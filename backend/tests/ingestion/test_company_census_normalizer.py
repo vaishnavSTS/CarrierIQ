@@ -200,3 +200,13 @@ def test_missing_optional_fields_are_none() -> None:
 def test_record_without_identity_is_rejected(row: dict[str, Any]) -> None:
     with pytest.raises(SourceDataError):
         normalize_census_row(row)
+
+
+def test_operation_classification() -> None:
+    assert (
+        normalize_census_row(real_row()).carrier.operation_classification
+        == "PRIVATE PROPERTY;AUTHORIZED FOR HIRE"
+    )
+    tidy = normalize_census_row(real_row(classdef=" private property ;  ")).carrier
+    assert tidy.operation_classification == "PRIVATE PROPERTY"
+    assert normalize_census_row(real_row(classdef=None)).carrier.operation_classification is None

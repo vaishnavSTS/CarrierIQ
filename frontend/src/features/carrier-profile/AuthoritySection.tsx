@@ -2,6 +2,11 @@ import { useState, type ReactNode } from 'react'
 
 import { StatusBadge } from '../../components/StatusBadge'
 import { useCarrierAuthority } from '../../hooks/useCarrierAuthority'
+import {
+  classificationLabel,
+  classifications,
+  needsForHireAuthority,
+} from '../../utils/classification'
 import type { DocketDetail, InsuranceFiling } from '../../types/carrierAuthority'
 import { formatDate, formatMoney, humanize, sourceLabel } from '../../utils/format'
 import { statusTone } from '../../utils/status'
@@ -182,7 +187,29 @@ function ShowMore({
   )
 }
 
-export function AuthoritySection({ usdotNumber }: { usdotNumber: number }) {
+function NotForHire({ classification }: { classification: string | null }) {
+  const labels = classifications(classification).map(classificationLabel)
+  return (
+    <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+      <p>
+        FMCSA classifies this carrier as <strong>{labels.join(', ')}</strong>. Only carriers
+        authorized for hire need operating authority (an MC, MX or FF number), so FMCSA holds no
+        authority or insurance filings for this one.
+      </p>
+      <p className="mt-1 text-xs text-slate-500">
+        Its insurance is not filed with FMCSA, so it can’t be checked here.
+      </p>
+    </div>
+  )
+}
+
+export function AuthoritySection({
+  usdotNumber,
+  classification,
+}: {
+  usdotNumber: number
+  classification: string | null
+}) {
   const { data, error, isPending } = useCarrierAuthority(usdotNumber)
   const [allInsurance, setAllInsurance] = useState(false)
   const [allActions, setAllActions] = useState(false)
@@ -196,8 +223,10 @@ export function AuthoritySection({ usdotNumber }: { usdotNumber: number }) {
       {data && (
         <>
           <SubHeading>Operating authority</SubHeading>
-          {data.dockets.length === 0 ? (
-            <Empty>No MC/MX/FF dockets on file (e.g. a private or intrastate carrier).</Empty>
+          {data.dockets.length === 0 && needsForHireAuthority(classification) === false ? (
+            <NotForHire classification={classification} />
+          ) : data.dockets.length === 0 ? (
+            <Empty>No MC, MX or FF docket found in FMCSA records.</Empty>
           ) : (
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {data.dockets.map((d) => (

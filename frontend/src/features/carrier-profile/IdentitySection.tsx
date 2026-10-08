@@ -1,5 +1,6 @@
 import { StatusBadge } from '../../components/StatusBadge'
 import type { CarrierProfile } from '../../types/carrierProfile'
+import { classificationLabel, classifications } from '../../utils/classification'
 import { formatDate, formatPhone, humanize } from '../../utils/format'
 import { Empty, Field, Section } from './Section'
 
@@ -27,6 +28,10 @@ export function IdentitySection({ profile }: { profile: CarrierProfile }) {
     <Section id="identity" title="Identity">
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="Entity type">{entityTypes(profile.entity_type)}</Field>
+        <Field label="Operation">
+          {classifications(profile.operation_classification).map(classificationLabel).join(', ') ||
+            '—'}
+        </Field>
         <Field label="Drivers">{profile.driver_count ?? '—'}</Field>
         <Field label="Registered (census add date)">
           {formatDate(profile.first_registered_date)}

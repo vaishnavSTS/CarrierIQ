@@ -108,6 +108,7 @@ class CarrierProfile(BaseModel):
     dba_name: str | None
     entity_type: str | None
     registration_status: str | None
+    operation_classification: str | None  # census CLASSDEF, ";"-separated
     email: str | None
     website: str | None
     driver_count: int | None

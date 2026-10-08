@@ -88,6 +88,8 @@ export interface CarrierProfile {
   dba_name: string | null
   entity_type: string | null
   registration_status: string | null
+  /** census CLASSDEF, ';'-separated, e.g. 'PRIVATE PROPERTY;AUTHORIZED FOR HIRE' */
+  operation_classification: string | null
   email: string | null
   website: string | null
   driver_count: number | null

@@ -73,6 +73,7 @@ class CarrierProfileService:
             dba_name=carrier.dba_name,
             entity_type=carrier.entity_type,
             registration_status=carrier.registration_status,
+            operation_classification=carrier.operation_classification,
             email=carrier.email,
             website=carrier.website,
             driver_count=carrier.driver_count,

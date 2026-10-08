@@ -406,6 +406,14 @@ and returns a check-digit verdict; the units dataset answers VIN lookups in ~0.5
   - Supabase: 930 VINs linked (297080: 893 incl. trailers; 297569: 32; 295017: 5).
   - Performance fix: per-link round trips took 69s for 297080; batched to **1.0s**.
   - 3 new tests (255 total).
+- [x] **Fix (reported from the app): empty Authority & Insurance tab for private carriers.**
+  BLUETRITON (297080) has no data in any of the 7 FMCSA authority/insurance datasets because the
+  census classifies it "PRIVATE PROPERTY" (hauls its own goods) — no for-hire authority, so no
+  FMCSA filings. Carriers now store the census classification (`operation_classification`,
+  CLASSDEF, migration `0007`, tracked in history); the tab explains why there's no data, the
+  header says "Not filed with FMCSA (not a for-hire carrier)", Identity shows "Operation".
+  1.47M census carriers are PRIVATE PROPERTY only. Supabase migrated and backfilled from stored
+  census records. 1 new test (256 total).
 - [ ] **Part 2 — Shared VINs**: each VIN looked up across all FMCSA inspections; other USDOT
   numbers using it get their own VIN_OBSERVED_WITH links (with dates and raw evidence)
 - [ ] **Part 3 — NHTSA vPIC decoding** (make, model, year, body, weight class; cached forever)
@@ -489,3 +497,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 6 Part 3: change detection → timeline events (authority + insurance); migration 0006; fixed authority status precedence (census docket status ≠ authority status); 243 tests passing. |
 | 2026-10-08 | Phase 6 Part 4: authority endpoint, insurance status, Authority & Insurance tab, timeline tab with events. Phase 6 complete. |
 | 2026-10-08 | Phase 7 Part 1: VIN extraction and VIN → USDOT links (930 VINs in Supabase); batched upserts 69s → 1s; 255 tests passing. |
+| 2026-10-08 | Explain private / non-for-hire carriers (census classification, migration 0007) after an empty Authority tab was reported. |

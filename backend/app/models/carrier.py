@@ -37,6 +37,9 @@ class Carrier(IdMixin, UpdatedAtMixin, Base):
     # Census `status_code`, normalized (ACTIVE | INACTIVE | PENDING). Kept as text so an
     # unexpected source code is stored rather than rejected.
     registration_status: Mapped[str | None] = mapped_column(String(20))
+    # Census CLASSDEF, ";"-separated (e.g. "PRIVATE PROPERTY;AUTHORIZED FOR HIRE"). Only
+    # "AUTHORIZED FOR HIRE" needs for-hire operating authority, and with it FMCSA insurance filings.
+    operation_classification: Mapped[str | None] = mapped_column(String(300))
     email: Mapped[str | None] = mapped_column(String(255))
     website: Mapped[str | None] = mapped_column(String(255))
     fleet_size: Mapped[int | None]  # census `power_units`

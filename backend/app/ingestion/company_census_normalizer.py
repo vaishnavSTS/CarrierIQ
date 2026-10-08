@@ -30,6 +30,7 @@ class CarrierValues:
     dba_name: str | None
     entity_type: str | None
     registration_status: str | None
+    operation_classification: str | None  # census CLASSDEF, ";"-separated
     email: str | None
     fleet_size: int | None
     driver_count: int | None
@@ -118,6 +119,7 @@ def normalize_census_row(row: Row) -> NormalizedCensusRecord:
         dba_name=_text(row, "dba_name"),
         entity_type=_text(row, "carship"),
         registration_status=_code(row, "status_code", STATUS_CODES),
+        operation_classification=_classification(row),
         email=email,
         fleet_size=_int(row, "power_units"),
         driver_count=_int(row, "total_drivers"),
@@ -236,6 +238,15 @@ def _authorities(row: Row, usdot_number: int) -> tuple[AuthorityValues, ...]:
             )
         )
     return tuple(authorities)
+
+
+def _classification(row: Row) -> str | None:
+    """CLASSDEF parts trimmed and upper-cased, in source order."""
+    value = _text(row, "classdef")
+    if value is None:
+        return None
+    parts = [" ".join(part.split()).upper() for part in value.split(";") if part.strip()]
+    return ";".join(parts) or None
 
 
 def _text(row: Row, field: str) -> str | None:

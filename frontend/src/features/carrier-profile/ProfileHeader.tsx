@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 
 import { StatusBadge } from '../../components/StatusBadge'
 import type { CarrierProfile } from '../../types/carrierProfile'
+import { needsForHireAuthority } from '../../utils/classification'
 import { formatDateTime, sourceLabel } from '../../utils/format'
 import { INSURANCE_LABEL, insuranceTone, statusTone } from '../../utils/status'
 
@@ -75,7 +76,11 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
               </span>
             </>
           ) : (
-            <span className="text-slate-500">No active operating authority</span>
+            <span className="text-slate-500">
+              {needsForHireAuthority(profile.operation_classification) === false
+                ? 'Not filed with FMCSA (not a for-hire carrier)'
+                : 'No active operating authority'}
+            </span>
           )}
         </HeaderStatus>
         <HeaderStatus label="Review status">

@@ -102,7 +102,12 @@ export function CarrierProfilePage() {
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
         {tab === 'identity' && <IdentitySection profile={profile} />}
-        {tab === 'authority' && <AuthoritySection usdotNumber={profile.usdot_number} />}
+        {tab === 'authority' && (
+          <AuthoritySection
+            usdotNumber={profile.usdot_number}
+            classification={profile.operation_classification}
+          />
+        )}
         {tab === 'safety' && (
           <SafetySection usdotNumber={profile.usdot_number} safety={profile.safety} />
         )}
