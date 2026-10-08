@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 5 (Safety) — Parts 1–2 done, Part 3 next
+**Current phase:** Phase 5 complete → Phase 6 (Authority & Insurance) is next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -18,8 +18,8 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 2 | Carrier Data Model | ✅ Done (2026-10-08) |
 | 3 | First Federal Data Integration | ✅ Done (2026-10-08) |
 | 4 | Carrier Search | ✅ Done (2026-10-08) |
-| 5 | Safety | 🔄 In progress (Parts 1–2 of 3 done) |
-| 6 | Authority & Insurance | Not started |
+| 5 | Safety | ✅ Done (2026-10-08) |
+| 6 | Authority & Insurance | ⏭️ Next |
 | 7 | Equipment / VIN | Not started |
 | 8 | Intelligence Engine | Not started |
 | 9 | Intelligence UI | Not started |
@@ -246,7 +246,7 @@ fetched from FMCSA on demand and refreshed after 24h.
 
 ---
 
-## Phase 5 — Safety 🔄
+## Phase 5 — Safety ✅
 
 Built part by part: (1) violations → (2) safety API (trends, history, violation breakdown) →
 (3) Safety tab with charts.
@@ -280,7 +280,24 @@ Built part by part: (1) violations → (2) safety API (trends, history, violatio
     `schemas/carrier_safety.py`, `InspectionRepository.page()`.
   - 12 new tests (190 total). Live on Supabase (297080): /safety 1.9s (loads all 1,109
     inspections — optimize later if needed), /inspections 0.5s; 98 OOS inspections.
-- [ ] **Part 3 — Safety tab**: trend charts, full inspection history, violation breakdown
+- [x] **Part 3 — Safety tab.** Headline tiles, then:
+  - **Trends**: inspections per quarter (column chart) and vehicle vs driver OOS rate per quarter
+    (line chart, one % axis, legend, crosshair tooltip with sample size). The in-progress quarter
+    is marked `*` and its rate is a separate dot, not joined to the trend (2 inspections at 0%
+    would otherwise read as a sharp improvement). Empty quarters show no rate. Every chart has a
+    "Show as table" view.
+  - **Violations**: totals (vehicle/driver/OOS, plus the header-vs-detail gap), horizontal bars
+    by 49 CFR part with OOS counts, top-10 violation table with last-seen date.
+  - **Inspection history**: paged (25), newest first, "out-of-service only" filter, each row
+    expands to its violations (driver / unit, description, code, citation, OOS).
+  - Charts are plain SVG (no chart library) in `components/charts/` following the data-viz
+    guidance; series colours (blue, orange) validated for colour-blind separation and contrast.
+    Code: `features/carrier-profile/safety/`, `hooks/useCarrierSafety.ts`, `types/carrierSafety.ts`.
+  - Checked in Chrome on Supabase data (297080): charts, tooltips, OOS filter (98), expanded
+    violations; no console errors. ESLint + build clean.
+
+Phase 5 done: inspection history, vehicle/driver OOS, counts, quarterly trends and violation
+detail, with charts and tables.
 
 ---
 
@@ -373,3 +390,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Carrier profile sections turned into tabs (Identity default, tab kept in URL). |
 | 2026-10-08 | Phase 5 Part 1: inspection violations ingested (876r-jsdb); fixed stale inspection format; Supabase violations validated 1,139/1,139; 178 tests passing. |
 | 2026-10-08 | Phase 5 Part 2: safety API (quarterly trends, breakdowns, paged inspection history); 190 tests passing. |
+| 2026-10-08 | Phase 5 Part 3: Safety tab charts, violation breakdown, paged inspection history. Phase 5 complete. |

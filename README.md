@@ -3,8 +3,8 @@
 Explainable carrier intelligence for freight brokers. The product specification is in
 `../PROJECT_SPECIFICATION.md` and is the source of truth for scope and design.
 
-Current state: **Phase 4 — carrier search** complete (search by USDOT / MC / name and a carrier
-profile, loaded from FMCSA on demand). Progress is tracked in `CHECKPOINT.md`.
+Current state: **Phase 5 — safety** complete (carrier search, profile, and a safety view with
+inspection trends, violations and history, loaded from FMCSA on demand). Progress is tracked in `CHECKPOINT.md`.
 
 ## Stack
 
