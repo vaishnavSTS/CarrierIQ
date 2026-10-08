@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 3 (First Federal Data Integration) — Parts 1–2 done, Part 3 next
+**Current phase:** Phase 3 (First Federal Data Integration) — Parts 1–3 done, Part 4 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -16,7 +16,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 |---|---|---|
 | 1 | Project Foundation | ✅ Done (2026-10-08) |
 | 2 | Carrier Data Model | ✅ Done (2026-10-08) |
-| 3 | First Federal Data Integration | 🔄 In progress (Parts 1–2 of 6 done) |
+| 3 | First Federal Data Integration | 🔄 In progress (Parts 1–3 of 6 done) |
 | 4 | Carrier Search | Not started |
 | 5 | Safety | Not started |
 | 6 | Authority & Insurance | Not started |
@@ -109,11 +109,28 @@ Only carriers that are searched get fetched (on-demand); tests use saved real re
   kept. Code: `ingestion/fingerprint.py`, `repositories/raw_record_repository.py`,
   `CensusIngestionService.ingest()`. 7 new tests; live check (API → local DB): fetching USDOT
   295017 twice gave 1 raw record + 2 runs.
-- [ ] **Part 3 — Normalize** into `carriers`, addresses, phones, officers, domains, authority
-  (status codes checked against the census data dictionary)
+- [x] **Part 3 — Normalize** into `carriers`, `addresses`, `phones`, `officers`, `domains`,
+  `authority`. Conversion is pure code in `ingestion/company_census_normalizer.py` (codes checked
+  against the data dictionary + live API); saving is in `services/census_normalization_service.py`
+  with `carrier_repository`, `observed_value_repository`, `authority_repository`. Changed values
+  add new rows and mark old ones not current (nothing deleted); dockets update status in place.
+  A record that can't be normalized fails the run but its raw record is kept. 37 new tests (82
+  total); live check (API → local DB) with USDOT 295017 and 3025897 (DBA + 2 dockets).
+  - Conversion rules: status A/I/P → ACTIVE/INACTIVE/PENDING (dockets also return P, not in the
+    dictionary); safety S/C/U → SATISFACTORY/CONDITIONAL/UNSATISFACTORY; `YYYYMMDD` → date,
+    invalid dates → empty; phones digits-only without US `1`, `0000000000` placeholders skipped;
+    officers kept as full text (titles not guessed); unknown codes kept as received.
+  - Fixed a Phase 2 test bug: DB tests were running against the real `public` tables instead of
+    the throwaway `pytest_models` schema (always rolled back, so no damage). Now enforced.
 - [ ] **Part 4 — History**: write `carrier_attribute_history` / `carrier_snapshots` for changed fields
 - [ ] **Part 5 — Validate with real carriers** loaded into Supabase
 - [ ] **Part 6 — Inspection data** adapter + normalization (separate dataset)
+
+Open questions for later phases:
+- Free email domains (e.g. `gmail.com`) are stored in `domains`; the shared-domain relationship
+  rule (Phase 8) must ignore them or it will link unrelated carriers.
+- `add_date` is used as `first_registered_date`, but the dictionary says it is also reset on
+  reactivation/systematic updates, so it is "best available", not guaranteed first.
 
 Source facts confirmed on the live API (2026-10-08): ~4.5M carriers, one row per USDOT number,
 all values are text, empty fields are omitted from the row, non-numeric input is parsed as SoQL.
@@ -220,3 +237,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Git initialized and connected to GitHub. Phase 2 built: 19 models, migration `0002` applied to Supabase, 16 new model tests. |
 | 2026-10-08 | Phase 3 Part 1: live API client + Company Census adapter + ingestion run logging, 38 tests passing. |
 | 2026-10-08 | Phase 3 Part 2: raw record storage with SHA-256 change detection, 45 tests passing. |
+| 2026-10-08 | Phase 3 Part 3: census normalization into canonical tables; fixed test-schema isolation bug; 82 tests passing. |

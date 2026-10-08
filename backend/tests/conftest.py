@@ -46,7 +46,11 @@ def engine() -> Iterator[Engine]:
         connection.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
         connection.execute(text(f"DROP SCHEMA IF EXISTS {TEST_SCHEMA} CASCADE"))
         connection.execute(text(f"CREATE SCHEMA {TEST_SCHEMA}"))
-        Base.metadata.create_all(connection)
+        # checkfirst=False: the app's own tables in `public` are also on the search path, and
+        # create_all would otherwise see them, skip creating ours, and test against them.
+        Base.metadata.create_all(connection, checkfirst=False)
+        current = connection.execute(text("SELECT current_schema()")).scalar()
+        assert current == TEST_SCHEMA, f"tests would run in {current!r}"
 
     yield engine
 

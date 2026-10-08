@@ -1,4 +1,4 @@
-"""Census ingestion: run logging and raw storage (requires TEST_DATABASE_URL)."""
+"""Census ingestion: run logging, raw storage, failures (requires TEST_DATABASE_URL)."""
 
 from typing import Any
 
@@ -6,20 +6,19 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import SourceFetchError, ValidationError
-from app.ingestion.company_census import CompanyCensusAdapter
+from app.core.exceptions import SourceDataError, SourceFetchError, ValidationError
 from app.ingestion.fingerprint import payload_hash
-from app.models import IngestionRun, RawRecord
+from app.models import Carrier, IngestionRun, RawRecord
 from app.models.enums import IngestionStatus
-from app.repositories.ingestion_run_repository import IngestionRunRepository
-from app.repositories.raw_record_repository import RawRecordRepository
-from app.services.census_ingestion_service import CensusIngestionService
+from app.services.census_ingestion_service import (
+    CensusIngestionService,
+    build_census_ingestion_service,
+)
 from tests.ingestion.helpers import load_census_rows, responding_with
 
 
 def service(db: Session, body: Any, status_code: int = 200) -> CensusIngestionService:
-    adapter = CompanyCensusAdapter(responding_with(body, status_code))
-    return CensusIngestionService(db, adapter, IngestionRunRepository(db), RawRecordRepository(db))
+    return build_census_ingestion_service(db, responding_with(body, status_code))
 
 
 def raw_records(db: Session) -> list[RawRecord]:
@@ -119,3 +118,18 @@ def test_changed_payload_is_stored_and_the_old_version_kept(db: Session) -> None
     assert [r.payload["phy_street"] for r in stored] == ["1770 NE FUSON RD", "456 NEW STREET"]
     assert result.raw_record is not None
     assert result.raw_record.id == stored[-1].id
+
+
+def test_record_that_cannot_be_normalized_fails_the_run_but_is_kept(db: Session) -> None:
+    row = {**load_census_rows()[0]}
+    del row["legal_name"]
+
+    with pytest.raises(SourceDataError):
+        service(db, [row]).ingest(295017)
+
+    run = db.scalars(select(IngestionRun)).one()
+    assert run.status == IngestionStatus.FAILED
+    assert run.error_message is not None
+    assert "legal_name" in run.error_message
+    assert len(raw_records(db)) == 1  # kept for auditing and reprocessing
+    assert db.scalars(select(Carrier)).all() == []

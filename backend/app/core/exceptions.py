@@ -40,6 +40,13 @@ class SourceFetchError(CarrierIQError):
     code = "source_fetch_error"
 
 
+class SourceDataError(CarrierIQError):
+    """A source record was fetched but cannot be normalized (e.g. a required field is missing)."""
+
+    status_code = 502
+    code = "source_data_error"
+
+
 class DatabaseUnavailableError(CarrierIQError):
     status_code = 503
     code = "database_unavailable"
