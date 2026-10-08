@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 6 (Authority & Insurance) — Parts 1–2 done, Part 3 next
+**Current phase:** Phase 6 (Authority & Insurance) — Parts 1–3 done, Part 4 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -19,7 +19,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 3 | First Federal Data Integration | ✅ Done (2026-10-08) |
 | 4 | Carrier Search | ✅ Done (2026-10-08) |
 | 5 | Safety | ✅ Done (2026-10-08) |
-| 6 | Authority & Insurance | 🔄 In progress (Parts 1–2 of 4 done) |
+| 6 | Authority & Insurance | 🔄 In progress (Parts 1–3 of 4 done) |
 | 7 | Equipment / VIN | Not started |
 | 8 | Intelligence Engine | Not started |
 | 9 | Intelligence UI | Not started |
@@ -322,8 +322,7 @@ YYYYMMDD, form codes `BMC-91X` vs legacy `91X`.
   Motus Carrier + AuthHist), each its own run, all-or-nothing, raw rows stored. `authority`
   gains authority type, BI&PD required / on file (dollars), cargo/bond required / on file,
   revocation pending, and `status_source` (CENSUS | MOTUS | LEGACY_LI) + `status_as_of`.
-  Precedence: Motus > census (daily) > legacy (frozen); a census refresh never overwrites a Motus
-  status; dockets only known to FMCSA authority data are added. New `authority_history` table
+  Precedence (corrected in Part 3 — see below): Motus > legacy (frozen) > census docket status; dockets only known to FMCSA authority data are added. New `authority_history` table
   (migration `0003`): dated actions from both systems (legacy rows give an original action and
   a disposition, e.g. MC139446 GRANTED 1986 → REVOKED 2021-06-08 → REINSTATED 2021-06-15).
   Migration `0004` labels pre-existing census statuses. Authority joins the on-demand refresh
@@ -348,8 +347,25 @@ YYYYMMDD, form codes `BMC-91X` vs legacy `91X`.
   - 14 new tests (229 total). Supabase migrated to `0005`; insurance loaded for all 11 carriers;
     independent live check: current filings (Motus and legacy) and past filings match for
     **11/11** carriers (first validator run was wrong — it merged the two filings above).
-- [ ] **Part 3 — Change detection**: authority status changes and insurance changes (new
-  insurer, cancellation, coverage change, gaps) — a normal insurer change is not "suspicious"
+- [x] **Part 3 — Change detection → federal timeline (spec 12.7).** Pure rules in
+  `services/change_detection.py` turn stored records into `timeline_events`, each traced to its
+  raw record, with a stable `event_key` (migration `0006`) so rebuilds update instead of
+  duplicating. Rebuilt after every successful carrier refresh (`TimelineService`).
+  - Authority: granted / reinstated (INFO), revocation started (MEDIUM) / discontinued (INFO),
+    revoked / suspended / out of service (HIGH), inactivated (MEDIUM), withdrawn / application
+    not granted / expired (LOW); the same action in both systems → one event. Filer e-mails in
+    Motus reasons ("Withdrawn by x@y.com") are never shown.
+  - Insurance (per docket + type): insurer changed (INFO — not a concern on its own, spec 12.2),
+    BI&PD coverage up (INFO) / down (LOW), policy cancelled (INFO if replaced next day, else
+    MEDIUM), gap in filings (BI&PD MEDIUM, others LOW), active authority with no BI&PD on file
+    (MEDIUM). Renewals with the same insurer (any spelling) are not changes.
+  - Live on Supabase: e.g. SURRATT — BI&PD cancelled 2024-11-07, nothing on file from 11-08,
+    authority revoked 2024-11-13. A crash (two filings starting the same day) was found and fixed.
+  - **Correction to Part 1:** the census docket status is NOT the operating-authority status —
+    it shows "A" for revoked authority (MC161790, MC196779, MC199622). Part 1 ranked it above
+    legacy, so revoked carriers showed "ACTIVE". Now Motus > legacy > census; a census refresh
+    never overwrites a Motus or legacy status. Supabase reloaded: 9/9 dockets match.
+  - 14 new tests (243 total).
 - [ ] **Part 4 — Authority & Insurance tab** + API
 
 ---
@@ -436,3 +452,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 5 Part 3: Safety tab charts, violation breakdown, paged inspection history. Phase 5 complete. |
 | 2026-10-08 | Phase 6 Part 1: operating authority (Motus + legacy L&I), authority history; migrations 0003–0004 on Supabase; 38/38 live checks; 215 tests passing. |
 | 2026-10-08 | Phase 6 Part 2: insurance filings (current + past, Motus + legacy); migration 0005 on Supabase; 11/11 carriers validated; 229 tests passing. |
+| 2026-10-08 | Phase 6 Part 3: change detection → timeline events (authority + insurance); migration 0006; fixed authority status precedence (census docket status ≠ authority status); 243 tests passing. |

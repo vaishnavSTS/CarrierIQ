@@ -25,6 +25,7 @@ from app.services.carrier_search_service import CarrierSearchService
 from app.services.census_ingestion_service import build_census_ingestion_service
 from app.services.inspection_ingestion_service import build_inspection_ingestion_service
 from app.services.insurance_ingestion_service import build_insurance_ingestion_service
+from app.services.timeline_service import build_timeline_service
 
 router = APIRouter(prefix="/carriers", tags=["carriers"])
 
@@ -48,6 +49,7 @@ def build_refresh_service(db: Session, client: SocrataClient) -> CarrierRefreshS
             build_insurance_ingestion_service(db, client),
         ],
         max_age=timedelta(hours=get_settings().carrier_refresh_hours),
+        after_refresh=build_timeline_service(db).rebuild,
     )
 
 

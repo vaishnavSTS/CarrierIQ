@@ -34,8 +34,8 @@ class AuthorityRepository:
         raw_record_id: int,
         as_of: date,
     ) -> None:
-        """Insert new dockets and update the status of known ones from the census. A status taken
-        from Motus is left alone (it is the authority system of record). Never deletes dockets."""
+        """Insert new dockets from the census. The census docket status is kept only while no
+        operating-authority status (Motus or legacy L&I) is known. Never deletes dockets."""
         existing = {(a.docket_prefix, a.docket_number): a for a in self.for_carrier(carrier_id)}
         for values in authorities:
             authority = existing.get((values.docket_prefix, values.docket_number))
@@ -52,7 +52,7 @@ class AuthorityRepository:
                         raw_record_id=raw_record_id,
                     )
                 )
-            elif authority.status_source != MOTUS:
+            elif authority.status_source in (None, CENSUS):
                 if authority.status != values.status:
                     authority.raw_record_id = raw_record_id  # the record the new status came from
                 authority.status = values.status
@@ -70,9 +70,8 @@ class AuthorityRepository:
     ) -> None:
         """Apply FMCSA operating-authority data to a docket (creating it if the census lacks it).
 
-        Motus data overwrites everything. Legacy L&I data (frozen) fills in type and insurance
-        requirements unless Motus already supplied them, and sets the status only when no
-        fresher status (census or Motus) exists.
+        Motus data overwrites everything. Legacy L&I data (frozen) applies unless Motus already
+        supplied the docket; it replaces a census docket status, which is not an authority status.
         """
         authority = next(
             (
@@ -100,10 +99,9 @@ class AuthorityRepository:
             fields.pop(name)
         for name, value in fields.items():
             setattr(authority, name, value)
-        if is_motus or authority.status is None:
-            authority.status = values.status
-            authority.status_source = values.status_source
-            authority.status_as_of = values.status_as_of
+        authority.status = values.status
+        authority.status_source = values.status_source
+        authority.status_as_of = values.status_as_of
         authority.raw_record_id = raw_record_id
         self.db.flush()
 

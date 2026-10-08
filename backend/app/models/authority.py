@@ -1,9 +1,11 @@
 """Operating authority, one row per docket (spec Section 11.2). MC search joins here.
 
-The census gives every docket and a daily status; FMCSA's operating-authority data (Motus, or
-the legacy L&I system frozen on 2026-05-14) adds the authority type, insurance requirements and
-the authoritative status. `status_source` / `status_as_of` say where the current status came
-from, so a frozen legacy status is never mistaken for today's.
+The census lists every docket, but its docket status is NOT the operating-authority status: it
+shows "A" for dockets whose authority was revoked (checked on 2026-10-08, e.g. MC161790,
+MC196779). The operating-authority status comes from Motus (current) or, when Motus doesn't
+hold the docket, the legacy L&I system (frozen on 2026-05-14); the census docket status is
+used only when neither has the docket. `status_source` / `status_as_of` say where the status
+came from and how current it is.
 """
 
 from datetime import date

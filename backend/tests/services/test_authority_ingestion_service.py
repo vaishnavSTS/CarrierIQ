@@ -99,19 +99,33 @@ def test_reingest_adds_nothing(db: Session, api: FakeDotApi) -> None:
     assert len(history(db)) == 6
 
 
-def test_without_motus_the_census_status_stays_and_legacy_fills_in(
-    db: Session, api: FakeDotApi
-) -> None:
+def test_without_motus_legacy_supplies_the_authority_status(db: Session, api: FakeDotApi) -> None:
     api.authority = {k: v for k, v in api.authority.items() if k not in ("inys-ebih", "yu5v-wbh6")}
     load_census(db, api)
+    assert (docket(db).status, docket(db).status_source) == ("ACTIVE", "CENSUS")
 
     ingest(db, api)
 
     a = docket(db)
-    assert (a.status, a.status_source) == ("ACTIVE", "CENSUS")  # fresher than frozen legacy
+    assert (a.status, a.status_source, a.status_as_of) == ("ACTIVE", "LEGACY_LI", FROZEN)
     assert a.authority_type == "Common carrier (Household goods)"
     assert a.bipd_on_file == Decimal("1000000.00")
     assert a.revocation_pending is False
+
+
+def test_census_docket_status_never_overrides_authority_status(
+    db: Session, api: FakeDotApi
+) -> None:
+    """Regression: the census shows docket status "A" for revoked authority (e.g. MC161790)."""
+    api.authority = {k: v for k, v in api.authority.items() if k not in ("inys-ebih", "yu5v-wbh6")}
+    legacy = api.authority["6eyk-hxee"][0]
+    api.authority["6eyk-hxee"] = [{**legacy, "common_stat": "I"}]  # authority inactive
+    load_census(db, api)  # census docket status: A
+    ingest(db, api)
+
+    load_census(db, api)  # a later census refresh still says A
+
+    assert (docket(db).status, docket(db).status_source) == ("INACTIVE", "LEGACY_LI")
 
 
 def test_census_refresh_does_not_overwrite_a_motus_status(db: Session, api: FakeDotApi) -> None:
