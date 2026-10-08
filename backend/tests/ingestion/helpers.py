@@ -41,6 +41,12 @@ AUTHORITY_DATASETS = {
     "legacy_carrier": "6eyk-hxee",
     "legacy_authhist": "9mw4-x3tu",
 }
+INSURANCE_DATASETS = {
+    "motus_insur": "c5y8-a4uz",
+    "motus_inshist": "3uet-3z4i",
+    "legacy_insur": "ypjt-5ydn",
+    "legacy_inshist": "6sqe-dvqs",
+}
 
 
 def load_authority_rows() -> dict[str, list[Row]]:
@@ -49,6 +55,15 @@ def load_authority_rows() -> dict[str, list[Row]]:
     return {
         dataset_id: json.loads((folder / f"{name}_usdot_295017.json").read_text())
         for name, dataset_id in AUTHORITY_DATASETS.items()
+    }
+
+
+def load_insurance_rows() -> dict[str, list[Row]]:
+    """Real insurance filings for USDOT 295017 (MC139446), keyed by dataset ID."""
+    folder = FIXTURES / "insurance"
+    return {
+        dataset_id: json.loads((folder / f"{name}_usdot_295017.json").read_text())
+        for name, dataset_id in INSURANCE_DATASETS.items()
     }
 
 
@@ -116,7 +131,7 @@ class FakeDotApi:
         authority: dict[str, list[Row]] | None = None,
     ) -> None:
         self.census = census
-        # Operating-authority rows by dataset ID (Motus / legacy L&I); empty unless given.
+        # FMCSA authority / insurance rows by dataset ID (Motus, legacy L&I); empty unless given.
         self.authority = authority or {}
         self.headers = headers or []
         self.units = units or []
@@ -146,7 +161,12 @@ class FakeDotApi:
             return httpx.Response(200, json=_for_inspections(self.units, where))
         if dataset == "876r-jsdb":
             return httpx.Response(200, json=_for_inspections(self.violations, where))
-        if dataset in AUTHORITY_DATASETS.values():
+        if dataset == INSURANCE_DATASETS["legacy_insur"]:  # keyed by padded docket only
+            rows = self.authority.get(dataset, [])
+            return httpx.Response(
+                200, json=[r for r in rows if f"'{r['prefix_docket_number']}'" in where]
+            )
+        if dataset in AUTHORITY_DATASETS.values() or dataset in INSURANCE_DATASETS.values():
             rows = self.authority.get(dataset, [])
             if "usdot_number" in params:  # Motus: plain USDOT
                 return httpx.Response(

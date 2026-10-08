@@ -1,0 +1,23 @@
+[
+  {
+    "prefix_docket_number": "MC139446",
+    "ins_type_code": "1",
+    "ins_class_code": "P",
+    "max_cov_amount": "01000",
+    "underl_lim_amount": "00000",
+    "policy_no": "MRV 3254703-17",
+    "effective_date": "01/01/2025",
+    "ins_form_code": "91X",
+    "name_company": "VANLINER INSURANCE COMPANY"
+  },
+  {
+    "prefix_docket_number": "MC139446",
+    "ins_type_code": "2",
+    "max_cov_amount": "00000",
+    "underl_lim_amount": "00000",
+    "policy_no": "CGV 3254702-17",
+    "effective_date": "01/01/2025",
+    "ins_form_code": "34",
+    "name_company": "VANLINER INSURANCE COMPANY"
+  }
+]

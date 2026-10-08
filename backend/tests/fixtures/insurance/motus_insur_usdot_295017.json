@@ -1,0 +1,28 @@
+[
+  {
+    "docket_number": "MC139446",
+    "usdot_number": "295017",
+    "ins_form_code": "BMC-34",
+    "ins_type_code": "2",
+    "ins_class_code": "P",
+    "max_cov_amount": "5000.00",
+    "underl_lim_amount": "0.00",
+    "policy_no": "CGV 3254702-17",
+    "effective_date": "20250101",
+    "insurance_company_name": "Vanliner Insurance Company",
+    "trans_date": "20241230"
+  },
+  {
+    "docket_number": "MC139446",
+    "usdot_number": "295017",
+    "ins_form_code": "BMC-91X",
+    "ins_type_code": "1",
+    "ins_class_code": "P",
+    "max_cov_amount": "1000000.00",
+    "underl_lim_amount": "0.00",
+    "policy_no": "MRV 3254703-17",
+    "effective_date": "20250101",
+    "insurance_company_name": "Vanliner Insurance Company",
+    "trans_date": "20241230"
+  }
+]

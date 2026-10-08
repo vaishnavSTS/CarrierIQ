@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 6 (Authority & Insurance) — Part 1 done, Part 2 next
+**Current phase:** Phase 6 (Authority & Insurance) — Parts 1–2 done, Part 3 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -19,7 +19,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 3 | First Federal Data Integration | ✅ Done (2026-10-08) |
 | 4 | Carrier Search | ✅ Done (2026-10-08) |
 | 5 | Safety | ✅ Done (2026-10-08) |
-| 6 | Authority & Insurance | 🔄 In progress (Part 1 of 4 done) |
+| 6 | Authority & Insurance | 🔄 In progress (Parts 1–2 of 4 done) |
 | 7 | Equipment / VIN | Not started |
 | 8 | Intelligence Engine | Not started |
 | 9 | Intelligence UI | Not started |
@@ -332,8 +332,22 @@ YYYYMMDD, form codes `BMC-91X` vs legacy `91X`.
   - 25 new tests (215 total). Supabase migrated to `0004`; authority loaded for all 11 carriers;
     independent live check **38/38** (Motus status/coverage, legacy amounts ×1000, census status
     kept, full history per docket).
-- [ ] **Part 2 — Insurance**: current policies (Motus Insur, else legacy Insur) and insurance
-  history (both InsHist), into `insurance`
+- [x] **Part 2 — Insurance filings.** Four fetches per carrier (Motus Insur + InsHist by USDOT,
+  legacy InsHist by padded USDOT, legacy Insur by the carrier's dockets padded to 6 digits —
+  legacy current filings carry no USDOT). `insurance` (migration `0005`) gains docket, type
+  (BIPD / CARGO / BOND / TRUST_FUND from type or form code), class (P/E/1/2), form code (without
+  "BMC-"), coverage + underlying limit in dollars, termination date, status (ON_FILE |
+  CANCELLED | REPLACED | NAME_CHANGED | TRANSFERRED | NO_LONGER_ON_FILE), `on_file`,
+  received date, source system, as-of date. Current filings come from Motus when Motus holds
+  the docket, else legacy (as of 2026-05-14); past filings from both, de-duplicated by docket +
+  type + policy + effective + cancellation date. Nothing deleted: a filing that leaves the
+  current list is kept as NO_LONGER_ON_FILE. Insurance joins the refresh after authority.
+  Shared value parsing moved to `ingestion/fmcsa_values.py`.
+  - Legacy non-BI&PD filings carry 0 amounts (shown as unknown); Motus gives a cargo amount.
+  - One policy number can cover two filings (e.g. MCP2603258C: cargo form 34 and BI&PD 91X).
+  - 14 new tests (229 total). Supabase migrated to `0005`; insurance loaded for all 11 carriers;
+    independent live check: current filings (Motus and legacy) and past filings match for
+    **11/11** carriers (first validator run was wrong — it merged the two filings above).
 - [ ] **Part 3 — Change detection**: authority status changes and insurance changes (new
   insurer, cancellation, coverage change, gaps) — a normal insurer change is not "suspicious"
 - [ ] **Part 4 — Authority & Insurance tab** + API
@@ -421,3 +435,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 5 Part 2: safety API (quarterly trends, breakdowns, paged inspection history); 190 tests passing. |
 | 2026-10-08 | Phase 5 Part 3: Safety tab charts, violation breakdown, paged inspection history. Phase 5 complete. |
 | 2026-10-08 | Phase 6 Part 1: operating authority (Motus + legacy L&I), authority history; migrations 0003–0004 on Supabase; 38/38 live checks; 215 tests passing. |
+| 2026-10-08 | Phase 6 Part 2: insurance filings (current + past, Motus + legacy); migration 0005 on Supabase; 11/11 carriers validated; 229 tests passing. |
