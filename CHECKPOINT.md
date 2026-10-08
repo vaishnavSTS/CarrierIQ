@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 3 (First Federal Data Integration) — Parts 1–3 done, Part 4 next
+**Current phase:** Phase 3 (First Federal Data Integration) — Parts 1–4 done, Part 5 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -16,7 +16,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 |---|---|---|
 | 1 | Project Foundation | ✅ Done (2026-10-08) |
 | 2 | Carrier Data Model | ✅ Done (2026-10-08) |
-| 3 | First Federal Data Integration | 🔄 In progress (Parts 1–3 of 6 done) |
+| 3 | First Federal Data Integration | 🔄 In progress (Parts 1–4 of 6 done) |
 | 4 | Carrier Search | Not started |
 | 5 | Safety | Not started |
 | 6 | Authority & Insurance | Not started |
@@ -122,7 +122,15 @@ Only carriers that are searched get fetched (on-demand); tests use saved real re
     officers kept as full text (titles not guessed); unknown codes kept as received.
   - Fixed a Phase 2 test bug: DB tests were running against the real `public` tables instead of
     the throwaway `pytest_models` schema (always rolled back, so no damage). Now enforced.
-- [ ] **Part 4 — History**: write `carrier_attribute_history` / `carrier_snapshots` for changed fields
+- [x] **Part 4 — History.** 11 tracked carrier attributes (name, DBA, entity type, status, email,
+  fleet size, drivers, safety rating + date, registration date, MCS-150 date) go to
+  `carrier_attribute_history`: a change closes the open row (`valid_to` = today) and opens a new
+  one; a value that disappears is recorded as empty. `carrier_snapshots` gets one row per new raw
+  record (its payload hash); unchanged fetches add nothing. `valid_from` is the day we observed
+  the value (the census file has no change dates of its own). Code:
+  `repositories/carrier_history_repository.py`, `CensusNormalizationService.apply()`; ingest
+  results report `changed_attributes`. 7 new tests (89 total); live check (API → empty local DB):
+  USDOT 3025897 opened 9 history rows + 1 snapshot, second fetch added nothing.
 - [ ] **Part 5 — Validate with real carriers** loaded into Supabase
 - [ ] **Part 6 — Inspection data** adapter + normalization (separate dataset)
 
@@ -238,3 +246,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 3 Part 1: live API client + Company Census adapter + ingestion run logging, 38 tests passing. |
 | 2026-10-08 | Phase 3 Part 2: raw record storage with SHA-256 change detection, 45 tests passing. |
 | 2026-10-08 | Phase 3 Part 3: census normalization into canonical tables; fixed test-schema isolation bug; 82 tests passing. |
+| 2026-10-08 | Phase 3 Part 4: carrier attribute history + snapshots, 89 tests passing. |

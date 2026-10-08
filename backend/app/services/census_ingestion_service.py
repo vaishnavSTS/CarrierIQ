@@ -18,6 +18,7 @@ from app.ingestion.fingerprint import payload_hash
 from app.ingestion.socrata_client import SocrataClient
 from app.models import Carrier, IngestionRun, RawRecord
 from app.repositories.authority_repository import AuthorityRepository
+from app.repositories.carrier_history_repository import CarrierHistoryRepository
 from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.ingestion_run_repository import IngestionRunRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
@@ -36,6 +37,8 @@ class CensusIngestResult:
     changed: bool
     # The canonical carrier; None if the source has no such USDOT number.
     carrier: Carrier | None
+    # Carrier attributes whose value changed and were written to history.
+    changed_attributes: tuple[str, ...] = ()
 
 
 class CensusIngestionService:
@@ -75,7 +78,7 @@ class CensusIngestionService:
 
         raw_record, changed = self._store(str(usdot_number), row, run)
         try:
-            carrier = self.normalizer.apply(raw_record)
+            outcome = self.normalizer.apply(raw_record, is_new_record=changed)
         except SourceDataError as exc:
             self.runs.fail(run, exc.message)
             self.db.commit()  # keeps the raw record for auditing and reprocessing
@@ -91,7 +94,13 @@ class CensusIngestionService:
             raw_record.id,
             run.id,
         )
-        return CensusIngestResult(run=run, raw_record=raw_record, changed=changed, carrier=carrier)
+        return CensusIngestResult(
+            run=run,
+            raw_record=raw_record,
+            changed=changed,
+            carrier=outcome.carrier,
+            changed_attributes=outcome.changed_attributes,
+        )
 
     def _store(
         self, external_id: str, row: dict[str, object], run: IngestionRun
@@ -122,6 +131,9 @@ def build_census_ingestion_service(
         IngestionRunRepository(db),
         RawRecordRepository(db),
         CensusNormalizationService(
-            CarrierRepository(db), ObservedValueRepository(db), AuthorityRepository(db)
+            CarrierRepository(db),
+            ObservedValueRepository(db),
+            AuthorityRepository(db),
+            CarrierHistoryRepository(db),
         ),
     )
