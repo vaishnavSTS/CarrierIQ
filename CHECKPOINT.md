@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 3 (First Federal Data Integration) — Part 1 done, Part 2 next
+**Current phase:** Phase 3 (First Federal Data Integration) — Parts 1–2 done, Part 3 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -16,7 +16,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 |---|---|---|
 | 1 | Project Foundation | ✅ Done (2026-10-08) |
 | 2 | Carrier Data Model | ✅ Done (2026-10-08) |
-| 3 | First Federal Data Integration | 🔄 In progress (Part 1 of 6 done) |
+| 3 | First Federal Data Integration | 🔄 In progress (Parts 1–2 of 6 done) |
 | 4 | Carrier Search | Not started |
 | 5 | Safety | Not started |
 | 6 | Authority & Insurance | Not started |
@@ -103,7 +103,12 @@ Only carriers that are searched get fetched (on-demand); tests use saved real re
   `CompanyCensusAdapter` (dataset `az4n-8mr2`, lookup by USDOT, only positive integers reach the
   API), every fetch recorded in `ingestion_runs` (RUNNING → SUCCEEDED / FAILED). 19 new tests;
   live read-only check passed (USDOT 295017 → UNITED MOVING AND STORAGE INC).
-- [ ] **Part 2 — Store as received** in `raw_records` with a SHA-256 fingerprint (change detection)
+- [x] **Part 2 — Store as received.** Each fetched row is saved unchanged to `raw_records` with a
+  SHA-256 fingerprint of its canonical JSON (key order doesn't matter). Unchanged payload → no new
+  row, the fetch is just a recorded check in `ingestion_runs`. Changed payload → new row, old one
+  kept. Code: `ingestion/fingerprint.py`, `repositories/raw_record_repository.py`,
+  `CensusIngestionService.ingest()`. 7 new tests; live check (API → local DB): fetching USDOT
+  295017 twice gave 1 raw record + 2 runs.
 - [ ] **Part 3 — Normalize** into `carriers`, addresses, phones, officers, domains, authority
   (status codes checked against the census data dictionary)
 - [ ] **Part 4 — History**: write `carrier_attribute_history` / `carrier_snapshots` for changed fields
@@ -214,3 +219,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 1 built (backend, frontend, Docker, Alembic, health check, tests). Switched database to Supabase session pooler, fixed `%` escaping in `alembic/env.py`, applied migration `0001`, verified dashboard end-to-end (API OK, Database OK). |
 | 2026-10-08 | Git initialized and connected to GitHub. Phase 2 built: 19 models, migration `0002` applied to Supabase, 16 new model tests. |
 | 2026-10-08 | Phase 3 Part 1: live API client + Company Census adapter + ingestion run logging, 38 tests passing. |
+| 2026-10-08 | Phase 3 Part 2: raw record storage with SHA-256 change detection, 45 tests passing. |
