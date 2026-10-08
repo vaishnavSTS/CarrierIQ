@@ -70,3 +70,23 @@ class RawRecordRepository:
         """Insert many records in batched statements (ids are set afterwards)."""
         self.db.add_all(records)
         self.db.flush()
+
+    def latest_for_inspections(
+        self, source: str, dataset_id: str, inspection_ids: Sequence[str]
+    ) -> list[RawRecord]:
+        """Latest stored version of every row (e.g. a vehicle unit) whose payload belongs to one
+        of the given inspections."""
+        if not inspection_ids:
+            return []
+        return list(
+            self.db.scalars(
+                select(RawRecord)
+                .where(
+                    RawRecord.source == source,
+                    RawRecord.dataset_id == dataset_id,
+                    RawRecord.payload["inspection_id"].astext.in_(inspection_ids),
+                )
+                .order_by(RawRecord.external_id, RawRecord.id.desc())
+                .distinct(RawRecord.external_id)
+            )
+        )

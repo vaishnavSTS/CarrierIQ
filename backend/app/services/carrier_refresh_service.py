@@ -45,10 +45,10 @@ class CarrierRefreshService:
         details: Sequence[DetailSource],
         max_age: timedelta,
         now: Callable[[], datetime] = lambda: datetime.now(UTC),
-        after_refresh: Callable[[Carrier], object] | None = None,
+        after_refresh: Sequence[Callable[[Carrier], object]] = (),
     ) -> None:
         self.carriers = carriers
-        # Runs after a successful refresh, e.g. rebuilding the carrier's timeline.
+        # Run in order after a successful refresh, e.g. VIN links, then the timeline.
         self.after_refresh = after_refresh
         self.census = census
         self.details = details
@@ -85,6 +85,7 @@ class CarrierRefreshService:
             logger.warning("Refresh of USDOT %d failed, serving stored data: %s", usdot_number, exc)
             return RefreshOutcome(carrier, refreshed=False, stale=True)
 
-        if carrier is not None and self.after_refresh is not None:
-            self.after_refresh(carrier)
+        if carrier is not None:
+            for step in self.after_refresh:
+                step(carrier)
         return RefreshOutcome(carrier, refreshed=True, stale=False)

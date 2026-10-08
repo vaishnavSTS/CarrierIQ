@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 6 complete → Phase 7 (Equipment / VIN) is next
+**Current phase:** Phase 7 (Equipment / VIN) — Part 1 done, Part 2 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -20,7 +20,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 4 | Carrier Search | ✅ Done (2026-10-08) |
 | 5 | Safety | ✅ Done (2026-10-08) |
 | 6 | Authority & Insurance | ✅ Done (2026-10-08) |
-| 7 | Equipment / VIN | ⏭️ Next |
+| 7 | Equipment / VIN | 🔄 In progress (Part 1 of 4 done) |
 | 8 | Intelligence Engine | Not started |
 | 9 | Intelligence UI | Not started |
 | 10 | Background Processing | Not started |
@@ -388,12 +388,28 @@ detection (authority + insurance events on the timeline), from Motus and legacy 
 
 ---
 
-## Phase 7 — Equipment / VIN
+## Phase 7 — Equipment / VIN 🔄
 
-- [ ] VIN extraction
-- [ ] VIN-to-carrier relationships
-- [ ] VIN history
-- [ ] NHTSA vPIC decoding
+Built part by part: (1) VIN links for the carrier's own vehicles → (2) shared VINs across all
+FMCSA inspections (live) → (3) NHTSA vPIC decoding → (4) Equipment tab.
+Checked 2026-10-08: vPIC `DecodeVINValuesBatch` decodes up to 50 VINs per call (~0.4s for 5)
+and returns a check-digit verdict; the units dataset answers VIN lookups in ~0.5s.
+
+- [x] **Part 1 — VIN extraction and VIN → carrier links.** Every unit on a carrier's
+  inspections (power units and trailers, from the stored unit raw records) becomes a `vehicles`
+  row and a `relationships` row `VIN_OBSERVED_WITH` (vehicle → **USDOT number**, so VINs can be
+  linked to carriers that aren't loaded) with first / last seen, number of inspections, and
+  confidence (2+ inspections HIGH, 1 MEDIUM — spec 13.1). Runs after every refresh, before the
+  timeline (refresh now takes a list of after-refresh steps). Code:
+  `services/vehicle_observation_service.py`, `repositories/vehicle_repository.py`,
+  `repositories/relationship_repository.py`.
+  - Supabase: 930 VINs linked (297080: 893 incl. trailers; 297569: 32; 295017: 5).
+  - Performance fix: per-link round trips took 69s for 297080; batched to **1.0s**.
+  - 3 new tests (255 total).
+- [ ] **Part 2 — Shared VINs**: each VIN looked up across all FMCSA inspections; other USDOT
+  numbers using it get their own VIN_OBSERVED_WITH links (with dates and raw evidence)
+- [ ] **Part 3 — NHTSA vPIC decoding** (make, model, year, body, weight class; cached forever)
+- [ ] **Part 4 — Equipment tab** (vehicles, decoded details, shared-VIN flags, fleet consistency)
 
 ---
 
@@ -472,3 +488,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 6 Part 2: insurance filings (current + past, Motus + legacy); migration 0005 on Supabase; 11/11 carriers validated; 229 tests passing. |
 | 2026-10-08 | Phase 6 Part 3: change detection → timeline events (authority + insurance); migration 0006; fixed authority status precedence (census docket status ≠ authority status); 243 tests passing. |
 | 2026-10-08 | Phase 6 Part 4: authority endpoint, insurance status, Authority & Insurance tab, timeline tab with events. Phase 6 complete. |
+| 2026-10-08 | Phase 7 Part 1: VIN extraction and VIN → USDOT links (930 VINs in Supabase); batched upserts 69s → 1s; 255 tests passing. |
