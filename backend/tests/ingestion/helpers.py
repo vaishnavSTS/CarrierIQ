@@ -1,6 +1,7 @@
 """Fake data.transportation.gov for ingestion tests. Tests never call the live API."""
 
 import json
+import re
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -62,3 +63,69 @@ def inspection_api(
         return httpx.Response(404, json={"message": "unknown dataset"})
 
     return socrata_client(handler)
+
+
+class FakeDotApi:
+    """Fake data.transportation.gov: census (by USDOT, docket, name), inspections and units.
+
+    `calls` counts requests per dataset; set `down = True` to answer every request with HTTP 400.
+    """
+
+    def __init__(
+        self,
+        census: list[Row],
+        headers: list[Row] | None = None,
+        units: list[Row] | None = None,
+    ) -> None:
+        self.census = census
+        self.headers = headers or []
+        self.units = units or []
+        self.calls: dict[str, int] = {}
+        self.down = False
+
+    def client(self) -> SocrataClient:
+        return socrata_client(self._handle)
+
+    def _handle(self, request: httpx.Request) -> httpx.Response:
+        dataset = request.url.path.removeprefix("/resource/").removesuffix(".json")
+        self.calls[dataset] = self.calls.get(dataset, 0) + 1
+        if self.down:
+            return httpx.Response(400, json={"message": "source unavailable"})
+        params = request.url.params
+        if int(params.get("$offset", "0")) > 0:
+            return httpx.Response(200, json=[])
+        where = params.get("$where", "")
+        if dataset == "az4n-8mr2":
+            return httpx.Response(200, json=self._census(params, where))
+        if dataset == "fx4q-ay7w":
+            dot = params["dot_number"]
+            return httpx.Response(200, json=[h for h in self.headers if h["dot_number"] == dot])
+        if dataset == "wt8s-2hbx":
+            return httpx.Response(
+                200, json=[u for u in self.units if f"'{u['inspection_id']}'" in where]
+            )
+        return httpx.Response(404, json={"message": "unknown dataset"})
+
+    def _census(self, params: httpx.QueryParams, where: str) -> list[Row]:
+        if "dot_number" in params:
+            return [r for r in self.census if r["dot_number"] == params["dot_number"]]
+        if "docket1prefix" in where:
+            prefix, number = re.findall(r"docket1prefix='(\w+)' AND docket1='(\d+)'", where)[0]
+            matches = [
+                r
+                for r in self.census
+                if any(
+                    r.get(f"docket{n}prefix") == prefix and r.get(f"docket{n}") == number
+                    for n in (1, 2, 3)
+                )
+            ]
+            return [{"dot_number": r["dot_number"]} for r in matches]
+        names = lambda r: (r.get("legal_name", "").upper(), r.get("dba_name", "").upper())  # noqa: E731
+        if "starts_with" in where:
+            text = re.findall(r"starts_with\(upper\(legal_name\), '(.*?)'\)", where)[0]
+            text = text.replace("''", "'")
+            return [r for r in self.census if any(n.startswith(text) for n in names(r))]
+        if " like " in where:
+            text = re.findall(r"like '%(.*?)%'", where)[0].replace("''", "'")
+            return [r for r in self.census if any(text in n for n in names(r))]
+        return []

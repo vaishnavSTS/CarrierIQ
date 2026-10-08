@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 3 complete → Phase 4 (Carrier Search) is next
+**Current phase:** Phase 4 (Carrier Search) — Part 1 done, Part 2 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -17,7 +17,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 1 | Project Foundation | ✅ Done (2026-10-08) |
 | 2 | Carrier Data Model | ✅ Done (2026-10-08) |
 | 3 | First Federal Data Integration | ✅ Done (2026-10-08) |
-| 4 | Carrier Search | ⏭️ Next |
+| 4 | Carrier Search | 🔄 In progress (Part 1 of 4 done) |
 | 5 | Safety | Not started |
 | 6 | Authority & Insurance | Not started |
 | 7 | Equipment / VIN | Not started |
@@ -176,14 +176,29 @@ all values are text, empty fields are omitted from the row, non-numeric input is
 
 ---
 
-## Phase 4 — Carrier Search
+## Phase 4 — Carrier Search 🔄
 
-- [ ] USDOT search
-- [ ] MC search
-- [ ] Name search (fuzzy, `pg_trgm`)
-- [ ] Search API endpoint(s)
-- [ ] Enable the dashboard search box
-- [ ] Carrier profile page (overview)
+Built part by part: (1) search API → (2) carrier profile API → (3) search screen → (4) profile page.
+
+- [x] **Part 1 — Search API** `GET /api/v1/carriers/search?q=…`. One box, type detected
+  (`services/carrier_search_query.py`): digits / "USDOT 123" → USDOT; `MC|MX|FF` + digits →
+  docket; else name (≥3 chars). Input is cleaned so nothing unsafe reaches SoQL.
+  - USDOT: on-demand refresh (`services/carrier_refresh_service.py`): load if missing or older
+    than `CARRIER_REFRESH_HOURS` (24) — census then inspections — then serve from the database.
+    If the source fails and stored data exists, it is served with `stale: true`.
+  - Docket: live census lookup across docket1–3 (one docket can belong to several USDOTs — e.g.
+    MC1000511 → 2972170 and 3212670); each carrier is loaded on demand.
+  - Name: loaded carriers first (trigram ranking), then live census matches — names starting
+    with the text first, then names containing it. Live-only results are not saved
+    (`loaded: false`); opening one loads it.
+  - Results: name, DBA, USDOT, dockets, authority status, registration status, fleet, city/state,
+    last refreshed; insurance status (Phase 6) and review status (Phase 8) are null for now.
+  - 37 new tests (156 total). Live check (API → local DB): USDOT 0.0–0.1s when fresh, MC 0.7s,
+    name 0.6s.
+- [ ] **Part 2 — Carrier profile API** (identity, addresses, phones, officers, dockets, safety
+  summary from inspections, equipment/VINs, recent changes; insurance "not available yet")
+- [ ] **Part 3 — Search screen** (dashboard search box + results table)
+- [ ] **Part 4 — Carrier profile page**
 
 ---
 
@@ -280,3 +295,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 3 Part 4: carrier attribute history + snapshots, 89 tests passing. |
 | 2026-10-08 | Phase 3 Part 5: 10 real carriers loaded into Supabase, 260/260 independent checks passed; junk phone values now skipped; 92 tests passing. |
 | 2026-10-08 | Phase 3 Part 6: inspections + vehicle units ingestion, client paging/retries/config IDs; 1,139 inspections in Supabase validated 9,124/9,124; 119 tests passing. Phase 3 complete. |
+| 2026-10-08 | Phase 4 Part 1: carrier search API (USDOT / docket / name) with on-demand refresh; 156 tests passing. |

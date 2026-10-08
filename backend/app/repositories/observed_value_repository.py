@@ -78,3 +78,17 @@ class ObservedValueRepository:
         for row in unmatched:
             row.is_current = False
         self.db.flush()
+
+    def current_for_carriers(
+        self, model: type[ObservedModel], carrier_ids: Sequence[int]
+    ) -> dict[int, list[ObservedModel]]:
+        by_carrier: dict[int, list[ObservedModel]] = {carrier_id: [] for carrier_id in carrier_ids}
+        if carrier_ids:
+            rows = self.db.scalars(
+                select(model)
+                .where(model.carrier_id.in_(carrier_ids), model.is_current.is_(True))
+                .order_by(model.carrier_id, model.id)
+            )
+            for row in rows:
+                by_carrier[row.carrier_id].append(row)
+        return by_carrier

@@ -3,11 +3,12 @@
 from dataclasses import asdict
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.ingestion.company_census_normalizer import CarrierValues
-from app.models import Carrier
+from app.models import Authority, Carrier
+from app.models.enums import DocketPrefix
 
 
 class CarrierRepository:
@@ -30,3 +31,33 @@ class CarrierRepository:
         carrier.last_refreshed_at = refreshed_at
         self.db.flush()
         return carrier
+
+    def find_by_docket(self, prefix: DocketPrefix, number: str) -> list[Carrier]:
+        return list(
+            self.db.scalars(
+                select(Carrier)
+                .join(Authority, Authority.carrier_id == Carrier.id)
+                .where(Authority.docket_prefix == prefix, Authority.docket_number == number)
+                .order_by(Carrier.usdot_number)
+                .distinct()
+            )
+        )
+
+    def search_by_name(self, name: str, limit: int) -> list[Carrier]:
+        """Loaded carriers whose legal or DBA name contains `name`, closest matches first.
+
+        `name` must already be cleaned (no LIKE wildcards; see services/carrier_search_query.py).
+        """
+        pattern = f"%{name}%"
+        closeness = func.greatest(
+            func.similarity(Carrier.legal_name, name),
+            func.coalesce(func.similarity(Carrier.dba_name, name), 0),
+        )
+        return list(
+            self.db.scalars(
+                select(Carrier)
+                .where(or_(Carrier.legal_name.ilike(pattern), Carrier.dba_name.ilike(pattern)))
+                .order_by(closeness.desc(), Carrier.usdot_number)
+                .limit(limit)
+            )
+        )

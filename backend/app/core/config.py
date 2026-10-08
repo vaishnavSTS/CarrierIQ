@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     socrata_max_attempts: int = 4  # retries on network errors, HTTP 429 and 5xx
     socrata_retry_base_seconds: float = 1.0  # backoff: 1s, 2s, 4s, ...
 
+    # On-demand refresh (spec Section 19.2): a carrier older than this is re-fetched on search.
+    carrier_refresh_hours: float = 24.0
+    search_result_limit: int = 20  # name search results
+    docket_search_limit: int = 10  # carriers loaded for one docket search
+
     # data.transportation.gov dataset IDs (spec Section 19.1: IDs live in configuration).
     census_dataset_id: str = "az4n-8mr2"  # Company Census File
     inspection_dataset_id: str = "fx4q-ay7w"  # Vehicle Inspection File

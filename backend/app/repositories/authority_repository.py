@@ -47,3 +47,15 @@ class AuthorityRepository:
                 authority.status = values.status
                 authority.raw_record_id = raw_record_id  # the record the new status came from
         self.db.flush()
+
+    def for_carriers(self, carrier_ids: Sequence[int]) -> dict[int, list[Authority]]:
+        by_carrier: dict[int, list[Authority]] = {carrier_id: [] for carrier_id in carrier_ids}
+        if carrier_ids:
+            rows = self.db.scalars(
+                select(Authority)
+                .where(Authority.carrier_id.in_(carrier_ids))
+                .order_by(Authority.carrier_id, Authority.id)
+            )
+            for row in rows:
+                by_carrier[row.carrier_id].append(row)
+        return by_carrier
