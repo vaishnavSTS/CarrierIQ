@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 4 (Carrier Search) — Parts 1–3 done, Part 4 next
+**Current phase:** Phase 4 complete → Phase 5 (Safety) is next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -17,8 +17,8 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 1 | Project Foundation | ✅ Done (2026-10-08) |
 | 2 | Carrier Data Model | ✅ Done (2026-10-08) |
 | 3 | First Federal Data Integration | ✅ Done (2026-10-08) |
-| 4 | Carrier Search | 🔄 In progress (Parts 1–3 of 4 done) |
-| 5 | Safety | Not started |
+| 4 | Carrier Search | ✅ Done (2026-10-08) |
+| 5 | Safety | ⏭️ Next |
 | 6 | Authority & Insurance | Not started |
 | 7 | Equipment / VIN | Not started |
 | 8 | Intelligence Engine | Not started |
@@ -176,7 +176,7 @@ all values are text, empty fields are omitted from the row, non-numeric input is
 
 ---
 
-## Phase 4 — Carrier Search 🔄
+## Phase 4 — Carrier Search ✅
 
 Built part by part: (1) search API → (2) carrier profile API → (3) search screen → (4) profile page.
 
@@ -223,7 +223,22 @@ Built part by part: (1) search API → (2) carrier profile API → (3) search sc
   - Checked in Chrome against the live API (local DB): docket MC1000511 → 2 carriers, name
     "united moving" → 20 results, "ab" → validation message; no console errors. ESLint + build
     clean. (No frontend unit-test framework is set up yet.)
-- [ ] **Part 4 — Carrier profile page**
+- [x] **Part 4 — Carrier profile page** `/carriers/{usdot}`. Header: name, DBA, USDOT, dockets,
+  authority / registration badges, insurance and review status placeholders, last refresh (+ stale
+  warning). Section links, then: Identity (entity type decoded from CARSHIP, drivers, dates,
+  email, officers, formatted phones, address cards with undeliverable badge and first-seen date);
+  Authority & Insurance (docket table; insurance "not loaded yet"); Safety (tiles: inspections,
+  vehicle/driver OOS %, crashes, safety rating; per-year table with OOS %; 10 recent inspections
+  with OOS flags); Equipment (power units, vehicles observed, 25 most recent VINs); Intelligence
+  (placeholder until Phase 8); Timeline (before → after changes). Loading, not-found and invalid
+  USDOT states. Code: `pages/CarrierProfilePage.tsx`, `features/carrier-profile/`,
+  `hooks/useCarrierProfile.ts`, `types/carrierProfile.ts`. Tables only — trend charts are Phase 5.
+  - Checked in Chrome (live API → local DB): 297080 full profile; clicking a "Not loaded yet"
+    name result (3320626) loaded it from FMCSA in ~4s; 99999999 → not found; "abc" → invalid.
+    No console errors; ESLint + build clean.
+
+Phase 4 done: a user can search by USDOT / MC / name and open a carrier profile; carriers are
+fetched from FMCSA on demand and refreshed after 24h.
 
 ---
 
@@ -323,3 +338,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 4 Part 1: carrier search API (USDOT / docket / name) with on-demand refresh; 156 tests passing. |
 | 2026-10-08 | Phase 4 Part 2: carrier profile API; fixed refresh so census and inspections age separately; 167 tests passing. |
 | 2026-10-08 | Phase 4 Part 3: search screen (dashboard box + results page), checked in Chrome. |
+| 2026-10-08 | Phase 4 Part 4: carrier profile page, checked in Chrome. Phase 4 complete. |

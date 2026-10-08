@@ -10,3 +10,21 @@ export function formatDateTime(value: string | null): string {
 export function formatDate(value: string | null): string {
   return value ? dateOnly.format(new Date(`${value}T00:00:00Z`)) : '—'
 }
+
+/** 0.0748 -> "7.5%"; "—" when there is nothing to divide. */
+export function formatPercent(value: number | null): string {
+  return value === null ? '—' : `${(value * 100).toFixed(1)}%`
+}
+
+/** 3604794800 -> "(360) 479-4800"; other lengths are shown as stored. */
+export function formatPhone(digits: string): string {
+  return digits.length === 10
+    ? `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+    : digits
+}
+
+/** "legal_name" -> "Legal name" */
+export function humanize(field: string): string {
+  const text = field.replace(/_/g, ' ')
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
