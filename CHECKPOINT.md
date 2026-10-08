@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 5 (Safety) — Part 1 done, Part 2 next
+**Current phase:** Phase 5 (Safety) — Parts 1–2 done, Part 3 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -18,7 +18,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 2 | Carrier Data Model | ✅ Done (2026-10-08) |
 | 3 | First Federal Data Integration | ✅ Done (2026-10-08) |
 | 4 | Carrier Search | ✅ Done (2026-10-08) |
-| 5 | Safety | 🔄 In progress (Part 1 of 3 done) |
+| 5 | Safety | 🔄 In progress (Parts 1–2 of 3 done) |
 | 6 | Authority & Insurance | Not started |
 | 7 | Equipment / VIN | Not started |
 | 8 | Intelligence Engine | Not started |
@@ -268,9 +268,18 @@ Built part by part: (1) violations → (2) safety API (trends, history, violatio
     2 vehicle-OOS flags have no OOS vehicle violation. Header counts/flags stay authoritative.
   - 11 new tests (178 total). Live: 297080 → 1,039 violations, re-fetch writes nothing.
     **Supabase validation: 1,139/1,139 inspections' violations match a fresh live fetch.**
-- [ ] **Part 2 — Safety API**: quarterly trends (inspections, vehicle/driver OOS rates), full
-  inspection history with paging, violation breakdown (by regulation part, driver vs vehicle,
-  most frequent codes)
+- [x] **Part 2 — Safety API.**
+  - `GET /api/v1/carriers/{usdot}/safety`: quarterly trend from the first inspection's quarter
+    to the current quarter, empty quarters filled with zeros (inspections, vehicle/driver OOS
+    counts + rates, violations); counts by inspection level and by state; violation summary
+    (rows vs header total, driver/vehicle, OOS, by 49 CFR part, top 10 codes with last seen).
+  - `GET /api/v1/carriers/{usdot}/inspections?page=&page_size=(≤100)&oos_only=`: full history,
+    newest first, each inspection with its violations.
+  - Both refresh the carrier on demand first; 404 for unknown carriers. Calculations are pure
+    functions in `services/safety_analysis.py`; `services/carrier_safety_service.py`,
+    `schemas/carrier_safety.py`, `InspectionRepository.page()`.
+  - 12 new tests (190 total). Live on Supabase (297080): /safety 1.9s (loads all 1,109
+    inspections — optimize later if needed), /inspections 0.5s; 98 OOS inspections.
 - [ ] **Part 3 — Safety tab**: trend charts, full inspection history, violation breakdown
 
 ---
@@ -363,3 +372,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 4 Part 4: carrier profile page, checked in Chrome. Phase 4 complete. |
 | 2026-10-08 | Carrier profile sections turned into tabs (Identity default, tab kept in URL). |
 | 2026-10-08 | Phase 5 Part 1: inspection violations ingested (876r-jsdb); fixed stale inspection format; Supabase violations validated 1,139/1,139; 178 tests passing. |
+| 2026-10-08 | Phase 5 Part 2: safety API (quarterly trends, breakdowns, paged inspection history); 190 tests passing. |

@@ -15,9 +15,11 @@ from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.inspection_repository import InspectionRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
 from app.schemas.carrier_profile import CarrierProfile
+from app.schemas.carrier_safety import CarrierSafetyOut, InspectionPageOut
 from app.schemas.carrier_search import CarrierSearchResponse
 from app.services.carrier_profile_service import CarrierProfileService
 from app.services.carrier_refresh_service import CarrierRefreshService
+from app.services.carrier_safety_service import CarrierSafetyService
 from app.services.carrier_search_service import CarrierSearchService
 from app.services.census_ingestion_service import build_census_ingestion_service
 from app.services.inspection_ingestion_service import build_inspection_ingestion_service
@@ -86,3 +88,32 @@ def get_carrier_profile(
     service: Annotated[CarrierProfileService, Depends(get_carrier_profile_service)],
 ) -> CarrierProfile:
     return service.get(usdot_number)
+
+
+def get_carrier_safety_service(
+    db: Annotated[Session, Depends(get_db)],
+    client: Annotated[SocrataClient, Depends(get_socrata_client)],
+) -> CarrierSafetyService:
+    return CarrierSafetyService(build_refresh_service(db, client), InspectionRepository(db))
+
+
+UsdotPath = Annotated[int, Path(gt=0, lt=100_000_000)]
+
+
+@router.get("/{usdot_number}/safety", response_model=CarrierSafetyOut)
+def get_carrier_safety(
+    usdot_number: UsdotPath,
+    service: Annotated[CarrierSafetyService, Depends(get_carrier_safety_service)],
+) -> CarrierSafetyOut:
+    return service.safety(usdot_number)
+
+
+@router.get("/{usdot_number}/inspections", response_model=InspectionPageOut)
+def get_carrier_inspections(
+    usdot_number: UsdotPath,
+    service: Annotated[CarrierSafetyService, Depends(get_carrier_safety_service)],
+    page: Annotated[int, Query(ge=1)] = 1,
+    page_size: Annotated[int, Query(ge=1, le=100)] = 25,
+    oos_only: bool = False,
+) -> InspectionPageOut:
+    return service.inspection_page(usdot_number, page, page_size, oos_only)

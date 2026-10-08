@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from datetime import date
 
-from sqlalchemy import Integer, func, select
+from sqlalchemy import Integer, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.ingestion.vehicle_inspection_normalizer import InspectionValues
@@ -101,6 +101,23 @@ class InspectionRepository:
             .order_by(year)
         )
         return [(y, n, v, d) for y, n, v, d in rows]
+
+    def page(
+        self, carrier_id: int, *, offset: int, limit: int, oos_only: bool
+    ) -> tuple[int, list[Inspection]]:
+        """Total matching inspections, and one page of them, newest first."""
+        conditions = [Inspection.carrier_id == carrier_id]
+        if oos_only:
+            conditions.append(or_(Inspection.vehicle_oos, Inspection.driver_oos))
+        total = self.db.scalar(select(func.count()).select_from(Inspection).where(*conditions))
+        rows = self.db.scalars(
+            select(Inspection)
+            .where(*conditions)
+            .order_by(Inspection.inspection_date.desc(), Inspection.inspection_id.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        return total or 0, list(rows)
 
     def recent(self, carrier_id: int, limit: int) -> list[Inspection]:
         return list(
