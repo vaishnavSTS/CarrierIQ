@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 3 (First Federal Data Integration) — Parts 1–5 done, Part 6 next
+**Current phase:** Phase 3 complete → Phase 4 (Carrier Search) is next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -16,8 +16,8 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 |---|---|---|
 | 1 | Project Foundation | ✅ Done (2026-10-08) |
 | 2 | Carrier Data Model | ✅ Done (2026-10-08) |
-| 3 | First Federal Data Integration | 🔄 In progress (Parts 1–5 of 6 done) |
-| 4 | Carrier Search | Not started |
+| 3 | First Federal Data Integration | ✅ Done (2026-10-08) |
+| 4 | Carrier Search | ⏭️ Next |
 | 5 | Safety | Not started |
 | 6 | Authority & Insurance | Not started |
 | 7 | Equipment / VIN | Not started |
@@ -91,7 +91,7 @@ Goal: all core tables exist as ORM models with migrations and tests (spec Sectio
 
 ---
 
-## Phase 3 — First Federal Data Integration 🔄
+## Phase 3 — First Federal Data Integration ✅
 
 Goal: one source flows `Source → Raw storage → Normalization → PostgreSQL`.
 First target: FMCSA/DOT carrier + inspection data (Company Census File as primary identity source).
@@ -146,7 +146,24 @@ Only carriers that are searched get fetched (on-demand); tests use saved real re
     (15 current), 8 officers, 5 domains, 8 dockets, 89 history rows, 10 snapshots.
   - SoQL note: numeric-looking census fields (e.g. `power_units`) are text in the API; numeric
     filters need a cast (`power_units::number > 1000`).
-- [ ] **Part 6 — Inspection data** adapter + normalization (separate dataset)
+- [x] **Part 6 — Inspection data.** Two linked datasets: Vehicle Inspection File `fx4q-ay7w`
+  (headers by USDOT, ~3-year rolling window, 8.3M rows) and Inspections Per Unit `wt8s-2hbx`
+  (vehicles/VINs by inspection_id, 13.9M rows). Each header and unit row is stored in
+  `raw_records`; `inspections` gets date, level, state, location, vehicle/driver OOS flags,
+  violation totals (JSONB) and the VIN of unit 1 (validated: 17 chars, no I/O/Q). Trailer VINs
+  stay in raw records for Phase 7. Carrier must be loaded first (census → inspections). Only new
+  or changed rows are stored/rewritten; inspections are never deleted. Code:
+  `ingestion/vehicle_inspections.py`, `ingestion/vehicle_inspection_normalizer.py`,
+  `repositories/inspection_repository.py`, `services/inspection_ingestion_service.py`.
+  - Client now follows spec 19.1: paging (`$limit`/`$offset`), retries with exponential backoff
+    on network errors / 429 / 5xx, dataset IDs in configuration. Raw rows inserted in batches.
+  - 27 new tests (119 total). Live: USDOT 297080 → 1,109 inspections + 1,437 units in 3.9s
+    (local) / 7.3s (Supabase); re-fetch writes nothing.
+  - Supabase validation: inspections for the 10 Part 5 carriers (8 have none in the window,
+    297569 has 30, 297080 has 1,109) checked against a fresh live fetch with independent logic:
+    **9,124/9,124 checks passed**.
+  - Not yet: individual violations (`876r-jsdb`, Phase 5); the per-carrier orchestration
+    "census → inspections when stale" (Phase 4 search).
 
 Open questions for later phases:
 - Free email domains (e.g. `gmail.com`) are stored in `domains`; the shared-domain relationship
@@ -262,3 +279,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 3 Part 3: census normalization into canonical tables; fixed test-schema isolation bug; 82 tests passing. |
 | 2026-10-08 | Phase 3 Part 4: carrier attribute history + snapshots, 89 tests passing. |
 | 2026-10-08 | Phase 3 Part 5: 10 real carriers loaded into Supabase, 260/260 independent checks passed; junk phone values now skipped; 92 tests passing. |
+| 2026-10-08 | Phase 3 Part 6: inspections + vehicle units ingestion, client paging/retries/config IDs; 1,139 inspections in Supabase validated 9,124/9,124; 119 tests passing. Phase 3 complete. |

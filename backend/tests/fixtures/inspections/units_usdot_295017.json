@@ -1,0 +1,76 @@
+[
+  {
+    "change_date": "20241016 2140",
+    "inspection_id": "82915718",
+    "insp_unit_id": "203427232",
+    "insp_unit_type_id": "11",
+    "insp_unit_number": "1",
+    "insp_unit_make": "FREIGHTLIN",
+    "insp_unit_company": "365",
+    "insp_unit_license": "C80099K",
+    "insp_unit_license_state": "WA",
+    "insp_unit_vehicle_id_number": "1FUBCXBS9DHFG2386",
+    "insp_unit_decal": "N"
+  },
+  {
+    "change_date": "20241016 2140",
+    "inspection_id": "82915718",
+    "insp_unit_id": "203427233",
+    "insp_unit_type_id": "9",
+    "insp_unit_number": "2",
+    "insp_unit_make": "KENTUCKY",
+    "insp_unit_license": "27A539",
+    "insp_unit_license_state": "MO",
+    "insp_unit_vehicle_id_number": "1KKVE4823RL099385",
+    "insp_unit_decal": "N"
+  },
+  {
+    "change_date": "20250929 2139",
+    "inspection_id": "85796455",
+    "insp_unit_id": "209194593",
+    "insp_unit_type_id": "11",
+    "insp_unit_number": "1",
+    "insp_unit_make": "ISUZU",
+    "insp_unit_license": "C90343B",
+    "insp_unit_license_state": "WA",
+    "insp_unit_vehicle_id_number": "JALB4B141Y7006238",
+    "insp_unit_decal": "N"
+  },
+  {
+    "change_date": "20251024 2139",
+    "inspection_id": "86137641",
+    "insp_unit_id": "209635832",
+    "insp_unit_type_id": "10",
+    "insp_unit_number": "1",
+    "insp_unit_make": "FREIGHTLIN",
+    "insp_unit_license": "D79644E",
+    "insp_unit_license_state": "WA",
+    "insp_unit_vehicle_id_number": "3ALACXFC1RDUW8608",
+    "insp_unit_decal": "N"
+  },
+  {
+    "change_date": "20251024 2139",
+    "inspection_id": "86137641",
+    "insp_unit_id": "209635833",
+    "insp_unit_type_id": "9",
+    "insp_unit_number": "2",
+    "insp_unit_make": "UNKNOWN",
+    "insp_unit_license": "2252YI",
+    "insp_unit_license_state": "WA",
+    "insp_unit_vehicle_id_number": "4P5T82224D1195316",
+    "insp_unit_decal": "N"
+  },
+  {
+    "change_date": "20260408 2137",
+    "inspection_id": "87518319",
+    "insp_unit_id": "212597536",
+    "insp_unit_type_id": "10",
+    "insp_unit_number": "1",
+    "insp_unit_make": "ISUZU",
+    "insp_unit_company": "808",
+    "insp_unit_license": "C90343B",
+    "insp_unit_license_state": "WA",
+    "insp_unit_vehicle_id_number": "JALB4B141Y7006238",
+    "insp_unit_decal": "N"
+  }
+]

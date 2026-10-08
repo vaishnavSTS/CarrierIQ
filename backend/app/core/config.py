@@ -21,6 +21,14 @@ class Settings(BaseSettings):
     socrata_base_url: str = "https://data.transportation.gov"
     socrata_app_token: str | None = None
     socrata_timeout_seconds: float = 30.0
+    socrata_page_size: int = 1000
+    socrata_max_attempts: int = 4  # retries on network errors, HTTP 429 and 5xx
+    socrata_retry_base_seconds: float = 1.0  # backoff: 1s, 2s, 4s, ...
+
+    # data.transportation.gov dataset IDs (spec Section 19.1: IDs live in configuration).
+    census_dataset_id: str = "az4n-8mr2"  # Company Census File
+    inspection_dataset_id: str = "fx4q-ay7w"  # Vehicle Inspection File
+    inspection_unit_dataset_id: str = "wt8s-2hbx"  # Inspections Per Unit (VINs)
 
     @property
     def cors_origin_list(self) -> list[str]:

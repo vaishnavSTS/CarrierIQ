@@ -1,4 +1,4 @@
-"""Adapter for the FMCSA Company Census File (spec Section 8.2, dataset az4n-8mr2).
+"""Adapter for the FMCSA Company Census File (spec Section 8.2, dataset az4n-8mr2 by default).
 
 The primary carrier identity source. One row per USDOT number; every value arrives as text
 and empty fields are omitted from the row entirely.
@@ -6,21 +6,21 @@ and empty fields are omitted from the row entirely.
 
 import logging
 
+from app.core.config import get_settings
 from app.core.exceptions import SourceFetchError, ValidationError
 from app.ingestion.socrata_client import Row, SocrataClient
 
 logger = logging.getLogger(__name__)
 
 SOURCE = "dot_socrata"
-DATASET_ID = "az4n-8mr2"
 
 
 class CompanyCensusAdapter:
     source = SOURCE
-    dataset_id = DATASET_ID
 
     def __init__(self, client: SocrataClient) -> None:
         self.client = client
+        self.dataset_id = get_settings().census_dataset_id
 
     @staticmethod
     def validate_usdot_number(usdot_number: int) -> None:
@@ -36,7 +36,7 @@ class CompanyCensusAdapter:
     def fetch_by_usdot(self, usdot_number: int) -> Row | None:
         """The census row for a USDOT number, or None if the source has no such carrier."""
         self.validate_usdot_number(usdot_number)
-        rows = self.client.get_rows(DATASET_ID, {"dot_number": str(usdot_number)})
+        rows = self.client.get_rows(self.dataset_id, {"dot_number": str(usdot_number)})
         if not rows:
             logger.info("USDOT %d not found in Company Census File", usdot_number)
             return None

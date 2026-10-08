@@ -1,5 +1,6 @@
 """Database access for raw_records. Rows are only ever inserted, never updated."""
 
+from collections.abc import Sequence
 from typing import Any
 
 from sqlalchemy import select
@@ -25,6 +26,24 @@ class RawRecordRepository:
             .limit(1)
         ).one_or_none()
 
+    def latest_many(
+        self, source: str, dataset_id: str, external_ids: Sequence[str]
+    ) -> dict[str, RawRecord]:
+        """The most recently stored record for each source key, in one query."""
+        if not external_ids:
+            return {}
+        rows = self.db.scalars(
+            select(RawRecord)
+            .where(
+                RawRecord.source == source,
+                RawRecord.dataset_id == dataset_id,
+                RawRecord.external_id.in_(external_ids),
+            )
+            .order_by(RawRecord.external_id, RawRecord.id.desc())
+            .distinct(RawRecord.external_id)
+        )
+        return {row.external_id: row for row in rows}
+
     def add(
         self,
         *,
@@ -46,3 +65,8 @@ class RawRecordRepository:
         self.db.add(record)
         self.db.flush()
         return record
+
+    def add_many(self, records: Sequence[RawRecord]) -> None:
+        """Insert many records in batched statements (ids are set afterwards)."""
+        self.db.add_all(records)
+        self.db.flush()
