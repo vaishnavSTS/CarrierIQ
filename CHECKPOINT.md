@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 1 complete → Phase 2 (Carrier Data Model) is next
+**Current phase:** Phase 2 complete → Phase 3 (First Federal Data Integration) is next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -15,8 +15,8 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | Phase | Name | Status |
 |---|---|---|
 | 1 | Project Foundation | ✅ Done (2026-10-08) |
-| 2 | Carrier Data Model | ⏭️ Next |
-| 3 | First Federal Data Integration | Not started |
+| 2 | Carrier Data Model | ✅ Done (2026-10-08) |
+| 3 | First Federal Data Integration | ⏭️ Next |
 | 4 | Carrier Search | Not started |
 | 5 | Safety | Not started |
 | 6 | Authority & Insurance | Not started |
@@ -54,29 +54,40 @@ Goal: `React → FastAPI → PostgreSQL` works locally.
 - Fixed: `alembic/env.py` now escapes `%` in the database URL (encoded passwords broke migrations).
 
 ### Open housekeeping
-- [ ] Initialize git and make the first commit
+- [x] Initialize git and make the first commit (remote: github.com/vaishnavSTS/CarrierIQ)
 - [ ] Reset the Supabase database password (it was shared in chat) and update both `.env` files
 
 ---
 
-## Phase 2 — Carrier Data Model ⏭️
+## Phase 2 — Carrier Data Model ✅
 
 Goal: all core tables exist as ORM models with migrations and tests (spec Section 11).
 
-- [ ] Raw layer: `raw_records`
-- [ ] Canonical: `carriers`
-- [ ] Canonical: `addresses`, `phones`, `officers`, `domains`
-- [ ] Canonical: `authority`
-- [ ] Canonical: `insurance`
-- [ ] Canonical: `inspections`
-- [ ] Canonical: `crashes`
-- [ ] Canonical: `vehicles`
-- [ ] History: `carrier_attribute_history`, `carrier_snapshots`, `identity_events`
-- [ ] Derived: `intelligence_signals`, `signal_evidence`
-- [ ] Derived: `timeline_events`, `relationships`
-- [ ] Operational: `ingestion_runs`
-- [ ] Alembic migration(s) for all tables, applied to Supabase
-- [ ] Model tests
+- [x] Raw layer: `raw_records`
+- [x] Canonical: `carriers` (trigram indexes on legal/DBA name for fuzzy search)
+- [x] Canonical: `addresses`, `phones`, `officers`, `domains`
+- [x] Canonical: `authority` (one row per docket; docket numbers kept as text)
+- [x] Canonical: `insurance`
+- [x] Canonical: `inspections`
+- [x] Canonical: `crashes`
+- [x] Canonical: `vehicles`
+- [x] History: `carrier_attribute_history`, `carrier_snapshots`, `identity_events`
+- [x] Derived: `intelligence_signals`, `signal_evidence`
+- [x] Derived: `timeline_events`, `relationships`
+- [x] Operational: `ingestion_runs`
+- [x] Alembic migration `0002` — tested up/down/up locally, applied to Supabase, `alembic check` clean
+- [x] Model tests — 16 new (6 schema-rule tests + 10 database tests); 19 total passing
+
+### Rules the database enforces
+- USDOT number is unique; authority docket is unique per carrier; inspection/crash IDs unique per source.
+- Only one current (`valid_to IS NULL`) history value per carrier attribute; `valid_to >= valid_from`.
+- `confidence`, `severity`, status and type columns accept only their fixed values (CHECK constraints).
+- Every canonical/history row has a non-null `source` + `raw_record_id` (source traceability).
+- Deleting a signal deletes its evidence; corrections to identity events never delete the original.
+
+### Not enforced by the database (by design)
+- "Every signal has at least one evidence row" — enforced in the signal service (Phase 8), per spec 13.2.
+- Database tests need `TEST_DATABASE_URL` (see README); without it they are skipped.
 
 ---
 
@@ -192,3 +203,4 @@ Deterministic signals; every signal must have evidence.
 | Date | What was done |
 |---|---|
 | 2026-10-08 | Phase 1 built (backend, frontend, Docker, Alembic, health check, tests). Switched database to Supabase session pooler, fixed `%` escaping in `alembic/env.py`, applied migration `0001`, verified dashboard end-to-end (API OK, Database OK). |
+| 2026-10-08 | Git initialized and connected to GitHub. Phase 2 built: 19 models, migration `0002` applied to Supabase, 16 new model tests. |

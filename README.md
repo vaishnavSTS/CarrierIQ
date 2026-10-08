@@ -3,7 +3,7 @@
 Explainable carrier intelligence for freight brokers. The product specification is in
 `../PROJECT_SPECIFICATION.md` and is the source of truth for scope and design.
 
-Current state: **Phase 1 — project foundation** (React → FastAPI → PostgreSQL).
+Current state: **Phase 2 — carrier data model** complete. Progress is tracked in `CHECKPOINT.md`.
 
 ## Stack
 
@@ -59,13 +59,24 @@ Vite forwards `/api` requests to `http://localhost:8000` (override with `API_PRO
 
 ```bash
 # backend (venv active)
-pytest
+pytest                           # database tests skip unless TEST_DATABASE_URL is set
 ruff check . && ruff format --check .
 mypy app
 
 # frontend
 npm run lint
 npm run build
+```
+
+### Database tests
+
+Model tests run against a real PostgreSQL inside a throwaway `pytest_models` schema and roll
+back every test, so they never touch application tables. Use the local container:
+
+```bash
+docker compose --profile localdb up -d db
+# PowerShell: $env:TEST_DATABASE_URL="postgresql+psycopg://carrieriq:carrieriq@localhost:5432/carrieriq"
+TEST_DATABASE_URL=postgresql+psycopg://carrieriq:carrieriq@localhost:5432/carrieriq pytest
 ```
 
 ## Backend layout
@@ -79,7 +90,7 @@ app/
   services/             business logic, one per domain
   repositories/         database queries, one per entity
   schemas/              Pydantic request/response models
-  models/               ORM models, one per table (Phase 2)
+  models/               ORM models, one per table; enums.py and mixins.py hold shared pieces
   ingestion/            source adapters (Phase 3)
   intelligence/rules/   one file per signal rule (Phase 8)
   workers/              background processing (Phase 10)
