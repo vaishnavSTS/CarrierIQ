@@ -1,14 +1,7 @@
+import { StatusBadge } from '../../components/StatusBadge'
 import { useHealth } from '../../hooks/useHealth'
 import type { ComponentStatus } from '../../types/health'
-
-type Tone = 'ok' | 'warn' | 'down' | 'pending'
-
-const TONE_STYLES: Record<Tone, string> = {
-  ok: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-  warn: 'bg-amber-50 text-amber-700 ring-amber-600/20',
-  down: 'bg-red-50 text-red-700 ring-red-600/20',
-  pending: 'bg-slate-100 text-slate-600 ring-slate-500/20',
-}
+import type { Tone } from '../../utils/status'
 
 function toneFor(status: ComponentStatus): Tone {
   if (status === 'ok') return 'ok'
@@ -20,10 +13,8 @@ function StatusRow({ label, value, tone }: { label: string; value: string; tone:
   return (
     <div className="flex items-center justify-between py-2">
       <dt className="text-sm text-slate-600">{label}</dt>
-      <dd
-        className={`rounded-md px-2 py-0.5 text-xs font-medium uppercase ring-1 ring-inset ${TONE_STYLES[tone]}`}
-      >
-        {value}
+      <dd>
+        <StatusBadge label={value} tone={tone} />
       </dd>
     </div>
   )

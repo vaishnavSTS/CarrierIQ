@@ -18,6 +18,14 @@ export function AppLayout() {
             >
               Dashboard
             </NavLink>
+            <NavLink
+              to="/search"
+              className={({ isActive }) =>
+                isActive ? 'font-medium text-slate-900' : 'text-slate-500 hover:text-slate-900'
+              }
+            >
+              Search
+            </NavLink>
           </nav>
         </div>
       </header>

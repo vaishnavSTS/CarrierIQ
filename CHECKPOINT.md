@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 4 (Carrier Search) — Parts 1–2 done, Part 3 next
+**Current phase:** Phase 4 (Carrier Search) — Parts 1–3 done, Part 4 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -17,7 +17,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 1 | Project Foundation | ✅ Done (2026-10-08) |
 | 2 | Carrier Data Model | ✅ Done (2026-10-08) |
 | 3 | First Federal Data Integration | ✅ Done (2026-10-08) |
-| 4 | Carrier Search | 🔄 In progress (Parts 1–2 of 4 done) |
+| 4 | Carrier Search | 🔄 In progress (Parts 1–3 of 4 done) |
 | 5 | Safety | Not started |
 | 6 | Authority & Insurance | Not started |
 | 7 | Equipment / VIN | Not started |
@@ -210,7 +210,19 @@ Built part by part: (1) search API → (2) carrier profile API → (3) search sc
     from the last successful inspection run in `ingestion_runs`.
   - 11 new tests (167 total). Live: 297080 profile (1,109 inspections, 647 VINs) in 0.1s from
     the database; 3025897 picked up its 3 missing inspections on the next request.
-- [ ] **Part 3 — Search screen** (dashboard search box + results table)
+- [x] **Part 3 — Search screen.** Dashboard search box is live (with examples); submitting
+  goes to `/search?q=…` (bookmarkable, back button works; "Search" added to the top nav).
+  Results table per spec 21: carrier + DBA, USDOT, MC/docket (inactive dockets marked),
+  authority and registration badges, insurance ("Not available" until Phase 6), fleet,
+  location, review status ("Not reviewed" until Phase 8), last updated ("Not loaded yet" for
+  live-only results, "stale" badge when the source failed). Loading message explains that a new
+  carrier is fetched from FMCSA first; validation errors show the API's message. Rows link to
+  `/carriers/{usdot}` (page arrives in Part 4). Shared `StatusBadge` now also used by the system
+  status card. Code: `features/carrier-search/`, `pages/SearchPage.tsx`, `api/carriers.ts`,
+  `hooks/useCarrierSearch.ts`, `types/carrier.ts`, `utils/format.ts`, `utils/status.ts`.
+  - Checked in Chrome against the live API (local DB): docket MC1000511 → 2 carriers, name
+    "united moving" → 20 results, "ab" → validation message; no console errors. ESLint + build
+    clean. (No frontend unit-test framework is set up yet.)
 - [ ] **Part 4 — Carrier profile page**
 
 ---
@@ -310,3 +322,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 3 Part 6: inspections + vehicle units ingestion, client paging/retries/config IDs; 1,139 inspections in Supabase validated 9,124/9,124; 119 tests passing. Phase 3 complete. |
 | 2026-10-08 | Phase 4 Part 1: carrier search API (USDOT / docket / name) with on-demand refresh; 156 tests passing. |
 | 2026-10-08 | Phase 4 Part 2: carrier profile API; fixed refresh so census and inspections age separately; 167 tests passing. |
+| 2026-10-08 | Phase 4 Part 3: search screen (dashboard box + results page), checked in Chrome. |
