@@ -1,13 +1,23 @@
 """Database access for inspections (unique per source + inspection_id)."""
 
 from collections.abc import Sequence
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
+from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import Integer, func, select
 from sqlalchemy.orm import Session
 
 from app.ingestion.vehicle_inspection_normalizer import InspectionValues
 from app.models import Inspection
+
+
+@dataclass(frozen=True)
+class InspectionSummary:
+    count: int
+    vehicle_oos: int
+    driver_oos: int
+    first_date: date | None
+    last_date: date | None
 
 
 class InspectionRepository:
@@ -56,3 +66,57 @@ class InspectionRepository:
         existing.carrier_id = carrier_id
         existing.raw_record_id = raw_record_id
         return existing
+
+    def summary(self, carrier_id: int) -> InspectionSummary:
+        row = self.db.execute(
+            select(
+                func.count(),
+                func.count().filter(Inspection.vehicle_oos),
+                func.count().filter(Inspection.driver_oos),
+                func.min(Inspection.inspection_date),
+                func.max(Inspection.inspection_date),
+            ).where(Inspection.carrier_id == carrier_id)
+        ).one()
+        return InspectionSummary(*row)
+
+    def by_year(self, carrier_id: int) -> list[tuple[int, int, int, int]]:
+        """(year, inspections, vehicle OOS, driver OOS), oldest year first."""
+        year = func.extract("year", Inspection.inspection_date).cast(Integer)
+        rows = self.db.execute(
+            select(
+                year,
+                func.count(),
+                func.count().filter(Inspection.vehicle_oos),
+                func.count().filter(Inspection.driver_oos),
+            )
+            .where(Inspection.carrier_id == carrier_id)
+            .group_by(year)
+            .order_by(year)
+        )
+        return [(y, n, v, d) for y, n, v, d in rows]
+
+    def recent(self, carrier_id: int, limit: int) -> list[Inspection]:
+        return list(
+            self.db.scalars(
+                select(Inspection)
+                .where(Inspection.carrier_id == carrier_id)
+                .order_by(Inspection.inspection_date.desc(), Inspection.inspection_id.desc())
+                .limit(limit)
+            )
+        )
+
+    def vehicles(
+        self, carrier_id: int, limit: int
+    ) -> tuple[int, list[tuple[str, int, date, date]]]:
+        """Distinct VIN count, and (vin, inspections, first seen, last seen) newest first."""
+        has_vin = (Inspection.carrier_id == carrier_id, Inspection.vin.is_not(None))
+        total = self.db.scalar(select(func.count(func.distinct(Inspection.vin))).where(*has_vin))
+        last_seen = func.max(Inspection.inspection_date)
+        rows = self.db.execute(
+            select(Inspection.vin, func.count(), func.min(Inspection.inspection_date), last_seen)
+            .where(*has_vin)
+            .group_by(Inspection.vin)
+            .order_by(last_seen.desc(), Inspection.vin)
+            .limit(limit)
+        )
+        return total or 0, [(vin, n, first, last) for vin, n, first, last in rows if vin]

@@ -82,3 +82,13 @@ class CarrierHistoryRepository:
         self.db.add(snapshot)
         self.db.flush()
         return snapshot
+
+    def all_for_carrier(self, carrier_id: int) -> list[CarrierAttributeHistory]:
+        """Every history row, grouped by attribute in the order values were observed."""
+        return list(
+            self.db.scalars(
+                select(CarrierAttributeHistory)
+                .where(CarrierAttributeHistory.carrier_id == carrier_id)
+                .order_by(CarrierAttributeHistory.attribute, CarrierAttributeHistory.id)
+            )
+        )

@@ -244,3 +244,36 @@ def test_name_search_puts_names_starting_with_the_query_first(db: Session) -> No
 
     assert [r.usdot_number for r in response.results] == [22, 11]
     assert api.calls["az4n-8mr2"] == 2  # starts-with pass, then contains pass
+
+
+def test_fresh_census_but_missing_inspections_fetches_only_inspections(
+    db: Session, api: FakeDotApi
+) -> None:
+    """Regression: a carrier loaded by census alone used to count as fully fresh."""
+    build_census_ingestion_service(db, api.client()).ingest(295017)
+    api.calls.clear()
+
+    outcome = refresh_service(db, api).ensure_fresh(295017)
+
+    assert outcome.refreshed is True
+    assert "az4n-8mr2" not in api.calls  # census still fresh: not refetched
+    assert api.calls["fx4q-ay7w"] == 1
+
+
+def test_failed_inspection_fetch_is_retried_on_the_next_request(
+    db: Session, api: FakeDotApi
+) -> None:
+    api.failing = {"fx4q-ay7w"}  # the inspection source is down
+    service = refresh_service(db, api)
+
+    first = service.ensure_fresh(295017)
+    assert first.carrier is not None  # census succeeded, so the carrier is still served
+    assert first.stale is True
+
+    api.failing = set()
+    api.calls.clear()
+    second = service.ensure_fresh(295017)
+
+    assert (second.refreshed, second.stale) == (True, False)
+    assert "az4n-8mr2" not in api.calls  # only the inspections are retried
+    assert api.calls["fx4q-ay7w"] == 1

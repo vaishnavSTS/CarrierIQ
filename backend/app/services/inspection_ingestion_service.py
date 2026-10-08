@@ -10,6 +10,7 @@ import logging
 from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import datetime
 
 from sqlalchemy.orm import Session
 
@@ -53,6 +54,12 @@ class InspectionIngestionService:
         self.raw_records = raw_records
         self.carriers = carriers
         self.inspections = inspections
+
+    def last_refreshed_at(self, usdot_number: int) -> datetime | None:
+        """When this carrier's inspections were last fetched successfully."""
+        return self.runs.last_success_at(
+            self.adapter.source, self.adapter.dataset_id, self.adapter.query_for(usdot_number)
+        )
 
     def ingest(self, usdot_number: int) -> InspectionIngestResult:
         carrier = self.carriers.get_by_usdot(usdot_number)

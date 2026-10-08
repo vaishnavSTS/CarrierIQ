@@ -68,7 +68,8 @@ def inspection_api(
 class FakeDotApi:
     """Fake data.transportation.gov: census (by USDOT, docket, name), inspections and units.
 
-    `calls` counts requests per dataset; set `down = True` to answer every request with HTTP 400.
+    `calls` counts requests per dataset. Set `down = True` to answer every request with HTTP 400,
+    or add dataset IDs to `failing` to fail only those.
     """
 
     def __init__(
@@ -82,6 +83,7 @@ class FakeDotApi:
         self.units = units or []
         self.calls: dict[str, int] = {}
         self.down = False
+        self.failing: set[str] = set()
 
     def client(self) -> SocrataClient:
         return socrata_client(self._handle)
@@ -89,7 +91,7 @@ class FakeDotApi:
     def _handle(self, request: httpx.Request) -> httpx.Response:
         dataset = request.url.path.removeprefix("/resource/").removesuffix(".json")
         self.calls[dataset] = self.calls.get(dataset, 0) + 1
-        if self.down:
+        if self.down or dataset in self.failing:
             return httpx.Response(400, json={"message": "source unavailable"})
         params = request.url.params
         if int(params.get("$offset", "0")) > 0:

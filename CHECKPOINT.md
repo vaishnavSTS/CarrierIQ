@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 4 (Carrier Search) — Part 1 done, Part 2 next
+**Current phase:** Phase 4 (Carrier Search) — Parts 1–2 done, Part 3 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -17,7 +17,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 1 | Project Foundation | ✅ Done (2026-10-08) |
 | 2 | Carrier Data Model | ✅ Done (2026-10-08) |
 | 3 | First Federal Data Integration | ✅ Done (2026-10-08) |
-| 4 | Carrier Search | 🔄 In progress (Part 1 of 4 done) |
+| 4 | Carrier Search | 🔄 In progress (Parts 1–2 of 4 done) |
 | 5 | Safety | Not started |
 | 6 | Authority & Insurance | Not started |
 | 7 | Equipment / VIN | Not started |
@@ -195,8 +195,21 @@ Built part by part: (1) search API → (2) carrier profile API → (3) search sc
     last refreshed; insurance status (Phase 6) and review status (Phase 8) are null for now.
   - 37 new tests (156 total). Live check (API → local DB): USDOT 0.0–0.1s when fresh, MC 0.7s,
     name 0.6s.
-- [ ] **Part 2 — Carrier profile API** (identity, addresses, phones, officers, dockets, safety
-  summary from inspections, equipment/VINs, recent changes; insurance "not available yet")
+- [x] **Part 2 — Carrier profile API** `GET /api/v1/carriers/{usdot}` (refreshes on demand
+  first, 404 if the carrier exists nowhere). Sections per spec 6: identity (names, status,
+  contacts, current addresses/phones with first-seen dates, officers, domains); authority (status
+  + every docket); insurance (`available: false` until Phase 6); safety (inspection count,
+  vehicle/driver OOS counts and rates, per-year counts, 10 most recent inspections, safety
+  rating; crash count null until crashes are loaded); equipment (power units, distinct VINs
+  seen in inspections with counts and first/last dates); recent changes (before → after from
+  history; the first load is not a change). Code: `services/carrier_profile_service.py`,
+  `schemas/carrier_profile.py`, new queries in `inspection_repository` / history repo.
+  - Bug found by the live check and fixed: freshness used only the census refresh time, so a
+    carrier whose inspections were never fetched (or whose inspection fetch failed) counted as
+    fresh for 24h. Census and inspections are now refreshed separately; inspection age comes
+    from the last successful inspection run in `ingestion_runs`.
+  - 11 new tests (167 total). Live: 297080 profile (1,109 inspections, 647 VINs) in 0.1s from
+    the database; 3025897 picked up its 3 missing inspections on the next request.
 - [ ] **Part 3 — Search screen** (dashboard search box + results table)
 - [ ] **Part 4 — Carrier profile page**
 
@@ -296,3 +309,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 3 Part 5: 10 real carriers loaded into Supabase, 260/260 independent checks passed; junk phone values now skipped; 92 tests passing. |
 | 2026-10-08 | Phase 3 Part 6: inspections + vehicle units ingestion, client paging/retries/config IDs; 1,139 inspections in Supabase validated 9,124/9,124; 119 tests passing. Phase 3 complete. |
 | 2026-10-08 | Phase 4 Part 1: carrier search API (USDOT / docket / name) with on-demand refresh; 156 tests passing. |
+| 2026-10-08 | Phase 4 Part 2: carrier profile API; fixed refresh so census and inspections age separately; 167 tests passing. |
