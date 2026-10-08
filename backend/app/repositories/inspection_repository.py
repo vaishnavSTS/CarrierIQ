@@ -45,6 +45,13 @@ class InspectionRepository:
             )
         )
 
+    @staticmethod
+    def matches(inspection: Inspection, values: InspectionValues, raw_record_id: int) -> bool:
+        """True when the stored inspection already holds exactly these values."""
+        return inspection.raw_record_id == raw_record_id and all(
+            getattr(inspection, field) == value for field, value in asdict(values).items()
+        )
+
     def upsert(
         self,
         existing: Inspection | None,

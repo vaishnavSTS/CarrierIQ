@@ -27,6 +27,18 @@ def load_inspection_rows() -> tuple[list[Row], list[Row]]:
     return headers, units
 
 
+def load_violation_rows() -> list[Row]:
+    """Real violations on USDOT 295017's inspections, saved from the live API."""
+    rows: list[Row] = json.loads(
+        (FIXTURES / "inspections" / "violations_usdot_295017.json").read_text()
+    )
+    return rows
+
+
+def _for_inspections(rows: list[Row], where: str) -> list[Row]:
+    return [r for r in rows if f"'{r['inspection_id']}'" in where]
+
+
 def socrata_client(
     handler: Callable[[httpx.Request], httpx.Response],
     sleeps: list[float] | None = None,
@@ -42,7 +54,12 @@ def responding_with(body: Any, status_code: int = 200) -> SocrataClient:
 
 
 def inspection_api(
-    headers: list[Row], units: list[Row], *, fail_units: bool = False
+    headers: list[Row],
+    units: list[Row],
+    *,
+    violations: list[Row] | None = None,
+    fail_units: bool = False,
+    fail_violations: bool = False,
 ) -> SocrataClient:
     """Fake API serving inspection headers and units, filtered like the real datasets."""
 
@@ -56,10 +73,11 @@ def inspection_api(
         if request.url.path == "/resource/wt8s-2hbx.json":
             if fail_units:
                 return httpx.Response(400, json={"message": "bad query"})
-            where = params["$where"]
-            return httpx.Response(
-                200, json=[u for u in units if f"'{u['inspection_id']}'" in where]
-            )
+            return httpx.Response(200, json=_for_inspections(units, params["$where"]))
+        if request.url.path == "/resource/876r-jsdb.json":
+            if fail_violations:
+                return httpx.Response(400, json={"message": "bad query"})
+            return httpx.Response(200, json=_for_inspections(violations or [], params["$where"]))
         return httpx.Response(404, json={"message": "unknown dataset"})
 
     return socrata_client(handler)
@@ -77,10 +95,12 @@ class FakeDotApi:
         census: list[Row],
         headers: list[Row] | None = None,
         units: list[Row] | None = None,
+        violations: list[Row] | None = None,
     ) -> None:
         self.census = census
         self.headers = headers or []
         self.units = units or []
+        self.violations = violations or []
         self.calls: dict[str, int] = {}
         self.down = False
         self.failing: set[str] = set()
@@ -103,9 +123,9 @@ class FakeDotApi:
             dot = params["dot_number"]
             return httpx.Response(200, json=[h for h in self.headers if h["dot_number"] == dot])
         if dataset == "wt8s-2hbx":
-            return httpx.Response(
-                200, json=[u for u in self.units if f"'{u['inspection_id']}'" in where]
-            )
+            return httpx.Response(200, json=_for_inspections(self.units, where))
+        if dataset == "876r-jsdb":
+            return httpx.Response(200, json=_for_inspections(self.violations, where))
         return httpx.Response(404, json={"message": "unknown dataset"})
 
     def _census(self, params: httpx.QueryParams, where: str) -> list[Row]:

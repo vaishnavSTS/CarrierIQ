@@ -2,7 +2,8 @@
 
 Headers (default dataset fx4q-ay7w) are looked up by USDOT number and hold roughly the last
 three years of inspections; a large carrier can have over a thousand. The vehicles on each
-inspection (VINs) live in Inspections Per Unit (default wt8s-2hbx), keyed by inspection_id.
+inspection (VINs) live in Inspections Per Unit (default wt8s-2hbx) and the individual violations
+in Vehicle Inspections and Violations (default 876r-jsdb), both keyed by inspection_id.
 """
 
 import logging
@@ -17,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 SOURCE = "dot_socrata"
 
-# Inspection IDs per unit request; keeps the $where clause well under URL length limits.
+# Inspection IDs per request for units / violations; keeps the $where clause well under URL
+# length limits.
 UNIT_BATCH_SIZE = 100
 
 
@@ -29,6 +31,7 @@ class VehicleInspectionAdapter:
         settings = get_settings()
         self.dataset_id = settings.inspection_dataset_id
         self.unit_dataset_id = settings.inspection_unit_dataset_id
+        self.violation_dataset_id = settings.violation_dataset_id
 
     @staticmethod
     def query_for(usdot_number: int) -> str:
@@ -51,25 +54,34 @@ class VehicleInspectionAdapter:
 
     def fetch_units(self, inspection_ids: Sequence[str]) -> list[Row]:
         """Every vehicle unit on the given inspections, as received."""
+        return self._by_inspection_ids(self.unit_dataset_id, inspection_ids, "insp_unit_id")
+
+    def fetch_violations(self, inspection_ids: Sequence[str]) -> list[Row]:
+        """Every violation recorded on the given inspections, as received."""
+        return self._by_inspection_ids(
+            self.violation_dataset_id, inspection_ids, "insp_violation_id"
+        )
+
+    def _by_inspection_ids(
+        self, dataset_id: str, inspection_ids: Sequence[str], key: str
+    ) -> list[Row]:
         for inspection_id in inspection_ids:
             # IDs go into a SoQL expression, so only digits are allowed.
             if not inspection_id.isdigit():
                 raise SourceFetchError(f"Invalid inspection_id {inspection_id!r}")
 
-        units: list[Row] = []
+        rows: list[Row] = []
         for start in range(0, len(inspection_ids), UNIT_BATCH_SIZE):
             batch = inspection_ids[start : start + UNIT_BATCH_SIZE]
             quoted = ",".join(f"'{inspection_id}'" for inspection_id in batch)
-            units.extend(
+            rows.extend(
                 self.client.get_all_rows(
-                    self.unit_dataset_id,
-                    {"$where": f"inspection_id in ({quoted})"},
-                    order="insp_unit_id",
+                    dataset_id, {"$where": f"inspection_id in ({quoted})"}, order=key
                 )
             )
-        for unit in units:
-            _require_numeric_id(unit, "insp_unit_id")
-        return units
+        for row in rows:
+            _require_numeric_id(row, key)
+        return rows
 
 
 def _require_numeric_id(row: Row, field: str) -> None:

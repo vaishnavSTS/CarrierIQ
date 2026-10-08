@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     census_dataset_id: str = "az4n-8mr2"  # Company Census File
     inspection_dataset_id: str = "fx4q-ay7w"  # Vehicle Inspection File
     inspection_unit_dataset_id: str = "wt8s-2hbx"  # Inspections Per Unit (VINs)
+    violation_dataset_id: str = "876r-jsdb"  # Vehicle Inspections and Violations
 
     @property
     def cors_origin_list(self) -> list[str]:

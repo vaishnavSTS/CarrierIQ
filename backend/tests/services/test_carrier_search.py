@@ -90,7 +90,7 @@ def test_missing_carrier_is_loaded_with_its_inspections(db: Session, api: FakeDo
     assert outcome.carrier is not None
     assert outcome.carrier.legal_name == "UNITED MOVING AND STORAGE INC"
     assert (outcome.refreshed, outcome.stale) == (True, False)
-    assert api.calls == {"az4n-8mr2": 1, "fx4q-ay7w": 1, "wt8s-2hbx": 1}
+    assert api.calls == {"az4n-8mr2": 1, "fx4q-ay7w": 1, "wt8s-2hbx": 1, "876r-jsdb": 1}
 
 
 def test_fresh_carrier_is_served_without_calling_the_source(db: Session, api: FakeDotApi) -> None:

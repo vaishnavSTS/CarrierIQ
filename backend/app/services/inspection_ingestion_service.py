@@ -1,14 +1,17 @@
-"""Fetch a carrier's inspections and their vehicle units, store them as received, and normalize
-them into the inspections table (spec Sections 19.2, 19.3).
+"""Fetch a carrier's inspections with their vehicle units and violations, store every row as
+received, and normalize them into the inspections table (spec Sections 19.2, 19.3).
 
 The carrier must already exist (census runs first). Each dataset fetch is its own ingestion
-run, committed first so failures are recorded. Raw rows are stored only when new or changed;
-an inspection is (re)normalized only when its header or one of its units changed.
+run, committed first so failures are recorded; if any fetch fails, nothing is stored and every
+run started for this carrier is marked failed. Raw rows are stored only when new or changed.
+Every inspection is normalized again on each fetch and written only when the result differs
+from what is stored, so a change to the normalizer also reaches inspections whose source rows
+did not change.
 """
 
 import logging
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -27,14 +30,19 @@ from app.repositories.raw_record_repository import RawRecordRepository
 
 logger = logging.getLogger(__name__)
 
+# Raw record per source key, and whether it was newly stored (new or changed).
+StoredRaws = dict[str, tuple[RawRecord, bool]]
+
 
 @dataclass(frozen=True)
 class InspectionIngestResult:
     header_run: IngestionRun
     unit_run: IngestionRun | None  # None when the carrier has no inspections
+    violation_run: IngestionRun | None  # None when the carrier has no inspections
     inspections_fetched: int
     units_fetched: int
-    # Inspections inserted or updated because their header or a unit was new or changed.
+    violations_fetched: int
+    # Inspections inserted or updated because their normalized values changed.
     inspections_written: int
 
 
@@ -69,71 +77,104 @@ class InspectionIngestionService:
             )
 
         query = self.adapter.query_for(usdot_number)
-        header_run, headers = self._fetch(self.adapter.dataset_id, query, usdot_number)
+        started: list[IngestionRun] = []
+        header_run, headers = self._fetch(
+            self.adapter.dataset_id,
+            query,
+            lambda: self.adapter.fetch_by_usdot(usdot_number),
+            started,
+            usdot_number,
+        )
         if not headers:
             self.runs.succeed(header_run, records_fetched=0)
             self.db.commit()
-            return InspectionIngestResult(header_run, None, 0, 0, 0)
+            return InspectionIngestResult(header_run, None, None, 0, 0, 0, 0)
 
-        inspection_ids = [row["inspection_id"] for row in headers]
-        unit_query = f"units of {len(inspection_ids)} inspections for {query}"
-        unit_run = self.runs.start(self.adapter.source, self.adapter.unit_dataset_id, unit_query)
-        self.db.commit()
-        try:
-            units = self.adapter.fetch_units(inspection_ids)
-        except SourceFetchError as exc:
-            self.runs.fail(header_run, f"Unit fetch failed (run {unit_run.id}); nothing stored")
-            self._fail(unit_run, exc.message, usdot_number)
-            raise
+        ids = [row["inspection_id"] for row in headers]
+        detail_query = f"{len(ids)} inspections for {query}"
+        unit_run, units = self._fetch(
+            self.adapter.unit_dataset_id,
+            f"units of {detail_query}",
+            lambda: self.adapter.fetch_units(ids),
+            started,
+            usdot_number,
+        )
+        violation_run, violations = self._fetch(
+            self.adapter.violation_dataset_id,
+            f"violations of {detail_query}",
+            lambda: self.adapter.fetch_violations(ids),
+            started,
+            usdot_number,
+        )
 
         header_raws = self._store(self.adapter.dataset_id, "inspection_id", headers, header_run)
-        unit_raws = self._store(self.adapter.unit_dataset_id, "insp_unit_id", units, unit_run)
+        self._store(self.adapter.unit_dataset_id, "insp_unit_id", units, unit_run)
+        self._store(
+            self.adapter.violation_dataset_id, "insp_violation_id", violations, violation_run
+        )
 
+        counts = {header_run: len(headers), unit_run: len(units), violation_run: len(violations)}
         try:
-            written = self._normalize(carrier.id, headers, units, header_raws, unit_raws)
+            written = self._normalize(carrier.id, headers, units, violations, header_raws)
         except SourceDataError as exc:
             self.runs.fail(header_run, exc.message)
-            self.runs.succeed(unit_run, records_fetched=len(units))
+            for run in (unit_run, violation_run):
+                self.runs.succeed(run, records_fetched=counts[run])
             self.db.commit()  # keeps the raw records for auditing and reprocessing
             logger.error("Inspections for USDOT %s could not be normalized", usdot_number)
             raise
 
-        self.runs.succeed(header_run, records_fetched=len(headers))
-        self.runs.succeed(unit_run, records_fetched=len(units))
+        for run, fetched in counts.items():
+            self.runs.succeed(run, records_fetched=fetched)
         self.db.commit()
         logger.info(
-            "USDOT %s: %d inspections, %d units fetched; %d inspections written",
+            "USDOT %s: %d inspections, %d units, %d violations fetched; %d inspections written",
             usdot_number,
             len(headers),
             len(units),
+            len(violations),
             written,
         )
-        return InspectionIngestResult(header_run, unit_run, len(headers), len(units), written)
+        return InspectionIngestResult(
+            header_run,
+            unit_run,
+            violation_run,
+            len(headers),
+            len(units),
+            len(violations),
+            written,
+        )
 
     def _fetch(
-        self, dataset_id: str, query: str, usdot_number: int
+        self,
+        dataset_id: str,
+        query: str,
+        fetch: Callable[[], list[Row]],
+        started: list[IngestionRun],
+        usdot_number: int,
     ) -> tuple[IngestionRun, list[Row]]:
+        """Run one dataset fetch as its own ingestion run. On failure, fail every run started for
+        this carrier so far (nothing has been stored yet) and re-raise."""
         run = self.runs.start(self.adapter.source, dataset_id, query)
         self.db.commit()
+        started.append(run)
         try:
-            return run, self.adapter.fetch_by_usdot(usdot_number)
+            return run, fetch()
         except SourceFetchError as exc:
-            self._fail(run, exc.message, usdot_number)
+            for earlier in started[:-1]:
+                self.runs.fail(earlier, f"Fetch failed in run {run.id}; nothing stored")
+            self.runs.fail(run, exc.message)
+            self.db.commit()
+            logger.error("Inspection fetch failed for USDOT %s (run %d)", usdot_number, run.id)
             raise
-
-    def _fail(self, run: IngestionRun, message: str, usdot_number: int) -> None:
-        self.runs.fail(run, message)
-        self.db.commit()
-        logger.error("Inspection fetch failed for USDOT %s (run %d)", usdot_number, run.id)
 
     def _store(
         self, dataset_id: str, key: str, rows: Sequence[Row], run: IngestionRun
-    ) -> dict[str, tuple[RawRecord, bool]]:
-        """Raw record per row key, and whether it was newly stored (new or changed)."""
+    ) -> StoredRaws:
         latest = self.raw_records.latest_many(
             self.adapter.source, dataset_id, [row[key] for row in rows]
         )
-        stored: dict[str, tuple[RawRecord, bool]] = {}
+        stored: StoredRaws = {}
         new_records: list[RawRecord] = []
         for row in rows:
             fingerprint = payload_hash(row)
@@ -159,13 +200,11 @@ class InspectionIngestionService:
         carrier_id: int,
         headers: Sequence[Row],
         units: Sequence[Row],
-        header_raws: dict[str, tuple[RawRecord, bool]],
-        unit_raws: dict[str, tuple[RawRecord, bool]],
+        violations: Sequence[Row],
+        header_raws: StoredRaws,
     ) -> int:
-        units_by_inspection: dict[str, list[Row]] = defaultdict(list)
-        for unit in units:
-            units_by_inspection[unit.get("inspection_id", "")].append(unit)
-
+        units_by_inspection = _group(units)
+        violations_by_inspection = _group(violations)
         existing = self.inspections.by_inspection_ids(
             self.adapter.source, [row["inspection_id"] for row in headers]
         )
@@ -173,14 +212,15 @@ class InspectionIngestionService:
         for header in headers:
             inspection_id = header["inspection_id"]
             own_units = units_by_inspection[inspection_id]
-            raw_record, header_changed = header_raws[inspection_id]
-            units_changed = any(unit_raws[u["insp_unit_id"]][1] for u in own_units)
+            own_violations = violations_by_inspection[inspection_id]
+            raw_record, _ = header_raws[inspection_id]
+            values = normalize_inspection(header, own_units, own_violations)
             current = existing.get(inspection_id)
-            if current is not None and not header_changed and not units_changed:
+            if current is not None and self.inspections.matches(current, values, raw_record.id):
                 continue
             self.inspections.upsert(
                 current,
-                normalize_inspection(header, own_units),
+                values,
                 carrier_id=carrier_id,
                 source=self.adapter.source,
                 raw_record_id=raw_record.id,
@@ -188,6 +228,13 @@ class InspectionIngestionService:
             written += 1
         self.db.flush()
         return written
+
+
+def _group(rows: Sequence[Row]) -> dict[str, list[Row]]:
+    by_inspection: dict[str, list[Row]] = defaultdict(list)
+    for row in rows:
+        by_inspection[row.get("inspection_id", "")].append(row)
+    return by_inspection
 
 
 def build_inspection_ingestion_service(

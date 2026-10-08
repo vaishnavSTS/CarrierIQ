@@ -26,6 +26,22 @@ VIOLATION_COUNTS = (
     "hazmat_oos_total",
 )
 
+# 49 CFR part titles, used to group violations. Parts 100-180 are the hazardous materials
+# regulations. Parts not listed here are shown by number only.
+CFR_PART_TITLES = {
+    382: "Controlled substances and alcohol use and testing",
+    383: "Commercial driver's license standards",
+    385: "Safety fitness procedures",
+    387: "Minimum levels of financial responsibility",
+    390: "General",
+    391: "Qualifications of drivers",
+    392: "Driving of commercial motor vehicles",
+    393: "Parts and accessories necessary for safe operation",
+    395: "Hours of service of drivers",
+    396: "Inspection, repair, and maintenance",
+    397: "Transportation of hazardous materials; driving and parking rules",
+}
+
 # 17 characters; VINs never use I, O or Q.
 VIN_PATTERN = re.compile(r"^[A-HJ-NPR-Z0-9]{17}$")
 
@@ -42,10 +58,14 @@ class InspectionValues:
     vin: str | None
     vehicle_oos: bool
     driver_oos: bool
-    violation_data: dict[str, int]
+    # The header's VIOLATION_COUNTS, plus "violations": one entry per violation row (see
+    # _violation), in the source's sequence order.
+    violation_data: dict[str, Any]
 
 
-def normalize_inspection(header: Row, units: Sequence[Row]) -> InspectionValues:
+def normalize_inspection(
+    header: Row, units: Sequence[Row], violations: Sequence[Row] = ()
+) -> InspectionValues:
     inspection_id = _text(header, "inspection_id")
     if inspection_id is None:
         raise SourceDataError("Inspection row has no inspection_id")
@@ -53,7 +73,9 @@ def normalize_inspection(header: Row, units: Sequence[Row]) -> InspectionValues:
     if inspection_date is None:
         raise SourceDataError(f"Inspection {inspection_id} has no valid insp_date")
 
-    counts = {field: _int(header, field) or 0 for field in VIOLATION_COUNTS}
+    counts: dict[str, Any] = {field: _int(header, field) or 0 for field in VIOLATION_COUNTS}
+    own = [v for v in violations if v.get("inspection_id") == inspection_id]
+    own.sort(key=lambda v: (_int(v, "seq_no") or 0, v.get("insp_violation_id", "")))
     return InspectionValues(
         inspection_id=inspection_id,
         inspection_date=inspection_date,
@@ -63,8 +85,34 @@ def normalize_inspection(header: Row, units: Sequence[Row]) -> InspectionValues:
         vin=_primary_vin(inspection_id, units),
         vehicle_oos=counts["vehicle_oos_total"] > 0,
         driver_oos=counts["driver_oos_total"] > 0,
-        violation_data=counts,
+        violation_data={**counts, "violations": [_violation(v) for v in own]},
     )
+
+
+def cfr_part_title(part: int | None) -> str | None:
+    if part is None:
+        return None
+    if 100 <= part <= 180:
+        return "Hazardous materials regulations"
+    return CFR_PART_TITLES.get(part)
+
+
+def _violation(row: Row) -> dict[str, Any]:
+    """One violation, kept JSON-serializable for inspections.violation_data."""
+    unit = _text(row, "insp_viol_unit")
+    part = _int(row, "part_no")
+    return {
+        "code": _text(row, "viol_code"),
+        "description": _text(row, "viol_desc"),
+        "part": part,
+        "part_title": cfr_part_title(part),
+        # "D" marks the driver; a number is the vehicle unit (1 = power unit, 2+ = trailers).
+        "applies_to": "DRIVER" if unit == "D" else "VEHICLE" if unit else None,
+        "unit_number": _int(row, "insp_viol_unit"),
+        "out_of_service": _text(row, "out_of_service_indicator") == "Y",
+        "category_id": _int(row, "insp_violation_category_id"),
+        "citation_number": _text(row, "citation_number"),
+    }
 
 
 def normalize_vin(value: str | None) -> str | None:

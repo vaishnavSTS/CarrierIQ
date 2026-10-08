@@ -6,9 +6,18 @@ import httpx
 import pytest
 
 from app.core.exceptions import SourceDataError, SourceFetchError, ValidationError
-from app.ingestion.vehicle_inspection_normalizer import normalize_inspection, normalize_vin
+from app.ingestion.vehicle_inspection_normalizer import (
+    cfr_part_title,
+    normalize_inspection,
+    normalize_vin,
+)
 from app.ingestion.vehicle_inspections import UNIT_BATCH_SIZE, VehicleInspectionAdapter
-from tests.ingestion.helpers import inspection_api, load_inspection_rows, socrata_client
+from tests.ingestion.helpers import (
+    inspection_api,
+    load_inspection_rows,
+    load_violation_rows,
+    socrata_client,
+)
 
 # --- adapter ---
 
@@ -110,3 +119,58 @@ def test_inspection_without_a_valid_date_is_rejected() -> None:
 
     with pytest.raises(SourceDataError, match="insp_date"):
         normalize_inspection({**headers[0], "insp_date": "00000000"}, units)
+
+
+def test_violations_are_attached_in_sequence_with_their_regulation() -> None:
+    headers, units = load_inspection_rows()
+    violations = list(reversed(load_violation_rows()))  # order must not depend on the source
+
+    values = normalize_inspection(headers[0], units, violations)
+
+    first, second, third = values.violation_data["violations"]
+    assert first == {
+        "code": "393.95A4-EEUS",
+        "description": "Emergency Equipment - Fire Extinguishers - unsecured",
+        "part": 393,
+        "part_title": "Parts and accessories necessary for safe operation",
+        "applies_to": "VEHICLE",
+        "unit_number": 1,
+        "out_of_service": False,
+        "category_id": 28,
+        "citation_number": None,
+    }
+    assert (second["applies_to"], second["unit_number"], second["citation_number"]) == (
+        "DRIVER",
+        None,
+        "4A0768979",
+    )
+    assert (third["unit_number"], third["out_of_service"]) == (2, True)
+    assert values.violation_data["viol_total"] == 3  # header counts are kept alongside
+
+
+def test_inspection_without_violations_has_an_empty_list() -> None:
+    headers, units = load_inspection_rows()
+
+    assert normalize_inspection(headers[0], units).violation_data["violations"] == []
+
+
+@pytest.mark.parametrize(
+    ("part", "title"),
+    [
+        (395, "Hours of service of drivers"),
+        (172, "Hazardous materials regulations"),
+        (999, None),  # unknown parts are shown by number only
+        (None, None),
+    ],
+)
+def test_cfr_part_title(part: int | None, title: str | None) -> None:
+    assert cfr_part_title(part) == title
+
+
+def test_fetches_violations_for_the_given_inspections() -> None:
+    headers, units = load_inspection_rows()
+    adapter = VehicleInspectionAdapter(
+        inspection_api(headers, units, violations=load_violation_rows())
+    )
+
+    assert len(adapter.fetch_violations(["82915718", "86137641"])) == 7

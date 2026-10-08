@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 4 complete → Phase 5 (Safety) is next
+**Current phase:** Phase 5 (Safety) — Part 1 done, Part 2 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -18,7 +18,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 2 | Carrier Data Model | ✅ Done (2026-10-08) |
 | 3 | First Federal Data Integration | ✅ Done (2026-10-08) |
 | 4 | Carrier Search | ✅ Done (2026-10-08) |
-| 5 | Safety | ⏭️ Next |
+| 5 | Safety | 🔄 In progress (Part 1 of 3 done) |
 | 6 | Authority & Insurance | Not started |
 | 7 | Equipment / VIN | Not started |
 | 8 | Intelligence Engine | Not started |
@@ -246,14 +246,32 @@ fetched from FMCSA on demand and refreshed after 24h.
 
 ---
 
-## Phase 5 — Safety
+## Phase 5 — Safety 🔄
 
-- [ ] Inspection history
-- [ ] Vehicle OOS
-- [ ] Driver OOS
-- [ ] Inspection counts
-- [ ] Basic trends
-- [ ] Charts / tables in the UI
+Built part by part: (1) violations → (2) safety API (trends, history, violation breakdown) →
+(3) Safety tab with charts.
+
+- [x] **Part 1 — Violations.** Third inspection dataset, Vehicle Inspections and Violations
+  `876r-jsdb` (13.6M rows), fetched in batches by inspection_id as its own ingestion run; every
+  row stored in `raw_records`. Each inspection's `violation_data` now holds the header counts plus
+  `violations`: code, description, 49 CFR part + title, applies to DRIVER/VEHICLE, unit number,
+  out-of-service, category id, citation number — in the source's sequence order.
+  - Grouping: the dataset's `insp_violation_category_id` has no published names, so violations
+    are grouped by 49 CFR part (393 Parts & accessories, 392 Driving, 395 Hours of service, 396
+    Inspection/repair, 100–180 Hazmat, …); the raw category id is kept.
+  - If any of the three fetches fails, nothing is stored and every run started is marked failed.
+  - Bug found by the live check and fixed: only inspections whose source rows changed were
+    rewritten, so the 587 (of 1,109) inspections without violations kept the old format.
+    Inspections are now re-normalized on every fetch and written only when the result differs —
+    normalizer changes reach stored data automatically.
+  - Source data quality (297080): 4 of 1,109 headers count a violation with no violation row;
+    2 vehicle-OOS flags have no OOS vehicle violation. Header counts/flags stay authoritative.
+  - 11 new tests (178 total). Live: 297080 → 1,039 violations, re-fetch writes nothing.
+    **Supabase validation: 1,139/1,139 inspections' violations match a fresh live fetch.**
+- [ ] **Part 2 — Safety API**: quarterly trends (inspections, vehicle/driver OOS rates), full
+  inspection history with paging, violation breakdown (by regulation part, driver vs vehicle,
+  most frequent codes)
+- [ ] **Part 3 — Safety tab**: trend charts, full inspection history, violation breakdown
 
 ---
 
@@ -344,3 +362,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 4 Part 3: search screen (dashboard box + results page), checked in Chrome. |
 | 2026-10-08 | Phase 4 Part 4: carrier profile page, checked in Chrome. Phase 4 complete. |
 | 2026-10-08 | Carrier profile sections turned into tabs (Identity default, tab kept in URL). |
+| 2026-10-08 | Phase 5 Part 1: inspection violations ingested (876r-jsdb); fixed stale inspection format; Supabase violations validated 1,139/1,139; 178 tests passing. |
