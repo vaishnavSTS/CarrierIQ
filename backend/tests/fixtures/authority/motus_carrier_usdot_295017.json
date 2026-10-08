@@ -1,0 +1,28 @@
+[
+  {
+    "docket_number": "MC139446",
+    "usdot_number": "295017",
+    "op_auth_type": "Motor Carrier of Household Goods",
+    "op_auth_status": "Active",
+    "min_cov_amount": "750000.000000000000000000",
+    "cargo_req": "Y",
+    "bond_req": "N",
+    "bipd_file": "1000000.000000000000000000",
+    "cargo_file": "Y",
+    "bond_file": "N",
+    "bus_undeliverable_mail": "Y",
+    "mail_undeliverable_mail": "Y",
+    "legal_name": "UNITED MOVING AND STORAGE INC",
+    "bus_street_po": "1770 NE FUSON RD",
+    "bus_city": "BREMERTON",
+    "bus_state_code": "WA",
+    "bus_ctry_code": "US",
+    "bus_zip_code": "98311-3729",
+    "bus_telno": "+1 (360) 479-4800",
+    "mail_street_po": "1770 NE FUSON RD",
+    "mail_city": "BREMERTON",
+    "mail_state_code": "WA",
+    "mail_ctry_code": "US",
+    "mail_zip_code": "98311"
+  }
+]

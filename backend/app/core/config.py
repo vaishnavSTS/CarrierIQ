@@ -1,5 +1,6 @@
 """Application settings, loaded only from environment variables (or a local .env file)."""
 
+from datetime import date
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -35,6 +36,12 @@ class Settings(BaseSettings):
     inspection_dataset_id: str = "fx4q-ay7w"  # Vehicle Inspection File
     inspection_unit_dataset_id: str = "wt8s-2hbx"  # Inspections Per Unit (VINs)
     violation_dataset_id: str = "876r-jsdb"  # Vehicle Inspections and Violations
+    # Operating authority: Motus (current, daily) and legacy L&I (frozen on its last refresh).
+    motus_carrier_dataset_id: str = "inys-ebih"  # Motus Carrier - All With History
+    motus_authhist_dataset_id: str = "yu5v-wbh6"  # Motus AuthHist - All With History
+    legacy_carrier_dataset_id: str = "6eyk-hxee"  # Carrier - All With History (legacy L&I)
+    legacy_authhist_dataset_id: str = "9mw4-x3tu"  # AuthHist - All With History (legacy L&I)
+    legacy_li_frozen_on: date = date(2026, 5, 14)  # "last refreshed on 05/14/2026"
 
     @property
     def cors_origin_list(self) -> list[str]:

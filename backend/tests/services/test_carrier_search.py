@@ -63,7 +63,7 @@ def refresh_service(
     return CarrierRefreshService(
         CarrierRepository(db),
         build_census_ingestion_service(db, client),
-        build_inspection_ingestion_service(db, client),
+        [build_inspection_ingestion_service(db, client)],
         max_age=timedelta(hours=24),
         now=clock or Clock(),
     )

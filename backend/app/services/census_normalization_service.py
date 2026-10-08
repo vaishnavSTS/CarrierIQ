@@ -65,7 +65,9 @@ class CensusNormalizationService:
             Officer, carrier.id, record.officers, seen_on=today, source=source, raw_record_id=raw_id
         )
         sync(Domain, carrier.id, record.domains, seen_on=today, source=source, raw_record_id=raw_id)
-        self.authorities.sync(carrier.id, record.authorities, source=source, raw_record_id=raw_id)
+        self.authorities.sync(
+            carrier.id, record.authorities, source=source, raw_record_id=raw_id, as_of=today
+        )
 
         changed = self.history.record_changes(
             carrier.id,

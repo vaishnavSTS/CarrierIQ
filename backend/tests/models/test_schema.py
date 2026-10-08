@@ -20,6 +20,7 @@ TABLES = {
     "crashes",
     "vehicles",
     # History
+    "authority_history",
     "carrier_attribute_history",
     "carrier_snapshots",
     "identity_events",
@@ -44,10 +45,16 @@ SOURCE_TRACED_TABLES = {
     "crashes",
     "carrier_attribute_history",
     "carrier_snapshots",
+    "authority_history",
 }
 
 # History rows are never updated in place (Section 20).
-APPEND_ONLY_TABLES = {"raw_records", "carrier_attribute_history", "carrier_snapshots"}
+APPEND_ONLY_TABLES = {
+    "raw_records",
+    "carrier_attribute_history",
+    "carrier_snapshots",
+    "authority_history",
+}
 
 
 def test_every_spec_table_is_modelled() -> None:

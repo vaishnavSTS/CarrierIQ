@@ -2,6 +2,7 @@
 
 from app.models.address import Address
 from app.models.authority import Authority
+from app.models.authority_history import AuthorityHistory
 from app.models.carrier import Carrier
 from app.models.carrier_attribute_history import CarrierAttributeHistory
 from app.models.carrier_snapshot import CarrierSnapshot
@@ -23,6 +24,7 @@ from app.models.vehicle import Vehicle
 __all__ = [
     "Address",
     "Authority",
+    "AuthorityHistory",
     "Carrier",
     "CarrierAttributeHistory",
     "CarrierSnapshot",

@@ -17,6 +17,7 @@ from app.repositories.observed_value_repository import ObservedValueRepository
 from app.schemas.carrier_profile import CarrierProfile
 from app.schemas.carrier_safety import CarrierSafetyOut, InspectionPageOut
 from app.schemas.carrier_search import CarrierSearchResponse
+from app.services.authority_ingestion_service import build_authority_ingestion_service
 from app.services.carrier_profile_service import CarrierProfileService
 from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.carrier_safety_service import CarrierSafetyService
@@ -39,7 +40,10 @@ def build_refresh_service(db: Session, client: SocrataClient) -> CarrierRefreshS
     return CarrierRefreshService(
         CarrierRepository(db),
         build_census_ingestion_service(db, client),
-        build_inspection_ingestion_service(db, client),
+        [
+            build_inspection_ingestion_service(db, client),
+            build_authority_ingestion_service(db, client),
+        ],
         max_age=timedelta(hours=get_settings().carrier_refresh_hours),
     )
 

@@ -1,0 +1,30 @@
+[
+  {
+    "docket_number": "MC139446",
+    "dot_number": "00295017",
+    "mod_col_1": "COMMON",
+    "original_action_desc": "INVOLUNTARY REVOCATION",
+    "orig_served_date": "11/07/2005",
+    "disp_action_desc": "DISCONTINUED REVOCATION",
+    "disp_decided_date": "11/29/2005",
+    "disp_served_date": "11/29/2005"
+  },
+  {
+    "docket_number": "MC139446",
+    "dot_number": "00295017",
+    "sub_number": "1",
+    "mod_col_1": "HOUSEHOLD GOODS COMMON CARRIER",
+    "original_action_desc": "GRANTED",
+    "orig_served_date": "07/18/1986",
+    "disp_action_desc": "REVOKED",
+    "disp_decided_date": "06/08/2021",
+    "disp_served_date": "06/08/2021"
+  },
+  {
+    "docket_number": "MC139446",
+    "dot_number": "00295017",
+    "mod_col_1": "HOUSEHOLD GOODS COMMON CARRIER",
+    "original_action_desc": "REINSTATED",
+    "orig_served_date": "06/15/2021"
+  }
+]

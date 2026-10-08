@@ -35,6 +35,23 @@ def load_violation_rows() -> list[Row]:
     return rows
 
 
+AUTHORITY_DATASETS = {
+    "motus_carrier": "inys-ebih",
+    "motus_authhist": "yu5v-wbh6",
+    "legacy_carrier": "6eyk-hxee",
+    "legacy_authhist": "9mw4-x3tu",
+}
+
+
+def load_authority_rows() -> dict[str, list[Row]]:
+    """Real operating-authority rows for USDOT 295017 (MC139446), keyed by dataset ID."""
+    folder = FIXTURES / "authority"
+    return {
+        dataset_id: json.loads((folder / f"{name}_usdot_295017.json").read_text())
+        for name, dataset_id in AUTHORITY_DATASETS.items()
+    }
+
+
 def _for_inspections(rows: list[Row], where: str) -> list[Row]:
     return [r for r in rows if f"'{r['inspection_id']}'" in where]
 
@@ -96,8 +113,11 @@ class FakeDotApi:
         headers: list[Row] | None = None,
         units: list[Row] | None = None,
         violations: list[Row] | None = None,
+        authority: dict[str, list[Row]] | None = None,
     ) -> None:
         self.census = census
+        # Operating-authority rows by dataset ID (Motus / legacy L&I); empty unless given.
+        self.authority = authority or {}
         self.headers = headers or []
         self.units = units or []
         self.violations = violations or []
@@ -126,6 +146,15 @@ class FakeDotApi:
             return httpx.Response(200, json=_for_inspections(self.units, where))
         if dataset == "876r-jsdb":
             return httpx.Response(200, json=_for_inspections(self.violations, where))
+        if dataset in AUTHORITY_DATASETS.values():
+            rows = self.authority.get(dataset, [])
+            if "usdot_number" in params:  # Motus: plain USDOT
+                return httpx.Response(
+                    200, json=[r for r in rows if r.get("usdot_number") == params["usdot_number"]]
+                )
+            return httpx.Response(  # legacy L&I: zero-padded USDOT
+                200, json=[r for r in rows if r.get("dot_number") == params["dot_number"]]
+            )
         return httpx.Response(404, json={"message": "unknown dataset"})
 
     def _census(self, params: httpx.QueryParams, where: str) -> list[Row]:

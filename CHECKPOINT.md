@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 5 complete → Phase 6 (Authority & Insurance) is next
+**Current phase:** Phase 6 (Authority & Insurance) — Part 1 done, Part 2 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -19,7 +19,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 3 | First Federal Data Integration | ✅ Done (2026-10-08) |
 | 4 | Carrier Search | ✅ Done (2026-10-08) |
 | 5 | Safety | ✅ Done (2026-10-08) |
-| 6 | Authority & Insurance | ⏭️ Next |
+| 6 | Authority & Insurance | 🔄 In progress (Part 1 of 4 done) |
 | 7 | Equipment / VIN | Not started |
 | 8 | Intelligence Engine | Not started |
 | 9 | Intelligence UI | Not started |
@@ -301,13 +301,42 @@ detail, with charts and tables.
 
 ---
 
-## Phase 6 — Authority & Insurance
+## Phase 6 — Authority & Insurance 🔄
 
-- [ ] Current authority
-- [ ] Authority history
-- [ ] Insurance
-- [ ] Insurance history
-- [ ] Change detection
+Built part by part: (1) authority → (2) insurance → (3) change detection → (4) Authority &
+Insurance tab (with its API).
+
+**Sources (found 2026-10-08).** FMCSA moved licensing & insurance to **Motus** in May 2026. The
+legacy **L&I** datasets (Carrier `6eyk-hxee`, AuthHist `9mw4-x3tu`, Insur `ypjt-5ydn`, InsHist
+`6sqe-dvqs`) say "last refreshed on 05/14/2026 and will no longer be updated" — frozen history.
+Motus (Carrier AWH `inys-ebih`, AuthHist AWH `yu5v-wbh6`, Insur AWH `c5y8-a4uz`, InsHist AWH
+`3uet-3z4i`) is current and daily but **does not hold every carrier yet** (e.g. 297569, 3320626
+are only in legacy). Data dictionaries saved in the repo root (outside git):
+`USDOT_Motus_Operating_Authority_Data_Dictionary.pdf`, `FMCSA_Operating_Authority_Data_Dictionary_V2.pdf`.
+Dictionary errors found by comparing the same policy in both systems: Motus amounts are in
+**dollars** (dictionary says thousands); legacy amounts are in thousands. Formats differ: legacy
+USDOT zero-padded to 8, dates MM/DD/YYYY, dockets may be zero-padded (`FF004758`); Motus dates
+YYYYMMDD, form codes `BMC-91X` vs legacy `91X`.
+
+- [x] **Part 1 — Operating authority.** Four fetches per carrier (legacy Carrier + AuthHist,
+  Motus Carrier + AuthHist), each its own run, all-or-nothing, raw rows stored. `authority`
+  gains authority type, BI&PD required / on file (dollars), cargo/bond required / on file,
+  revocation pending, and `status_source` (CENSUS | MOTUS | LEGACY_LI) + `status_as_of`.
+  Precedence: Motus > census (daily) > legacy (frozen); a census refresh never overwrites a Motus
+  status; dockets only known to FMCSA authority data are added. New `authority_history` table
+  (migration `0003`): dated actions from both systems (legacy rows give an original action and
+  a disposition, e.g. MC139446 GRANTED 1986 → REVOKED 2021-06-08 → REINSTATED 2021-06-15).
+  Migration `0004` labels pre-existing census statuses. Authority joins the on-demand refresh
+  (refresh now takes a list of detail sources). Shared `services/dataset_batch.py` (multi-dataset
+  fetch/store) now also used by inspections.
+  - 25 new tests (215 total). Supabase migrated to `0004`; authority loaded for all 11 carriers;
+    independent live check **38/38** (Motus status/coverage, legacy amounts ×1000, census status
+    kept, full history per docket).
+- [ ] **Part 2 — Insurance**: current policies (Motus Insur, else legacy Insur) and insurance
+  history (both InsHist), into `insurance`
+- [ ] **Part 3 — Change detection**: authority status changes and insurance changes (new
+  insurer, cancellation, coverage change, gaps) — a normal insurer change is not "suspicious"
+- [ ] **Part 4 — Authority & Insurance tab** + API
 
 ---
 
@@ -391,3 +420,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 5 Part 1: inspection violations ingested (876r-jsdb); fixed stale inspection format; Supabase violations validated 1,139/1,139; 178 tests passing. |
 | 2026-10-08 | Phase 5 Part 2: safety API (quarterly trends, breakdowns, paged inspection history); 190 tests passing. |
 | 2026-10-08 | Phase 5 Part 3: Safety tab charts, violation breakdown, paged inspection history. Phase 5 complete. |
+| 2026-10-08 | Phase 6 Part 1: operating authority (Motus + legacy L&I), authority history; migrations 0003–0004 on Supabase; 38/38 live checks; 215 tests passing. |
