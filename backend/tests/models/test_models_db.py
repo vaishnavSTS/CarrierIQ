@@ -24,7 +24,7 @@ from app.models.enums import (
     Severity,
     SignalStatus,
 )
-from tests.models.conftest import make_carrier, make_raw_record
+from tests.factories import make_carrier, make_raw_record
 
 
 def test_carrier_with_source_traced_children(db: Session) -> None:

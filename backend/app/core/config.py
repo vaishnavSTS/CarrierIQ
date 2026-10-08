@@ -17,8 +17,10 @@ class Settings(BaseSettings):
     # Comma-separated list of allowed frontend origins.
     cors_origins: str = "http://localhost:5173"
 
-    # Optional app token for data.transportation.gov (raises Socrata rate limits).
+    # data.transportation.gov (Socrata). The app token is optional; it raises rate limits.
+    socrata_base_url: str = "https://data.transportation.gov"
     socrata_app_token: str | None = None
+    socrata_timeout_seconds: float = 30.0
 
     @property
     def cors_origin_list(self) -> list[str]:
