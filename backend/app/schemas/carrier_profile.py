@@ -32,8 +32,19 @@ class AuthorityOut(BaseModel):
 
 
 class InsuranceOut(BaseModel):
-    available: bool = False  # insurance data arrives in Phase 6
-    status: str | None = None
+    # ON_FILE: every active docket has the required filing on file; NOT_ON_FILE: one has none;
+    # None: no active authority.
+    status: str | None
+    source_system: str | None  # MOTUS | LEGACY_LI | MIXED
+    as_of: date | None
+
+
+class TimelineEventOut(BaseModel):
+    event_type: str
+    event_date: date
+    severity: str
+    title: str
+    description: str | None
 
 
 class InspectionOut(BaseModel):
@@ -114,4 +125,5 @@ class CarrierProfile(BaseModel):
     safety: SafetyOut
     equipment: EquipmentOut
     recent_changes: list[ChangeOut]  # newest first; the first load is not a change
+    timeline: list[TimelineEventOut]  # authority / insurance events, newest first
     review_status: str | None = None  # intelligence signals arrive in Phase 8

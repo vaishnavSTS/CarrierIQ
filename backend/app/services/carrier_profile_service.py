@@ -10,7 +10,9 @@ from app.models import Address, Carrier, CarrierAttributeHistory, Domain, Office
 from app.repositories.authority_repository import AuthorityRepository
 from app.repositories.carrier_history_repository import CarrierHistoryRepository
 from app.repositories.inspection_repository import InspectionRepository
+from app.repositories.insurance_repository import InsuranceRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
+from app.repositories.timeline_repository import TimelineRepository
 from app.schemas.carrier_profile import (
     AddressOut,
     AuthorityOut,
@@ -22,17 +24,20 @@ from app.schemas.carrier_profile import (
     InsuranceOut,
     PhoneOut,
     SafetyOut,
+    TimelineEventOut,
     VehicleOut,
 )
 from app.schemas.carrier_search import DocketOut
 from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.carrier_search_service import authority_status
+from app.services.insurance_status import insurance_status
 
 logger = logging.getLogger(__name__)
 
 RECENT_INSPECTIONS = 10
 VEHICLES_LISTED = 25
 RECENT_CHANGES = 20
+TIMELINE_EVENTS = 200
 
 
 class CarrierProfileService:
@@ -43,12 +48,16 @@ class CarrierProfileService:
         authorities: AuthorityRepository,
         inspections: InspectionRepository,
         history: CarrierHistoryRepository,
+        insurance: InsuranceRepository,
+        timeline: TimelineRepository,
     ) -> None:
         self.refresh = refresh
         self.observed = observed
         self.authorities = authorities
         self.inspections = inspections
         self.history = history
+        self.insurance = insurance
+        self.timeline = timeline
 
     def get(self, usdot_number: int) -> CarrierProfile:
         outcome = self.refresh.ensure_fresh(usdot_number)
@@ -57,6 +66,7 @@ class CarrierProfileService:
             raise CarrierNotFoundError(f"No carrier with USDOT {usdot_number}")
 
         dockets = self.authorities.for_carrier(carrier.id)
+        coverage = insurance_status(dockets, self.insurance.for_carrier(carrier.id))
         return CarrierProfile(
             usdot_number=carrier.usdot_number,
             legal_name=carrier.legal_name,
@@ -88,7 +98,19 @@ class CarrierProfileService:
                     for a in dockets
                 ],
             ),
-            insurance=InsuranceOut(),
+            insurance=InsuranceOut(
+                status=coverage.status, source_system=coverage.source_system, as_of=coverage.as_of
+            ),
+            timeline=[
+                TimelineEventOut(
+                    event_type=e.event_type,
+                    event_date=e.event_date,
+                    severity=e.severity.value,
+                    title=e.title,
+                    description=e.description,
+                )
+                for e in self.timeline.for_carrier(carrier.id)[:TIMELINE_EVENTS]
+            ],
             safety=self._safety(carrier),
             equipment=self._equipment(carrier),
             recent_changes=recent_changes(self.history.all_for_carrier(carrier.id))[

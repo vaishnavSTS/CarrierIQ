@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 6 (Authority & Insurance) — Parts 1–3 done, Part 4 next
+**Current phase:** Phase 6 complete → Phase 7 (Equipment / VIN) is next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -19,8 +19,8 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 3 | First Federal Data Integration | ✅ Done (2026-10-08) |
 | 4 | Carrier Search | ✅ Done (2026-10-08) |
 | 5 | Safety | ✅ Done (2026-10-08) |
-| 6 | Authority & Insurance | 🔄 In progress (Parts 1–3 of 4 done) |
-| 7 | Equipment / VIN | Not started |
+| 6 | Authority & Insurance | ✅ Done (2026-10-08) |
+| 7 | Equipment / VIN | ⏭️ Next |
 | 8 | Intelligence Engine | Not started |
 | 9 | Intelligence UI | Not started |
 | 10 | Background Processing | Not started |
@@ -301,7 +301,7 @@ detail, with charts and tables.
 
 ---
 
-## Phase 6 — Authority & Insurance 🔄
+## Phase 6 — Authority & Insurance ✅
 
 Built part by part: (1) authority → (2) insurance → (3) change detection → (4) Authority &
 Insurance tab (with its API).
@@ -366,7 +366,25 @@ YYYYMMDD, form codes `BMC-91X` vs legacy `91X`.
     legacy, so revoked carriers showed "ACTIVE". Now Motus > legacy > census; a census refresh
     never overwrites a Motus or legacy status. Supabase reloaded: 9/9 dockets match.
   - 14 new tests (243 total).
-- [ ] **Part 4 — Authority & Insurance tab** + API
+- [x] **Part 4 — Authority & Insurance tab + API.**
+  - `GET /api/v1/carriers/{usdot}/authority`: dockets (type, status + source + as-of, BI&PD
+    required / on file, cargo/bond required / on file, revocation pending), insurance on file,
+    insurance history (newest first), authority history (each action once; filer e-mails hidden).
+  - Headline insurance status (`services/insurance_status.py`): ON_FILE when every docket with
+    active operating authority (Motus or legacy — never a census docket status) has BI&PD on file
+    (brokers: bond / trust fund also count); NOT_ON_FILE otherwise; none without active
+    authority. Shown in the profile header (with source + as-of) and in search results.
+  - Profile now returns the timeline events; the Timeline tab merges them with recorded field
+    changes, with severity badges and a "medium and high only" filter.
+  - Frontend: docket cards, insurance on file / history tables (show 10, "show all"), authority
+    history. Missing cargo/bond is red only while the authority is active.
+  - Fix found by tests: a census "A" made the insurance status claim NOT_ON_FILE; the "no BI&PD
+    while active" timeline rule had the same flaw. Both now require a real authority status.
+  - 9 new backend tests (252 total). Checked in Chrome on Supabase data (SURRATT revoked,
+    UNITED MOVING on file); no console errors; ESLint + build clean.
+
+Phase 6 done: current authority and history, current insurance and history, and change
+detection (authority + insurance events on the timeline), from Motus and legacy L&I.
 
 ---
 
@@ -453,3 +471,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 6 Part 1: operating authority (Motus + legacy L&I), authority history; migrations 0003–0004 on Supabase; 38/38 live checks; 215 tests passing. |
 | 2026-10-08 | Phase 6 Part 2: insurance filings (current + past, Motus + legacy); migration 0005 on Supabase; 11/11 carriers validated; 229 tests passing. |
 | 2026-10-08 | Phase 6 Part 3: change detection → timeline events (authority + insurance); migration 0006; fixed authority status precedence (census docket status ≠ authority status); 243 tests passing. |
+| 2026-10-08 | Phase 6 Part 4: authority endpoint, insurance status, Authority & Insurance tab, timeline tab with events. Phase 6 complete. |

@@ -17,10 +17,12 @@ from app.models import Address, Authority, Carrier
 from app.models.enums import AddressType
 from app.repositories.authority_repository import AuthorityRepository
 from app.repositories.carrier_repository import CarrierRepository
+from app.repositories.insurance_repository import InsuranceRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
 from app.schemas.carrier_search import CarrierSearchResponse, CarrierSearchResult, DocketOut
 from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.carrier_search_query import SearchKind, SearchQuery, parse_search_query
+from app.services.insurance_status import insurance_status
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +35,7 @@ class CarrierSearchService:
         carriers: CarrierRepository,
         authorities: AuthorityRepository,
         observed: ObservedValueRepository,
+        insurance: InsuranceRepository,
         *,
         name_limit: int,
         docket_limit: int,
@@ -42,6 +45,7 @@ class CarrierSearchService:
         self.carriers = carriers
         self.authorities = authorities
         self.observed = observed
+        self.insurance = insurance
         self.name_limit = name_limit
         self.docket_limit = docket_limit
 
@@ -104,6 +108,7 @@ class CarrierSearchService:
         ids = [carrier.id for carrier in carriers]
         dockets = self.authorities.for_carriers(ids)
         addresses = self.observed.current_for_carriers(Address, ids)
+        filings = self.insurance.for_carriers(ids)
         results = []
         for carrier in carriers:
             physical = next(
@@ -117,6 +122,9 @@ class CarrierSearchService:
                     dockets=[_docket(a) for a in dockets[carrier.id]],
                     authority_status=authority_status([a.status for a in dockets[carrier.id]]),
                     registration_status=carrier.registration_status,
+                    insurance_status=insurance_status(
+                        dockets[carrier.id], filings[carrier.id]
+                    ).status,
                     fleet_size=carrier.fleet_size,
                     city=physical.city if physical else None,
                     state=physical.state if physical else None,

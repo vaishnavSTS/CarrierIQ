@@ -59,7 +59,9 @@ def filing(
     )
 
 
-ACTIVE = [Authority(docket_prefix=MC, docket_number="139446", status="ACTIVE")]
+ACTIVE = [
+    Authority(docket_prefix=MC, docket_number="139446", status="ACTIVE", status_source="LEGACY_LI")
+]
 
 
 def types(events: list[Any]) -> list[tuple[str, date, Severity]]:
@@ -238,9 +240,20 @@ def test_active_authority_with_no_bipd_on_file() -> None:
     inactive = insurance_events(
         filings, [Authority(docket_prefix=MC, docket_number="139446", status="INACTIVE")], TODAY
     )
+    census_only = insurance_events(
+        filings,
+        [
+            Authority(
+                docket_prefix=MC, docket_number="139446", status="ACTIVE", status_source="CENSUS"
+            )
+        ],
+        TODAY,
+    )
 
     assert "INSURANCE_NONE_ON_FILE" in {e.event_type for e in active}
     assert "INSURANCE_NONE_ON_FILE" not in {e.event_type for e in inactive}
+    # A census docket status is not an authority status: no claim either way.
+    assert "INSURANCE_NONE_ON_FILE" not in {e.event_type for e in census_only}
     none = next(e for e in active if e.event_type == "INSURANCE_NONE_ON_FILE")
     assert (none.event_date, none.severity) == (date(2026, 2, 2), Severity.MEDIUM)
 

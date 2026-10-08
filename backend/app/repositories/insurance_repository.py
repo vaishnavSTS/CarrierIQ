@@ -90,3 +90,15 @@ class InsuranceRepository:
 
         self.db.flush()
         return added, dropped
+
+    def for_carriers(self, carrier_ids: Sequence[int]) -> dict[int, list[Insurance]]:
+        """Filings currently on file, per carrier."""
+        by_carrier: dict[int, list[Insurance]] = {carrier_id: [] for carrier_id in carrier_ids}
+        if carrier_ids:
+            for row in self.db.scalars(
+                select(Insurance).where(
+                    Insurance.carrier_id.in_(carrier_ids), Insurance.on_file.is_(True)
+                )
+            ):
+                by_carrier[row.carrier_id].append(row)
+        return by_carrier

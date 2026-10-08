@@ -15,6 +15,7 @@ from app.ingestion.company_census import CompanyCensusAdapter
 from app.main import app
 from app.repositories.authority_repository import AuthorityRepository
 from app.repositories.carrier_repository import CarrierRepository
+from app.repositories.insurance_repository import InsuranceRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
 from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.carrier_search_service import CarrierSearchService
@@ -76,6 +77,7 @@ def search_service(db: Session, api: FakeDotApi) -> CarrierSearchService:
         CarrierRepository(db),
         AuthorityRepository(db),
         ObservedValueRepository(db),
+        InsuranceRepository(db),
         name_limit=20,
         docket_limit=10,
     )

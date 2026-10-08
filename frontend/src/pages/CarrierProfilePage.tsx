@@ -102,7 +102,7 @@ export function CarrierProfilePage() {
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
         {tab === 'identity' && <IdentitySection profile={profile} />}
-        {tab === 'authority' && <AuthoritySection profile={profile} />}
+        {tab === 'authority' && <AuthoritySection usdotNumber={profile.usdot_number} />}
         {tab === 'safety' && (
           <SafetySection usdotNumber={profile.usdot_number} safety={profile.safety} />
         )}
@@ -115,7 +115,9 @@ export function CarrierProfilePage() {
             </Empty>
           </Section>
         )}
-        {tab === 'timeline' && <TimelineSection changes={profile.recent_changes} />}
+        {tab === 'timeline' && (
+          <TimelineSection events={profile.timeline} changes={profile.recent_changes} />
+        )}
       </div>
     </div>
   )

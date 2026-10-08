@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/StatusBadge'
 import type { CarrierSearchResult } from '../../types/carrier'
 import { formatDateTime } from '../../utils/format'
-import { statusTone } from '../../utils/status'
+import { INSURANCE_LABEL, insuranceTone, statusTone } from '../../utils/status'
 
 function DocketList({ result }: { result: CarrierSearchResult }) {
   if (result.dockets.length === 0) return <span className="text-slate-400">—</span>
@@ -81,11 +81,17 @@ export function CarrierSearchResults({ results }: { results: CarrierSearchResult
                   />
                 )}
               </td>
-              <td
-                className="px-3 py-2 whitespace-nowrap text-xs text-slate-400"
-                title="Insurance data arrives in a later phase"
-              >
-                {r.insurance_status ?? 'Not available'}
+              <td className="px-3 py-2">
+                {r.insurance_status ? (
+                  <StatusBadge
+                    label={INSURANCE_LABEL[r.insurance_status] ?? r.insurance_status}
+                    tone={insuranceTone(r.insurance_status)}
+                  />
+                ) : (
+                  <span className="whitespace-nowrap text-xs text-slate-400">
+                    {r.loaded ? 'No active authority' : '—'}
+                  </span>
+                )}
               </td>
               <td className="px-3 py-2 text-right tabular-nums">{r.fleet_size ?? '—'}</td>
               <td className="px-3 py-2 whitespace-nowrap">

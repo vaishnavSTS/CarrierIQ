@@ -1,4 +1,5 @@
 import type { CarrierSearchResponse } from '../types/carrier'
+import type { CarrierAuthority } from '../types/carrierAuthority'
 import type { CarrierProfile } from '../types/carrierProfile'
 import type { CarrierSafety, InspectionPage } from '../types/carrierSafety'
 import { apiGet } from './client'
@@ -27,4 +28,8 @@ export function fetchCarrierInspections(
     oos_only: String(oosOnly),
   })
   return apiGet<InspectionPage>(`/carriers/${usdotNumber}/inspections?${params}`)
+}
+
+export function fetchCarrierAuthority(usdotNumber: number): Promise<CarrierAuthority> {
+  return apiGet<CarrierAuthority>(`/carriers/${usdotNumber}/authority`)
 }

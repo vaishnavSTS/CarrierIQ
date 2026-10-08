@@ -2,8 +2,8 @@ import type { ReactNode } from 'react'
 
 import { StatusBadge } from '../../components/StatusBadge'
 import type { CarrierProfile } from '../../types/carrierProfile'
-import { formatDateTime } from '../../utils/format'
-import { statusTone } from '../../utils/status'
+import { formatDateTime, sourceLabel } from '../../utils/format'
+import { INSURANCE_LABEL, insuranceTone, statusTone } from '../../utils/status'
 
 function HeaderStatus({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -64,7 +64,19 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
           )}
         </HeaderStatus>
         <HeaderStatus label="Insurance">
-          <span className="text-slate-500">Not available yet</span>
+          {profile.insurance.status ? (
+            <>
+              <StatusBadge
+                label={INSURANCE_LABEL[profile.insurance.status] ?? profile.insurance.status}
+                tone={insuranceTone(profile.insurance.status)}
+              />
+              <span className="text-xs text-slate-500">
+                {sourceLabel(profile.insurance.source_system, profile.insurance.as_of)}
+              </span>
+            </>
+          ) : (
+            <span className="text-slate-500">No active operating authority</span>
+          )}
         </HeaderStatus>
         <HeaderStatus label="Review status">
           <span className="text-slate-500">{profile.review_status ?? 'Not reviewed yet'}</span>

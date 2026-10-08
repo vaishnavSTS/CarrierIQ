@@ -15,7 +15,9 @@ from app.main import app
 from app.repositories.authority_repository import AuthorityRepository
 from app.repositories.carrier_history_repository import CarrierHistoryRepository
 from app.repositories.inspection_repository import InspectionRepository
+from app.repositories.insurance_repository import InsuranceRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
+from app.repositories.timeline_repository import TimelineRepository
 from app.services.carrier_profile_service import CarrierProfileService
 from tests.ingestion.helpers import FakeDotApi, load_inspection_rows
 from tests.services.test_carrier_search import UNITED, Clock, census_row, refresh_service
@@ -36,6 +38,8 @@ def profile_service(
         AuthorityRepository(db),
         InspectionRepository(db),
         CarrierHistoryRepository(db),
+        InsuranceRepository(db),
+        TimelineRepository(db),
     )
 
 
@@ -60,7 +64,7 @@ def test_profile_of_a_real_carrier(db: Session, api: FakeDotApi) -> None:
     # Authority & insurance
     assert profile.authority.status == "ACTIVE"
     assert [(d.prefix, d.number) for d in profile.authority.dockets] == [("MC", "139446")]
-    assert profile.insurance.available is False
+    assert profile.insurance.status is None  # no FMCSA authority data in this fake API
 
     # Safety: 4 inspections, one vehicle out-of-service (82915718, 2024-10-14)
     safety = profile.safety

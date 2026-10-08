@@ -21,7 +21,7 @@ class CarrierSearchResult(BaseModel):
     # ACTIVE when any docket is active; otherwise the first docket's status; None: no dockets.
     authority_status: str | None
     registration_status: str | None
-    insurance_status: str | None = None  # insurance data arrives in Phase 6
+    insurance_status: str | None = None  # ON_FILE | NOT_ON_FILE | None (insurance_status.py)
     review_status: str | None = None  # intelligence signals arrive in Phase 8
     fleet_size: int | None
     city: str | None

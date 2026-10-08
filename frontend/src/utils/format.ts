@@ -28,3 +28,18 @@ export function humanize(field: string): string {
   const text = field.replace(/_/g, ' ')
   return text.charAt(0).toUpperCase() + text.slice(1)
 }
+
+/** "1000000.00" -> "$1,000,000"; "—" when missing. */
+export function formatMoney(value: string | number | null): string {
+  if (value === null || value === '') return '—'
+  return `$${Math.round(Number(value)).toLocaleString('en-US')}`
+}
+
+/** Where an authority / insurance status came from, for display. */
+export function sourceLabel(source: string | null, asOf: string | null): string {
+  if (source === 'MOTUS') return `FMCSA Motus · ${formatDate(asOf)}`
+  if (source === 'LEGACY_LI') return `FMCSA L&I · as of ${formatDate(asOf)} (no longer updated)`
+  if (source === 'CENSUS') return 'Census docket status only — no authority record found'
+  if (source === 'MIXED') return `FMCSA Motus and L&I · as of ${formatDate(asOf)}`
+  return '—'
+}

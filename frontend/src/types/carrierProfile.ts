@@ -74,6 +74,14 @@ export interface Change {
   changed_on: string
 }
 
+export interface TimelineEvent {
+  event_type: string
+  event_date: string
+  severity: 'INFO' | 'LOW' | 'MEDIUM' | 'HIGH'
+  title: string
+  description: string | null
+}
+
 export interface CarrierProfile {
   usdot_number: number
   legal_name: string
@@ -92,7 +100,9 @@ export interface CarrierProfile {
   officers: string[]
   domains: string[]
   authority: { status: string | null; dockets: Docket[] }
-  insurance: { available: boolean; status: string | null }
+  /** ON_FILE | NOT_ON_FILE | null (no active operating authority) */
+  insurance: { status: string | null; source_system: string | null; as_of: string | null }
+  timeline: TimelineEvent[]
   safety: Safety
   equipment: Equipment
   recent_changes: Change[]

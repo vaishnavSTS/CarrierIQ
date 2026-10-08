@@ -15,6 +15,7 @@ from decimal import Decimal
 
 from app.models import Authority, AuthorityHistory, Insurance
 from app.models.enums import Severity
+from app.services.insurance_status import is_active_authority
 
 AUTHORITY_PREFIX = "AUTHORITY_"
 INSURANCE_PREFIX = "INSURANCE_"
@@ -93,7 +94,7 @@ def authority_events(history: Iterable[AuthorityHistory]) -> list[TimelineEventV
         if key in events:
             continue
         detail = _safe(row.reason) or _safe(row.action) or ""
-        parts = [f"{docket}: {detail.capitalize()}" if detail else docket]
+        parts = [f"{docket}: {detail.capitalize().rstrip('.')}." if detail else f"{docket}."]
         if row.authority_type:
             parts.append(f"Authority type: {row.authority_type.capitalize()}.")
         if row.status:
@@ -144,7 +145,7 @@ def insurance_events(
                 f
             )
     active_dockets = {
-        f"{a.docket_prefix.value}{a.docket_number}" for a in authorities if a.status == "ACTIVE"
+        f"{a.docket_prefix.value}{a.docket_number}" for a in authorities if is_active_authority(a)
     }
 
     events: list[TimelineEventValues] = []
