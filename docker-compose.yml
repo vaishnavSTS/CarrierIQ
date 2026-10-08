@@ -1,0 +1,41 @@
+services:
+  # Optional local PostgreSQL. Not started by default (we use Supabase);
+  # run `docker compose --profile localdb up` to use it instead.
+  db:
+    image: postgres:16-alpine
+    profiles: ["localdb"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-carrieriq}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-carrieriq}
+      POSTGRES_DB: ${POSTGRES_DB:-carrieriq}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-carrieriq} -d ${POSTGRES_DB:-carrieriq}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      SOCRATA_APP_TOKEN: ${SOCRATA_APP_TOKEN:-}
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    environment:
+      API_PROXY_TARGET: http://backend:8000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
