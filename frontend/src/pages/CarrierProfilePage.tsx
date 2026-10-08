@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { ApiError } from '../api/client'
 import { AuthoritySection } from '../features/carrier-profile/AuthoritySection'
@@ -11,7 +11,7 @@ import { Empty, Section } from '../features/carrier-profile/Section'
 import { TimelineSection } from '../features/carrier-profile/TimelineSection'
 import { useCarrierProfile } from '../hooks/useCarrierProfile'
 
-const SECTIONS = [
+const TABS = [
   ['identity', 'Identity'],
   ['authority', 'Authority & Insurance'],
   ['safety', 'Safety'],
@@ -20,11 +20,28 @@ const SECTIONS = [
   ['timeline', 'Timeline'],
 ] as const
 
+type TabId = (typeof TABS)[number][0]
+
+const DEFAULT_TAB: TabId = 'identity'
+
+function isTab(value: string | null): value is TabId {
+  return TABS.some(([id]) => id === value)
+}
+
 export function CarrierProfilePage() {
   const { usdot = '' } = useParams()
   const usdotNumber = Number(usdot)
   const { data: profile, error, isPending } = useCarrierProfile(usdotNumber)
   const navigate = useNavigate()
+  // The open tab lives in the URL (?tab=safety) so a refresh or shared link keeps it.
+  const [params, setParams] = useSearchParams()
+  const requested = params.get('tab')
+  const tab: TabId = isTab(requested) ? requested : DEFAULT_TAB
+
+  function openTab(id: TabId) {
+    // replace: switching tabs shouldn't fill the history, so Back still returns to the search.
+    setParams(id === DEFAULT_TAB ? {} : { tab: id }, { replace: true })
+  }
 
   if (!Number.isInteger(usdotNumber) || usdotNumber <= 0) {
     return <Notice>“{usdot}” is not a USDOT number.</Notice>
@@ -58,25 +75,46 @@ export function CarrierProfilePage() {
       </button>
       <ProfileHeader profile={profile} />
 
-      <nav aria-label="Profile sections" className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        {SECTIONS.map(([id, label]) => (
-          <a key={id} href={`#${id}`} className="text-slate-500 hover:text-slate-900">
+      <div
+        role="tablist"
+        aria-label="Profile sections"
+        className="flex flex-wrap gap-1 border-b border-slate-200"
+      >
+        {TABS.map(([id, label]) => (
+          <button
+            key={id}
+            id={`tab-${id}`}
+            type="button"
+            role="tab"
+            aria-selected={tab === id}
+            aria-controls={`panel-${id}`}
+            onClick={() => openTab(id)}
+            className={`-mb-px border-b-2 px-3 py-2 text-sm ${
+              tab === id
+                ? 'border-slate-900 font-medium text-slate-900'
+                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
+            }`}
+          >
             {label}
-          </a>
+          </button>
         ))}
-      </nav>
+      </div>
 
-      <IdentitySection profile={profile} />
-      <AuthoritySection profile={profile} />
-      <SafetySection safety={profile.safety} />
-      <EquipmentSection equipment={profile.equipment} />
-      <Section id="intelligence" title="Intelligence">
-        <Empty>
-          Review signals (authority and insurance changes, shared VINs, identity changes) arrive
-          with the intelligence engine. Every signal will link to the records behind it.
-        </Empty>
-      </Section>
-      <TimelineSection changes={profile.recent_changes} />
+      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+        {tab === 'identity' && <IdentitySection profile={profile} />}
+        {tab === 'authority' && <AuthoritySection profile={profile} />}
+        {tab === 'safety' && <SafetySection safety={profile.safety} />}
+        {tab === 'equipment' && <EquipmentSection equipment={profile.equipment} />}
+        {tab === 'intelligence' && (
+          <Section id="intelligence" title="Intelligence">
+            <Empty>
+              Review signals (authority and insurance changes, shared VINs, identity changes) arrive
+              with the intelligence engine. Every signal will link to the records behind it.
+            </Empty>
+          </Section>
+        )}
+        {tab === 'timeline' && <TimelineSection changes={profile.recent_changes} />}
+      </div>
     </div>
   )
 }

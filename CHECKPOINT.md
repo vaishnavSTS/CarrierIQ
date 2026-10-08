@@ -237,6 +237,10 @@ Built part by part: (1) search API → (2) carrier profile API → (3) search sc
     name result (3320626) loaded it from FMCSA in ~4s; 99999999 → not found; "abc" → invalid.
     No console errors; ESLint + build clean.
 
+  - Changed on request: profile sections are **tabs** (one section shown at a time, Identity by
+    default) instead of one long page. The open tab is kept in the URL (`?tab=safety`) so a
+    refresh or shared link keeps it; switching tabs doesn't add browser-history entries.
+
 Phase 4 done: a user can search by USDOT / MC / name and open a carrier profile; carriers are
 fetched from FMCSA on demand and refreshed after 24h.
 
@@ -339,3 +343,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 4 Part 2: carrier profile API; fixed refresh so census and inspections age separately; 167 tests passing. |
 | 2026-10-08 | Phase 4 Part 3: search screen (dashboard box + results page), checked in Chrome. |
 | 2026-10-08 | Phase 4 Part 4: carrier profile page, checked in Chrome. Phase 4 complete. |
+| 2026-10-08 | Carrier profile sections turned into tabs (Identity default, tab kept in URL). |
