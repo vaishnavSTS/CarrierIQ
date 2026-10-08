@@ -83,6 +83,9 @@ def test_real_record_is_normalized() -> None:
         ("13604794800", "3604794800"),  # US country code dropped
         ("(360) 479-4800", "3604794800"),
         ("0000000000", None),  # placeholder seen on the live API
+        ("01012022", None),  # a date typed into the phone field (USDOT 3695639)
+        ("1", None),
+        ("030433780", None),  # 9 digits
         ("", None),
         (None, None),
     ],

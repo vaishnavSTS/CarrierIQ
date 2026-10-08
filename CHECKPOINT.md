@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 3 (First Federal Data Integration) — Parts 1–4 done, Part 5 next
+**Current phase:** Phase 3 (First Federal Data Integration) — Parts 1–5 done, Part 6 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -16,7 +16,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 |---|---|---|
 | 1 | Project Foundation | ✅ Done (2026-10-08) |
 | 2 | Carrier Data Model | ✅ Done (2026-10-08) |
-| 3 | First Federal Data Integration | 🔄 In progress (Parts 1–4 of 6 done) |
+| 3 | First Federal Data Integration | 🔄 In progress (Parts 1–5 of 6 done) |
 | 4 | Carrier Search | Not started |
 | 5 | Safety | Not started |
 | 6 | Authority & Insurance | Not started |
@@ -131,7 +131,21 @@ Only carriers that are searched get fetched (on-demand); tests use saved real re
   `repositories/carrier_history_repository.py`, `CensusNormalizationService.apply()`; ingest
   results report `changed_attributes`. 7 new tests (89 total); live check (API → empty local DB):
   USDOT 3025897 opened 9 history rows + 1 snapshot, second fetch added nothing.
-- [ ] **Part 5 — Validate with real carriers** loaded into Supabase
+- [x] **Part 5 — Validate with real carriers in Supabase.** First real data in Supabase: 10
+  carriers picked from the live API to cover edge cases — 2972170 (DBA + 3 dockets incl. FF),
+  295014 (inactive), 872417 (pending, Mexico), 297569 (undeliverable physical + mailing),
+  782429 (undeliverable mailing), 295037 (conditional rating), 295023 (unsatisfactory rating),
+  3695639 (cell phone), 603897 (broker), 297080 (2,446 power units). An independent script
+  re-fetched each record with plain HTTP and checked Supabase field by field with its own logic:
+  **260/260 checks passed** (raw payload, carrier fields, addresses, undeliverable flags, phones,
+  officers, domains, dockets, open history, snapshot, run status).
+  - Found + fixed: ~28,000 census phone values are junk (`0`, `1`, `01012022` — a date). Phones
+    now need ≥10 digits; junk stays only in `raw_records`. 3695639's junk cell row is marked
+    not current (rows are never deleted).
+  - Supabase now holds: 10 carriers, 10 raw records, 11 ingestion runs, 20 addresses, 16 phones
+    (15 current), 8 officers, 5 domains, 8 dockets, 89 history rows, 10 snapshots.
+  - SoQL note: numeric-looking census fields (e.g. `power_units`) are text in the API; numeric
+    filters need a cast (`power_units::number > 1000`).
 - [ ] **Part 6 — Inspection data** adapter + normalization (separate dataset)
 
 Open questions for later phases:
@@ -247,3 +261,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 3 Part 2: raw record storage with SHA-256 change detection, 45 tests passing. |
 | 2026-10-08 | Phase 3 Part 3: census normalization into canonical tables; fixed test-schema isolation bug; 82 tests passing. |
 | 2026-10-08 | Phase 3 Part 4: carrier attribute history + snapshots, 89 tests passing. |
+| 2026-10-08 | Phase 3 Part 5: 10 real carriers loaded into Supabase, 260/260 independent checks passed; junk phone values now skipped; 92 tests passing. |

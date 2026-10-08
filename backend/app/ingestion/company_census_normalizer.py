@@ -136,14 +136,20 @@ def normalize_census_row(row: Row) -> NormalizedCensusRecord:
     )
 
 
+# North American (US/Canada/Mexico) numbers have 10 digits. The census holds ~28,000 shorter
+# values such as "0", "1" or "01012022" (a date); they are not phone numbers and would falsely
+# link unrelated carriers in phone matching. They remain in raw_records.
+MIN_PHONE_DIGITS = 10
+
+
 def normalize_phone(value: str | None) -> str | None:
-    """Digits only, without the US country code. All-zero placeholders mean "no number"."""
+    """Digits only, without the US country code; None for placeholders and junk values."""
     if value is None:
         return None
     digits = re.sub(r"\D", "", value)
     if len(digits) == 11 and digits.startswith("1"):
         digits = digits[1:]
-    if not digits or set(digits) == {"0"}:
+    if len(digits) < MIN_PHONE_DIGITS or set(digits) == {"0"}:
         return None
     return digits
 
