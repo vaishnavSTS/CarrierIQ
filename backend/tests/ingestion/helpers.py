@@ -116,6 +116,7 @@ def inspection_api(
 
 
 ORDER_DATASETS = ("p2mt-9ige", "wb4f-neki")  # out-of-service orders, Motus RevokeSuspend
+BOC3_DATASETS = ("6snj-ed7q", "2emp-mxtb")  # Motus BOC3 (plain USDOT), legacy BOC3 (padded)
 
 
 class FakeDotApi:
@@ -141,6 +142,8 @@ class FakeDotApi:
         self.violations = violations or []
         # Out-of-service orders and Motus revocations by dataset ID; empty unless given.
         self.orders: dict[str, list[Row]] = {}
+        # BOC-3 process agent rows by dataset ID; empty unless given.
+        self.boc3: dict[str, list[Row]] = {}
         self.calls: dict[str, int] = {}
         self.down = False
         self.failing: set[str] = set()
@@ -194,6 +197,10 @@ class FakeDotApi:
         if dataset in ORDER_DATASETS:  # out-of-service orders / Motus revocations
             key = "dot_number" if dataset == ORDER_DATASETS[0] else "usdot_number"
             rows = self.orders.get(dataset, [])
+            return httpx.Response(200, json=[r for r in rows if r.get(key) == params.get(key)])
+        if dataset in BOC3_DATASETS:
+            key = "usdot_number" if dataset == BOC3_DATASETS[0] else "dot_number"
+            rows = self.boc3.get(dataset, [])
             return httpx.Response(200, json=[r for r in rows if r.get(key) == params.get(key)])
         return httpx.Response(404, json={"message": "unknown dataset"})
 

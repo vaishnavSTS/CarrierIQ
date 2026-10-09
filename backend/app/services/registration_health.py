@@ -18,6 +18,7 @@ from datetime import date, timedelta
 from typing import Any
 
 from app.models import Address, Authority, Carrier, Insurance
+from app.services.boc3_service import ProcessAgent
 from app.services.insurance_renewal import describe, renewals
 
 MCS150_MONTHS = 24  # FMCSA requires an MCS-150 update at least every 24 months
@@ -80,9 +81,11 @@ def registration_checks(
     today: date,
     insurance: Sequence[Insurance] = (),
     address_peers: Sequence[AddressPeer] = (),
+    process_agents: Sequence[ProcessAgent] | None = None,
 ) -> list[Check]:
     checks = [
         _motus(authorities, carrier, legacy_frozen_on),
+        _boc3(authorities, process_agents, legacy_frozen_on),
         _mcs150(carrier, today),
         _prior_revoke(carrier, census),
         _oos(oos_orders),
@@ -138,6 +141,68 @@ def _motus(authorities: Sequence[Authority], carrier: Carrier, frozen: date) -> 
         f"FMCSA's census lists a docket for USDOT {carrier.usdot_number}, but no authority "
         "record was found for it in FMCSA's public Motus or old L&I data.",
         "FMCSA census",
+    )
+
+
+def _agent_names(agents: Sequence[ProcessAgent]) -> str:
+    names = sorted({f"{a.name} ({a.docket})" if a.docket else a.name for a in agents})
+    more = f" and {len(names) - 2} more" if len(names) > 2 else ""
+    return " and ".join(names[:2]) + more
+
+
+def _boc3(
+    authorities: Sequence[Authority], agents: Sequence[ProcessAgent] | None, frozen: date
+) -> Check | None:
+    """BOC-3 process agent filing; only for carriers with an MC/MX/FF docket."""
+    if not authorities:
+        return None
+    label = "Process agent (BOC-3)"
+    no_dates = "FMCSA's BOC-3 data has no filing dates."
+    if agents is None:
+        return Check(
+            "boc3",
+            label,
+            "unknown",
+            "FMCSA's BOC-3 data has not been fetched for this carrier yet.",
+            "FMCSA BOC-3",
+        )
+    # Missing BOC-3 matters while the authority is active; otherwise it is context.
+    level = (
+        "attention"
+        if any((a.status or "").upper().startswith("ACTIVE") for a in authorities)
+        else "info"
+    )
+    motus = [a for a in agents if a.source_system == "MOTUS"]
+    legacy = [a for a in agents if a.source_system == "LEGACY_LI"]
+    if motus:
+        return Check(
+            "boc3",
+            label,
+            "ok",
+            f"FMCSA's current system (Motus) lists {_agent_names(motus)} as process agent on "
+            f"this carrier's BOC-3 filing. {no_dates}",
+            "FMCSA Motus BOC-3",
+        )
+    if legacy:
+        return Check(
+            "boc3",
+            label,
+            level,
+            f"FMCSA's old L&I system lists {_agent_names(legacy)} as process agent on this "
+            "carrier's BOC-3 filing, but FMCSA's current system (Motus) lists none. The old "
+            f"system stopped updating on {frozen.isoformat()}. Broker tools that read current "
+            f"FMCSA data may show the BOC-3 as missing. {no_dates}",
+            "FMCSA BOC-3 (L&I frozen / Motus)",
+            frozen,
+        )
+    return Check(
+        "boc3",
+        label,
+        level,
+        "FMCSA's public BOC-3 data (Motus and the old L&I system) lists no process agent for "
+        "this carrier. Under FMCSA rules, a for-hire carrier needs a BOC-3 on file to hold "
+        "operating authority, and FMCSA reinstates a revoked authority only with one on file.",
+        "FMCSA BOC-3",
     )
 
 

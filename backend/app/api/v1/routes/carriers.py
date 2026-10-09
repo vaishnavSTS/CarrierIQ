@@ -17,6 +17,7 @@ from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.inspection_repository import InspectionRepository
 from app.repositories.insurance_repository import InsuranceRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
+from app.repositories.raw_record_repository import RawRecordRepository
 from app.repositories.relationship_repository import RelationshipRepository
 from app.repositories.signal_repository import SignalRepository
 from app.repositories.timeline_repository import TimelineRepository
@@ -29,6 +30,7 @@ from app.schemas.carrier_search import CarrierSearchResponse
 from app.schemas.carrier_signals import CarrierSignalsOut
 from app.schemas.jobs import RefreshQueuedOut
 from app.schemas.network import IdentityEventIn, IdentityEventOut, NetworkOut
+from app.services.boc3_service import process_agents
 from app.services.carrier_authority_service import CarrierAuthorityService
 from app.services.carrier_equipment_service import CarrierEquipmentService, EquipmentReader
 from app.services.carrier_profile_service import CarrierProfileService
@@ -164,6 +166,7 @@ def get_carrier_authority_service(
         AuthorityRepository(db),
         InsuranceRepository(db),
         AuthorityHistoryRepository(db),
+        process_agents=lambda usdot: process_agents(RawRecordRepository(db), usdot),
     )
 
 

@@ -61,6 +61,15 @@ class RenewalOut(BaseModel):
     summary: str
 
 
+class ProcessAgentOut(BaseModel):
+    docket: str | None
+    name: str
+    attention: str | None
+    city: str | None
+    state: str | None
+    source_system: str  # MOTUS | LEGACY_LI
+
+
 class CarrierAuthorityOut(BaseModel):
     usdot_number: int
     dockets: list[DocketDetailOut]
@@ -68,3 +77,5 @@ class CarrierAuthorityOut(BaseModel):
     insurance_history: list[InsuranceFilingOut]  # newest first
     authority_history: list[AuthorityActionOut]  # newest first, each action once
     renewals: list[RenewalOut] = []  # insurance on file with a yearly renewal pattern
+    # BOC-3 process agents (no filing dates); None when not fetched yet
+    process_agents: list[ProcessAgentOut] | None = None

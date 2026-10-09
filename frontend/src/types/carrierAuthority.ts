@@ -55,6 +55,16 @@ export interface Renewal {
   summary: string
 }
 
+/** A BOC-3 process agent; FMCSA's BOC-3 data has no filing dates */
+export interface ProcessAgent {
+  docket: string | null
+  name: string
+  attention: string | null
+  city: string | null
+  state: string | null
+  source_system: string // MOTUS | LEGACY_LI
+}
+
 export interface CarrierAuthority {
   usdot_number: number
   dockets: DocketDetail[]
@@ -62,4 +72,6 @@ export interface CarrierAuthority {
   insurance_history: InsuranceFiling[]
   authority_history: AuthorityAction[]
   renewals: Renewal[]
+  /** null when BOC-3 data has not been fetched yet */
+  process_agents: ProcessAgent[] | null
 }

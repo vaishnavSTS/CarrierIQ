@@ -791,3 +791,4 @@ and ownership events → (3) the Network & Identity tab.
 | 2026-10-09 | Signal evidence opens as a centred pop-up instead of a side panel; plain-word labels for shared-contact and ownership-event rules. |
 | 2026-10-09 | Address matching ignores spelling differences (SOUTH/S, STREET/ST; query by house number + ZIP); undeliverable-address check names carriers at the same address and whether FMCSA marks them (Vanek: Re-Ship not marked); 335 tests passing. |
 | 2026-10-09 | Profile header heads-up: linked carriers by name and USDOT (shared phone / email / address / officer), links to the Network tab; amber when one is not active. |
+| 2026-10-09 | BOC-3 process agents from Motus (6snj-ed7q) and legacy L&I (2emp-mxtb): line on each docket card, registration check (ok in Motus / attention if only in frozen L&I or none while authority active); refresh detail source; 337 tests passing. |

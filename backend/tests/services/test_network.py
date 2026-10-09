@@ -14,8 +14,9 @@ from app.db.session import get_db
 from app.main import app
 from app.models import Address, Authority, Carrier
 from app.models.enums import AddressType, DocketPrefix
+from app.services.boc3_service import ProcessAgent
 from app.services.registration_health import address_peer, registration_checks
-from tests.ingestion.helpers import ORDER_DATASETS, FakeDotApi, load_census_rows
+from tests.ingestion.helpers import BOC3_DATASETS, ORDER_DATASETS, FakeDotApi, load_census_rows
 from tests.services.test_contact_links import OTHERS
 
 TODAY = date(2026, 10, 9)
@@ -129,6 +130,33 @@ def test_undeliverable_address_names_carriers_at_the_same_address() -> None:
     assert "why one record is marked and another is not" in detail
 
 
+def agent(source: str, name: str = "ALLAMERICAN AGENTS OF PROCESS") -> ProcessAgent:
+    return ProcessAgent("MC1363132", name, None, "SIOUX FALLS", "SD", source)
+
+
+def test_boc3_process_agent() -> None:
+    motus = [authority("MOTUS")]
+    assert "boc3" not in checks(process_agents=[])  # no docket: no BOC-3 needed
+    assert checks(authorities=motus)["boc3"].status == "unknown"  # not fetched yet
+
+    ok = checks(authorities=motus, process_agents=[agent("MOTUS")])["boc3"]
+    assert ok.status == "ok"
+    assert ok.detail.startswith(
+        "FMCSA's current system (Motus) lists ALLAMERICAN AGENTS OF PROCESS (MC1363132) as "
+        "process agent"
+    )
+
+    legacy = checks(authorities=motus, process_agents=[agent("LEGACY_LI")])["boc3"]
+    assert (legacy.status, legacy.as_of) == ("attention", FROZEN)
+    assert "but FMCSA's current system (Motus) lists none" in legacy.detail
+
+    missing = checks(authorities=motus, process_agents=[])["boc3"]
+    assert missing.status == "attention"
+    assert "lists no process agent for this carrier" in missing.detail
+    revoked = Authority(docket_prefix=DocketPrefix.MC, docket_number="1", status="REVOKED")
+    assert checks(authorities=[revoked], process_agents=[])["boc3"].status == "info"
+
+
 @pytest.fixture
 def api(db: Session) -> Iterator[TestClient]:
     fake = FakeDotApi(load_census_rows() + OTHERS)
@@ -140,6 +168,16 @@ def api(db: Session) -> Iterator[TestClient]:
             "status": "RESCINDED",
         }
     ]
+    legacy_row = {
+        "docket_number": "MC123456",
+        "dot_number": "00295017",
+        "co_name": "ALLAMERICAN AGENTS OF PROCESS",
+        "attn_to_or_title": "DAVID B. ROSE,  VP",
+        "city": "SIOUX FALLS,",
+        "state_code": "SD",
+    }
+    # The same agent listed twice, plus a different carrier whose padded number only ends alike.
+    fake.boc3[BOC3_DATASETS[1]] = [legacy_row, legacy_row, {**legacy_row, "dot_number": "03295017"}]
 
     def fake_client() -> Iterator[Any]:
         yield fake.client()
@@ -167,6 +205,21 @@ def test_network_endpoint(api: TestClient) -> None:
     statuses = {c["key"]: c["status"] for c in body["registration_checks"]}
     assert statuses["oos"] == "info"  # an old, rescinded order
     assert body["ownership"]["state"] == "NONE"
+
+
+def test_authority_endpoint_lists_process_agents(api: TestClient) -> None:
+    body = api.get("/api/v1/carriers/295017/authority").json()
+
+    assert body["process_agents"] == [
+        {
+            "docket": "MC123456",
+            "name": "ALLAMERICAN AGENTS OF PROCESS",
+            "attention": "DAVID B. ROSE, VP",
+            "city": "SIOUX FALLS",
+            "state": "SD",
+            "source_system": "LEGACY_LI",
+        }
+    ]
 
 
 def test_ownership_attestation_and_correction(api: TestClient) -> None:

@@ -7,7 +7,12 @@ import {
   classifications,
   needsForHireAuthority,
 } from '../../utils/classification'
-import type { DocketDetail, InsuranceFiling, Renewal } from '../../types/carrierAuthority'
+import type {
+  DocketDetail,
+  InsuranceFiling,
+  ProcessAgent,
+  Renewal,
+} from '../../types/carrierAuthority'
 import { formatDate, formatMoney, humanize, sourceLabel } from '../../utils/format'
 import { statusTone, type Tone } from '../../utils/status'
 import { Empty, Section } from './Section'
@@ -49,7 +54,39 @@ function YesNo({
   )
 }
 
-function DocketCard({ docket }: { docket: DocketDetail }) {
+function ProcessAgentLine({ agents }: { agents: ProcessAgent[] | null }) {
+  if (agents === null) return null
+  const motus = agents.filter((a) => a.source_system === 'MOTUS')
+  const shown = motus.length > 0 ? motus : agents
+  return (
+    <div className="mt-3 border-t border-slate-100 pt-2 text-xs">
+      <span className="text-slate-500">Process agent (BOC-3): </span>
+      {shown.length === 0 ? (
+        <span className={motus.length === 0 ? 'text-amber-300' : ''}>
+          None listed in FMCSA’s public BOC-3 data
+        </span>
+      ) : (
+        <>
+          {shown.map((a) => a.name).join(', ')}
+          {shown[0].city && (
+            <span className="text-slate-500">
+              {' '}
+              · {shown[0].city}
+              {shown[0].state && `, ${shown[0].state}`}
+            </span>
+          )}
+          <div className="mt-0.5 text-slate-500">
+            {motus.length > 0
+              ? 'From FMCSA Motus (current system); no filing date in the data'
+              : 'Only in FMCSA’s old L&I system (frozen May 14, 2026), not in Motus; no filing date in the data'}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function DocketCard({ docket, agents }: { docket: DocketDetail; agents: ProcessAgent[] | null }) {
   const required = docket.bipd_required ? Number(docket.bipd_required) : 0
   const onFile = docket.bipd_on_file ? Number(docket.bipd_on_file) : 0
   const short = docket.status === 'ACTIVE' && required > 0 && onFile < required
@@ -96,6 +133,7 @@ function DocketCard({ docket }: { docket: DocketDetail }) {
           </dd>
         </dl>
       )}
+      <ProcessAgentLine agents={agents} />
     </div>
   )
 }
@@ -266,7 +304,17 @@ export function AuthoritySection({
           ) : (
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {data.dockets.map((d) => (
-                <DocketCard key={`${d.prefix}${d.number}`} docket={d} />
+                <DocketCard
+                  key={`${d.prefix}${d.number}`}
+                  docket={d}
+                  agents={
+                    data.process_agents === null || data.process_agents === undefined
+                      ? null
+                      : data.process_agents.filter(
+                          (a) => a.docket === null || a.docket === `${d.prefix}${d.number}`,
+                        )
+                  }
+                />
               ))}
             </div>
           )}

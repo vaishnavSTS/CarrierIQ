@@ -27,6 +27,7 @@ const FIX: Record<string, string> = {
   revocations:
     'Confirming that insurance and the BOC-3 process agent filing are active; FMCSA reinstates authority only with both on file.',
   address: 'Correcting or confirming the address on an MCS-150.',
+  boc3: 'Having a process agent company file a BOC-3 with FMCSA (most carriers use a blanket agent that covers every state).',
 }
 
 const RENEWAL_FIX =

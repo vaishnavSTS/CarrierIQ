@@ -12,6 +12,7 @@ from app.ingestion.socrata_client import SocrataClient
 from app.ingestion.vpic import VpicClient
 from app.repositories.carrier_repository import CarrierRepository
 from app.services.authority_ingestion_service import build_authority_ingestion_service
+from app.services.boc3_service import build_boc3_service
 from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.census_ingestion_service import build_census_ingestion_service
 from app.services.contact_link_service import build_contact_link_service
@@ -36,6 +37,8 @@ def build_refresh_service(
             build_contact_link_service(db, client),
             # Out-of-service orders and authority revocations / suspensions.
             build_registration_orders_service(db, client),
+            # BOC-3 process agents (Motus and old L&I).
+            build_boc3_service(db, client),
             build_inspection_ingestion_service(db, client),
             # After inspections: checks this carrier's VINs against all FMCSA inspections.
             build_shared_vin_service(db, client),

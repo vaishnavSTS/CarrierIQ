@@ -14,8 +14,10 @@ from app.schemas.carrier_authority import (
     CarrierAuthorityOut,
     DocketDetailOut,
     InsuranceFilingOut,
+    ProcessAgentOut,
     RenewalOut,
 )
+from app.services.boc3_service import ProcessAgent
 from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.insurance_renewal import describe, renewals
 
@@ -30,7 +32,9 @@ class CarrierAuthorityService:
         insurance: InsuranceRepository,
         history: AuthorityHistoryRepository,
         today: Callable[[], date] = lambda: datetime.now(UTC).date(),
+        process_agents: Callable[[int], list[ProcessAgent] | None] = lambda _: None,
     ) -> None:
+        self.process_agents = process_agents
         self.refresh = refresh
         self.authorities = authorities
         self.insurance = insurance
@@ -88,6 +92,11 @@ class CarrierAuthorityService:
                 )
             ],
             authority_history=list(actions.values()),
+            process_agents=(
+                None
+                if (agents := self.process_agents(carrier.usdot_number)) is None
+                else [ProcessAgentOut(**vars(a)) for a in agents]
+            ),
             renewals=[
                 RenewalOut(
                     docket=r.docket,

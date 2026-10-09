@@ -28,6 +28,7 @@ from app.schemas.network import (
     OwnershipStateOut,
     SharedDetailOut,
 )
+from app.services.boc3_service import process_agents
 from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.contact_link_service import (
     CONTACT_LINK_TYPES,
@@ -95,6 +96,7 @@ class NetworkService:
             self.today(),
             InsuranceRepository(self.db).for_carrier(carrier.id),
             self._address_peers(carrier),
+            process_agents(self.raw_records, usdot_number),
         )
         events = self.events.for_carrier(carrier.id)
         state = ownership_state(events)
