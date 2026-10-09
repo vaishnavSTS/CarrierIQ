@@ -788,3 +788,4 @@ and ownership events → (3) the Network & Identity tab.
 | 2026-10-09 | Phase 11 Part 2: registration health checks, out-of-service orders and revocations, ownership events with timeline and signal, /network endpoint; migration 0013; 326 tests passing. |
 | 2026-10-09 | Phase 11 Part 3: Network & Identity tab (broker-flag summary, registration health, linked carriers, identity history, team notes); authority transfers recognised; 327 tests passing. |
 | 2026-10-09 | Insurance renewal estimate from yearly filing dates (Authority tab + Network check); wording pass; 333 tests passing. |
+| 2026-10-09 | Signal evidence opens as a centred pop-up instead of a side panel; plain-word labels for shared-contact and ownership-event rules. |
