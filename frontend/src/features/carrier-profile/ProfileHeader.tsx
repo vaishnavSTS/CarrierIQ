@@ -6,6 +6,7 @@ import type { CarrierProfile } from '../../types/carrierProfile'
 import { needsForHireAuthority } from '../../utils/classification'
 import { formatDateTime, sourceLabel } from '../../utils/format'
 import { reviewLabel } from '../../utils/review'
+import { RefreshButton } from './RefreshButton'
 import { INSURANCE_LABEL, insuranceTone, severityTone, statusTone } from '../../utils/status'
 
 function HeaderStatus({ label, children }: { label: string; children: ReactNode }) {
@@ -36,6 +37,7 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
         </div>
         <div className="text-right text-xs text-slate-500">
           Data refreshed {formatDateTime(profile.last_refreshed_at)}
+          <RefreshButton usdotNumber={profile.usdot_number} />
           {profile.stale && (
             <div className="mt-1 text-amber-700">
               <StatusBadge label="stale" tone="warn" /> FMCSA could not be reached; showing stored

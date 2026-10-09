@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 10 (Background Processing) — Parts 1–2 done, Part 3 next
+**Current phase:** All 10 phases done — the MVP checklist below is met
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -23,7 +23,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 7 | Equipment / VIN | ✅ Done (2026-10-08) |
 | 8 | Intelligence Engine | ✅ Done (2026-10-08) |
 | 9 | Intelligence UI | ✅ Done (2026-10-09) |
-| 10 | Background Processing | 🔄 In progress (Parts 1–2 of 3 done) |
+| 10 | Background Processing | ✅ Done (2026-10-09) |
 
 ---
 
@@ -590,7 +590,7 @@ relationship view.
 
 ---
 
-## Phase 10 — Background Processing 🔄
+## Phase 10 — Background Processing ✅
 
 Spec Section 18 / decision log: no Redis for the MVP — React → FastAPI → PostgreSQL → Python
 worker, with the queue swappable later. Built part by part: (1) job queue + worker + retries →
@@ -629,23 +629,39 @@ and the queue evaluation.
   - Live (Supabase): a round with a 30-minute window queued 295014 and 295017; the worker
     refreshed both from FMCSA in 33s. With the normal 24h window nothing was due.
   - 4 new tests (307 total).
-- [ ] Job status (API + dashboard), "refresh now"
-- [ ] Optional queue: written evaluation of Redis vs RabbitMQ vs cloud queue
+- [x] **Part 3 — Job status, "refresh now", queue evaluation.**
+  - `GET /api/v1/jobs` (counts by status, whether a worker is running, recent jobs; filter by
+    status), `GET /api/v1/jobs/{id}`, `POST /api/v1/carriers/{usdot}/refresh` (202; queues a
+    forced refresh, or returns the one already waiting). `JobStatusService`, `JobRepository`.
+  - Worker heartbeat: `worker_heartbeats` (migration `0012`); a running worker checks in every
+    30s; "running" = seen within 3 check-ins. (First version had no `id` column; the schema
+    test enforcing id + created_at on every table caught it.)
+  - Frontend: Dashboard "Background jobs" card (counts, worker running / not, how to start one,
+    recent jobs with carrier links and errors; refreshes every 5s). Carrier header "Refresh now"
+    follows its job (queued → running → refreshed / retrying / failed), warns when no worker is
+    running, and reloads the carrier's data when it succeeds.
+  - `docs/queue-evaluation.md`: PostgreSQL vs Redis vs RabbitMQ vs cloud queues. Decision: stay
+    on PostgreSQL (spec 18, decision log); the public sources, not the queue, are the limit.
+    Lists when to switch (volume, database load, fan-out, cloud hosting), what to pick, and how
+    (one `JobQueue` class; handlers and intelligence untouched).
+  - Checked in Chrome: Refresh now on 295023 → "no worker running" warning → `--once` → page
+    showed "Refreshed" and the new time by itself; dashboard card correct. No console errors.
+  - Supabase at migration 0012. 3 new tests (310 total).
 
 ---
 
 ## MVP done when a user can (spec Section 33)
 
-- [ ] 1. Open the application
-- [ ] 2. Search for a carrier
-- [ ] 3. View normalized carrier information
-- [ ] 4. View authority and insurance
-- [ ] 5. View safety/inspection history
-- [ ] 6. View equipment/VIN information
-- [ ] 7. View historical changes
-- [ ] 8. See intelligence signals
-- [ ] 9. Open a signal
-- [ ] 10. See the evidence behind it
+- [x] 1. Open the application
+- [x] 2. Search for a carrier
+- [x] 3. View normalized carrier information
+- [x] 4. View authority and insurance
+- [x] 5. View safety/inspection history
+- [x] 6. View equipment/VIN information
+- [x] 7. View historical changes
+- [x] 8. See intelligence signals
+- [x] 9. Open a signal
+- [x] 10. See the evidence behind it
 
 > The user must be able to understand why the system generated a signal.
 
@@ -689,3 +705,4 @@ and the queue evaluation.
 | 2026-10-09 | Phase 9 Part 3: timeline → signal links (signal in the URL), relationship view of carriers sharing equipment; Phase 9 done. |
 | 2026-10-09 | Phase 10 Part 1: PostgreSQL job queue (SKIP LOCKED, dedupe, backoff retries, dead-worker recovery), worker process; migration 0011; 303 tests passing. |
 | 2026-10-09 | Phase 10 Part 2: scheduled ingestion (stale carriers queued every 15 min, batch 50, failure cooldown), Docker worker service; 307 tests passing. |
+| 2026-10-09 | Phase 10 Part 3: job status API + dashboard card, worker heartbeat, Refresh now, queue evaluation doc; migration 0012; 310 tests passing. All 10 phases done. |

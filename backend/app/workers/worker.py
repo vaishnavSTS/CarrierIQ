@@ -17,7 +17,7 @@ import os
 import socket
 import time
 from collections.abc import Callable, Mapping
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.orm import Session
 
@@ -27,6 +27,7 @@ from app.jobs.handlers import HANDLERS, Handler
 from app.jobs.queue import JobQueue, PostgresJobQueue
 from app.jobs.scheduler import Schedule, schedule_stale_refreshes
 from app.models.enums import JobStatus
+from app.repositories.job_repository import JobRepository
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +87,14 @@ class Worker:
         with self.session_factory() as db:
             return schedule_stale_refreshes(db, self.queue_factory(db), datetime.now(UTC))
 
+    def beat(self, started: datetime) -> None:
+        """Check in, so the app can show that a worker is running."""
+        try:
+            with self.session_factory() as db:
+                JobRepository(db).beat(self.name, started, datetime.now(UTC))
+        except Exception:  # a missed check-in must not stop the worker
+            logger.exception("Heartbeat failed")
+
     def run_forever(self) -> None:
         settings = get_settings()
         poll = settings.worker_poll_seconds
@@ -96,7 +105,12 @@ class Worker:
             poll,
             f"every {settings.schedule_interval_minutes:.0f} min" if schedule else "off",
         )
+        started = datetime.now(UTC)
+        next_beat = started
         while True:
+            if datetime.now(UTC) >= next_beat:
+                self.beat(started)
+                next_beat = datetime.now(UTC) + timedelta(seconds=settings.worker_heartbeat_seconds)
             if schedule is not None and schedule.due():
                 try:
                     self.schedule_round()

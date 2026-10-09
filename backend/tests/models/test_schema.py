@@ -32,6 +32,7 @@ TABLES = {
     # Operational
     "ingestion_runs",
     "jobs",
+    "worker_heartbeats",
 }
 
 # Rows in these tables always come from a source record (Engineering Principle 5).

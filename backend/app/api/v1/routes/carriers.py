@@ -1,9 +1,10 @@
 from collections.abc import Iterator
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path, Query
+from fastapi import APIRouter, Depends, Path, Query, status
 from sqlalchemy.orm import Session
 
+from app.api.v1.routes.jobs import get_job_status_service
 from app.core.config import get_settings
 from app.db.session import get_db
 from app.ingestion.company_census import CompanyCensusAdapter
@@ -26,6 +27,7 @@ from app.schemas.carrier_profile import CarrierProfile
 from app.schemas.carrier_safety import CarrierSafetyOut, InspectionPageOut
 from app.schemas.carrier_search import CarrierSearchResponse
 from app.schemas.carrier_signals import CarrierSignalsOut
+from app.schemas.jobs import RefreshQueuedOut
 from app.services.carrier_authority_service import CarrierAuthorityService
 from app.services.carrier_equipment_service import CarrierEquipmentService, EquipmentReader
 from app.services.carrier_profile_service import CarrierProfileService
@@ -34,6 +36,7 @@ from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.carrier_safety_service import CarrierSafetyService
 from app.services.carrier_search_service import CarrierSearchService
 from app.services.carrier_signals_service import CarrierSignalsService
+from app.services.job_status_service import JobStatusService
 
 router = APIRouter(prefix="/carriers", tags=["carriers"])
 
@@ -197,3 +200,14 @@ def get_carrier_signals(
     service: Annotated[CarrierSignalsService, Depends(get_carrier_signals_service)],
 ) -> CarrierSignalsOut:
     return service.get(usdot_number)
+
+
+@router.post(
+    "/{usdot_number}/refresh", response_model=RefreshQueuedOut, status_code=status.HTTP_202_ACCEPTED
+)
+def queue_carrier_refresh(
+    usdot_number: UsdotPath,
+    service: Annotated[JobStatusService, Depends(get_job_status_service)],
+) -> RefreshQueuedOut:
+    """Ask the background worker to re-fetch this carrier from every source now."""
+    return service.queue_refresh(usdot_number)

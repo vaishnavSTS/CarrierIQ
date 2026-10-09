@@ -21,6 +21,7 @@ from app.models.relationship import Relationship
 from app.models.signal_evidence import SignalEvidence
 from app.models.timeline_event import TimelineEvent
 from app.models.vehicle import Vehicle
+from app.models.worker_heartbeat import WorkerHeartbeat
 
 __all__ = [
     "Address",
@@ -44,4 +45,5 @@ __all__ = [
     "SignalEvidence",
     "TimelineEvent",
     "Vehicle",
+    "WorkerHeartbeat",
 ]

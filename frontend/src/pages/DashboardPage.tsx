@@ -1,4 +1,5 @@
 import { CarrierSearchBox } from '../features/carrier-search/CarrierSearchBox'
+import { JobsCard } from '../features/system-status/JobsCard'
 import { SystemStatusCard } from '../features/system-status/SystemStatusCard'
 
 export function DashboardPage() {
@@ -7,7 +8,7 @@ export function DashboardPage() {
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Recently viewed carriers and recent intelligence events arrive in later phases.
+          Search FMCSA carriers; background jobs keep loaded carriers up to date.
         </p>
       </div>
 
@@ -23,6 +24,7 @@ export function DashboardPage() {
         </section>
         <SystemStatusCard />
       </div>
+      <JobsCard />
     </div>
   )
 }
