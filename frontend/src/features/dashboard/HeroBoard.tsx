@@ -45,8 +45,8 @@ const PLACEHOLDER: RecentSignal[] = [
   detected_at: null,
 }))
 
-const COLUMNS = 5
-const PER_COLUMN = 4
+const COLUMNS = 4
+const PER_COLUMN = 6
 
 /** Roads across the board (viewBox 0–1000). Each carries a few trucks and cars. */
 const ROUTES = [
@@ -108,7 +108,7 @@ function Card({ signal }: { signal: RecentSignal }) {
 }
 
 /**
- * Dashboard background, after the moving load board on vektortms.com: a tilted 3D board of
+ * Dashboard hero background, after the moving load board on vektortms.com: a tilted 3D board of
  * carrier signal cards drifting in columns across the whole page, with glowing roads carrying
  * trucks and cars, behind the dashboard's see-through cards. Built from this app's own newest signals.
  * Decorative only (hidden from screen readers); it holds still for people who prefer reduced
@@ -130,9 +130,9 @@ export function HeroBoard({ signals }: { signals: RecentSignal[] | undefined }) 
   )
 
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-      <div className="absolute inset-0 hidden [perspective:1400px] md:block">
-        <div className="hero-board absolute left-[22%] top-[0%] h-[240%] w-[160%] [transform:rotateX(52deg)_rotateZ(-26deg)] [transform-style:preserve-3d]">
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className="absolute inset-y-0 right-0 hidden w-[72%] [perspective:1400px] md:block">
+        <div className="hero-board absolute left-[-10%] top-[-55%] h-[210%] w-[150%] [transform:rotateX(52deg)_rotateZ(-26deg)] [transform-style:preserve-3d]">
           <div className="absolute inset-0 flex justify-center gap-6">
             {columns.map((cards, c) => (
               <div
@@ -148,10 +148,9 @@ export function HeroBoard({ signals }: { signals: RecentSignal[] | undefined }) 
           </div>
         </div>
       </div>
-      {/* Roads on their own larger panel at the same tilt, drawn above the cards. They fade out
-          towards the top left so the headline and search stay clear. */}
-      <div className="absolute inset-0 hidden [mask-image:linear-gradient(150deg,transparent_38%,black_62%)] [perspective:1400px] md:block">
-        <div className="absolute left-[-50%] top-[-90%] h-[280%] w-[200%] [transform:rotateX(52deg)_rotateZ(-26deg)]">
+      {/* Roads on their own larger panel at the same tilt, drawn above the cards. */}
+      <div className="absolute inset-y-0 right-0 hidden w-[72%] [perspective:1400px] md:block">
+        <div className="absolute left-[-30%] top-[-80%] h-[260%] w-[180%] [transform:rotateX(52deg)_rotateZ(-26deg)]">
           <svg
             ref={routes}
             className="absolute inset-0 size-full"
@@ -203,10 +202,10 @@ export function HeroBoard({ signals }: { signals: RecentSignal[] | undefined }) 
           </svg>
         </div>
       </div>
-      {/* A light tint and soft edges keep the board behind the cards, not competing with them. */}
-      <div className="absolute inset-0 bg-canvas/40" />
-      <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-canvas to-transparent" />
-      <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-canvas to-transparent" />
+      {/* Keeps the headline and search readable over the board, like Vektor's left fade. */}
+      <div className="absolute inset-0 bg-gradient-to-r from-surface from-35% via-surface/85 via-55% to-surface/10" />
+      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface to-transparent" />
+      <div className="absolute -left-24 -top-32 size-96 rounded-full bg-violet-600/25 blur-3xl" />
     </div>
   )
 }

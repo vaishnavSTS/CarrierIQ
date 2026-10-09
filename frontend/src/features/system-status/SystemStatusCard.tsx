@@ -24,7 +24,7 @@ export function SystemStatusCard() {
   const { data, isPending, isError } = useHealth()
 
   return (
-    <section className="rounded-2xl border border-slate-200/70 bg-surface/25 p-5 shadow-xl shadow-black/20">
+    <section className="rounded-2xl border border-slate-200 bg-surface p-5">
       <h2 className="text-sm font-semibold text-slate-900">System data status</h2>
       <dl className="mt-2 divide-y divide-slate-100">
         {isPending && <StatusRow label="API" value="checking" tone="pending" />}

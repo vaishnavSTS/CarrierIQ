@@ -14,7 +14,7 @@ export function SeverityBreakdown({ totals }: { totals: DashboardTotals | undefi
   const counts = totals?.open_by_severity
   const max = Math.max(1, ...(counts ? Object.values(counts) : [0]))
   return (
-    <section className="rounded-2xl border border-slate-200/70 bg-surface/25 p-5 shadow-xl shadow-black/20">
+    <section className="rounded-2xl border border-slate-200 bg-surface p-5">
       <h2 className="text-sm font-semibold text-slate-900">Open signals by severity</h2>
       <p className="text-xs text-slate-500">Across all loaded carriers, not yet reviewed</p>
       <dl className="mt-4 space-y-3">
