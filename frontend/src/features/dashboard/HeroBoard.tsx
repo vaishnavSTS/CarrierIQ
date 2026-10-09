@@ -45,9 +45,8 @@ const PLACEHOLDER: RecentSignal[] = [
   detected_at: null,
 }))
 
-// Enough cards that every column runs past the bottom of the screen, even mid-loop.
-const COLUMNS = 10
-const PER_COLUMN = 16
+const COLUMNS = 7
+const PER_COLUMN = 6
 
 /** Roads across the board (viewBox 0–1000). Each carries a few trucks and cars. */
 const ROUTES = [
@@ -184,7 +183,7 @@ export function HeroBoard({ signals }: { signals: RecentSignal[] | undefined }) 
             })}
           </svg>
 
-          <div className="absolute inset-0 flex justify-around">
+          <div className="absolute inset-0 flex justify-center gap-6">
             {columns.map((cards, c) => (
               <div
                 key={c}
