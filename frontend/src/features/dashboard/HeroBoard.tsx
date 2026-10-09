@@ -4,13 +4,11 @@ import {
   FileWarning,
   Gauge,
   IdCard,
-  Pause,
-  Play,
   TrendingUp,
   type LucideIcon,
 } from 'lucide-react'
 import { useReducedMotion } from 'motion/react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
 import type { RecentSignal } from '../../types/dashboard'
 
@@ -75,18 +73,18 @@ function Card({ signal }: { signal: RecentSignal }) {
 /**
  * Hero background, after the moving load board on vektortms.com: a tilted 3D board of carrier
  * signal cards drifting in columns, with glowing routes and moving dots. Built from this app's
- * own newest signals. Decorative only (hidden from screen readers); a button pauses it, and it
- * starts paused for people who prefer reduced motion.
+ * own newest signals. Decorative only (hidden from screen readers); it holds still for people
+ * who prefer reduced motion.
  */
 export function HeroBoard({ signals }: { signals: RecentSignal[] | undefined }) {
   const reduce = useReducedMotion()
-  const [paused, setPaused] = useState(Boolean(reduce))
   const routes = useRef<SVGSVGElement>(null)
 
   useEffect(() => {
-    if (paused) routes.current?.pauseAnimations()
+    // The card columns and route dashes stop through CSS; the moving dots are SVG animations.
+    if (reduce) routes.current?.pauseAnimations()
     else routes.current?.unpauseAnimations()
-  }, [paused])
+  }, [reduce])
 
   const source = signals && signals.length > 0 ? signals : PLACEHOLDER
   const columns = Array.from({ length: COLUMNS }, (_, c) =>
@@ -94,79 +92,68 @@ export function HeroBoard({ signals }: { signals: RecentSignal[] | undefined }) 
   )
 
   return (
-    <>
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute inset-y-0 right-0 hidden w-[72%] [perspective:1400px] md:block">
-          <div
-            className={`hero-board absolute left-[-10%] top-[-55%] h-[210%] w-[150%] [transform:rotateX(52deg)_rotateZ(-26deg)] [transform-style:preserve-3d] ${paused ? 'is-paused' : ''}`}
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div className="absolute inset-y-0 right-0 hidden w-[72%] [perspective:1400px] md:block">
+        <div
+          className={`hero-board absolute left-[-10%] top-[-55%] h-[210%] w-[150%] [transform:rotateX(52deg)_rotateZ(-26deg)] [transform-style:preserve-3d] `}
+        >
+          <svg
+            ref={routes}
+            className="absolute inset-0 size-full"
+            viewBox="0 0 1000 1000"
+            preserveAspectRatio="none"
           >
-            <svg
-              ref={routes}
-              className="absolute inset-0 size-full"
-              viewBox="0 0 1000 1000"
-              preserveAspectRatio="none"
-            >
-              <defs>
-                <linearGradient id="route-glow" x1="0" x2="1">
-                  <stop offset="0" stopColor="#a78bfa" stopOpacity="0" />
-                  <stop offset="0.5" stopColor="#c4b5fd" stopOpacity="0.9" />
-                  <stop offset="1" stopColor="#f0abfc" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              {[
-                'M -50 820 C 220 640, 380 760, 560 520 S 860 260, 1050 180',
-                'M -50 380 C 160 470, 330 300, 520 360 S 820 640, 1050 560',
-                'M 120 1050 C 260 820, 520 900, 640 700 S 760 380, 980 -40',
-              ].map((d, i) => (
-                <g key={d}>
-                  <path d={d} fill="none" stroke="#8b5cf6" strokeOpacity="0.25" strokeWidth="10" />
-                  <path
-                    d={d}
-                    fill="none"
-                    stroke="url(#route-glow)"
-                    strokeWidth="3"
-                    strokeDasharray="14 18"
-                    className="route-dash"
-                  />
-                  <circle r="9" fill="#f5d0fe">
-                    <animateMotion dur={`${11 + i * 4}s`} repeatCount="indefinite" path={d} />
-                  </circle>
-                  <circle r="22" fill="#c084fc" opacity="0.25">
-                    <animateMotion dur={`${11 + i * 4}s`} repeatCount="indefinite" path={d} />
-                  </circle>
-                </g>
-              ))}
-            </svg>
+            <defs>
+              <linearGradient id="route-glow" x1="0" x2="1">
+                <stop offset="0" stopColor="#a78bfa" stopOpacity="0" />
+                <stop offset="0.5" stopColor="#c4b5fd" stopOpacity="0.9" />
+                <stop offset="1" stopColor="#f0abfc" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            {[
+              'M -50 820 C 220 640, 380 760, 560 520 S 860 260, 1050 180',
+              'M -50 380 C 160 470, 330 300, 520 360 S 820 640, 1050 560',
+              'M 120 1050 C 260 820, 520 900, 640 700 S 760 380, 980 -40',
+            ].map((d, i) => (
+              <g key={d}>
+                <path d={d} fill="none" stroke="#8b5cf6" strokeOpacity="0.25" strokeWidth="10" />
+                <path
+                  d={d}
+                  fill="none"
+                  stroke="url(#route-glow)"
+                  strokeWidth="3"
+                  strokeDasharray="14 18"
+                  className="route-dash"
+                />
+                <circle r="9" fill="#f5d0fe">
+                  <animateMotion dur={`${11 + i * 4}s`} repeatCount="indefinite" path={d} />
+                </circle>
+                <circle r="22" fill="#c084fc" opacity="0.25">
+                  <animateMotion dur={`${11 + i * 4}s`} repeatCount="indefinite" path={d} />
+                </circle>
+              </g>
+            ))}
+          </svg>
 
-            <div className="absolute inset-0 flex justify-center gap-6">
-              {columns.map((cards, c) => (
-                <div
-                  key={c}
-                  className={`board-column flex flex-col gap-6 ${c % 2 ? 'reverse' : ''}`}
-                  style={{ animationDuration: `${46 + c * 9}s` }}
-                >
-                  {[...cards, ...cards].map((s, i) => (
-                    <Card key={`${s.id}-${i}`} signal={s} />
-                  ))}
-                </div>
-              ))}
-            </div>
+          <div className="absolute inset-0 flex justify-center gap-6">
+            {columns.map((cards, c) => (
+              <div
+                key={c}
+                className={`board-column flex flex-col gap-6 ${c % 2 ? 'reverse' : ''}`}
+                style={{ animationDuration: `${46 + c * 9}s` }}
+              >
+                {[...cards, ...cards].map((s, i) => (
+                  <Card key={`${s.id}-${i}`} signal={s} />
+                ))}
+              </div>
+            ))}
           </div>
         </div>
-        {/* Keeps the headline and search readable over the board, like Vektor's left fade. */}
-        <div className="absolute inset-0 bg-gradient-to-r from-surface from-35% via-surface/85 via-55% to-surface/10" />
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface to-transparent" />
-        <div className="absolute -left-24 -top-32 size-96 rounded-full bg-violet-600/25 blur-3xl" />
       </div>
-
-      <button
-        type="button"
-        onClick={() => setPaused((p) => !p)}
-        aria-label={paused ? 'Play background animation' : 'Pause background animation'}
-        className="absolute right-4 top-4 z-10 grid size-8 place-items-center rounded-full border border-slate-300 bg-surface/70 text-slate-600 backdrop-blur hover:text-slate-900"
-      >
-        {paused ? <Play className="size-3.5" /> : <Pause className="size-3.5" />}
-      </button>
-    </>
+      {/* Keeps the headline and search readable over the board, like Vektor's left fade. */}
+      <div className="absolute inset-0 bg-gradient-to-r from-surface from-35% via-surface/85 via-55% to-surface/10" />
+      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface to-transparent" />
+      <div className="absolute -left-24 -top-32 size-96 rounded-full bg-violet-600/25 blur-3xl" />
+    </div>
   )
 }

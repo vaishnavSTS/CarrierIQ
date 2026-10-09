@@ -125,11 +125,6 @@ body {
   animation: route-dash 6s linear infinite;
 }
 
-.hero-board.is-paused .board-column,
-.hero-board.is-paused .route-dash {
-  animation-play-state: paused;
-}
-
 /* Dashboard hero: slow drifting glow. Turned off for people who prefer reduced motion. */
 @keyframes aurora-drift {
   0% {
