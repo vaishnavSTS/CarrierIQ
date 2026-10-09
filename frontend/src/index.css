@@ -97,6 +97,39 @@ body {
     spotlight-sway 18s ease-in-out 2.9s infinite reverse;
 }
 
+/* Dashboard hero board (HeroBoard): card columns drift up / down; route dashes flow. */
+@keyframes board-scroll {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+@keyframes route-dash {
+  to {
+    stroke-dashoffset: -320;
+  }
+}
+
+.board-column {
+  animation: board-scroll linear infinite;
+}
+
+.board-column.reverse {
+  animation-direction: reverse;
+}
+
+.route-dash {
+  animation: route-dash 6s linear infinite;
+}
+
+.hero-board.is-paused .board-column,
+.hero-board.is-paused .route-dash {
+  animation-play-state: paused;
+}
+
 /* Dashboard hero: slow drifting glow. Turned off for people who prefer reduced motion. */
 @keyframes aurora-drift {
   0% {
@@ -133,7 +166,9 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .aurora-blob,
   .live-ping,
-  .spotlight-beam {
+  .spotlight-beam,
+  .board-column,
+  .route-dash {
     animation: none;
   }
   .spotlight-beam {

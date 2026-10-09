@@ -18,7 +18,7 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <DashboardHero totals={data?.totals} />
+      <DashboardHero totals={data?.totals} signals={data?.recent_signals} />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <motion.div className="min-w-0 lg:col-span-2" {...rise(0.3)}>

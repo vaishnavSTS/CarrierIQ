@@ -2,8 +2,9 @@ import { ClipboardCheck, ShieldAlert, Truck, Building2, type LucideIcon } from '
 import { motion } from 'motion/react'
 
 import { AnimatedNumber } from '../../components/AnimatedNumber'
-import type { DashboardTotals } from '../../types/dashboard'
+import type { DashboardTotals, RecentSignal } from '../../types/dashboard'
 import { CarrierSearchBox } from '../carrier-search/CarrierSearchBox'
+import { HeroBoard } from './HeroBoard'
 
 const container = {
   hidden: {},
@@ -42,22 +43,17 @@ function StatTile({
   )
 }
 
-/** Dashboard opener: drifting violet glow, live status, search and headline numbers. */
-export function DashboardHero({ totals }: { totals: DashboardTotals | undefined }) {
+/** Dashboard opener: moving 3D signal board behind live status, search and headline numbers. */
+export function DashboardHero({
+  totals,
+  signals,
+}: {
+  totals: DashboardTotals | undefined
+  signals: RecentSignal[] | undefined
+}) {
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-slate-200 bg-surface">
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="aurora-blob absolute -left-24 -top-32 size-96 rounded-full bg-violet-600/30 blur-3xl" />
-        <div
-          className="aurora-blob absolute -right-16 top-10 size-80 rounded-full bg-fuchsia-500/20 blur-3xl"
-          style={{ animationDelay: '-6s' }}
-        />
-        <div
-          className="aurora-blob absolute bottom-[-10rem] left-1/3 size-96 rounded-full bg-indigo-500/20 blur-3xl"
-          style={{ animationDelay: '-12s' }}
-        />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.06)_1px,transparent_0)] [background-size:22px_22px]" />
-      </div>
+    <section className="relative isolate overflow-hidden rounded-2xl border border-slate-200 bg-surface">
+      <HeroBoard signals={signals} />
 
       <motion.div
         className="relative grid gap-6 p-6 md:p-8"
