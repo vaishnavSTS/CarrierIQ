@@ -28,6 +28,20 @@ services:
     ports:
       - "8000:8000"
 
+  # Background worker (spec Section 18): runs queued jobs and refreshes stale carriers on a
+  # schedule. Same image as the backend; starts after it so migrations have been applied.
+  worker:
+    build: ./backend
+    command: ["python", "-m", "app.workers.worker"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SOCRATA_APP_TOKEN: ${SOCRATA_APP_TOKEN:-}
+      SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-true}
+    depends_on:
+      - backend
+    restart: unless-stopped
+
   frontend:
     build: ./frontend
     environment:

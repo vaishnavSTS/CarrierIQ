@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 10 (Background Processing) — Part 1 done, Part 2 next
+**Current phase:** Phase 10 (Background Processing) — Parts 1–2 done, Part 3 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -23,7 +23,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 7 | Equipment / VIN | ✅ Done (2026-10-08) |
 | 8 | Intelligence Engine | ✅ Done (2026-10-08) |
 | 9 | Intelligence UI | ✅ Done (2026-10-09) |
-| 10 | Background Processing | 🔄 In progress (Part 1 of 3 done) |
+| 10 | Background Processing | 🔄 In progress (Parts 1–2 of 3 done) |
 
 ---
 
@@ -616,7 +616,19 @@ and the queue evaluation.
   - Live (Supabase, migration 0011): a forced refresh of 297569 ran through the worker in 18s
     (all sources, signals rebuilt), SUCCEEDED; a duplicate enqueue was refused.
   - `alembic check`: migration matches the models. 6 new tests (303 total).
-- [ ] Scheduled ingestion (worker enqueues stale carriers) + Docker worker service
+- [x] **Part 2 — Scheduled ingestion + Docker worker service.** `jobs/scheduler.py`: every
+  `schedule_interval_minutes` (15) the running worker queues `refresh_carrier` jobs for carriers
+  whose data is older than `carrier_refresh_hours` (never refreshed first, then oldest), at most
+  `schedule_batch_size` (50) per round; skips carriers with a refresh already pending and, for
+  `schedule_failed_cooldown_hours` (6), those whose refresh gave up. `--schedule` runs one round
+  and exits; `SCHEDULER_ENABLED=false` turns it off. `docker-compose.yml` gains a `worker`
+  service (same image, `python -m app.workers.worker`, starts after the backend).
+  - Bug caught live: scheduled jobs re-checked staleness with their own settings and skipped
+    the refresh (`refreshed: False`) when those differed from the round's. A round's jobs now
+    carry `force`, since the round already decided the carrier is due.
+  - Live (Supabase): a round with a 30-minute window queued 295014 and 295017; the worker
+    refreshed both from FMCSA in 33s. With the normal 24h window nothing was due.
+  - 4 new tests (307 total).
 - [ ] Job status (API + dashboard), "refresh now"
 - [ ] Optional queue: written evaluation of Redis vs RabbitMQ vs cloud queue
 
@@ -676,3 +688,4 @@ and the queue evaluation.
 | 2026-10-09 | Phase 9 Part 2: review actions (PATCH /signals/{id}, reviewed / dismissed with a note, reopen); migration 0010; 297 tests passing. |
 | 2026-10-09 | Phase 9 Part 3: timeline → signal links (signal in the URL), relationship view of carriers sharing equipment; Phase 9 done. |
 | 2026-10-09 | Phase 10 Part 1: PostgreSQL job queue (SKIP LOCKED, dedupe, backoff retries, dead-worker recovery), worker process; migration 0011; 303 tests passing. |
+| 2026-10-09 | Phase 10 Part 2: scheduled ingestion (stale carriers queued every 15 min, batch 50, failure cooldown), Docker worker service; 307 tests passing. |

@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     job_max_attempts: int = 4
     job_retry_base_seconds: float = 60.0  # retry n waits base * 2^(n-1): 1, 2, 4 minutes
     job_lock_timeout_minutes: int = 30  # a RUNNING job older than this belonged to a dead worker
+    # Scheduled ingestion: the worker queues refreshes of carriers older than carrier_refresh_hours.
+    scheduler_enabled: bool = True
+    schedule_interval_minutes: float = 15.0
+    schedule_batch_size: int = 50  # carriers queued per round, oldest data first
+    schedule_failed_cooldown_hours: float = 6.0  # wait after a refresh that gave up
     search_result_limit: int = 20  # name search results
     docket_search_limit: int = 10  # carriers loaded for one docket search
 
