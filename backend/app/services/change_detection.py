@@ -52,6 +52,10 @@ _AUTHORITY_RULES: tuple[tuple[str, str, Severity, str], ...] = (
     ("REVOCATION", "REVOKED", Severity.HIGH, "Authority revoked"),
     ("SUSPEN", "SUSPENDED", Severity.HIGH, "Authority suspended"),
     ("OUT OF SERVICE", "OUT_OF_SERVICE", Severity.HIGH, "Authority placed out of service"),
+    # A transfer moves the authority to another entity: the public record closest to an
+    # ownership change. Renumbering re-issues the docket under a new number.
+    ("TRANSFER", "TRANSFERRED", Severity.MEDIUM, "Authority transferred"),
+    ("RENUMBER", "RENUMBERED", Severity.LOW, "Authority renumbered"),
     ("REINSTAT", "REINSTATED", Severity.INFO, "Authority reinstated"),
     ("GRANTED", "GRANTED", Severity.INFO, "Authority granted"),
     ("INACTIVAT", "INACTIVATED", Severity.MEDIUM, "Authority inactivated"),

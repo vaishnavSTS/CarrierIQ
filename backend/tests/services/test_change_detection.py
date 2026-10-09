@@ -294,3 +294,17 @@ def test_two_filings_starting_the_same_day() -> None:
     )
 
     assert "INSURANCE_GAP" not in {e.event_type for e in events}
+
+
+def test_transfers_and_renumberings_are_recognised() -> None:
+    events = authority_events(
+        [
+            history_row(1, "TRANSFERRED", date(2026, 3, 1), reason="Transferred"),
+            history_row(2, "RENUMBERED", date(2026, 4, 1), reason="Renumbered"),
+        ]
+    )
+
+    found = {e.event_type: e for e in events}
+    assert found["AUTHORITY_TRANSFERRED"].severity == Severity.MEDIUM
+    assert found["AUTHORITY_TRANSFERRED"].title == "Authority transferred (MC139446)"
+    assert found["AUTHORITY_RENUMBERED"].severity == Severity.LOW

@@ -44,7 +44,7 @@ def _action_evidence(row: AuthorityHistory) -> EvidenceValues:
 
 class AuthorityChangeRule(Rule):
     rule_id = "authority_change"
-    rule_version = "1.1"
+    rule_version = "1.2"  # 1.2: transfers and renumberings recognised
 
     def evaluate(self, context: RuleContext) -> list[SignalValues]:
         carrier_id = context.carrier.id

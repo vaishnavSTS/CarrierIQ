@@ -6,6 +6,7 @@ import { AuthoritySection } from '../features/carrier-profile/AuthoritySection'
 import { EquipmentSection } from '../features/carrier-profile/EquipmentSection'
 import { IdentitySection } from '../features/carrier-profile/IdentitySection'
 import { IntelligenceSection } from '../features/carrier-profile/intelligence/IntelligenceSection'
+import { NetworkSection } from '../features/carrier-profile/network/NetworkSection'
 import { ProfileHeader } from '../features/carrier-profile/ProfileHeader'
 import { SafetySection } from '../features/carrier-profile/SafetySection'
 import { TimelineSection } from '../features/carrier-profile/TimelineSection'
@@ -16,6 +17,7 @@ const TABS = [
   ['authority', 'Authority & Insurance'],
   ['safety', 'Safety'],
   ['equipment', 'Equipment'],
+  ['network', 'Network & Identity'],
   ['intelligence', 'Intelligence'],
   ['timeline', 'Timeline'],
 ] as const
@@ -112,6 +114,7 @@ export function CarrierProfilePage() {
           <SafetySection usdotNumber={profile.usdot_number} safety={profile.safety} />
         )}
         {tab === 'equipment' && <EquipmentSection usdotNumber={profile.usdot_number} />}
+        {tab === 'network' && <NetworkSection profile={profile} />}
         {tab === 'intelligence' && <IntelligenceSection usdotNumber={profile.usdot_number} />}
         {tab === 'timeline' && (
           <TimelineSection events={profile.timeline} changes={profile.recent_changes} />
