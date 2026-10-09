@@ -64,7 +64,7 @@ def _spread_note(count: int) -> str:
 
 class SharedContactRule(Rule):
     rule_id = "shared_contact"
-    rule_version = "1.1"  # 1.1: evidence shows the exact shared value
+    rule_version = "1.2"  # 1.2: neutral wording; 1.1: exact shared value in evidence
 
     def evaluate(self, context: RuleContext) -> list[SignalValues]:
         usdot = context.carrier.usdot_number
@@ -131,9 +131,9 @@ class SharedContactRule(Rule):
                     title=f"Shares {shared} with USDOT {other} ({name})",
                     description=(
                         f"The FMCSA census lists the same {shared} for USDOT {other} ({name}, "
-                        f"{status}, registered {_registered(payload)}). Broker vetting tools often "
-                        "flag shared contact details as a possible sign of related or reincarnated "
-                        "carriers. There are ordinary reasons too: a family business, a shared "
+                        f"{status}, registered {_registered(payload)}). Some broker vetting tools "
+                        "link carriers that share contact details and ask about the "
+                        "relationship. Ordinary reasons include a family business, a shared "
                         "office, or a dispatch or compliance service listing its own contact "
                         f"details. A relationship to review, not a finding.{note}"
                     ),

@@ -54,7 +54,7 @@ def _observed(fleet: FleetOut) -> EvidenceValues:
 
 class FleetConsistencyRule(Rule):
     rule_id = "fleet_consistency"
-    rule_version = "1.0"
+    rule_version = "1.1"  # 1.1: descriptions name their source
 
     def evaluate(self, context: RuleContext) -> list[SignalValues]:
         db = context.db
@@ -96,8 +96,9 @@ class FleetConsistencyRule(Rule):
                     confidence=Confidence.MEDIUM,
                     title="Fleet consistency requires review: limited inspection coverage",
                     description=(
-                        f"Registered power units: {registered}. Power units seen on inspections "
-                        f"in the last {months} months: {recent}. Inspection coverage is limited "
+                        "Based on FMCSA census and inspection records: registered power units "
+                        f"{registered}; power units seen on inspections"
+                        f" in the last {months} months {recent}. Inspection coverage is limited "
                         "relative to the registered fleet. This does not prove non-operation or "
                         "misconduct: only some vehicles of any carrier are inspected."
                     ),
@@ -132,8 +133,9 @@ class FleetConsistencyRule(Rule):
                         "Fleet consistency requires review: more power units seen than registered"
                     ),
                     description=(
-                        f"Registered power units: {registered}. Power units seen on inspections "
-                        f"in the last {months} months: {recent}. The registration (MCS-150) may be "
+                        "Based on FMCSA census and inspection records: registered power units "
+                        f"{registered}; power units seen on inspections"
+                        f" in the last {months} months {recent}. The registration (MCS-150) may be "
                         "out of date, or vehicles may be leased or replaced. Requires review."
                     ),
                     evidence=(

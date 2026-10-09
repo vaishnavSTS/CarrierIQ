@@ -56,7 +56,8 @@ def test_legacy_only_registration_is_explained_not_alarming() -> None:
     motus = found["motus"]
     assert motus.status == "attention"
     assert "stopped updating on 2026-05-14" in motus.detail
-    assert "may not have claimed its USDOT number in Motus" in motus.detail
+    assert "has not been claimed in Motus yet" in motus.detail
+    assert "CarrierIQ cannot confirm the status" in motus.detail  # not our verdict
     assert checks(authorities=[authority("MOTUS")])["motus"].status == "ok"
 
 
@@ -89,8 +90,17 @@ def test_orders_and_addresses() -> None:
         ]
     )
     assert recent["revocations"].status == "attention"
-    bad = Address(address_type=AddressType.MAILING, undeliverable=True)
-    assert checks(addresses=[bad])["address"].status == "attention"
+    bad = [
+        Address(address_type=AddressType.MAILING, undeliverable=True),
+        Address(address_type=AddressType.PHYSICAL, undeliverable=True),
+    ]
+    marked = checks(addresses=bad, census={"carrier_mailing_und_date": "20240723"})["address"]
+    assert marked.status == "attention" and marked.as_of == date(2024, 7, 23)
+    assert marked.detail.startswith(
+        "FMCSA's census marks the mailing and physical addresses as undeliverable "
+        "(mailing address marked on 2024-07-23)"
+    )
+    assert "The census does not say why." in marked.detail
     assert "address" not in checks()
 
 

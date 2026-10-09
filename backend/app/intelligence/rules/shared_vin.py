@@ -52,7 +52,7 @@ def _evidence(link: Relationship, vin: str, whose: str, suspect: bool) -> Eviden
 
 class SharedVinRule(Rule):
     rule_id = "shared_vin"
-    rule_version = "1.1"
+    rule_version = "1.2"  # 1.2: description names its source
 
     def evaluate(self, context: RuleContext) -> list[SignalValues]:
         usdot = context.carrier.usdot_number
@@ -110,6 +110,7 @@ class SharedVinRule(Rule):
                         else f"Potential shared equipment with {who}: {count} VINs"
                     ),
                     description=(
+                        "According to FMCSA inspection records, "
                         f"{count} VIN{'s' if count != 1 else ''} on this carrier's inspections "
                         f"{'were' if count != 1 else 'was'} also recorded on inspections of "
                         f"{who}{'' if name else ', a carrier not loaded in CarrierIQ'}, {period}. "

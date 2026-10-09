@@ -199,7 +199,7 @@ function NetworkBody({
                 <p className="mt-1 text-sm text-slate-700">{f.why}</p>
                 {f.fix && (
                   <p className="mt-1 text-sm text-slate-600">
-                    <span className="font-medium text-slate-900">What clears it: </span>
+                    <span className="font-medium text-slate-900">Usually resolved by: </span>
                     {f.fix}
                   </p>
                 )}

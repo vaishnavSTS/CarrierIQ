@@ -50,7 +50,7 @@ def test_one_shared_vin_signal_per_other_carrier(db: Session, api: FakeDotApi) -
     assert (isuzu.signal_type, isuzu.rule_id, isuzu.rule_version) == (
         "SHARED_VIN",
         "shared_vin",
-        "1.1",
+        "1.2",
     )
     assert (isuzu.severity, isuzu.confidence) == (Severity.LOW, Confidence.HIGH)  # 2 inspections
     assert "not loaded in CarrierIQ" in (isuzu.description or "")
