@@ -66,7 +66,8 @@ _AUTHORITY_RULES: tuple[tuple[str, str, Severity, str], ...] = (
 _EMAIL = re.compile(r"\S+@\S+")
 
 
-def _authority_rule(action: str) -> tuple[str, Severity, str]:
+def authority_rule(action: str) -> tuple[str, Severity, str]:
+    """(category, severity, title) for an authority action, e.g. ("REVOKED", HIGH, ...)."""
     text = action.upper()
     for needle, category, severity, title in _AUTHORITY_RULES:
         if needle in text:
@@ -81,6 +82,15 @@ def _safe(text: str | None) -> str | None:
     return " ".join(_EMAIL.sub("(filing agent)", text).split())
 
 
+def authority_event_key(row: AuthorityHistory) -> str | None:
+    """The timeline key of the event an authority action belongs to; None when undated."""
+    if row.action_date is None:
+        return None
+    category = authority_rule(row.action)[0]
+    docket = f"{row.docket_prefix.value}{row.docket_number}"
+    return f"authority:{docket}:{category}:{row.action_date.isoformat()}"
+
+
 def authority_events(history: Iterable[AuthorityHistory]) -> list[TimelineEventValues]:
     """One event per authority action; the same action reported by both systems (same docket,
     category and date) becomes one event."""
@@ -89,8 +99,8 @@ def authority_events(history: Iterable[AuthorityHistory]) -> list[TimelineEventV
         if row.action_date is None:
             continue
         docket = f"{row.docket_prefix.value}{row.docket_number}"
-        category, severity, title = _authority_rule(row.action)
-        key = f"authority:{docket}:{category}:{row.action_date.isoformat()}"
+        category, severity, title = authority_rule(row.action)
+        key = f"authority:{docket}:{category}:{row.action_date.isoformat()}"  # authority_event_key
         if key in events:
             continue
         detail = _safe(row.reason) or _safe(row.action) or ""

@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 8 (Intelligence Engine) — Part 1 done, Part 2 next
+**Current phase:** Phase 8 (Intelligence Engine) — Parts 1–2 done, Part 3 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -21,7 +21,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 5 | Safety | ✅ Done (2026-10-08) |
 | 6 | Authority & Insurance | ✅ Done (2026-10-08) |
 | 7 | Equipment / VIN | ✅ Done (2026-10-08) |
-| 8 | Intelligence Engine | 🔄 In progress (Part 1 of 4 done) |
+| 8 | Intelligence Engine | 🔄 In progress (Parts 1–2 of 4 done) |
 | 9 | Intelligence UI | Not started |
 | 10 | Background Processing | Not started |
 
@@ -488,8 +488,26 @@ consistency → (4) safety trend and timeline links.
   - Supabase (migration 0009): 297080 → 92 signals (11 MEDIUM/HIGH with 3–6 VINs, 18 LOW/HIGH,
     61 LOW/MEDIUM, 2 LOW/LOW from mistyped VINs); a re-run adds nothing.
   - 5 new tests (279 total).
-- [ ] Authority change
-- [ ] Insurance change
+- [x] **Part 2 — Authority change and insurance change (spec 12.1, 12.2).** Both rules reuse
+  the timeline's change detection, so a signal and its timeline event always agree. Only
+  changes in the last 2 years (`signal_lookback_days` = 730) are signals; older ones stay
+  timeline history.
+  - `rules/authority_change.py`: one signal per authority action (severity from the action:
+    revoked/suspended HIGH, revocation started/inactivated MEDIUM, …, granted/reinstated INFO;
+    confidence HIGH), with every source row behind it as evidence (both FMCSA systems when both
+    report it, identical copies once). Non-INFO ones say why it matters (spec 12.1 wording). Plus
+    "Revocation pending" (MEDIUM) from the authority record.
+  - `rules/insurance_change.py`: insurer changed (INFO, "common, not a concern"), coverage
+    changed, cancelled, gaps, required BI&PD not on file. Confidence HIGH for a change shown by
+    a filing; MEDIUM for gaps / nothing on file (inferred from absence; FMCSA lists may be
+    incomplete). A gap's evidence is the filing before and the filing after it.
+  - Bug caught on live data: one legacy L&I row holds both the original grant and the
+    revocation, so matching evidence by raw record showed "GRANTED" under "Authority revoked".
+    Evidence is now matched by the event itself (`authority_event_key`); a test guards it.
+  - Supabase: 295014 (revoked 2024-11-13, BI&PD cancelled 2024-11-07 with nothing after),
+    3695639 (broker revoked 2026-04-21, trust fund cancelled, inactive), 297569 (new insurer
+    + coverage $750k → $1M, both INFO). 295017's 2021 revocation is history, not a signal.
+  - 6 new tests (285 total).
 - [ ] Identity change
 - [ ] Fleet consistency
 - [ ] Safety trend
@@ -564,3 +582,4 @@ consistency → (4) safety trend and timeline links.
 | 2026-10-08 | Phase 7 Part 3: NHTSA vPIC decoding (930 VINs), parallel batches 42s → 9.5s; migration 0008; 271 tests passing. |
 | 2026-10-08 | Phase 7 Part 4: Equipment tab + `/equipment` endpoint; tests never call real vPIC; Phase 7 done; 274 tests passing. |
 | 2026-10-08 | Phase 8 Part 1: signal engine (evidence enforced), Shared VIN rule, `/signals` API; migration 0009; 297080 → 92 signals; 279 tests passing. |
+| 2026-10-08 | Phase 8 Part 2: authority and insurance change signals (2-year lookback, evidence per source row); fixed evidence matching for legacy rows; 285 tests passing. |

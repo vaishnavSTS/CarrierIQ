@@ -12,6 +12,8 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import CarrierIQError
 from app.intelligence.base_rule import Rule, RuleContext
+from app.intelligence.rules.authority_change import AuthorityChangeRule
+from app.intelligence.rules.insurance_change import InsuranceChangeRule
 from app.intelligence.rules.shared_vin import SharedVinRule
 from app.models import Carrier
 from app.repositories.signal_repository import SignalRepository
@@ -24,7 +26,7 @@ class MissingEvidenceError(CarrierIQError):
 
 
 def default_rules() -> list[Rule]:
-    return [SharedVinRule()]
+    return [AuthorityChangeRule(), InsuranceChangeRule(), SharedVinRule()]
 
 
 class SignalService:

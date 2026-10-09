@@ -28,6 +28,8 @@ class Settings(BaseSettings):
 
     # On-demand refresh (spec Section 19.2): a carrier older than this is re-fetched on search.
     carrier_refresh_hours: float = 24.0
+    # Intelligence signals (spec Section 12): changes older than this are history, not signals.
+    signal_lookback_days: int = 730
     search_result_limit: int = 20  # name search results
     docket_search_limit: int = 10  # carriers loaded for one docket search
 
