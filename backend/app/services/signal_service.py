@@ -13,6 +13,8 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import CarrierIQError
 from app.intelligence.base_rule import Rule, RuleContext
 from app.intelligence.rules.authority_change import AuthorityChangeRule
+from app.intelligence.rules.fleet_consistency import FleetConsistencyRule
+from app.intelligence.rules.identity_change import IdentityChangeRule
 from app.intelligence.rules.insurance_change import InsuranceChangeRule
 from app.intelligence.rules.shared_vin import SharedVinRule
 from app.models import Carrier
@@ -26,7 +28,13 @@ class MissingEvidenceError(CarrierIQError):
 
 
 def default_rules() -> list[Rule]:
-    return [AuthorityChangeRule(), InsuranceChangeRule(), SharedVinRule()]
+    return [
+        AuthorityChangeRule(),
+        InsuranceChangeRule(),
+        IdentityChangeRule(),
+        FleetConsistencyRule(),
+        SharedVinRule(),
+    ]
 
 
 class SignalService:

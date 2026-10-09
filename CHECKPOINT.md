@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 8 (Intelligence Engine) — Parts 1–2 done, Part 3 next
+**Current phase:** Phase 8 (Intelligence Engine) — Parts 1–3 done, Part 4 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -21,7 +21,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 5 | Safety | ✅ Done (2026-10-08) |
 | 6 | Authority & Insurance | ✅ Done (2026-10-08) |
 | 7 | Equipment / VIN | ✅ Done (2026-10-08) |
-| 8 | Intelligence Engine | 🔄 In progress (Parts 1–2 of 4 done) |
+| 8 | Intelligence Engine | 🔄 In progress (Parts 1–3 of 4 done) |
 | 9 | Intelligence UI | Not started |
 | 10 | Background Processing | Not started |
 
@@ -508,8 +508,21 @@ consistency → (4) safety trend and timeline links.
     3695639 (broker revoked 2026-04-21, trust fund cancelled, inactive), 297569 (new insurer
     + coverage $750k → $1M, both INFO). 295017's 2021 revocation is history, not a signal.
   - 6 new tests (285 total).
-- [ ] Identity change
-- [ ] Fleet consistency
+- [x] **Part 3 — Identity change and fleet consistency (spec 12.4, 12.5).**
+  - `rules/identity_change.py`: legal name (MEDIUM), DBA and email (LOW) from
+    `carrier_attribute_history`; physical address, phones, officers (LOW), mailing address and
+    web domain (INFO) from the observed-period tables. Before and after values, both rows as
+    evidence; confidence HIGH. A carrier's first load is never a change. The census file has no
+    change dates, so the date is the day CarrierIQ first saw the new value (said in the text).
+  - `rules/fleet_consistency.py`: uses the same numbers as the Equipment tab
+    (`EquipmentReader` + `summarize_fleet`, split out of the equipment service). "Limited
+    inspection coverage" when 5+ registered and under 25% seen in 24 months; "more power units
+    seen than registered" when 3+ more. LOW / MEDIUM confidence, spec 12.5 wording ("does not
+    prove non-operation or misconduct"). Evidence: census record, observed comparison, and the
+    threshold that fired (RECORD / COMPARISON / THRESHOLD).
+  - Supabase: fleet signals for 297080 (501 of 2,446 = 20%) and 295017 (3 of 18). No identity
+    changes yet: census history only began when each carrier was first loaded.
+  - 6 new tests (291 total).
 - [ ] Safety trend
 - [ ] Federal event timeline (signals linked from timeline events)
 
@@ -583,3 +596,4 @@ consistency → (4) safety trend and timeline links.
 | 2026-10-08 | Phase 7 Part 4: Equipment tab + `/equipment` endpoint; tests never call real vPIC; Phase 7 done; 274 tests passing. |
 | 2026-10-08 | Phase 8 Part 1: signal engine (evidence enforced), Shared VIN rule, `/signals` API; migration 0009; 297080 → 92 signals; 279 tests passing. |
 | 2026-10-08 | Phase 8 Part 2: authority and insurance change signals (2-year lookback, evidence per source row); fixed evidence matching for legacy rows; 285 tests passing. |
+| 2026-10-08 | Phase 8 Part 3: identity change and fleet consistency signals; equipment reader shared with the rule; 291 tests passing. |

@@ -9,7 +9,7 @@ from collections import defaultdict
 from datetime import date, timedelta
 
 from app.core.exceptions import CarrierNotFoundError
-from app.models import Relationship, Vehicle
+from app.models import Carrier, Relationship, Vehicle
 from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.relationship_repository import RelationshipRepository
 from app.repositories.vehicle_repository import VehicleRepository
@@ -25,26 +25,23 @@ from app.services.vehicle_observation_service import USDOT, VEHICLE, VIN_OBSERVE
 RECENT_MONTHS = 24
 
 
-class CarrierEquipmentService:
+class EquipmentReader:
+    """A carrier's equipment from stored data only (also used by the fleet consistency rule)."""
+
     def __init__(
         self,
-        refresh: CarrierRefreshService,
         carriers: CarrierRepository,
         vehicles: VehicleRepository,
         relationships: RelationshipRepository,
         today: date | None = None,
     ) -> None:
-        self.refresh = refresh
         self.carriers = carriers
         self.vehicles = vehicles
         self.relationships = relationships
         self.today = today
 
-    def get(self, usdot_number: int) -> CarrierEquipmentOut:
-        carrier = self.refresh.ensure_fresh(usdot_number).carrier
-        if carrier is None:
-            raise CarrierNotFoundError(f"No carrier with USDOT {usdot_number}")
-
+    def read(self, carrier: Carrier) -> CarrierEquipmentOut:
+        usdot_number = carrier.usdot_number
         own = self.relationships.to_target(VIN_OBSERVED_WITH, (USDOT, usdot_number))
         vehicles = self.vehicles.by_ids(link.source_entity_id for link in own)
         others: dict[int, list[Relationship]] = defaultdict(list)
@@ -62,29 +59,44 @@ class CarrierEquipmentService:
         ]
         return CarrierEquipmentOut(
             usdot_number=usdot_number,
-            fleet=self._fleet(carrier.fleet_size, rows),
+            fleet=summarize_fleet(carrier.fleet_size, rows, self.today or date.today()),
             shared_vin_count=sum(1 for r in rows if r.other_carriers),
             other_carrier_count=len({c.usdot_number for r in rows for c in r.other_carriers}),
             invalid_check_digit_count=sum(1 for r in rows if r.check_digit_valid is False),
             vehicles=rows,
         )
 
-    def _fleet(self, registered: int | None, rows: list[EquipmentVehicleOut]) -> FleetOut:
-        since = (self.today or date.today()) - timedelta(days=round(RECENT_MONTHS * 365.25 / 12))
-        kinds = [_kind(r) for r in rows]
-        return FleetOut(
-            registered_power_units=registered,
-            observed_vehicles=len(rows),
-            observed_power_units=kinds.count("power"),
-            observed_trailers=kinds.count("trailer"),
-            observed_unknown_type=kinds.count("unknown"),
-            recent_power_units=sum(
-                1 for r, k in zip(rows, kinds, strict=True) if k == "power" and r.last_seen >= since
-            ),
-            recent_months=RECENT_MONTHS,
-            first_observed=min((r.first_seen for r in rows), default=None),
-            last_observed=max((r.last_seen for r in rows), default=None),
-        )
+
+class CarrierEquipmentService:
+    def __init__(self, refresh: CarrierRefreshService, reader: EquipmentReader) -> None:
+        self.refresh = refresh
+        self.reader = reader
+
+    def get(self, usdot_number: int) -> CarrierEquipmentOut:
+        carrier = self.refresh.ensure_fresh(usdot_number).carrier
+        if carrier is None:
+            raise CarrierNotFoundError(f"No carrier with USDOT {usdot_number}")
+        return self.reader.read(carrier)
+
+
+def summarize_fleet(
+    registered: int | None, rows: list[EquipmentVehicleOut], today: date
+) -> FleetOut:
+    since = today - timedelta(days=round(RECENT_MONTHS * 365.25 / 12))
+    kinds = [_kind(r) for r in rows]
+    return FleetOut(
+        registered_power_units=registered,
+        observed_vehicles=len(rows),
+        observed_power_units=kinds.count("power"),
+        observed_trailers=kinds.count("trailer"),
+        observed_unknown_type=kinds.count("unknown"),
+        recent_power_units=sum(
+            1 for r, k in zip(rows, kinds, strict=True) if k == "power" and r.last_seen >= since
+        ),
+        recent_months=RECENT_MONTHS,
+        first_observed=min((r.first_seen for r in rows), default=None),
+        last_observed=max((r.last_seen for r in rows), default=None),
+    )
 
 
 def _kind(row: EquipmentVehicleOut) -> str:

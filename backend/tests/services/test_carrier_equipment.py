@@ -12,7 +12,7 @@ from app.api.v1.routes.carriers import get_socrata_client
 from app.db.session import get_db
 from app.main import app
 from app.schemas.carrier_equipment import EquipmentVehicleOut
-from app.services.carrier_equipment_service import CarrierEquipmentService
+from app.services.carrier_equipment_service import summarize_fleet
 from tests.factories import make_carrier
 from tests.ingestion.helpers import FakeDotApi
 from tests.services.test_shared_vin_service import FREIGHTLINER, ISUZU, api  # noqa: F401
@@ -91,9 +91,7 @@ def row(vin: str, vehicle_type: str | None, last_seen: date) -> EquipmentVehicle
 
 
 def test_fleet_counts_recent_power_units_only() -> None:
-    service = CarrierEquipmentService(None, None, None, None, today=date(2026, 10, 8))  # type: ignore[arg-type]
-
-    fleet = service._fleet(
+    fleet = summarize_fleet(
         25,
         [
             row("A", "TRUCK", date(2026, 1, 1)),
@@ -101,6 +99,7 @@ def test_fleet_counts_recent_power_units_only() -> None:
             row("C", "Trailer", date(2026, 1, 1)),
             row("D", None, date(2026, 1, 1)),  # not decoded yet
         ],
+        date(2026, 10, 8),
     )
 
     assert (fleet.registered_power_units, fleet.observed_vehicles) == (25, 4)

@@ -29,7 +29,7 @@ from app.schemas.carrier_search import CarrierSearchResponse
 from app.schemas.carrier_signals import CarrierSignalsOut
 from app.services.authority_ingestion_service import build_authority_ingestion_service
 from app.services.carrier_authority_service import CarrierAuthorityService
-from app.services.carrier_equipment_service import CarrierEquipmentService
+from app.services.carrier_equipment_service import CarrierEquipmentService, EquipmentReader
 from app.services.carrier_profile_service import CarrierProfileService
 from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.carrier_safety_service import CarrierSafetyService
@@ -203,7 +203,8 @@ def get_carrier_equipment_service(
     refresh: Refresh,
 ) -> CarrierEquipmentService:
     return CarrierEquipmentService(
-        refresh, CarrierRepository(db), VehicleRepository(db), RelationshipRepository(db)
+        refresh,
+        EquipmentReader(CarrierRepository(db), VehicleRepository(db), RelationshipRepository(db)),
     )
 
 

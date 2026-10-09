@@ -123,8 +123,9 @@ def test_signals_endpoint(api_client: TestClient) -> None:  # noqa: F811
 
     assert response.status_code == 200
     body = response.json()
-    assert [s["signal_type"] for s in body["signals"]] == ["SHARED_VIN", "SHARED_VIN"]
-    first = body["signals"][0]
+    types = sorted(s["signal_type"] for s in body["signals"])
+    assert types == ["FLEET_CONSISTENCY", "SHARED_VIN", "SHARED_VIN"]  # 3 of 18 seen
+    first = next(s for s in body["signals"] if s["signal_type"] == "SHARED_VIN")
     assert first["status"] == "OPEN"
     assert len(first["evidence"]) == 2
     assert first["evidence"][0]["source"] == "dot_socrata"
