@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 8 (Intelligence Engine) — not started; Phase 7 done
+**Current phase:** Phase 8 (Intelligence Engine) — Part 1 done, Part 2 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -21,7 +21,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 5 | Safety | ✅ Done (2026-10-08) |
 | 6 | Authority & Insurance | ✅ Done (2026-10-08) |
 | 7 | Equipment / VIN | ✅ Done (2026-10-08) |
-| 8 | Intelligence Engine | Not started |
+| 8 | Intelligence Engine | 🔄 In progress (Part 1 of 4 done) |
 | 9 | Intelligence UI | Not started |
 | 10 | Background Processing | Not started |
 
@@ -461,17 +461,39 @@ and returns a check-digit verdict; the units dataset answers VIN lookups in ~0.5
 
 ---
 
-## Phase 8 — Intelligence Engine
+## Phase 8 — Intelligence Engine 🔄
 
-Deterministic signals; every signal must have evidence.
+Deterministic signals; every signal must have evidence. Built part by part: (1) signal engine +
+shared VIN + `/signals` API → (2) authority and insurance changes → (3) identity change and fleet
+consistency → (4) safety trend and timeline links.
 
+- [x] **Part 1 — Signal engine and Shared VIN (spec 12.3, 13).**
+  - `intelligence/base_rule.py`: a rule returns `SignalValues`, each with `EvidenceValues`, from
+    stored data only. One file per rule in `intelligence/rules/`.
+  - `services/signal_service.py` runs every rule and refuses the whole run if any signal has no
+    evidence (`MissingEvidenceError`, nothing saved). Spec 13.2.
+  - `repositories/signal_repository.py`: signals have a stable `signal_key` (migration `0009`
+    adds it, plus `is_active`, `first_detected_at`, `last_detected_at`). Re-running a rule
+    keeps the signal's id and review status and replaces its evidence. A signal the rule no
+    longer finds becomes inactive (kept, so a review decision stays on record).
+  - Shared VIN rule v1.1: one signal per other USDOT number, two evidence rows per shared VIN
+    (seen with the other carrier, seen with this one), each traced to the relationship and its
+    raw unit row. Confidence HIGH (2+ inspections or 2+ VINs), MEDIUM (one VIN, one inspection),
+    LOW when every shared VIN has an invalid check digit (a typo can match another vehicle).
+    Severity LOW, MEDIUM for 3+ VINs. Wording: "potential shared equipment … a relationship to
+    review, not a finding" (spec 14).
+  - Signals rebuild after every refresh (last step). `GET /carriers/{usdot}/signals` returns
+    the active ones, highest severity first, with evidence. `python -m
+    app.workers.rebuild_signals [usdot …]` rebuilds from stored data after a rule changes.
+  - Supabase (migration 0009): 297080 → 92 signals (11 MEDIUM/HIGH with 3–6 VINs, 18 LOW/HIGH,
+    61 LOW/MEDIUM, 2 LOW/LOW from mistyped VINs); a re-run adds nothing.
+  - 5 new tests (279 total).
 - [ ] Authority change
 - [ ] Insurance change
-- [ ] Shared VIN
 - [ ] Identity change
 - [ ] Fleet consistency
 - [ ] Safety trend
-- [ ] Federal event timeline
+- [ ] Federal event timeline (signals linked from timeline events)
 
 ---
 
@@ -541,3 +563,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 7 Part 2: shared VINs across all FMCSA inspections (297080: 147 VINs shared with 92 carriers); batched 26s → 7s; 260 tests passing. |
 | 2026-10-08 | Phase 7 Part 3: NHTSA vPIC decoding (930 VINs), parallel batches 42s → 9.5s; migration 0008; 271 tests passing. |
 | 2026-10-08 | Phase 7 Part 4: Equipment tab + `/equipment` endpoint; tests never call real vPIC; Phase 7 done; 274 tests passing. |
+| 2026-10-08 | Phase 8 Part 1: signal engine (evidence enforced), Shared VIN rule, `/signals` API; migration 0009; 297080 → 92 signals; 279 tests passing. |

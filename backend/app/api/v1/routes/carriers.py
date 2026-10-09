@@ -18,6 +18,7 @@ from app.repositories.inspection_repository import InspectionRepository
 from app.repositories.insurance_repository import InsuranceRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
 from app.repositories.relationship_repository import RelationshipRepository
+from app.repositories.signal_repository import SignalRepository
 from app.repositories.timeline_repository import TimelineRepository
 from app.repositories.vehicle_repository import VehicleRepository
 from app.schemas.carrier_authority import CarrierAuthorityOut
@@ -25,6 +26,7 @@ from app.schemas.carrier_equipment import CarrierEquipmentOut
 from app.schemas.carrier_profile import CarrierProfile
 from app.schemas.carrier_safety import CarrierSafetyOut, InspectionPageOut
 from app.schemas.carrier_search import CarrierSearchResponse
+from app.schemas.carrier_signals import CarrierSignalsOut
 from app.services.authority_ingestion_service import build_authority_ingestion_service
 from app.services.carrier_authority_service import CarrierAuthorityService
 from app.services.carrier_equipment_service import CarrierEquipmentService
@@ -32,10 +34,12 @@ from app.services.carrier_profile_service import CarrierProfileService
 from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.carrier_safety_service import CarrierSafetyService
 from app.services.carrier_search_service import CarrierSearchService
+from app.services.carrier_signals_service import CarrierSignalsService
 from app.services.census_ingestion_service import build_census_ingestion_service
 from app.services.inspection_ingestion_service import build_inspection_ingestion_service
 from app.services.insurance_ingestion_service import build_insurance_ingestion_service
 from app.services.shared_vin_service import build_shared_vin_service
+from app.services.signal_service import build_signal_service
 from app.services.timeline_service import build_timeline_service
 from app.services.vehicle_observation_service import build_vehicle_observation_service
 from app.services.vin_decode_service import build_vin_decode_service
@@ -78,6 +82,8 @@ def build_refresh_service(
             build_vehicle_observation_service(db).rebuild_own,
             build_vin_decode_service(db, vpic).decode_for_carrier,
             build_timeline_service(db).rebuild,
+            # Last: rules read everything loaded above.
+            build_signal_service(db).rebuild,
         ],
     )
 
@@ -206,4 +212,19 @@ def get_carrier_equipment(
     usdot_number: UsdotPath,
     service: Annotated[CarrierEquipmentService, Depends(get_carrier_equipment_service)],
 ) -> CarrierEquipmentOut:
+    return service.get(usdot_number)
+
+
+def get_carrier_signals_service(
+    db: Annotated[Session, Depends(get_db)],
+    refresh: Refresh,
+) -> CarrierSignalsService:
+    return CarrierSignalsService(refresh, SignalRepository(db))
+
+
+@router.get("/{usdot_number}/signals", response_model=CarrierSignalsOut)
+def get_carrier_signals(
+    usdot_number: UsdotPath,
+    service: Annotated[CarrierSignalsService, Depends(get_carrier_signals_service)],
+) -> CarrierSignalsOut:
     return service.get(usdot_number)
