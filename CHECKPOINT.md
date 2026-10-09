@@ -650,7 +650,7 @@ and the queue evaluation.
 
 ---
 
-## Phase 11 — Network & Identity tab (post-MVP, spec Sections 7 "Network / Fraud", 29) 🔄
+## Phase 11 — Network & Identity tab (post-MVP, spec Sections 7 "Network / Fraud", 29) ✅
 
 Prompted by a real client case (MC 1363132: an accidental "ownership change" attestation on
 Highway left brokers seeing "MC previously reported as sold"). Goal: per carrier, show what
@@ -703,7 +703,19 @@ and ownership events → (3) the Network & Identity tab.
   - Live (Supabase, migration 0013), MC 1363132: legacy-only registration (attention), MCS-150
     current, no prior revocation / out-of-service / revocation, 5 same-building links. 8.8s.
   - 7 new tests (326 total).
-- [ ] Part 3 — Network & Identity tab
+- [x] **Part 3 — Network & Identity tab.** Live public data first; team notes last and
+  optional (only for what no public source publishes, e.g. a Highway attestation).
+  - Sections: "What a broker's check may flag" (`network/brokerFlags.ts`: each item says why a
+    broker may react and what clears it — registration checks needing attention, shared
+    contact details, same-building carriers, authority transfers, name / contact changes,
+    recorded ownership events), Registration health, Linked carriers (strong links; same-building
+    ones behind a link), Identity and ownership history (census changes + authority transfers),
+    Notes from your team (list + collapsed form; a correction must pick an attestation).
+  - Backend: Motus authority history "Transferred" / "Renumbered" are now recognised (an
+    authority transfer is the public record closest to an ownership change; MEDIUM);
+    authority_change v1.2.
+  - Checked in Chrome on MC 1363132: legacy-only registration flagged with how to clear it,
+    5 same-building carriers, all other checks OK; no console errors. 327 tests passing.
 
 ---
 
@@ -766,3 +778,4 @@ and ownership events → (3) the Network & Identity tab.
 | 2026-10-09 | Dark purple theme (slate scale redefined in `index.css`; charts re-validated for the dark surface) and animated live dashboard (`/api/v1/dashboard`, lucide-react + motion); docs/architecture.md + .html; 311 tests passing. |
 | 2026-10-09 | Phase 11 Part 1: linked carriers via shared phone / email / address / officer (census-wide), shared_contact signal; 319 tests passing. |
 | 2026-10-09 | Phase 11 Part 2: registration health checks, out-of-service orders and revocations, ownership events with timeline and signal, /network endpoint; migration 0013; 326 tests passing. |
+| 2026-10-09 | Phase 11 Part 3: Network & Identity tab (broker-flag summary, registration health, linked carriers, identity history, team notes); authority transfers recognised; 327 tests passing. |
