@@ -45,7 +45,7 @@ const PLACEHOLDER: RecentSignal[] = [
   detected_at: null,
 }))
 
-const COLUMNS = 4
+const COLUMNS = 7
 const PER_COLUMN = 6
 
 function Card({ signal }: { signal: RecentSignal }) {
@@ -71,10 +71,11 @@ function Card({ signal }: { signal: RecentSignal }) {
 }
 
 /**
- * Hero background, after the moving load board on vektortms.com: a tilted 3D board of carrier
- * signal cards drifting in columns, with glowing routes and moving dots. Built from this app's
- * own newest signals. Decorative only (hidden from screen readers); it holds still for people
- * who prefer reduced motion.
+ * Dashboard background, after the moving load board on vektortms.com: a tilted 3D board of
+ * carrier signal cards drifting in columns across the whole page, with glowing routes and moving
+ * dots, behind the dashboard's see-through cards. Built from this app's own newest signals.
+ * Decorative only (hidden from screen readers); it holds still for people who prefer reduced
+ * motion.
  */
 export function HeroBoard({ signals }: { signals: RecentSignal[] | undefined }) {
   const reduce = useReducedMotion()
@@ -92,11 +93,9 @@ export function HeroBoard({ signals }: { signals: RecentSignal[] | undefined }) 
   )
 
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div className="absolute inset-y-0 right-0 hidden w-[72%] [perspective:1400px] md:block">
-        <div
-          className={`hero-board absolute left-[-10%] top-[-55%] h-[210%] w-[150%] [transform:rotateX(52deg)_rotateZ(-26deg)] [transform-style:preserve-3d] `}
-        >
+    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+      <div className="absolute inset-0 hidden [perspective:1400px] md:block">
+        <div className="hero-board absolute left-[-30%] top-[-70%] h-[240%] w-[160%] [transform:rotateX(52deg)_rotateZ(-26deg)] [transform-style:preserve-3d]">
           <svg
             ref={routes}
             className="absolute inset-0 size-full"
@@ -150,10 +149,10 @@ export function HeroBoard({ signals }: { signals: RecentSignal[] | undefined }) 
           </div>
         </div>
       </div>
-      {/* Keeps the headline and search readable over the board, like Vektor's left fade. */}
-      <div className="absolute inset-0 bg-gradient-to-r from-surface from-35% via-surface/85 via-55% to-surface/10" />
-      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface to-transparent" />
-      <div className="absolute -left-24 -top-32 size-96 rounded-full bg-violet-600/25 blur-3xl" />
+      {/* A light tint and soft edges keep the board behind the cards, not competing with them. */}
+      <div className="absolute inset-0 bg-canvas/40" />
+      <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-canvas to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-canvas to-transparent" />
     </div>
   )
 }

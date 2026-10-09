@@ -2,9 +2,8 @@ import { ClipboardCheck, ShieldAlert, Truck, Building2, type LucideIcon } from '
 import { motion } from 'motion/react'
 
 import { AnimatedNumber } from '../../components/AnimatedNumber'
-import type { DashboardTotals, RecentSignal } from '../../types/dashboard'
+import type { DashboardTotals } from '../../types/dashboard'
 import { CarrierSearchBox } from '../carrier-search/CarrierSearchBox'
-import { HeroBoard } from './HeroBoard'
 
 const container = {
   hidden: {},
@@ -43,18 +42,10 @@ function StatTile({
   )
 }
 
-/** Dashboard opener: moving 3D signal board behind live status, search and headline numbers. */
-export function DashboardHero({
-  totals,
-  signals,
-}: {
-  totals: DashboardTotals | undefined
-  signals: RecentSignal[] | undefined
-}) {
+/** Dashboard opener: live status, search and headline numbers, on a see-through card. */
+export function DashboardHero({ totals }: { totals: DashboardTotals | undefined }) {
   return (
-    <section className="relative isolate overflow-hidden rounded-2xl border border-slate-200 bg-surface">
-      <HeroBoard signals={signals} />
-
+    <section className="relative isolate overflow-hidden rounded-2xl border border-slate-200/70 bg-surface/55 shadow-xl shadow-black/20 backdrop-blur-md">
       <motion.div
         className="relative grid gap-6 p-6 md:p-8"
         variants={container}

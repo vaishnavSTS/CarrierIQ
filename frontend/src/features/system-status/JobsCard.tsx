@@ -57,7 +57,7 @@ export function JobsCard() {
   const { data, isPending, isError } = useJobs()
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-surface p-5">
+    <section className="rounded-2xl border border-slate-200/70 bg-surface/55 p-5 shadow-xl shadow-black/20 backdrop-blur-md">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-slate-900">Background jobs</h2>
         {data && (
