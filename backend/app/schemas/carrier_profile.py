@@ -29,6 +29,9 @@ class AuthorityOut(BaseModel):
     # ACTIVE when any docket is active; otherwise the first docket's status; None: no dockets.
     status: str | None
     dockets: list[DocketOut]
+    # Where the status comes from: MOTUS | LEGACY_LI | CENSUS, and how current it is.
+    source_system: str | None = None
+    as_of: date | None = None
 
 
 class InsuranceOut(BaseModel):

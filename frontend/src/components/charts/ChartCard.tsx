@@ -17,7 +17,7 @@ export function ChartCard({
 }) {
   const [asTable, setAsTable] = useState(false)
   return (
-    <div className="rounded-md border border-slate-200 p-3">
+    <div className="flex h-full flex-col rounded-md border border-slate-200 p-3">
       <div className="mb-2 flex items-start justify-between gap-4">
         <div>
           <h3 className="text-sm font-medium text-slate-900">{title}</h3>
@@ -32,7 +32,10 @@ export function ChartCard({
           {asTable ? 'Show chart' : 'Show as table'}
         </button>
       </div>
-      {asTable ? <div className="max-h-72 overflow-auto">{table}</div> : chart}
+      {/* Grows to fill the card, so cards side by side end at the same line. */}
+      <div className="flex flex-1 flex-col justify-center">
+        {asTable ? <div className="max-h-72 overflow-auto">{table}</div> : chart}
+      </div>
       {note && <p className="mt-2 text-xs text-slate-500">{note}</p>}
     </div>
   )

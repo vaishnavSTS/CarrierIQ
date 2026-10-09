@@ -1,23 +1,14 @@
-import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import { StatusBadge } from '../../components/StatusBadge'
 import type { CarrierProfile } from '../../types/carrierProfile'
 import { needsForHireAuthority } from '../../utils/classification'
-import { formatDateTime, sourceLabel } from '../../utils/format'
+import { censusLabel, formatDateTime, sourceLabel } from '../../utils/format'
 import { reviewLabel } from '../../utils/review'
+import { HeaderCard } from './HeaderCard'
 import { LinkedHeadsUp } from './network/LinkedHeadsUp'
 import { RefreshButton } from './RefreshButton'
 import { INSURANCE_LABEL, insuranceTone, severityTone, statusTone } from '../../utils/status'
-
-function HeaderStatus({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex items-center gap-2 text-sm">
-      <span className="text-slate-500">{label}:</span>
-      {children}
-    </div>
-  )
-}
 
 export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
   const dockets = profile.authority.dockets
@@ -48,8 +39,15 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2">
-        <HeaderStatus label="Authority">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <HeaderCard
+          label="Authority"
+          source={
+            profile.authority.status
+              ? sourceLabel(profile.authority.source_system, profile.authority.as_of)
+              : undefined
+          }
+        >
           {profile.authority.status ? (
             <StatusBadge
               label={profile.authority.status}
@@ -58,8 +56,8 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
           ) : (
             <span className="text-slate-500">No dockets</span>
           )}
-        </HeaderStatus>
-        <HeaderStatus label="Registration">
+        </HeaderCard>
+        <HeaderCard label="Registration" source={censusLabel(profile.last_refreshed_at)}>
           {profile.registration_status ? (
             <StatusBadge
               label={profile.registration_status}
@@ -68,18 +66,20 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
           ) : (
             <span className="text-slate-500">Unknown</span>
           )}
-        </HeaderStatus>
-        <HeaderStatus label="Insurance">
+        </HeaderCard>
+        <HeaderCard
+          label="Insurance"
+          source={
+            profile.insurance.status
+              ? sourceLabel(profile.insurance.source_system, profile.insurance.as_of)
+              : undefined
+          }
+        >
           {profile.insurance.status ? (
-            <>
-              <StatusBadge
-                label={INSURANCE_LABEL[profile.insurance.status] ?? profile.insurance.status}
-                tone={insuranceTone(profile.insurance.status)}
-              />
-              <span className="text-xs text-slate-500">
-                {sourceLabel(profile.insurance.source_system, profile.insurance.as_of)}
-              </span>
-            </>
+            <StatusBadge
+              label={INSURANCE_LABEL[profile.insurance.status] ?? profile.insurance.status}
+              tone={insuranceTone(profile.insurance.status)}
+            />
           ) : (
             <span className="text-slate-500">
               {needsForHireAuthority(profile.operation_classification) === false
@@ -87,8 +87,8 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
                 : 'No active operating authority'}
             </span>
           )}
-        </HeaderStatus>
-        <HeaderStatus label="Review status">
+        </HeaderCard>
+        <HeaderCard label="Review status" source="CarrierIQ checks of FMCSA records">
           {profile.review_status === 'OPEN_SIGNALS' ? (
             <Link
               to="?tab=intelligence"
@@ -110,7 +110,7 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
               {reviewLabel(profile.review_status, profile.open_signal_count) ?? 'Not reviewed yet'}
             </span>
           )}
-        </HeaderStatus>
+        </HeaderCard>
         <LinkedHeadsUp usdotNumber={profile.usdot_number} />
       </div>
     </header>

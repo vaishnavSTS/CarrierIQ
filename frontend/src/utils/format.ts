@@ -51,6 +51,11 @@ export function sourceLabel(source: string | null, asOf: string | null): string 
   return '—'
 }
 
+/** Where the USDOT registration status comes from: the census, as last fetched. */
+export function censusLabel(fetchedAt: string | null): string {
+  return fetchedAt ? `FMCSA census · ${formatLocalDate(fetchedAt)}` : 'FMCSA census'
+}
+
 const relative = new Intl.RelativeTimeFormat('en-US', { numeric: 'auto' })
 
 /** ISO timestamp -> "5 minutes ago" / "yesterday"; "—" when missing. */

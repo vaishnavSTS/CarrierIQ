@@ -60,9 +60,10 @@ export function SafetyTrends({ quarters }: { quarters: Quarter[] }) {
   const note = '* Current quarter, still in progress. Quarters without inspections have no rate.'
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-2">
+    <div className="grid gap-4 lg:grid-cols-2">
       <ChartCard
         title="Inspections per quarter"
+        subtitle="Roadside inspections FMCSA recorded for the carrier each quarter"
         note={note}
         chart={
           <ColumnChart
@@ -82,7 +83,7 @@ export function SafetyTrends({ quarters }: { quarters: Quarter[] }) {
       />
       <ChartCard
         title="Out-of-service rate per quarter"
-        subtitle="FMCSA’s method: out-of-service orders over the quarter’s inspections that examined the vehicle (or driver); driver-only Level III inspections do not count toward the vehicle rate"
+        subtitle="FMCSA’s method: only inspections that examined the vehicle (or driver) count"
         note={`${note} The current quarter is shown as a separate dot, not joined to the trend.`}
         chart={
           <LineChart

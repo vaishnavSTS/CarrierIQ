@@ -124,7 +124,13 @@ export interface CarrierProfile {
   phones: Phone[]
   officers: string[]
   domains: string[]
-  authority: { status: string | null; dockets: Docket[] }
+  authority: {
+    status: string | null
+    dockets: Docket[]
+    /** MOTUS | LEGACY_LI | CENSUS: where the status comes from */
+    source_system: string | null
+    as_of: string | null
+  }
   /** ON_FILE | NOT_ON_FILE | null (no active operating authority) */
   insurance: { status: string | null; source_system: string | null; as_of: string | null }
   timeline: TimelineEvent[]

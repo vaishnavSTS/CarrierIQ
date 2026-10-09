@@ -2,6 +2,7 @@ import { Link2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { useCarrierNetwork } from '../../../hooks/useNetwork'
+import { HeaderCard } from '../HeaderCard'
 import type { LinkedCarrier } from '../../../types/network'
 
 const KIND_LABEL: Record<string, string> = {
@@ -35,8 +36,11 @@ export function LinkedHeadsUp({ usdotNumber }: { usdotNumber: number }) {
   const inactive = linked.some((c) => c.status === 'INACTIVE')
   const names = linked.slice(0, NAMED)
   return (
-    <div className="flex items-center gap-2 text-sm">
-      <span className="text-slate-500">Linked carriers:</span>
+    <HeaderCard
+      label="Linked carriers"
+      source="FMCSA census"
+      className="sm:col-span-2 lg:col-span-4"
+    >
       <Link
         to="?tab=network"
         replace
@@ -66,6 +70,6 @@ export function LinkedHeadsUp({ usdotNumber }: { usdotNumber: number }) {
         </span>
         <span className="text-slate-500">→ Network tab</span>
       </Link>
-    </div>
+    </HeaderCard>
   )
 }

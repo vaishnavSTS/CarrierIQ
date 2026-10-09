@@ -9,32 +9,56 @@ import { classificationLabel, classifications } from '../../../utils/classificat
 import {
   formatDate,
   formatMoney,
+  censusLabel,
   formatLocalDate,
   formatPercent,
   formatPhone,
   humanize,
+  sourceLabel,
 } from '../../../utils/format'
 import { brokerFlags } from '../network/brokerFlags'
 import { packetItems } from './packetItems'
 
 const SIGNIFICANT_EVENTS = 5
 
-function Block({ title, children }: { title: string; children: ReactNode }) {
+function Block({
+  title,
+  source,
+  children,
+}: {
+  title: string
+  /** Where the section's figures come from */
+  source?: string
+  children: ReactNode
+}) {
   return (
     <section className="break-inside-avoid">
-      <h2 className="mb-3 border-b border-slate-200 pb-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-accent-strong">
-        {title}
+      <h2 className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 border-b border-slate-200 pb-1.5">
+        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-strong">
+          {title}
+        </span>
+        {source && <span className="text-[11px] font-normal text-slate-500">{source}</span>}
       </h2>
       {children}
     </section>
   )
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({
+  label,
+  source,
+  children,
+}: {
+  label: string
+  /** Where the value comes from */
+  source?: string
+  children: ReactNode
+}) {
   return (
     <div>
       <dt className="text-[11px] uppercase tracking-wide text-slate-500">{label}</dt>
       <dd className="mt-0.5 text-sm font-medium text-slate-900">{children ?? '—'}</dd>
+      {source && <dd className="text-[11px] text-slate-500">{source}</dd>}
     </div>
   )
 }
@@ -105,6 +129,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
     .slice(0, SIGNIFICANT_EVENTS)
   const linked = net.linked_carriers.filter((c) => c.shares.some((s) => s.kind !== 'building'))
   const generated = new Date()
+  const census = censusLabel(profile.last_refreshed_at)
 
   function saveAsPdf() {
     // The browser names the PDF after the page title.
@@ -153,7 +178,10 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Block title={`Needs attention · ${watch.length}`}>
+        <Block
+          title={`Needs attention · ${watch.length}`}
+          source="Each item names its FMCSA record"
+        >
           {watch.length === 0 ? (
             <p className="text-sm text-slate-500">
               Nothing in the checks CarrierIQ runs on FMCSA’s records.
@@ -169,7 +197,10 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
             </ul>
           )}
         </Block>
-        <Block title={`In good standing · ${good.length}`}>
+        <Block
+          title={`In good standing · ${good.length}`}
+          source="Each item names its FMCSA record"
+        >
           <ul className="list-disc space-y-2 pl-5 text-sm text-slate-700">
             {good.map((item) => (
               <li key={item.key}>
@@ -181,13 +212,17 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
         </Block>
       </div>
 
-      <Block title="Identity & authority">
+      <Block title="Identity & authority" source="FMCSA census unless noted">
         <Fields>
-          <Field label="Operating status">
+          <Field label="USDOT registration" source={census}>
             {profile.registration_status && humanize(profile.registration_status.toLowerCase())}
           </Field>
           {auth.dockets.map((d) => (
-            <Field key={`${d.prefix}${d.number}`} label={`Authority ${d.prefix}${d.number}`}>
+            <Field
+              key={`${d.prefix}${d.number}`}
+              label={`Authority ${d.prefix}${d.number}`}
+              source={sourceLabel(d.status_source, d.status_as_of)}
+            >
               {d.status ? humanize(d.status.toLowerCase()) : 'Unknown'}
               {d.authority_type && (
                 <span className="block text-xs font-normal text-slate-500">{d.authority_type}</span>
@@ -212,7 +247,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
             {profile.first_registered_date &&
               `${formatDate(profile.first_registered_date)}${years !== null ? ` · ${years} yr` : ''}`}
           </Field>
-          <Field label="Out-of-service order">
+          <Field label="Out-of-service order" source="FMCSA Out of Service Orders">
             {oos ? (oos.status === 'alert' ? 'Active' : 'None active') : null}
           </Field>
           <Field label="Last MCS-150">{formatDate(profile.last_mcs150_date)}</Field>
@@ -234,7 +269,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
       </Block>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Block title="Fleet">
+        <Block title="Fleet" source="FMCSA census (MCS-150), FMCSA inspections, NHTSA vPIC">
           <Fields columns={2}>
             <Field label="Power units (MCS-150)">{fleet.registered_power_units}</Field>
             <Field label="Drivers (MCS-150)">{profile.driver_count}</Field>
@@ -246,15 +281,23 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
             <Field label="VINs also on other carriers">{equipment.data.shared_vin_count}</Field>
           </Fields>
         </Block>
-        <Block title="Insurance">
+        <Block title="Insurance" source="FMCSA insurance filings unless noted">
           <Fields columns={2}>
-            <Field label="BI&PD on file">
+            <Field
+              label="BI&PD on file"
+              source={docket ? sourceLabel(docket.status_source, docket.status_as_of) : undefined}
+            >
               {docket?.bipd_on_file ? formatMoney(docket.bipd_on_file) : 'None'}
             </Field>
             <Field label="BI&PD required">
               {docket?.bipd_required ? formatMoney(docket.bipd_required) : 'None'}
             </Field>
-            <Field label="Insurer">{bipd?.insurer}</Field>
+            <Field
+              label="Insurer"
+              source={bipd ? sourceLabel(bipd.source_system, bipd.status_as_of) : undefined}
+            >
+              {bipd?.insurer}
+            </Field>
             <Field label="Current filing since">{formatDate(bipd?.effective_date ?? null)}</Field>
             <Field label="Cargo">
               {docket?.cargo_required
@@ -271,7 +314,11 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
                 : 'Not required'}
             </Field>
             {auth.renewals.map((r) => (
-              <Field key={`${r.docket}-${r.insurance_type}`} label="Usual renewal (estimate)">
+              <Field
+                key={`${r.docket}-${r.insurance_type}`}
+                label="Usual renewal (estimate)"
+                source="From FMCSA filing start dates"
+              >
                 Around {formatDate(r.expected)}
                 <span className="block text-xs font-normal text-slate-500">
                   {r.state === 'unconfirmed'
@@ -280,19 +327,26 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
                 </span>
               </Field>
             ))}
-            <Field label="Process agent (BOC-3)">
+            <Field
+              label="Process agent (BOC-3)"
+              source={
+                agent
+                  ? agent.source_system === 'MOTUS'
+                    ? 'FMCSA Motus BOC-3'
+                    : 'FMCSA L&I BOC-3 (old system only)'
+                  : 'FMCSA BOC-3 filings'
+              }
+            >
               {agent ? agent.name : auth.process_agents ? 'None listed' : null}
-              {agent && (
-                <span className="block text-xs font-normal text-slate-500">
-                  {agent.source_system === 'MOTUS' ? 'FMCSA Motus' : 'Old L&I system only'}
-                </span>
-              )}
             </Field>
           </Fields>
         </Block>
       </div>
 
-      <Block title={`Safety · last ${recent?.months ?? 24} months`}>
+      <Block
+        title={`Safety · last ${recent?.months ?? 24} months`}
+        source="FMCSA inspections; national averages from FMCSA SAFER"
+      >
         <Fields>
           <Field label="Inspections">
             {recent?.inspections ?? profile.safety.inspection_count}
@@ -333,7 +387,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
       </Block>
 
       {linked.length > 0 && (
-        <Block title="Linked carriers (FMCSA census)">
+        <Block title="Linked carriers" source="FMCSA census">
           <ul className="space-y-1 text-sm text-slate-700">
             {linked.map((c) => (
               <li key={c.usdot_number}>
@@ -356,7 +410,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
       )}
 
       {events.length > 0 && (
-        <Block title="Recent significant events">
+        <Block title="Recent significant events" source="FMCSA authority and insurance history">
           <ul className="space-y-1 text-sm text-slate-700">
             {events.map((e) => (
               <li key={`${e.event_type}-${e.event_date}-${e.title}`}>

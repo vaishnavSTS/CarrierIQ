@@ -8,7 +8,7 @@ from itertools import pairwise
 
 from app.core.exceptions import CarrierNotFoundError
 from app.core.inspection_levels import NATIONAL_DRIVER_OOS_RATE, NATIONAL_VEHICLE_OOS_RATE
-from app.models import Address, Carrier, CarrierAttributeHistory, Domain, Officer, Phone
+from app.models import Address, Authority, Carrier, CarrierAttributeHistory, Domain, Officer, Phone
 from app.repositories.authority_repository import AuthorityRepository
 from app.repositories.carrier_history_repository import CarrierHistoryRepository
 from app.repositories.inspection_repository import InspectionRepository
@@ -104,6 +104,8 @@ class CarrierProfileService:
             domains=[d.domain for d in self.observed.current(Domain, carrier.id)],
             authority=AuthorityOut(
                 status=authority_status([a.status for a in dockets]),
+                source_system=shown.status_source if (shown := _shown(dockets)) else None,
+                as_of=shown.status_as_of if shown else None,
                 dockets=[
                     DocketOut(prefix=a.docket_prefix.value, number=a.docket_number, status=a.status)
                     for a in dockets
@@ -224,6 +226,11 @@ def _address(address: Address) -> AddressOut:
         first_seen=address.first_seen,
         last_seen=address.last_seen,
     )
+
+
+def _shown(dockets: Sequence[Authority]) -> Authority | None:
+    """The docket whose status the header shows: an active one, else the first."""
+    return next((a for a in dockets if a.status == "ACTIVE"), dockets[0] if dockets else None)
 
 
 def _rate(part: int, whole: int) -> float | None:
