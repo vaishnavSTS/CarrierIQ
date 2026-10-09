@@ -28,7 +28,7 @@ function StatTile({
   return (
     <motion.div
       variants={item}
-      className="rounded-xl border border-slate-200/80 bg-canvas/60 px-4 py-3 backdrop-blur"
+      className="rounded-xl border border-slate-200/80 bg-canvas/20 px-4 py-3"
     >
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-500">
         <Icon className="size-4 text-accent-strong" aria-hidden />
@@ -45,7 +45,7 @@ function StatTile({
 /** Dashboard opener: live status, search and headline numbers, on a see-through card. */
 export function DashboardHero({ totals }: { totals: DashboardTotals | undefined }) {
   return (
-    <section className="relative isolate overflow-hidden rounded-2xl border border-slate-200/70 bg-surface/55 shadow-xl shadow-black/20 backdrop-blur-md">
+    <section className="relative isolate overflow-hidden rounded-2xl border border-slate-200/70 bg-surface/25 shadow-xl shadow-black/20">
       <motion.div
         className="relative grid gap-6 p-6 md:p-8"
         variants={container}
