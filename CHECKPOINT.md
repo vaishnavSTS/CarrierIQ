@@ -706,3 +706,4 @@ and the queue evaluation.
 | 2026-10-09 | Phase 10 Part 1: PostgreSQL job queue (SKIP LOCKED, dedupe, backoff retries, dead-worker recovery), worker process; migration 0011; 303 tests passing. |
 | 2026-10-09 | Phase 10 Part 2: scheduled ingestion (stale carriers queued every 15 min, batch 50, failure cooldown), Docker worker service; 307 tests passing. |
 | 2026-10-09 | Phase 10 Part 3: job status API + dashboard card, worker heartbeat, Refresh now, queue evaluation doc; migration 0012; 310 tests passing. All 10 phases done. |
+| 2026-10-09 | Dark purple theme (slate scale redefined in `index.css`; charts re-validated for the dark surface) and animated live dashboard (`/api/v1/dashboard`, lucide-react + motion); docs/architecture.md + .html; 311 tests passing. |

@@ -1,9 +1,103 @@
 @import 'tailwindcss';
 
+/*
+ * Dark purple theme.
+ *
+ * Components are written with the slate scale ("text-slate-900" = strongest text,
+ * "bg-slate-50" = subtle fill, "border-slate-200" = hairline). Here that scale is redefined
+ * for a dark, violet-tinted surface: low numbers are dark fills, high numbers are light ink.
+ * So every page switches theme from this one place. Status colours (emerald / amber / red /
+ * blue) are inverted the same way: 50 = a dark tint behind a badge, 600-800 = light text.
+ */
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --color-canvas: #0c0916; /* page background */
+  --color-surface: #161126; /* cards, header */
+  --color-accent: #8b5cf6; /* violet: primary actions, highlights */
+  --color-accent-strong: #a78bfa;
+  --color-accent-soft: #2a1e4a;
+
+  --color-slate-50: #1c1530;
+  --color-slate-100: #231a3a;
+  --color-slate-200: #2e2447;
+  --color-slate-300: #40355f;
+  --color-slate-400: #6e6491;
+  --color-slate-500: #9a90b9;
+  --color-slate-600: #b3aacd;
+  --color-slate-700: #c9c2e1;
+  --color-slate-800: #ddd8ee;
+  --color-slate-900: #f2effa;
+  --color-slate-950: #faf8ff;
+
+  --color-emerald-50: #0e2a20;
+  --color-emerald-600: #34d399;
+  --color-emerald-700: #6ee7b7;
+  --color-amber-50: #2e2210;
+  --color-amber-600: #fbbf24;
+  --color-amber-700: #fcd34d;
+  --color-red-50: #2f1219;
+  --color-red-200: #5b2232;
+  --color-red-600: #f87171;
+  --color-red-700: #fca5a5;
+  --color-red-800: #fecaca;
+  --color-blue-700: #93c5fd;
+}
+
+:root {
+  color-scheme: dark;
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-canvas text-slate-900 antialiased;
+}
+
+::selection {
+  background: var(--color-accent-soft);
+  color: var(--color-slate-950);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent-strong);
+  outline-offset: 2px;
+}
+
+/* Dashboard hero: slow drifting glow. Turned off for people who prefer reduced motion. */
+@keyframes aurora-drift {
+  0% {
+    transform: translate3d(-8%, -6%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(6%, 4%, 0) scale(1.15);
+  }
+  100% {
+    transform: translate3d(-8%, -6%, 0) scale(1);
+  }
+}
+
+@keyframes live-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  80%,
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.aurora-blob {
+  animation: aurora-drift 18s ease-in-out infinite;
+}
+
+.live-ping {
+  animation: live-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aurora-blob,
+  .live-ping {
+    animation: none;
+  }
 }

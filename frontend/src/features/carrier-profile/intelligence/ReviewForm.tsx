@@ -46,7 +46,7 @@ export function ReviewForm({ usdotNumber, signal }: { usdotNumber: number; signa
           type="button"
           disabled={review.isPending}
           onClick={() => decide('REVIEWED')}
-          className={`${button} bg-slate-900 text-white ring-slate-900 hover:bg-slate-700`}
+          className={`${button} bg-accent text-white ring-accent hover:bg-accent-strong`}
         >
           {signal.status === 'REVIEWED' ? 'Save note' : 'Mark reviewed'}
         </button>
@@ -54,7 +54,7 @@ export function ReviewForm({ usdotNumber, signal }: { usdotNumber: number; signa
           type="button"
           disabled={review.isPending}
           onClick={() => decide('DISMISSED')}
-          className={`${button} bg-white text-slate-900 ring-slate-300 hover:bg-slate-50`}
+          className={`${button} bg-surface text-slate-900 ring-slate-300 hover:bg-slate-50`}
         >
           {signal.status === 'DISMISSED' ? 'Save note' : 'Dismiss'}
         </button>
@@ -66,7 +66,7 @@ export function ReviewForm({ usdotNumber, signal }: { usdotNumber: number; signa
               setNote('')
               decide('OPEN')
             }}
-            className={`${button} bg-white text-slate-700 ring-slate-300 hover:bg-slate-50`}
+            className={`${button} bg-surface text-slate-700 ring-slate-300 hover:bg-slate-50`}
           >
             Reopen
           </button>

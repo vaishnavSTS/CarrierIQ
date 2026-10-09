@@ -50,13 +50,13 @@ export function EvidenceDrawer({
         aria-label="Close evidence"
         tabIndex={-1}
         onClick={onClose}
-        className="absolute inset-0 bg-slate-900/30"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
       />
       <aside
         role="dialog"
         aria-modal="true"
         aria-labelledby="evidence-title"
-        className="relative flex h-full w-full max-w-xl flex-col overflow-y-auto bg-white shadow-xl"
+        className="relative flex h-full w-full max-w-xl flex-col overflow-y-auto bg-surface shadow-xl"
       >
         <div className="flex items-start justify-between gap-3 px-5 py-4">
           <div>

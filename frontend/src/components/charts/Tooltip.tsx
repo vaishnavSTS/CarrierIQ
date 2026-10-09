@@ -5,7 +5,7 @@ export function Tooltip({ x, y, children }: { x: number; y: number; children: Re
   return (
     <div
       role="status"
-      className="pointer-events-none absolute z-10 min-w-36 -translate-x-1/2 -translate-y-full rounded-md border border-black/10 bg-white px-3 py-2 text-xs shadow-md"
+      className="pointer-events-none absolute z-10 min-w-36 -translate-x-1/2 -translate-y-full rounded-md border border-slate-300 bg-surface px-3 py-2 text-xs shadow-md"
       style={{ left: x, top: y - 8 }}
     >
       {children}

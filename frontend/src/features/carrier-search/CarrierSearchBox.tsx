@@ -30,11 +30,11 @@ export function CarrierSearchBox({ initialQuery = '', autoFocus = false }: Props
         placeholder="Search USDOT, MC, or Carrier Name"
         autoFocus={autoFocus}
         maxLength={100}
-        className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+        className="w-full rounded-md border border-slate-300 bg-surface px-3 py-2 text-sm placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
       />
       <button
         type="submit"
-        className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+        className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong disabled:opacity-50"
         disabled={!query.trim()}
       >
         Search

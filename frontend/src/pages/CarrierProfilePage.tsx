@@ -91,7 +91,7 @@ export function CarrierProfilePage() {
             onClick={() => openTab(id)}
             className={`-mb-px border-b-2 px-3 py-2 text-sm ${
               tab === id
-                ? 'border-slate-900 font-medium text-slate-900'
+                ? 'border-accent-strong font-medium text-slate-900'
                 : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
             }`}
           >
@@ -125,7 +125,7 @@ function Notice({ children }: { children: ReactNode }) {
   return (
     <div className="space-y-3">
       <div
-        className="rounded-md border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700"
+        className="rounded-md border border-slate-200 bg-surface px-4 py-3 text-sm text-slate-700"
         role="alert"
       >
         {children}

@@ -1,23 +1,24 @@
 /**
- * Chart colours (light surface). Categorical slots 1–2 of the reference data-viz palette,
- * validated together for colour-blind separation and 3:1 contrast on white and #fcfcfb.
+ * Chart colours for the dark purple surface (#161126). The two series are the dark-mode steps
+ * of slots 1–2 of the reference data-viz palette, re-validated on this surface: lightness band,
+ * chroma, colour-blind separation (worst ΔE 26.8) and 3:1 contrast all pass.
  * Text never uses series colours; it uses the ink tokens below.
  */
 export const SERIES = {
-  blue: '#2a78d6',
-  orange: '#eb6834',
+  blue: '#3987e5',
+  orange: '#d95926',
 } as const
 
 export const INK = {
-  primary: '#0b0b0b',
-  secondary: '#52514e',
-  muted: '#898781',
+  primary: '#f2effa',
+  secondary: '#b3aacd',
+  muted: '#8a80a8',
 } as const
 
 export const CHROME = {
-  surface: '#ffffff',
-  grid: '#e1e0d9',
-  baseline: '#c3c2b7',
+  surface: '#161126',
+  grid: '#2e2447',
+  baseline: '#40355f',
 } as const
 
 /** A "nice" upper bound for an axis (1, 2, 2.5, 5, 10 × 10^n) and its tick step. */
