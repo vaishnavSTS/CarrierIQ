@@ -16,6 +16,8 @@ export const TYPE_LABEL: Record<string, string> = {
   SAFETY_TREND: 'Safety trend',
   FLEET_CONSISTENCY: 'Fleet consistency',
   SHARED_VIN: 'Shared equipment',
+  SHARED_CONTACT: 'Shared contact details',
+  OWNERSHIP_EVENT: 'Ownership events',
 }
 
 /** What each rule checks, in one sentence: "how was this calculated?" (spec 13). */
@@ -32,6 +34,10 @@ export const RULE_EXPLAINED: Record<string, string> = {
     'Registered power units compared with power units seen on inspections in the last 24 months.',
   shared_vin:
     'VINs on this carrier’s inspections that were also recorded on inspections of another USDOT number.',
+  shared_contact:
+    'Phone, email, street address and unit, or officer names in this carrier’s FMCSA census record that also appear on another USDOT number.',
+  ownership_event:
+    'Ownership and identity events recorded by your team, such as a broker attestation of an ownership change.',
 }
 
 export const CONFIDENCE_EXPLAINED: Record<string, string> = {

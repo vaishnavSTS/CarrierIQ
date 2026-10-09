@@ -1,5 +1,7 @@
 import { type ReactNode, useEffect, useRef } from 'react'
 
+import { motion } from 'motion/react'
+
 import { StatusBadge } from '../../../components/StatusBadge'
 import type { Signal } from '../../../types/carrierSignals'
 import { formatDate, formatDateTime } from '../../../utils/format'
@@ -22,7 +24,7 @@ function Block({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
-/** Side panel answering "why was this signal generated?" with every record behind it. */
+/** Centered pop-up answering "why was this signal generated?" with every record behind it. */
 export function EvidenceDrawer({
   usdotNumber,
   signal,
@@ -44,7 +46,7 @@ export function EvidenceDrawer({
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-40 flex justify-end">
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-4">
       <button
         type="button"
         aria-label="Close evidence"
@@ -52,13 +54,16 @@ export function EvidenceDrawer({
         onClick={onClose}
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
       />
-      <aside
+      <motion.div
         role="dialog"
         aria-modal="true"
         aria-labelledby="evidence-title"
-        className="relative flex h-full w-full max-w-xl flex-col overflow-y-auto bg-surface shadow-xl"
+        initial={{ opacity: 0, scale: 0.96, y: 8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.18, ease: 'easeOut' }}
+        className="relative flex max-h-[88vh] w-full max-w-2xl flex-col overflow-y-auto rounded-xl border border-slate-200 bg-surface shadow-2xl"
       >
-        <div className="flex items-start justify-between gap-3 px-5 py-4">
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-3 bg-surface px-5 py-4">
           <div>
             <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
               {TYPE_LABEL[signal.signal_type] ?? signal.signal_type}
@@ -147,7 +152,7 @@ export function EvidenceDrawer({
           Based on available public records. A signal is a prompt for review, not a finding about
           the carrier.
         </p>
-      </aside>
+      </motion.div>
     </div>
   )
 }
