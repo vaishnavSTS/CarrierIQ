@@ -2,10 +2,12 @@
 recent changes, refreshed on demand first (spec Section 19.2)."""
 
 import logging
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from datetime import UTC, date, datetime, timedelta
 from itertools import pairwise
 
 from app.core.exceptions import CarrierNotFoundError
+from app.core.inspection_levels import NATIONAL_DRIVER_OOS_RATE, NATIONAL_VEHICLE_OOS_RATE
 from app.models import Address, Carrier, CarrierAttributeHistory, Domain, Officer, Phone
 from app.repositories.authority_repository import AuthorityRepository
 from app.repositories.carrier_history_repository import CarrierHistoryRepository
@@ -23,6 +25,7 @@ from app.schemas.carrier_profile import (
     InspectionOut,
     InspectionYearOut,
     InsuranceOut,
+    OosWindowOut,
     PhoneOut,
     SafetyOut,
     TimelineEventOut,
@@ -39,6 +42,7 @@ RECENT_INSPECTIONS = 10
 VEHICLES_LISTED = 25
 RECENT_CHANGES = 20
 TIMELINE_EVENTS = 200
+RECENT_MONTHS = 24  # out-of-service window, as on FMCSA SAFER
 
 
 class CarrierProfileService:
@@ -52,7 +56,9 @@ class CarrierProfileService:
         insurance: InsuranceRepository,
         timeline: TimelineRepository,
         signals: SignalRepository,
+        today: Callable[[], date] = lambda: datetime.now(UTC).date(),
     ) -> None:
+        self.today = today
         self.refresh = refresh
         self.observed = observed
         self.authorities = authorities
@@ -129,12 +135,28 @@ class CarrierProfileService:
 
     def _safety(self, carrier: Carrier) -> SafetyOut:
         summary = self.inspections.summary(carrier.id)
+        since = self.today() - timedelta(days=round(RECENT_MONTHS * 365.25 / 12))
+        recent = self.inspections.summary(carrier.id, since=since)
         return SafetyOut(
             inspection_count=summary.count,
+            vehicle_inspection_count=summary.vehicle_inspections,
+            driver_inspection_count=summary.driver_inspections,
             vehicle_oos_count=summary.vehicle_oos,
             driver_oos_count=summary.driver_oos,
-            vehicle_oos_rate=_rate(summary.vehicle_oos, summary.count),
-            driver_oos_rate=_rate(summary.driver_oos, summary.count),
+            vehicle_oos_rate=_rate(summary.vehicle_oos, summary.vehicle_inspections),
+            driver_oos_rate=_rate(summary.driver_oos, summary.driver_inspections),
+            recent=OosWindowOut(
+                months=RECENT_MONTHS,
+                inspections=recent.count,
+                vehicle_inspections=recent.vehicle_inspections,
+                driver_inspections=recent.driver_inspections,
+                vehicle_oos=recent.vehicle_oos,
+                driver_oos=recent.driver_oos,
+                vehicle_oos_rate=_rate(recent.vehicle_oos, recent.vehicle_inspections),
+                driver_oos_rate=_rate(recent.driver_oos, recent.driver_inspections),
+                national_vehicle_oos_rate=NATIONAL_VEHICLE_OOS_RATE,
+                national_driver_oos_rate=NATIONAL_DRIVER_OOS_RATE,
+            ),
             first_inspection_date=summary.first_date,
             last_inspection_date=summary.last_date,
             by_year=[

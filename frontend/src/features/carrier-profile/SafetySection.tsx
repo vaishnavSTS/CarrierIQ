@@ -23,6 +23,8 @@ function SubHeading({ children }: { children: string }) {
 
 export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; safety: Safety }) {
   const detail = useCarrierSafety(usdotNumber)
+  // FMCSA's method: a Level III (driver-only) inspection does not count toward the vehicle rate.
+  const recent = safety.recent
 
   return (
     <Section id="safety" title="Safety">
@@ -37,14 +39,22 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
           }
         />
         <Stat
-          label="Vehicle OOS"
-          value={formatPercent(safety.vehicle_oos_rate)}
-          note={`${safety.vehicle_oos_count} of ${safety.inspection_count} inspections`}
+          label={`Vehicle OOS · last ${recent?.months ?? 24} months`}
+          value={formatPercent(recent?.vehicle_oos_rate ?? null)}
+          note={
+            recent
+              ? `${recent.vehicle_oos} of ${recent.vehicle_inspections} inspections that examined the vehicle · national average ${formatPercent(recent.national_vehicle_oos_rate)}`
+              : undefined
+          }
         />
         <Stat
-          label="Driver OOS"
-          value={formatPercent(safety.driver_oos_rate)}
-          note={`${safety.driver_oos_count} of ${safety.inspection_count} inspections`}
+          label={`Driver OOS · last ${recent?.months ?? 24} months`}
+          value={formatPercent(recent?.driver_oos_rate ?? null)}
+          note={
+            recent
+              ? `${recent.driver_oos} of ${recent.driver_inspections} inspections that examined the driver · national average ${formatPercent(recent.national_driver_oos_rate)}`
+              : undefined
+          }
         />
         <Stat label="Crashes" value={safety.crash_count ?? '—'} note="Crash data not loaded yet" />
         <Stat

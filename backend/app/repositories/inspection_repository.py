@@ -7,6 +7,7 @@ from datetime import date
 from sqlalchemy import Integer, func, or_, select
 from sqlalchemy.orm import Session
 
+from app.core.inspection_levels import DRIVER_LEVELS, VEHICLE_LEVELS
 from app.ingestion.vehicle_inspection_normalizer import InspectionValues
 from app.models import Inspection
 
@@ -18,6 +19,8 @@ class InspectionSummary:
     driver_oos: int
     first_date: date | None
     last_date: date | None
+    vehicle_inspections: int  # inspections that examined the vehicle (FMCSA OOS-rate base)
+    driver_inspections: int  # inspections that examined the driver
 
 
 class InspectionRepository:
@@ -74,15 +77,23 @@ class InspectionRepository:
         existing.raw_record_id = raw_record_id
         return existing
 
-    def summary(self, carrier_id: int) -> InspectionSummary:
+    def summary(self, carrier_id: int, since: date | None = None) -> InspectionSummary:
+        level = Inspection.inspection_level
+        vehicle = or_(level.is_(None), level.in_(VEHICLE_LEVELS))
+        driver = or_(level.is_(None), level.in_(DRIVER_LEVELS))
+        conditions = [Inspection.carrier_id == carrier_id]
+        if since is not None:
+            conditions.append(Inspection.inspection_date >= since)
         row = self.db.execute(
             select(
                 func.count(),
-                func.count().filter(Inspection.vehicle_oos),
-                func.count().filter(Inspection.driver_oos),
+                func.count().filter(Inspection.vehicle_oos, vehicle),
+                func.count().filter(Inspection.driver_oos, driver),
                 func.min(Inspection.inspection_date),
                 func.max(Inspection.inspection_date),
-            ).where(Inspection.carrier_id == carrier_id)
+                func.count().filter(vehicle),
+                func.count().filter(driver),
+            ).where(*conditions)
         ).one()
         return InspectionSummary(*row)
 

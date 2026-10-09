@@ -9,9 +9,12 @@ class QuarterOut(BaseModel):
     quarter: str  # e.g. "2025-Q3"
     start_date: date
     inspections: int
+    vehicle_inspections: int = 0  # inspections that examined the vehicle (Levels I, II, V, VI)
+    driver_inspections: int = 0  # inspections that examined the driver (Levels I, II, III, VI)
     vehicle_oos: int
     driver_oos: int
-    # Share of the quarter's inspections with an OOS order, 0..1; None without inspections.
+    # FMCSA's method: OOS orders / inspections that examined the vehicle (or driver), 0..1;
+    # None when there were none.
     vehicle_oos_rate: float | None
     driver_oos_rate: float | None
     violations: int  # violation rows recorded on the quarter's inspections

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
+from app.core.inspection_levels import examines_driver, examines_vehicle
 from app.models import Inspection
 from app.schemas.carrier_safety import (
     CountOut,
@@ -28,6 +29,8 @@ def violations_of(inspection: Inspection) -> list[dict[str, Any]]:
 @dataclass
 class _Totals:
     inspections: int = 0
+    vehicle_inspections: int = 0
+    driver_inspections: int = 0
     vehicle_oos: int = 0
     driver_oos: int = 0
     violations: int = 0
@@ -47,8 +50,12 @@ def quarterly_trend(inspections: Sequence[Inspection], today: date) -> list[Quar
     for inspection in inspections:
         quarter = totals.setdefault(quarter_of(inspection.inspection_date), _Totals())
         quarter.inspections += 1
-        quarter.vehicle_oos += inspection.vehicle_oos
-        quarter.driver_oos += inspection.driver_oos
+        vehicle = examines_vehicle(inspection.inspection_level)
+        driver = examines_driver(inspection.inspection_level)
+        quarter.vehicle_inspections += vehicle
+        quarter.driver_inspections += driver
+        quarter.vehicle_oos += vehicle and inspection.vehicle_oos
+        quarter.driver_oos += driver and inspection.driver_oos
         quarter.violations += len(violations_of(inspection))
 
     year, q = min(totals)
@@ -61,10 +68,12 @@ def quarterly_trend(inspections: Sequence[Inspection], today: date) -> list[Quar
                 quarter=f"{year}-Q{q}",
                 start_date=date(year, 3 * q - 2, 1),
                 inspections=t.inspections,
+                vehicle_inspections=t.vehicle_inspections,
+                driver_inspections=t.driver_inspections,
                 vehicle_oos=t.vehicle_oos,
                 driver_oos=t.driver_oos,
-                vehicle_oos_rate=rate(t.vehicle_oos, t.inspections),
-                driver_oos_rate=rate(t.driver_oos, t.inspections),
+                vehicle_oos_rate=rate(t.vehicle_oos, t.vehicle_inspections),
+                driver_oos_rate=rate(t.driver_oos, t.driver_inspections),
                 violations=t.violations,
             )
         )

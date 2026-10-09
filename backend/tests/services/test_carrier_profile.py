@@ -71,7 +71,9 @@ def test_profile_of_a_real_carrier(db: Session, api: FakeDotApi) -> None:
     # Safety: 4 inspections, one vehicle out-of-service (82915718, 2024-10-14)
     safety = profile.safety
     assert (safety.inspection_count, safety.vehicle_oos_count, safety.driver_oos_count) == (4, 1, 0)
-    assert (safety.vehicle_oos_rate, safety.driver_oos_rate) == (0.25, 0.0)
+    # FMCSA's method: vehicle OOS over inspections that examined the vehicle (1 of the 4).
+    assert (safety.vehicle_inspection_count, safety.driver_inspection_count) == (1, 4)
+    assert (safety.vehicle_oos_rate, safety.driver_oos_rate) == (1.0, 0.0)
     assert (safety.first_inspection_date, safety.last_inspection_date) == (
         date(2024, 10, 14),
         date(2026, 4, 3),

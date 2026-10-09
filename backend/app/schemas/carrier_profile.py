@@ -67,13 +67,32 @@ class InspectionYearOut(BaseModel):
     driver_oos: int
 
 
-class SafetyOut(BaseModel):
-    inspection_count: int
-    vehicle_oos_count: int
-    driver_oos_count: int
-    # Share of inspections with an out-of-service order, 0..1; None without inspections.
+class OosWindowOut(BaseModel):
+    """Out-of-service figures for a recent window, by FMCSA's method."""
+
+    months: int
+    inspections: int
+    vehicle_inspections: int
+    driver_inspections: int
+    vehicle_oos: int
+    driver_oos: int
     vehicle_oos_rate: float | None
     driver_oos_rate: float | None
+    national_vehicle_oos_rate: float  # FMCSA SAFER national average
+    national_driver_oos_rate: float
+
+
+class SafetyOut(BaseModel):
+    inspection_count: int
+    vehicle_inspection_count: int = 0  # inspections that examined the vehicle
+    driver_inspection_count: int = 0  # inspections that examined the driver
+    vehicle_oos_count: int
+    driver_oos_count: int
+    # FMCSA's method: OOS orders / inspections that examined the vehicle (or driver), 0..1;
+    # None when there were none.
+    vehicle_oos_rate: float | None
+    driver_oos_rate: float | None
+    recent: OosWindowOut | None = None  # last 24 months
     first_inspection_date: date | None
     last_inspection_date: date | None
     by_year: list[InspectionYearOut]

@@ -48,8 +48,9 @@ def inspection(
 
 def test_quarters_run_from_the_first_inspection_to_today_with_gaps_filled() -> None:
     inspections = [
-        inspection(date(2025, 2, 10), vehicle_oos=True),
-        inspection(date(2025, 3, 5)),
+        inspection(date(2025, 2, 10), vehicle_oos=True, level=2),
+        inspection(date(2025, 3, 5), level=1),
+        inspection(date(2025, 3, 6)),  # Level III: driver only, not in the vehicle rate
         inspection(
             date(2025, 8, 1), driver_oos=True, violations=[violation("392.2", 392, "DRIVER")]
         ),
@@ -59,7 +60,8 @@ def test_quarters_run_from_the_first_inspection_to_today_with_gaps_filled() -> N
 
     assert [q.quarter for q in trend] == ["2025-Q1", "2025-Q2", "2025-Q3", "2025-Q4", "2026-Q1"]
     q1, q2, q3, _, now = trend
-    assert (q1.inspections, q1.vehicle_oos, q1.vehicle_oos_rate) == (2, 1, 0.5)
+    assert (q1.inspections, q1.vehicle_inspections, q1.vehicle_oos) == (3, 2, 1)
+    assert (q1.vehicle_oos_rate, q1.driver_inspections) == (0.5, 3)
     assert (q2.inspections, q2.vehicle_oos_rate) == (0, None)  # empty quarter, no rate
     assert (q3.driver_oos, q3.driver_oos_rate, q3.violations) == (1, 1.0, 1)
     assert (now.inspections, now.start_date) == (0, date(2026, 1, 1))

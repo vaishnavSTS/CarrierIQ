@@ -4,6 +4,9 @@ export interface Quarter {
   quarter: string // "2025-Q3"
   start_date: string
   inspections: number
+  /** Inspections that examined the vehicle / driver: the base of each OOS rate */
+  vehicle_inspections: number
+  driver_inspections: number
   vehicle_oos: number
   driver_oos: number
   vehicle_oos_rate: number | null

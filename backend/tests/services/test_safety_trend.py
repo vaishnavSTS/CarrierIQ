@@ -13,16 +13,24 @@ from tests.factories import make_carrier, make_raw_record
 TODAY = date(2026, 10, 8)
 
 
-def inspect(db: Session, carrier: Carrier, days_ago: int, n: int, vehicle_oos: int) -> None:
+def inspect(
+    db: Session,
+    carrier: Carrier,
+    days_ago: int,
+    n: int,
+    vehicle_oos: int,
+    level: int | None = None,
+) -> None:
     """`n` inspections `days_ago` days before TODAY, the first `vehicle_oos` of them OOS."""
     for k in range(n):
-        inspection_id = f"{carrier.usdot_number}-{days_ago}-{k}"
+        inspection_id = f"{carrier.usdot_number}-{days_ago}-{k}-{level}"
         db.add(
             Inspection(
                 carrier_id=carrier.id,
                 inspection_id=inspection_id,
                 inspection_date=TODAY - timedelta(days=days_ago),
                 state="WA",
+                inspection_level=level,
                 vehicle_oos=k < vehicle_oos,
                 driver_oos=False,
                 source="dot_socrata",
@@ -53,6 +61,19 @@ def test_vehicle_oos_rate_rose(db: Session) -> None:
     assert types == ["COMPARISON", "COMPARISON", "THRESHOLD"] + ["RECORD"] * 4
     assert all(e.raw_record_id for e in rose.evidence if e.evidence_type == "RECORD")
     assert "safety_trend:driver_oos_rose" not in found
+
+
+def test_driver_only_inspections_do_not_dilute_the_vehicle_rate(db: Session) -> None:
+    carrier = make_carrier(db)
+    inspect(db, carrier, days_ago=500, n=10, vehicle_oos=1, level=1)  # 10%
+    inspect(db, carrier, days_ago=30, n=5, vehicle_oos=4, level=2)  # 80% of vehicle inspections
+    inspect(db, carrier, days_ago=30, n=20, vehicle_oos=0, level=3)  # driver only: not counted
+
+    rose = evaluate(db, carrier)["safety_trend:vehicle_oos_rose"]
+
+    assert "80% over the last 12 months (4 of 5 inspections that examined the vehicle)" in (
+        rose.description
+    )
 
 
 def test_small_or_steady_changes_are_not_signals(db: Session) -> None:

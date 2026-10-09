@@ -17,6 +17,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
 
+from app.core.inspection_levels import examines_driver, examines_vehicle
 from app.intelligence.base_rule import EvidenceValues, Rule, RuleContext, SignalValues, at_day
 from app.models import Inspection
 from app.models.enums import Confidence, Severity
@@ -47,6 +48,14 @@ class _Period:
         return f"{self.start.isoformat()} to {self.end.isoformat()}"
 
 
+def _examined(period: _Period, name: str) -> _Period:
+    """Only inspections that examined the vehicle (or driver): FMCSA's OOS-rate base."""
+    check = examines_vehicle if name == "vehicle" else examines_driver
+    return _Period(
+        period.start, period.end, [i for i in period.inspections if check(i.inspection_level)]
+    )
+
+
 def _period(inspections: Sequence[Inspection], start: date, end: date) -> _Period:
     return _Period(start, end, [i for i in inspections if start <= i.inspection_date <= end])
 
@@ -69,7 +78,8 @@ def _summary(period: _Period, name: str, flag: Callable[[Inspection], bool]) -> 
         raw_record_id=None,
         field_name=f"{name}_oos_rate",
         observed_value=(
-            f"{period.label()}: {n} inspections, {oos} with {name} out of service{share}"
+            f"{period.label()}: {n} inspections that examined the {name}, {oos} with {name} "
+            f"out of service{share}"
         ),
         observed_at=at_day(period.end),
         source="dot_socrata",
@@ -94,7 +104,7 @@ def _inspection(inspection: Inspection, name: str) -> EvidenceValues:
 
 class SafetyTrendRule(Rule):
     rule_id = "safety_trend"
-    rule_version = "1.0"
+    rule_version = "1.1"  # 1.1: FMCSA's rate base (inspections that examined the unit)
 
     def evaluate(self, context: RuleContext) -> list[SignalValues]:
         inspections = InspectionRepository(context.db).for_carrier(context.carrier.id)
@@ -112,7 +122,12 @@ class SafetyTrendRule(Rule):
                 ("vehicle", lambda i: i.vehicle_oos),
                 ("driver", lambda i: i.driver_oos),
             )
-            if (signal := self._rate_rise(name, flag, recent, earlier)) is not None
+            if (
+                signal := self._rate_rise(
+                    name, flag, _examined(recent, name), _examined(earlier, name)
+                )
+            )
+            is not None
         ]
         if len(earlier.inspections) >= MIN_INSPECTIONS and not recent.inspections:
             last = earlier.inspections[-1]
@@ -183,7 +198,8 @@ class SafetyTrendRule(Rule):
             title=f"{name.capitalize()} out-of-service rate rose",
             description=(
                 f"{name.capitalize()} out-of-service rate {now:.0%} over the last 12 months "
-                f"({recent.count(flag)} of {len(recent.inspections)} inspections), up from "
+                f"({recent.count(flag)} of {len(recent.inspections)} inspections that examined "
+                f"the {name}), up from "
                 f"{before:.0%} in the 12 months before ({earlier.count(flag)} of "
                 f"{len(earlier.inspections)}). Compared with the carrier's own history only; no "
                 "industry benchmark is applied. Based on FMCSA inspection records."

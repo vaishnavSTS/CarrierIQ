@@ -39,8 +39,29 @@ export interface InspectionYear {
   driver_oos: number
 }
 
+/** Out-of-service figures for a recent window, by FMCSA's method */
+export interface OosWindow {
+  months: number
+  inspections: number
+  /** Inspections that examined the vehicle (Levels I, II, V, VI): the vehicle rate's base */
+  vehicle_inspections: number
+  /** Inspections that examined the driver (Levels I, II, III, VI): the driver rate's base */
+  driver_inspections: number
+  vehicle_oos: number
+  driver_oos: number
+  vehicle_oos_rate: number | null
+  driver_oos_rate: number | null
+  /** FMCSA SAFER national averages */
+  national_vehicle_oos_rate: number
+  national_driver_oos_rate: number
+}
+
 export interface Safety {
   inspection_count: number
+  vehicle_inspection_count: number
+  driver_inspection_count: number
+  /** Last 24 months */
+  recent: OosWindow | null
   vehicle_oos_count: number
   driver_oos_count: number
   vehicle_oos_rate: number | null
