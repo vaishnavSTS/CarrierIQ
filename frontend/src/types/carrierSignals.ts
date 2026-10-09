@@ -29,8 +29,13 @@ export interface Signal {
   description: string | null
   first_detected_at: string | null
   last_detected_at: string | null
+  /** Set when a person marked it REVIEWED or DISMISSED */
+  reviewed_at: string | null
+  review_note: string | null
   evidence: Evidence[]
 }
+
+export type ReviewStatus = 'OPEN' | 'REVIEWED' | 'DISMISSED'
 
 export interface CarrierSignals {
   usdot_number: number

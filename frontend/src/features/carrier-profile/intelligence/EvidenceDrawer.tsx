@@ -11,6 +11,7 @@ import {
   TYPE_LABEL,
   sourceName,
 } from './labels'
+import { ReviewForm } from './ReviewForm'
 
 function Block({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -22,7 +23,15 @@ function Block({ title, children }: { title: string; children: ReactNode }) {
 }
 
 /** Side panel answering "why was this signal generated?" with every record behind it. */
-export function EvidenceDrawer({ signal, onClose }: { signal: Signal; onClose: () => void }) {
+export function EvidenceDrawer({
+  usdotNumber,
+  signal,
+  onClose,
+}: {
+  usdotNumber: number
+  signal: Signal
+  onClose: () => void
+}) {
   const closeRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -103,6 +112,10 @@ export function EvidenceDrawer({ signal, onClose }: { signal: Signal; onClose: (
               </li>
             ))}
           </ol>
+        </Block>
+
+        <Block title="Review">
+          <ReviewForm key={signal.id} usdotNumber={usdotNumber} signal={signal} />
         </Block>
 
         <Block title="How this was calculated">

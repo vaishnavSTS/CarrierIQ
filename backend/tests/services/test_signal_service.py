@@ -155,3 +155,54 @@ def test_mistyped_vin_lowers_confidence(db: Session, api: FakeDotApi) -> None:  
     assert found.confidence == Confidence.LOW  # a typo can match another carrier's vehicle
     assert "possibly mistyped" in (evidence(db, found)[0].observed_value or "")
     assert signals(db)["shared_vin:888"].confidence == Confidence.HIGH
+
+
+def test_review_a_signal(api_client: TestClient, db: Session) -> None:  # noqa: F811
+    signals = api_client.get("/api/v1/carriers/295017/signals").json()["signals"]
+    target = next(s for s in signals if s["signal_type"] == "SHARED_VIN")
+
+    response = api_client.patch(
+        f"/api/v1/signals/{target['id']}",
+        json={"status": "REVIEWED", "note": "  Leased tractor, confirmed with the carrier.  "},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert (body["status"], body["review_note"]) == (
+        "REVIEWED",
+        "Leased tractor, confirmed with the carrier.",
+    )
+    assert body["reviewed_at"] is not None
+    assert len(body["evidence"]) == 2
+    profile = api_client.get("/api/v1/carriers/295017").json()
+    assert profile["open_signal_count"] == 2  # one fewer to review
+
+    carrier = CarrierRepository(db).get_by_usdot(295017)
+    assert carrier is not None
+    service(db).rebuild(carrier)  # a refresh re-runs every rule
+    again = next(
+        s
+        for s in api_client.get("/api/v1/carriers/295017/signals").json()["signals"]
+        if s["id"] == target["id"]
+    )
+    assert (again["status"], again["review_note"]) == (body["status"], body["review_note"])
+
+    reopened = api_client.patch(f"/api/v1/signals/{target['id']}", json={"status": "OPEN"}).json()
+    assert (reopened["status"], reopened["reviewed_at"], reopened["review_note"]) == (
+        "OPEN",
+        None,
+        None,
+    )
+
+
+def test_review_validation(api_client: TestClient) -> None:  # noqa: F811
+    assert (
+        api_client.patch("/api/v1/signals/999999", json={"status": "REVIEWED"}).status_code == 404
+    )
+    signal_id = api_client.get("/api/v1/carriers/295017/signals").json()["signals"][0]["id"]
+    bad = api_client.patch(f"/api/v1/signals/{signal_id}", json={"status": "APPROVED"})
+    assert bad.status_code == 422
+    long_note = api_client.patch(
+        f"/api/v1/signals/{signal_id}", json={"status": "DISMISSED", "note": "x" * 2001}
+    )
+    assert long_note.status_code == 422

@@ -7,7 +7,7 @@ service enforces that (Section 13.2).
 `signal_key` is the signal's stable identity within its carrier (e.g. "shared_vin:888"), so
 re-running a rule updates the signal and keeps its review status instead of duplicating it. A
 signal the rule no longer produces is kept with `is_active` false: a reviewer's decision about it
-stays on record.
+stays on record. Rules never change `status`, `reviewed_at` or `review_note`: only a reviewer does.
 """
 
 from datetime import datetime
@@ -45,3 +45,6 @@ class IntelligenceSignal(IdMixin, UpdatedAtMixin, Base):
     is_active: Mapped[bool] = mapped_column(default=True, server_default=true())
     first_detected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_detected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Set when a person marks the signal REVIEWED or DISMISSED; cleared when it is reopened.
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_note: Mapped[str | None] = mapped_column(Text)

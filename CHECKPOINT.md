@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 9 (Intelligence UI) — Part 1 done, Part 2 next
+**Current phase:** Phase 9 (Intelligence UI) — Parts 1–2 done, Part 3 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -22,7 +22,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 6 | Authority & Insurance | ✅ Done (2026-10-08) |
 | 7 | Equipment / VIN | ✅ Done (2026-10-08) |
 | 8 | Intelligence Engine | ✅ Done (2026-10-08) |
-| 9 | Intelligence UI | 🔄 In progress (Part 1 of 3 done) |
+| 9 | Intelligence UI | 🔄 In progress (Parts 1–2 of 3 done) |
 | 10 | Background Processing | Not started |
 
 ---
@@ -563,7 +563,17 @@ relationship view.
   - Removed a duplicate `severityTone` added in Phase 8 Part 4 (one in `utils/status.ts`).
   - Detection dates use the viewer's local date (`formatLocalDate`), like the header.
   - Checked in Chrome (J2Z Trucking, BlueTriton); no console errors. ESLint + build clean.
-- [ ] Review actions (reviewed / dismissed)
+- [x] **Part 2 — Review actions.** `PATCH /api/v1/signals/{id}` (new `routes/signals.py`,
+  `SignalReviewService`) with `{status: OPEN | REVIEWED | DISMISSED, note}` (note ≤ 2,000
+  characters, trimmed; 404 / 422 handled). Migration `0010` adds `reviewed_at` and
+  `review_note`; reopening clears both. Rules never touch status or note, so a decision
+  survives every refresh (tested). The drawer has a Review block (note, Mark reviewed / Dismiss
+  / Reopen, "Save note" when already decided); the tab filters Open (default) / Reviewed /
+  Dismissed / All with counts, tiles count open signals, cards show the decision and note.
+  After a decision the signal list updates at once and the header / search counts refresh.
+  - Checked in Chrome on USDOT 295017: reviewed with a note → header "No open signals", then
+    reopened (database checked: back to OPEN, no note; no other signal touched).
+  - Supabase at migration 0010. 2 new tests (297 total).
 - [ ] Timeline ↔ signals
 - [ ] Relationship view
 
@@ -630,3 +640,4 @@ relationship view.
 | 2026-10-08 | Phase 8 Part 3: identity change and fleet consistency signals; equipment reader shared with the rule; 291 tests passing. |
 | 2026-10-08 | Phase 8 Part 4: safety trend signal, timeline ↔ signal links, review status on profile and search; Phase 8 done; 295 tests passing. |
 | 2026-10-08 | Phase 9 Part 1: Intelligence tab — severity summary, signal cards grouped by type, evidence drawer. |
+| 2026-10-09 | Phase 9 Part 2: review actions (PATCH /signals/{id}, reviewed / dismissed with a note, reopen); migration 0010; 297 tests passing. |

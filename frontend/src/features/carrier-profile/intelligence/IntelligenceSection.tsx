@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 
 import { StatusBadge } from '../../../components/StatusBadge'
 import { useCarrierSignals } from '../../../hooks/useCarrierSignals'
-import type { Severity, Signal } from '../../../types/carrierSignals'
+import type { ReviewStatus, Severity, Signal } from '../../../types/carrierSignals'
 import { formatLocalDate } from '../../../utils/format'
 import { severityTone } from '../../../utils/status'
 import { Empty, Section, Stat } from '../Section'
@@ -11,6 +11,20 @@ import { TYPE_LABEL, TYPE_ORDER } from './labels'
 
 const SEVERITIES: Severity[] = ['HIGH', 'MEDIUM', 'LOW', 'INFO']
 const PREVIEW_CARDS = 5
+const STATUSES: [ReviewStatus | 'ALL', string][] = [
+  ['OPEN', 'Open'],
+  ['REVIEWED', 'Reviewed'],
+  ['DISMISSED', 'Dismissed'],
+  ['ALL', 'All'],
+]
+
+function chipClass(selected: boolean): string {
+  return `rounded-md px-2.5 py-1 text-xs ring-1 ring-inset ${
+    selected
+      ? 'bg-slate-900 text-white ring-slate-900'
+      : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50'
+  }`
+}
 
 function SignalCard({ signal, onOpen }: { signal: Signal; onOpen: () => void }) {
   return (
@@ -25,6 +39,13 @@ function SignalCard({ signal, onOpen }: { signal: Signal; onOpen: () => void }) 
             <span className="font-medium text-slate-900">{signal.title}</span>
           </div>
           <p className="mt-1 line-clamp-2 text-sm text-slate-600">{signal.description}</p>
+          {signal.status !== 'OPEN' && (
+            <p className="mt-1 text-xs text-slate-600">
+              <StatusBadge label={signal.status.toLowerCase()} tone="pending" />{' '}
+              {formatLocalDate(signal.reviewed_at)}
+              {signal.review_note && ` · “${signal.review_note}”`}
+            </p>
+          )}
         </div>
         <button
           type="button"
@@ -89,12 +110,19 @@ export function IntelligenceSection({ usdotNumber }: { usdotNumber: number }) {
   const { data, error, isPending } = useCarrierSignals(usdotNumber)
   const [includeInfo, setIncludeInfo] = useState(false)
   const [type, setType] = useState<string | null>(null)
+  const [status, setStatus] = useState<ReviewStatus | 'ALL'>('OPEN')
   const [openId, setOpenId] = useState<number | null>(null)
   const close = useCallback(() => setOpenId(null), [])
 
   const signals = useMemo(() => data?.signals ?? [], [data])
+  const openSignals = signals.filter((s) => s.status === 'OPEN')
+  const statusCount = (st: ReviewStatus | 'ALL') =>
+    st === 'ALL' ? signals.length : signals.filter((s) => s.status === st).length
   const visible = signals.filter(
-    (s) => (includeInfo || s.severity !== 'INFO') && (type === null || s.signal_type === type),
+    (s) =>
+      (includeInfo || s.severity !== 'INFO') &&
+      (type === null || s.signal_type === type) &&
+      (status === 'ALL' || s.status === status),
   )
   const groups = [...TYPE_ORDER, ...new Set(signals.map((s) => s.signal_type))]
     .filter((t, i, all) => all.indexOf(t) === i)
@@ -119,12 +147,15 @@ export function IntelligenceSection({ usdotNumber }: { usdotNumber: number }) {
               <Stat
                 key={s}
                 label={s === 'INFO' ? 'Information' : `${s.toLowerCase()} severity`}
-                value={signals.filter((x) => x.severity === s).length}
+                value={openSignals.filter((x) => x.severity === s).length}
               />
             ))}
           </div>
           <p className="mt-3 text-xs text-slate-500">
-            Signals are deterministic checks over public FMCSA and NHTSA records, each with the
+            Open signals by severity
+            {signals.length > openSignals.length &&
+              ` (${statusCount('REVIEWED')} reviewed, ${statusCount('DISMISSED')} dismissed)`}
+            . Signals are deterministic checks over public FMCSA and NHTSA records, each with the
             records behind it. They are prompts for review, not findings about the carrier.
           </p>
 
@@ -135,17 +166,26 @@ export function IntelligenceSection({ usdotNumber }: { usdotNumber: number }) {
           ) : (
             <>
               <div className="mt-5 flex flex-wrap items-center gap-2">
+                {STATUSES.map(([st, label]) => (
+                  <button
+                    key={st}
+                    type="button"
+                    aria-pressed={status === st}
+                    onClick={() => setStatus(st)}
+                    className={chipClass(status === st)}
+                  >
+                    {label} ({statusCount(st)})
+                  </button>
+                ))}
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
                 {[null, ...types].map((t) => (
                   <button
                     key={t ?? 'all'}
                     type="button"
                     aria-pressed={type === t}
                     onClick={() => setType(t)}
-                    className={`rounded-md px-2.5 py-1 text-xs ring-1 ring-inset ${
-                      type === t
-                        ? 'bg-slate-900 text-white ring-slate-900'
-                        : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50'
-                    }`}
+                    className={chipClass(type === t)}
                   >
                     {t === null ? 'All types' : (TYPE_LABEL[t] ?? t)}
                   </button>
@@ -164,11 +204,16 @@ export function IntelligenceSection({ usdotNumber }: { usdotNumber: number }) {
 
               <div className="mt-4 space-y-6">
                 {groups.length === 0 ? (
-                  <Empty>Only information-level signals match. Tick “Show information”.</Empty>
+                  <Empty>
+                    {status === 'OPEN' && openSignals.length === 0
+                      ? 'No open signals: every signal has been reviewed or dismissed.'
+                      : 'No signals match these filters.'}
+                    {!includeInfo && infoCount > 0 && ' Information-level signals are hidden.'}
+                  </Empty>
                 ) : (
                   groups.map(([t, list]) => (
                     <SignalGroup
-                      key={`${t}-${type}-${includeInfo}`}
+                      key={`${t}-${type}-${includeInfo}-${status}`}
                       type={t}
                       signals={list}
                       onOpen={(s) => setOpenId(s.id)}
@@ -178,7 +223,7 @@ export function IntelligenceSection({ usdotNumber }: { usdotNumber: number }) {
               </div>
             </>
           )}
-          {open && <EvidenceDrawer signal={open} onClose={close} />}
+          {open && <EvidenceDrawer usdotNumber={usdotNumber} signal={open} onClose={close} />}
         </>
       )}
     </Section>

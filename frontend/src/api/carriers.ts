@@ -3,8 +3,8 @@ import type { CarrierAuthority } from '../types/carrierAuthority'
 import type { CarrierEquipment } from '../types/carrierEquipment'
 import type { CarrierProfile } from '../types/carrierProfile'
 import type { CarrierSafety, InspectionPage } from '../types/carrierSafety'
-import type { CarrierSignals } from '../types/carrierSignals'
-import { apiGet } from './client'
+import type { CarrierSignals, ReviewStatus, Signal } from '../types/carrierSignals'
+import { apiGet, apiRequest } from './client'
 
 export function searchCarriers(query: string): Promise<CarrierSearchResponse> {
   return apiGet<CarrierSearchResponse>(`/carriers/search?q=${encodeURIComponent(query)}`)
@@ -42,4 +42,16 @@ export function fetchCarrierEquipment(usdotNumber: number): Promise<CarrierEquip
 
 export function fetchCarrierSignals(usdotNumber: number): Promise<CarrierSignals> {
   return apiGet<CarrierSignals>(`/carriers/${usdotNumber}/signals`)
+}
+
+export function reviewSignal(
+  signalId: number,
+  status: ReviewStatus,
+  note: string | null,
+): Promise<Signal> {
+  return apiRequest<Signal>(`/signals/${signalId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status, note }),
+  })
 }
