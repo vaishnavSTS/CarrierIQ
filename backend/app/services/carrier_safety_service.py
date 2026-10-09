@@ -6,7 +6,13 @@ from datetime import UTC, date, datetime
 from app.core.exceptions import CarrierNotFoundError
 from app.models import Carrier
 from app.repositories.inspection_repository import InspectionRepository
-from app.schemas.carrier_safety import CarrierSafetyOut, InspectionDetailOut, InspectionPageOut
+from app.schemas.carrier_safety import (
+    CarrierSafetyOut,
+    CrashSummaryOut,
+    InspectionDetailOut,
+    InspectionPageOut,
+    SmsOut,
+)
 from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.safety_analysis import (
     counts_by,
@@ -22,7 +28,11 @@ class CarrierSafetyService:
         refresh: CarrierRefreshService,
         inspections: InspectionRepository,
         today: Callable[[], date] = lambda: datetime.now(UTC).date(),
+        sms: Callable[[int], SmsOut | None] = lambda _: None,
+        crashes: Callable[[int, date], CrashSummaryOut | None] = lambda _u, _d: None,
     ) -> None:
+        self.sms = sms
+        self.crashes = crashes
         self.refresh = refresh
         self.inspections = inspections
         self.today = today
@@ -49,6 +59,8 @@ class CarrierSafetyService:
             ),
             by_state=counts_by(i.state for i in inspections),
             violations=violation_summary(inspections),
+            sms=self.sms(carrier.usdot_number),
+            crashes=self.crashes(carrier.usdot_number, self.today()),
         )
 
     def inspection_page(

@@ -21,6 +21,7 @@ from app.services.insurance_ingestion_service import build_insurance_ingestion_s
 from app.services.registration_orders_service import build_registration_orders_service
 from app.services.shared_vin_service import build_shared_vin_service
 from app.services.signal_service import build_signal_service
+from app.services.sms_service import build_sms_service
 from app.services.timeline_service import build_timeline_service
 from app.services.vehicle_observation_service import build_vehicle_observation_service
 from app.services.vin_decode_service import build_vin_decode_service
@@ -39,6 +40,8 @@ def build_refresh_service(
             build_registration_orders_service(db, client),
             # BOC-3 process agents (Motus and old L&I).
             build_boc3_service(db, client),
+            # FMCSA SMS (CSA) results and crash reports.
+            build_sms_service(db, client),
             build_inspection_ingestion_service(db, client),
             # After inspections: checks this carrier's VINs against all FMCSA inspections.
             build_shared_vin_service(db, client),

@@ -53,6 +53,57 @@ class ViolationSummaryOut(BaseModel):
     top_codes: list[ViolationCodeOut]  # most frequent first
 
 
+class BasicOut(BaseModel):
+    """One CSA BASIC as FMCSA's SMS publishes it."""
+
+    key: str
+    label: str
+    inspections_with_violation: int
+    measure: float | None
+    percentile: float | None  # 0-100; FMCSA publishes it for passenger carriers only
+    over_threshold: bool | None  # passenger files only: percentile over FMCSA's threshold
+    alert: bool | None  # passenger files only: FMCSA's overall BASIC alert
+    acute_critical: bool | None  # acute/critical violation found in an investigation, 12 months
+    note: str | None  # e.g. why there is no percentile
+
+
+class SmsOut(BaseModel):
+    """FMCSA SMS (CSA) results for the carrier, 24-month measurement period."""
+
+    dataset_id: str | None  # None: the carrier is in none of FMCSA's SMS files
+    dataset: str | None
+    passenger: bool
+    inspections: int
+    driver_inspections: int
+    vehicle_inspections: int
+    basics: list[BasicOut]
+
+
+class CrashOut(BaseModel):
+    report_number: str
+    report_date: date
+    state: str | None
+    city: str | None
+    fatalities: int
+    injuries: int
+    tow_away: bool
+    hazmat_released: bool
+
+
+class CrashSummaryOut(BaseModel):
+    """Crashes in FMCSA's Crash File, grouped by crash report."""
+
+    years: int  # history fetched
+    total: int
+    fatal: int
+    injury: int
+    recent_months: int
+    recent_total: int
+    recent_fatal: int
+    recent_injury: int
+    crashes: list[CrashOut]  # newest first
+
+
 class CarrierSafetyOut(BaseModel):
     usdot_number: int
     inspection_count: int
@@ -60,6 +111,8 @@ class CarrierSafetyOut(BaseModel):
     by_level: list[CountOut]  # by level number
     by_state: list[CountOut]  # most inspections first
     violations: ViolationSummaryOut
+    sms: SmsOut | None = None  # None: not fetched yet
+    crashes: CrashSummaryOut | None = None  # None: not fetched yet
 
 
 class ViolationOut(BaseModel):

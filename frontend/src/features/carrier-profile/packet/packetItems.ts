@@ -1,4 +1,5 @@
 import type { CarrierAuthority } from '../../../types/carrierAuthority'
+import type { CrashSummary, Sms } from '../../../types/carrierSafety'
 import type { CarrierProfile } from '../../../types/carrierProfile'
 import type { CarrierNetwork } from '../../../types/network'
 import { formatDate, formatMoney, formatPercent, humanize } from '../../../utils/format'
@@ -25,6 +26,8 @@ export function packetItems(
   authority: CarrierAuthority,
   network: CarrierNetwork,
   flags: BrokerFlag[],
+  sms: Sms | null = null,
+  crashes: CrashSummary | null = null,
 ): { watch: PacketItem[]; good: PacketItem[] } {
   const watch: PacketItem[] = flags
     .filter((f) => f.level === 'alert' || f.level === 'attention')
@@ -64,6 +67,25 @@ export function packetItems(
       if (rate > national) watch.splice(safetyAt++, 0, item)
       else good.push(item)
     }
+  }
+
+  for (const b of sms?.basics ?? []) {
+    if (b.alert || b.acute_critical) {
+      watch.splice(safetyAt++, 0, {
+        key: `basic-${b.key}`,
+        title: `${b.label}: ${b.alert ? 'FMCSA alert' : 'acute / critical violation'}`,
+        detail: b.alert
+          ? `FMCSA's SMS shows an alert for this BASIC${b.percentile !== null ? ` (${b.percentile}th percentile)` : ''}.`
+          : 'FMCSA’s SMS records an acute or critical violation found in an investigation in the last 12 months.',
+      })
+    }
+  }
+  if (crashes && crashes.recent_fatal > 0) {
+    watch.splice(safetyAt++, 0, {
+      key: 'fatal-crash',
+      title: 'Fatal crash in the last 24 months',
+      detail: `FMCSA’s Crash File lists ${crashes.recent_fatal} crash${crashes.recent_fatal === 1 ? '' : 'es'} with a fatality in the last ${crashes.recent_months} months; the file does not say who was at fault.`,
+    })
   }
 
   for (const d of authority.dockets) {

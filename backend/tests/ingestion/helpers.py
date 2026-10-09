@@ -117,6 +117,8 @@ def inspection_api(
 
 ORDER_DATASETS = ("p2mt-9ige", "wb4f-neki")  # out-of-service orders, Motus RevokeSuspend
 BOC3_DATASETS = ("6snj-ed7q", "2emp-mxtb")  # Motus BOC3 (plain USDOT), legacy BOC3 (padded)
+# SMS AB Pass, C Pass, AB PassProperty, C PassProperty; then the Crash File. Plain USDOT.
+SMS_DATASETS = ("m3ry-qcip", "h3zn-uid9", "4y6x-dmck", "h9zy-gjn8", "aayw-vxb3")
 
 
 class FakeDotApi:
@@ -144,6 +146,8 @@ class FakeDotApi:
         self.orders: dict[str, list[Row]] = {}
         # BOC-3 process agent rows by dataset ID; empty unless given.
         self.boc3: dict[str, list[Row]] = {}
+        # SMS results and crash rows by dataset ID; empty unless given.
+        self.sms: dict[str, list[Row]] = {}
         self.calls: dict[str, int] = {}
         self.down = False
         self.failing: set[str] = set()
@@ -202,6 +206,11 @@ class FakeDotApi:
             key = "usdot_number" if dataset == BOC3_DATASETS[0] else "dot_number"
             rows = self.boc3.get(dataset, [])
             return httpx.Response(200, json=[r for r in rows if r.get(key) == params.get(key)])
+        if dataset in SMS_DATASETS:
+            rows = self.sms.get(dataset, [])
+            return httpx.Response(
+                200, json=[r for r in rows if r.get("dot_number") == params.get("dot_number")]
+            )
         return httpx.Response(404, json={"message": "unknown dataset"})
 
     def _census(self, params: httpx.QueryParams, where: str) -> list[Row]:

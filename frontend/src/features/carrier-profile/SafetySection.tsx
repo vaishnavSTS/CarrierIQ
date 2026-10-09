@@ -2,6 +2,8 @@ import { StatusBadge } from '../../components/StatusBadge'
 import { useCarrierSafety } from '../../hooks/useCarrierSafety'
 import type { Safety } from '../../types/carrierProfile'
 import { formatDate, formatPercent } from '../../utils/format'
+import { CrashList } from './safety/CrashList'
+import { CsaBasics } from './safety/CsaBasics'
 import { InspectionHistory } from './safety/InspectionHistory'
 import { SafetyTrends } from './safety/SafetyTrends'
 import { ViolationBreakdown } from './safety/ViolationBreakdown'
@@ -25,6 +27,7 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
   const detail = useCarrierSafety(usdotNumber)
   // FMCSA's method: a Level III (driver-only) inspection does not count toward the vehicle rate.
   const recent = safety.recent
+  const crashes = detail.data?.crashes ?? null
 
   return (
     <Section id="safety" title="Safety">
@@ -56,7 +59,15 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
               : undefined
           }
         />
-        <Stat label="Crashes" value={safety.crash_count ?? '—'} note="Crash data not loaded yet" />
+        <Stat
+          label={`Crashes · last ${crashes?.recent_months ?? 24} months`}
+          value={crashes ? crashes.recent_total : '—'}
+          note={
+            crashes
+              ? `${crashes.recent_fatal} fatal · ${crashes.recent_injury} with injury · FMCSA Crash File`
+              : 'Loading FMCSA crash reports…'
+          }
+        />
         <Stat
           label="Safety rating"
           value={
@@ -74,6 +85,15 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
           }
         />
       </div>
+
+      {detail.data && (
+        <>
+          <SubHeading>CSA BASICs · FMCSA SMS</SubHeading>
+          <CsaBasics sms={detail.data.sms} />
+          <SubHeading>Crashes</SubHeading>
+          <CrashList crashes={detail.data.crashes} />
+        </>
+      )}
 
       {safety.inspection_count === 0 ? (
         <div className="mt-4">

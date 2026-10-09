@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 
 import { useCarrierAuthority } from '../../../hooks/useCarrierAuthority'
 import { useCarrierEquipment } from '../../../hooks/useCarrierEquipment'
+import { useCarrierSafety } from '../../../hooks/useCarrierSafety'
 import { useCarrierNetwork } from '../../../hooks/useNetwork'
 import type { CarrierProfile } from '../../../types/carrierProfile'
 import { classificationLabel, classifications } from '../../../utils/classification'
@@ -88,8 +89,9 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
   const authority = useCarrierAuthority(profile.usdot_number)
   const network = useCarrierNetwork(profile.usdot_number)
   const equipment = useCarrierEquipment(profile.usdot_number)
+  const safetyDetail = useCarrierSafety(profile.usdot_number)
 
-  if (authority.isPending || network.isPending || equipment.isPending) {
+  if (authority.isPending || network.isPending || equipment.isPending || safetyDetail.isPending) {
     return <p className="text-sm text-slate-500">Building the packet from FMCSA records…</p>
   }
   if (!authority.data || !network.data || !equipment.data) {
@@ -104,7 +106,9 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
   const net = network.data
   const fleet = equipment.data.fleet
   const recent = profile.safety.recent
-  const { watch, good } = packetItems(profile, auth, net, brokerFlags(net, profile))
+  const sms = safetyDetail.data?.sms ?? null
+  const crashes = safetyDetail.data?.crashes ?? null
+  const { watch, good } = packetItems(profile, auth, net, brokerFlags(net, profile), sms, crashes)
   const physical = profile.addresses.find((a) => a.address_type === 'PHYSICAL')
   const address = physical
     ? [physical.street, physical.city, [physical.state, physical.zip].filter(Boolean).join(' ')]
@@ -345,7 +349,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
 
       <Block
         title={`Safety · last ${recent?.months ?? 24} months`}
-        source="FMCSA inspections; national averages from FMCSA SAFER"
+        source="FMCSA inspections, SMS and Crash File; national averages from FMCSA SAFER"
       >
         <Fields>
           <Field label="Inspections">
@@ -380,10 +384,53 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
             )}
           </Field>
           <Field label="Last inspection">{formatDate(profile.safety.last_inspection_date)}</Field>
-          <Field label="Crashes">
-            <span className="font-normal text-slate-500">Crash data not loaded yet</span>
+          <Field
+            label={`Crashes · last ${crashes?.recent_months ?? 24} months`}
+            source="FMCSA Crash File"
+          >
+            {crashes ? (
+              <>
+                {crashes.recent_total}
+                <span className="block text-xs font-normal text-slate-500">
+                  {crashes.recent_fatal} fatal · {crashes.recent_injury} with injury ·{' '}
+                  {crashes.total} in {crashes.years} years
+                </span>
+              </>
+            ) : null}
           </Field>
         </Fields>
+        {sms?.dataset && (
+          <table className="mt-4 w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 text-left text-[11px] uppercase tracking-wide text-slate-500">
+                <th className="py-1.5 font-medium">CSA BASIC (FMCSA {sms.dataset})</th>
+                <th className="py-1.5 text-right font-medium">Measure</th>
+                <th className="py-1.5 text-right font-medium">Percentile</th>
+                <th className="py-1.5 text-right font-medium">Acute / critical</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 tabular-nums text-slate-700">
+              {sms.basics.map((b) => (
+                <tr key={b.key}>
+                  <td className="py-1.5">{b.label}</td>
+                  <td className="py-1.5 text-right">{b.measure ?? '—'}</td>
+                  <td className="py-1.5 text-right">
+                    {b.percentile !== null ? (
+                      `${b.percentile}%${b.alert ? ' · alert' : ''}`
+                    ) : (
+                      <span className="text-xs text-slate-500">
+                        {sms.passenger ? (b.note ?? '—') : 'Not published (property)'}
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-1.5 text-right">
+                    {b.acute_critical === null ? '—' : b.acute_critical ? 'Yes' : 'No'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </Block>
 
       {linked.length > 0 && (

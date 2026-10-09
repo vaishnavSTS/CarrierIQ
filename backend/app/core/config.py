@@ -70,6 +70,12 @@ class Settings(BaseSettings):
     motus_revoke_suspend_dataset_id: str = "wb4f-neki"  # Motus RevokeSuspend - All With History
     motus_boc3_dataset_id: str = "6snj-ed7q"  # Motus BOC3 - All With History
     legacy_boc3_dataset_id: str = "2emp-mxtb"  # BOC3 - All With History (legacy L&I)
+    # FMCSA SMS (CSA) monthly results, one row per carrier: passenger files carry percentiles
+    sms_ab_pass_dataset_id: str = "m3ry-qcip"  # SMS AB Pass (interstate / hazmat, passenger)
+    sms_c_pass_dataset_id: str = "h3zn-uid9"  # SMS C Pass (intrastate non-hazmat, passenger)
+    sms_ab_property_dataset_id: str = "4y6x-dmck"  # SMS AB PassProperty (interstate / hazmat)
+    sms_c_property_dataset_id: str = "h9zy-gjn8"  # SMS C PassProperty (intrastate non-hazmat)
+    crash_dataset_id: str = "aayw-vxb3"  # Crash File (FMCSA)
     legacy_li_frozen_on: date = date(2026, 5, 14)  # "last refreshed on 05/14/2026"
 
     @property

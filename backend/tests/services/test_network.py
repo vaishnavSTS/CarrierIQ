@@ -16,7 +16,13 @@ from app.models import Address, Authority, Carrier
 from app.models.enums import AddressType, DocketPrefix
 from app.services.boc3_service import ProcessAgent
 from app.services.registration_health import address_peer, registration_checks
-from tests.ingestion.helpers import BOC3_DATASETS, ORDER_DATASETS, FakeDotApi, load_census_rows
+from tests.ingestion.helpers import (
+    BOC3_DATASETS,
+    ORDER_DATASETS,
+    SMS_DATASETS,
+    FakeDotApi,
+    load_census_rows,
+)
 from tests.services.test_contact_links import OTHERS
 
 TODAY = date(2026, 10, 9)
@@ -177,6 +183,12 @@ def api(db: Session) -> Iterator[TestClient]:
         "state_code": "SD",
     }
     # The same agent listed twice, plus a different carrier whose padded number only ends alike.
+    fake.sms[SMS_DATASETS[2]] = [
+        {"dot_number": "295017", "insp_total": "7", "unsafe_driv_measure": "1.5"}
+    ]
+    fake.sms[SMS_DATASETS[4]] = [
+        {"report_number": "WA1", "dot_number": "295017", "report_date": "20260301", "injuries": "1"}
+    ]
     fake.boc3[BOC3_DATASETS[1]] = [legacy_row, legacy_row, {**legacy_row, "dot_number": "03295017"}]
 
     def fake_client() -> Iterator[Any]:
@@ -205,6 +217,14 @@ def test_network_endpoint(api: TestClient) -> None:
     statuses = {c["key"]: c["status"] for c in body["registration_checks"]}
     assert statuses["oos"] == "info"  # an old, rescinded order
     assert body["ownership"]["state"] == "NONE"
+
+
+def test_safety_endpoint_has_sms_and_crashes(api: TestClient) -> None:
+    body = api.get("/api/v1/carriers/295017/safety").json()
+
+    assert body["sms"]["dataset"] == "SMS AB PassProperty"
+    assert body["sms"]["basics"][0]["measure"] == 1.5
+    assert (body["crashes"]["total"], body["crashes"]["injury"]) == (1, 1)
 
 
 def test_authority_endpoint_lists_process_agents(api: TestClient) -> None:
