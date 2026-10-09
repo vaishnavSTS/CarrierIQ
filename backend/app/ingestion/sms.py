@@ -8,6 +8,9 @@ carriers' percentiles from public view.
 - SMS AB PassProperty (4y6x-dmck), SMS C PassProperty (h9zy-gjn8): all carriers, interstate /
   intrastate.
 
+SMS Input - Violation (8mt8-2mdr): each violation FMCSA counts in the measures, with its BASIC,
+violation group and FMCSA's severity, time and total weights.
+
 Crash File (aayw-vxb3): one row per vehicle in a reported crash, plain USDOT number, report date
 as YYYYMMDD text.
 """
@@ -31,6 +34,7 @@ class SmsAdapter:
         # Most specific first: the passenger files carry percentiles.
         self.sms_dataset_ids = self.dataset_ids()
         self.crash_dataset_id = settings.crash_dataset_id
+        self.violation_dataset_id = settings.sms_violation_dataset_id
 
     @staticmethod
     def dataset_ids() -> tuple[str, str, str, str]:
@@ -46,9 +50,20 @@ class SmsAdapter:
     def crash_id() -> str:
         return get_settings().crash_dataset_id
 
+    @staticmethod
+    def violation_id() -> str:
+        return get_settings().sms_violation_dataset_id
+
     def fetch_sms(self, dataset_id: str, usdot_number: int) -> list[Row]:
         CompanyCensusAdapter.validate_usdot_number(usdot_number)
         return self.client.get_all_rows(dataset_id, {"dot_number": str(usdot_number)}, ":id")
+
+    def fetch_violations(self, usdot_number: int) -> list[Row]:
+        """FMCSA's SMS input violations for the carrier, with FMCSA's weights."""
+        CompanyCensusAdapter.validate_usdot_number(usdot_number)
+        return self.client.get_all_rows(
+            self.violation_dataset_id, {"dot_number": str(usdot_number)}, ":id"
+        )
 
     def fetch_crashes(self, usdot_number: int, today: date) -> list[Row]:
         CompanyCensusAdapter.validate_usdot_number(usdot_number)

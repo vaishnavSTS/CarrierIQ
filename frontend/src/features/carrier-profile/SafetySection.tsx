@@ -5,6 +5,7 @@ import type { Safety } from '../../types/carrierProfile'
 import { formatDate, formatPercent } from '../../utils/format'
 import { CrashList } from './safety/CrashList'
 import { CsaBasics } from './safety/CsaBasics'
+import { ImprovementGuide } from './safety/ImprovementGuide'
 import { InspectionHistory } from './safety/InspectionHistory'
 import { SafetyTrends } from './safety/SafetyTrends'
 import { ViolationBreakdown } from './safety/ViolationBreakdown'
@@ -109,6 +110,15 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
             CSA BASICs
           </SubHeading>
           <CsaBasics sms={detail.data.sms} />
+          <SubHeading source="FMCSA SMS Input – Violation (FMCSA's weights); FMCSA rules (49 CFR)">
+            Why the figures look this way · how to improve
+          </SubHeading>
+          <ImprovementGuide
+            drivers={detail.data.drivers}
+            recent={safety.recent}
+            rating={safety.safety_rating}
+            ratingDate={safety.safety_rating_date}
+          />
           <SubHeading source="FMCSA Crash File (state crash reports)">Crashes</SubHeading>
           <CrashList crashes={detail.data.crashes} />
         </>

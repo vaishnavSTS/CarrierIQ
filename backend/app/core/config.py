@@ -76,6 +76,7 @@ class Settings(BaseSettings):
     sms_ab_property_dataset_id: str = "4y6x-dmck"  # SMS AB PassProperty (interstate / hazmat)
     sms_c_property_dataset_id: str = "h9zy-gjn8"  # SMS C PassProperty (intrastate non-hazmat)
     crash_dataset_id: str = "aayw-vxb3"  # Crash File (FMCSA)
+    sms_violation_dataset_id: str = "8mt8-2mdr"  # SMS Input - Violation (weights per violation)
     legacy_li_frozen_on: date = date(2026, 5, 14)  # "last refreshed on 05/14/2026"
 
     @property

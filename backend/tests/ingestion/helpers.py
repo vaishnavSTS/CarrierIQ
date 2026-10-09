@@ -117,8 +117,8 @@ def inspection_api(
 
 ORDER_DATASETS = ("p2mt-9ige", "wb4f-neki")  # out-of-service orders, Motus RevokeSuspend
 BOC3_DATASETS = ("6snj-ed7q", "2emp-mxtb")  # Motus BOC3 (plain USDOT), legacy BOC3 (padded)
-# SMS AB Pass, C Pass, AB PassProperty, C PassProperty; then the Crash File. Plain USDOT.
-SMS_DATASETS = ("m3ry-qcip", "h3zn-uid9", "4y6x-dmck", "h9zy-gjn8", "aayw-vxb3")
+# SMS AB Pass, C Pass, AB PassProperty, C PassProperty, Crash File, SMS violations. Plain USDOT.
+SMS_DATASETS = ("m3ry-qcip", "h3zn-uid9", "4y6x-dmck", "h9zy-gjn8", "aayw-vxb3", "8mt8-2mdr")
 
 
 class FakeDotApi:

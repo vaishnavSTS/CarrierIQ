@@ -7,6 +7,7 @@ from app.core.exceptions import CarrierNotFoundError
 from app.models import Carrier
 from app.repositories.inspection_repository import InspectionRepository
 from app.schemas.carrier_safety import (
+    BasicDriverOut,
     CarrierSafetyOut,
     CrashSummaryOut,
     InspectionDetailOut,
@@ -30,7 +31,9 @@ class CarrierSafetyService:
         today: Callable[[], date] = lambda: datetime.now(UTC).date(),
         sms: Callable[[int], SmsOut | None] = lambda _: None,
         crashes: Callable[[int, date], CrashSummaryOut | None] = lambda _u, _d: None,
+        drivers: Callable[[int, date], list[BasicDriverOut] | None] = lambda _u, _d: None,
     ) -> None:
+        self.drivers = drivers
         self.sms = sms
         self.crashes = crashes
         self.refresh = refresh
@@ -61,6 +64,7 @@ class CarrierSafetyService:
             violations=violation_summary(inspections),
             sms=self.sms(carrier.usdot_number),
             crashes=self.crashes(carrier.usdot_number, self.today()),
+            drivers=self.drivers(carrier.usdot_number, self.today()),
         )
 
     def inspection_page(

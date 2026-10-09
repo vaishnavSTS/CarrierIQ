@@ -104,6 +104,28 @@ class CrashSummaryOut(BaseModel):
     crashes: list[CrashOut]  # newest first
 
 
+class ViolationGroupOut(BaseModel):
+    """One FMCSA violation group within a BASIC, e.g. Tires in Vehicle Maintenance."""
+
+    group: str
+    violations: int
+    out_of_service: int
+    weight: float  # sum of FMCSA total severity weights
+    share: float  # of the BASIC's total weight, 0..1
+    examples: list[str]  # most heavily weighted violation descriptions
+
+
+class BasicDriverOut(BaseModel):
+    """What makes up one BASIC measure, from FMCSA's SMS input violations."""
+
+    basic: str
+    violations: int
+    out_of_service: int
+    weight: float
+    recent_violations: int  # in the last 6 months, where FMCSA's time weight is highest
+    groups: list[ViolationGroupOut]  # heaviest first
+
+
 class CarrierSafetyOut(BaseModel):
     usdot_number: int
     inspection_count: int
@@ -113,6 +135,7 @@ class CarrierSafetyOut(BaseModel):
     violations: ViolationSummaryOut
     sms: SmsOut | None = None  # None: not fetched yet
     crashes: CrashSummaryOut | None = None  # None: not fetched yet
+    drivers: list[BasicDriverOut] | None = None  # None: not fetched yet; heaviest BASIC first
 
 
 class ViolationOut(BaseModel):

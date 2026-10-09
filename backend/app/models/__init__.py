@@ -21,6 +21,7 @@ from app.models.raw_record import RawRecord
 from app.models.relationship import Relationship
 from app.models.signal_evidence import SignalEvidence
 from app.models.sms_result import SmsResult
+from app.models.sms_violation import SmsViolation
 from app.models.timeline_event import TimelineEvent
 from app.models.vehicle import Vehicle
 from app.models.worker_heartbeat import WorkerHeartbeat
@@ -47,6 +48,7 @@ __all__ = [
     "Relationship",
     "SignalEvidence",
     "SmsResult",
+    "SmsViolation",
     "TimelineEvent",
     "Vehicle",
     "WorkerHeartbeat",

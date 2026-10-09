@@ -9,11 +9,12 @@ Each is written from the raw FMCSA rows just stored, so every row points at its 
 from collections.abc import Sequence
 from datetime import date
 from decimal import Decimal
+from typing import Any
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
-from app.models import Crash, ProcessAgent, SmsResult
+from app.models import Crash, ProcessAgent, SmsResult, SmsViolation
 from app.schemas.carrier_safety import CrashOut, SmsOut
 
 
@@ -122,6 +123,39 @@ class SafetyRecordRepository:
                 .where(SmsResult.carrier_id == carrier_id, SmsResult.snapshot_month == month)
                 .order_by(SmsResult.id)
             )
+        )
+
+    # sms_violations
+
+    def replace_violations(
+        self, carrier_id: int, violations: Sequence[Any], source: str, raw_record_id: int
+    ) -> None:
+        """FMCSA's current 24-month input replaces the carrier's previous rows."""
+        self.db.execute(delete(SmsViolation).where(SmsViolation.carrier_id == carrier_id))
+        self.db.add_all(
+            SmsViolation(
+                carrier_id=carrier_id,
+                inspection_id=v.inspection_id,
+                inspection_date=v.inspection_date,
+                code=v.code,
+                basic=v.basic,
+                group=v.group,
+                description=v.description,
+                unit=v.unit,
+                out_of_service=v.out_of_service,
+                severity_weight=v.severity_weight,
+                time_weight=v.time_weight,
+                total_weight=v.total_weight,
+                source=source,
+                raw_record_id=raw_record_id,
+            )
+            for v in violations
+        )
+        self.db.flush()
+
+    def violations(self, carrier_id: int) -> list[SmsViolation]:
+        return list(
+            self.db.scalars(select(SmsViolation).where(SmsViolation.carrier_id == carrier_id))
         )
 
     # process_agents

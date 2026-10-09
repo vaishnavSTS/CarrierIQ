@@ -99,6 +99,29 @@ export interface CrashSummary {
   crashes: Crash[]
 }
 
+/** One FMCSA violation group within a BASIC, e.g. Tires in Vehicle Maintenance */
+export interface ViolationGroup {
+  group: string
+  violations: number
+  out_of_service: number
+  /** Sum of FMCSA's total severity weights */
+  weight: number
+  /** Of the BASIC's total weight, 0..1 */
+  share: number
+  examples: string[]
+}
+
+/** What makes up one BASIC measure, from FMCSA's SMS input violations */
+export interface BasicDriver {
+  basic: string
+  violations: number
+  out_of_service: number
+  weight: number
+  /** Last 6 months, where FMCSA's time weight is highest (x3) */
+  recent_violations: number
+  groups: ViolationGroup[]
+}
+
 export interface CarrierSafety {
   usdot_number: number
   inspection_count: number
@@ -109,6 +132,8 @@ export interface CarrierSafety {
   /** null: not fetched yet */
   sms: Sms | null
   crashes: CrashSummary | null
+  /** null: not fetched yet; heaviest BASIC first */
+  drivers: BasicDriver[] | null
 }
 
 export interface Violation {

@@ -189,6 +189,16 @@ def api(db: Session) -> Iterator[TestClient]:
     fake.sms[SMS_DATASETS[4]] = [
         {"report_number": "WA1", "dot_number": "295017", "report_date": "20260301", "injuries": "1"}
     ]
+    fake.sms[SMS_DATASETS[5]] = [
+        {
+            "dot_number": "295017",
+            "unique_id": "1",
+            "insp_date": "01-MAR-26",
+            "basic_desc": "Vehicle Maintenance",
+            "group_desc": "Brakes All Others",
+            "total_severity_wght": "4",
+        }
+    ]
     fake.boc3[BOC3_DATASETS[1]] = [legacy_row, legacy_row, {**legacy_row, "dot_number": "03295017"}]
 
     def fake_client() -> Iterator[Any]:
@@ -225,6 +235,12 @@ def test_safety_endpoint_has_sms_and_crashes(api: TestClient) -> None:
     assert body["sms"]["dataset"] == "SMS AB PassProperty"
     assert body["sms"]["basics"][0]["measure"] == 1.5
     assert (body["crashes"]["total"], body["crashes"]["injury"]) == (1, 1)
+    (maint,) = body["drivers"]
+    assert (maint["basic"], maint["weight"], maint["groups"][0]["group"]) == (
+        "Vehicle Maintenance",
+        4.0,
+        "Brakes All Others",
+    )
 
 
 def test_authority_endpoint_lists_process_agents(api: TestClient) -> None:

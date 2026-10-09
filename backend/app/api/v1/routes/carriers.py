@@ -43,7 +43,7 @@ from app.services.job_status_service import JobStatusService
 from app.services.network_service import NetworkService
 from app.services.registration_orders_service import build_registration_orders_service
 from app.services.signal_service import build_signal_service
-from app.services.sms_service import crashes_for, sms_for
+from app.services.sms_service import crashes_for, drivers_for, sms_for
 from app.services.timeline_service import build_timeline_service
 
 router = APIRouter(prefix="/carriers", tags=["carriers"])
@@ -137,6 +137,7 @@ def get_carrier_safety_service(
         InspectionRepository(db),
         sms=lambda usdot: sms_for(db, usdot),
         crashes=lambda usdot, today: crashes_for(db, usdot, today),
+        drivers=lambda usdot, today: drivers_for(db, usdot, today),
     )
 
 

@@ -17,6 +17,7 @@ import {
   humanize,
   sourceLabel,
 } from '../../../utils/format'
+import { ImprovementGuide } from '../safety/ImprovementGuide'
 import { brokerFlags } from '../network/brokerFlags'
 import { packetItems } from './packetItems'
 
@@ -431,6 +432,18 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
             </tbody>
           </table>
         )}
+      </Block>
+
+      <Block
+        title="How to improve"
+        source="FMCSA SMS Input – Violation (FMCSA's weights); FMCSA rules (49 CFR)"
+      >
+        <ImprovementGuide
+          drivers={safetyDetail.data?.drivers ?? null}
+          recent={recent}
+          rating={profile.safety.safety_rating}
+          ratingDate={profile.safety.safety_rating_date}
+        />
       </Block>
 
       {linked.length > 0 && (

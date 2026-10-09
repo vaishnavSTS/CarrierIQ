@@ -20,8 +20,15 @@ from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.ingestion_run_repository import IngestionRunRepository
 from app.repositories.raw_record_repository import RawRecordRepository
 from app.repositories.safety_record_repository import SafetyRecordRepository
-from app.schemas.carrier_safety import BasicOut, CrashOut, CrashSummaryOut, SmsOut
+from app.schemas.carrier_safety import (
+    BasicDriverOut,
+    BasicOut,
+    CrashOut,
+    CrashSummaryOut,
+    SmsOut,
+)
 from app.services.dataset_batch import DatasetBatch
+from app.services.sms_drivers import basic_drivers, parse_violations
 from app.services.sms_results import crash_reports, crash_summary, sms_result
 
 logger = logging.getLogger(__name__)
@@ -97,6 +104,15 @@ def crashes_for(db: Session, usdot_number: int, today: date) -> CrashSummaryOut 
     )
 
 
+def drivers_for(db: Session, usdot_number: int, today: date) -> list[BasicDriverOut] | None:
+    """What makes up each BASIC measure; None when FMCSA's violation input was never fetched."""
+    if not _fetched(db, SmsAdapter.violation_id(), usdot_number):
+        return None
+    carrier = CarrierRepository(db).get_by_usdot(usdot_number)
+    rows = SafetyRecordRepository(db).violations(carrier.id) if carrier else []
+    return basic_drivers(rows, today)
+
+
 @dataclass(frozen=True)
 class SmsResult:
     sms_rows: int
@@ -143,9 +159,16 @@ class SmsService:
         crash_run, crashes = batch.fetch(
             a.crash_dataset_id, query, lambda: a.fetch_crashes(usdot_number, self.today())
         )
+        violation_run, violation_rows = batch.fetch(
+            a.violation_dataset_id, query, lambda: a.fetch_violations(usdot_number)
+        )
         key = str(usdot_number)
         raw_ids = {}
-        for dataset_id, run, rows in [*fetched, (a.crash_dataset_id, crash_run, crashes)]:
+        for dataset_id, run, rows in [
+            *fetched,
+            (a.crash_dataset_id, crash_run, crashes),
+            (a.violation_dataset_id, violation_run, violation_rows),
+        ]:
             stored = batch.store(dataset_id, [{"rows": rows}], run, lambda _: key)
             raw_ids[dataset_id] = stored[key][0].id
 
@@ -161,8 +184,17 @@ class SmsService:
             self.records.sync_crashes(
                 carrier.id, crash_reports(crashes), a.source, raw_ids[a.crash_dataset_id]
             )
+            self.records.replace_violations(
+                carrier.id,
+                parse_violations(violation_rows),
+                a.source,
+                raw_ids[a.violation_dataset_id],
+            )
 
-        batch.succeed({run: len(rows) for _, run, rows in fetched} | {crash_run: len(crashes)})
+        batch.succeed(
+            {run: len(rows) for _, run, rows in fetched}
+            | {crash_run: len(crashes), violation_run: len(violation_rows)}
+        )
         self.db.commit()
         sms_rows = sum(len(rows) for _, _, rows in fetched)
         logger.info("USDOT %d: %d SMS rows, %d crash rows", usdot_number, sms_rows, len(crashes))
