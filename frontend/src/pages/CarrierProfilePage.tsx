@@ -7,12 +7,14 @@ import { EquipmentSection } from '../features/carrier-profile/EquipmentSection'
 import { IdentitySection } from '../features/carrier-profile/IdentitySection'
 import { IntelligenceSection } from '../features/carrier-profile/intelligence/IntelligenceSection'
 import { NetworkSection } from '../features/carrier-profile/network/NetworkSection'
+import { PacketSection } from '../features/carrier-profile/packet/PacketSection'
 import { ProfileHeader } from '../features/carrier-profile/ProfileHeader'
 import { SafetySection } from '../features/carrier-profile/SafetySection'
 import { TimelineSection } from '../features/carrier-profile/TimelineSection'
 import { useCarrierProfile } from '../hooks/useCarrierProfile'
 
 const TABS = [
+  ['packet', 'Packet'],
   ['identity', 'Identity'],
   ['authority', 'Authority & Insurance'],
   ['safety', 'Safety'],
@@ -24,7 +26,8 @@ const TABS = [
 
 type TabId = (typeof TABS)[number][0]
 
-const DEFAULT_TAB: TabId = 'identity'
+// The packet is the overall view, so a carrier opens on it.
+const DEFAULT_TAB: TabId = 'packet'
 
 function isTab(value: string | null): value is TabId {
   return TABS.some(([id]) => id === value)
@@ -103,6 +106,7 @@ export function CarrierProfilePage() {
       </div>
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+        {tab === 'packet' && <PacketSection profile={profile} />}
         {tab === 'identity' && <IdentitySection profile={profile} />}
         {tab === 'authority' && (
           <AuthoritySection

@@ -171,3 +171,48 @@ body {
     transform: translate(-50%, -40%) rotate(-30deg);
   }
 }
+
+/*
+ * Printing the carrier packet ("Download / Save as PDF"): only the packet prints, on white with
+ * the standard light slate scale, whatever the screen theme.
+ */
+@media print {
+  :root {
+    color-scheme: light;
+    --color-canvas: #ffffff;
+    --color-surface: #ffffff;
+    --color-accent-strong: #5b21b6;
+    --color-slate-50: #f8fafc;
+    --color-slate-100: #f1f5f9;
+    --color-slate-200: #e2e8f0;
+    --color-slate-300: #cbd5e1;
+    --color-slate-400: #94a3b8;
+    --color-slate-500: #64748b;
+    --color-slate-600: #475569;
+    --color-slate-700: #334155;
+    --color-slate-800: #1e293b;
+    --color-slate-900: #0f172a;
+    --color-slate-950: #020617;
+    --color-amber-700: #b45309;
+    --color-red-700: #b91c1c;
+  }
+  @page {
+    margin: 12mm;
+  }
+  body {
+    background: #ffffff;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #carrier-packet,
+  #carrier-packet * {
+    visibility: visible;
+  }
+  #carrier-packet {
+    position: absolute;
+    inset: 0 0 auto 0;
+    border: none;
+    padding: 0;
+  }
+}
