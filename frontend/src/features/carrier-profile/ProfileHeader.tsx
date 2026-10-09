@@ -5,8 +5,8 @@ import { StatusBadge } from '../../components/StatusBadge'
 import type { CarrierProfile } from '../../types/carrierProfile'
 import { needsForHireAuthority } from '../../utils/classification'
 import { formatDateTime, sourceLabel } from '../../utils/format'
-import { reviewLabel, severityTone } from '../../utils/review'
-import { INSURANCE_LABEL, insuranceTone, statusTone } from '../../utils/status'
+import { reviewLabel } from '../../utils/review'
+import { INSURANCE_LABEL, insuranceTone, severityTone, statusTone } from '../../utils/status'
 
 function HeaderStatus({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -94,7 +94,7 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
             >
               <StatusBadge
                 label={reviewLabel(profile.review_status, profile.open_signal_count) ?? ''}
-                tone={severityTone(profile.highest_open_severity)}
+                tone={severityTone(profile.highest_open_severity ?? 'LOW')}
               />
               {profile.highest_open_severity && (
                 <span className="text-xs text-slate-500">

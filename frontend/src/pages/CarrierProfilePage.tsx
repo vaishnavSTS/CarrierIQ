@@ -5,9 +5,9 @@ import { ApiError } from '../api/client'
 import { AuthoritySection } from '../features/carrier-profile/AuthoritySection'
 import { EquipmentSection } from '../features/carrier-profile/EquipmentSection'
 import { IdentitySection } from '../features/carrier-profile/IdentitySection'
+import { IntelligenceSection } from '../features/carrier-profile/intelligence/IntelligenceSection'
 import { ProfileHeader } from '../features/carrier-profile/ProfileHeader'
 import { SafetySection } from '../features/carrier-profile/SafetySection'
-import { Empty, Section } from '../features/carrier-profile/Section'
 import { TimelineSection } from '../features/carrier-profile/TimelineSection'
 import { useCarrierProfile } from '../hooks/useCarrierProfile'
 
@@ -112,16 +112,7 @@ export function CarrierProfilePage() {
           <SafetySection usdotNumber={profile.usdot_number} safety={profile.safety} />
         )}
         {tab === 'equipment' && <EquipmentSection usdotNumber={profile.usdot_number} />}
-        {tab === 'intelligence' && (
-          <Section id="intelligence" title="Intelligence">
-            <Empty>
-              {profile.open_signal_count > 0
-                ? `${profile.open_signal_count} open review signal${profile.open_signal_count === 1 ? '' : 's'} found. `
-                : 'No open review signals. '}
-              Signal cards with the evidence behind each signal arrive in the next phase.
-            </Empty>
-          </Section>
-        )}
+        {tab === 'intelligence' && <IntelligenceSection usdotNumber={profile.usdot_number} />}
         {tab === 'timeline' && (
           <TimelineSection events={profile.timeline} changes={profile.recent_changes} />
         )}

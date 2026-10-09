@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/StatusBadge'
 import type { CarrierSearchResult } from '../../types/carrier'
 import { formatDateTime } from '../../utils/format'
-import { reviewLabel, severityTone } from '../../utils/review'
-import { INSURANCE_LABEL, insuranceTone, statusTone } from '../../utils/status'
+import { reviewLabel } from '../../utils/review'
+import { INSURANCE_LABEL, insuranceTone, severityTone, statusTone } from '../../utils/status'
 
 function DocketList({ result }: { result: CarrierSearchResult }) {
   if (result.dockets.length === 0) return <span className="text-slate-400">—</span>
@@ -102,7 +102,7 @@ export function CarrierSearchResults({ results }: { results: CarrierSearchResult
                 {r.review_status === 'OPEN_SIGNALS' ? (
                   <StatusBadge
                     label={reviewLabel(r.review_status, r.open_signal_count) ?? ''}
-                    tone={severityTone(r.highest_open_severity)}
+                    tone={severityTone(r.highest_open_severity ?? 'LOW')}
                   />
                 ) : (
                   <span className="text-slate-400">

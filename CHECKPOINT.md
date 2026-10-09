@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 9 (Intelligence UI) — not started; Phase 8 done
+**Current phase:** Phase 9 (Intelligence UI) — Part 1 done, Part 2 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -22,7 +22,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 6 | Authority & Insurance | ✅ Done (2026-10-08) |
 | 7 | Equipment / VIN | ✅ Done (2026-10-08) |
 | 8 | Intelligence Engine | ✅ Done (2026-10-08) |
-| 9 | Intelligence UI | Not started |
+| 9 | Intelligence UI | 🔄 In progress (Part 1 of 3 done) |
 | 10 | Background Processing | Not started |
 
 ---
@@ -544,12 +544,27 @@ consistency → (4) safety trend and timeline links.
 
 ---
 
-## Phase 9 — Intelligence UI
+## Phase 9 — Intelligence UI 🔄
 
-- [ ] Intelligence summary
-- [ ] Signal cards
-- [ ] Evidence drawer
-- [ ] Timeline
+Built part by part: (1) Intelligence tab: summary, grouped signal cards, evidence drawer →
+(2) review actions (reviewed / dismissed, with a note) → (3) timeline ↔ signal links and the
+relationship view.
+
+- [x] **Part 1 — Intelligence summary, signal cards, evidence drawer.** The Intelligence tab
+  (`features/carrier-profile/intelligence/`) loads `/signals`: 4 tiles (high / medium / low /
+  information), the "prompts for review, not findings" note, type filter chips, and a "show
+  information" toggle (INFO hidden by default). Cards are grouped by type with a count by
+  severity, 5 per group then "Show all" (BlueTriton: "Shared equipment · 92 signals · 11
+  medium, 81 low"). Each card opens the evidence drawer (Esc / backdrop closes): what the
+  records show, every evidence row (type, date, source, stored source record #), and "how this
+  was calculated" (rule in plain words + rule id/version, what the confidence level means,
+  detection times). Spec 33: "the user must be able to understand why the system generated a
+  signal".
+  - Removed a duplicate `severityTone` added in Phase 8 Part 4 (one in `utils/status.ts`).
+  - Detection dates use the viewer's local date (`formatLocalDate`), like the header.
+  - Checked in Chrome (J2Z Trucking, BlueTriton); no console errors. ESLint + build clean.
+- [ ] Review actions (reviewed / dismissed)
+- [ ] Timeline ↔ signals
 - [ ] Relationship view
 
 ---
@@ -614,3 +629,4 @@ consistency → (4) safety trend and timeline links.
 | 2026-10-08 | Phase 8 Part 2: authority and insurance change signals (2-year lookback, evidence per source row); fixed evidence matching for legacy rows; 285 tests passing. |
 | 2026-10-08 | Phase 8 Part 3: identity change and fleet consistency signals; equipment reader shared with the rule; 291 tests passing. |
 | 2026-10-08 | Phase 8 Part 4: safety trend signal, timeline ↔ signal links, review status on profile and search; Phase 8 done; 295 tests passing. |
+| 2026-10-08 | Phase 9 Part 1: Intelligence tab — severity summary, signal cards grouped by type, evidence drawer. |
