@@ -19,11 +19,13 @@ appears on many carriers (most likely a service provider's).
 from collections import Counter, defaultdict
 from datetime import date
 
+from app.ingestion.contact_match import classify
 from app.intelligence.base_rule import EvidenceValues, Rule, RuleContext, SignalValues, at_day
 from app.models import RawRecord, Relationship
 from app.models.enums import Confidence, Severity
+from app.repositories.observed_value_repository import ObservedValueRepository
 from app.repositories.relationship_repository import RelationshipRepository
-from app.services.contact_link_service import CONTACT_LINK_TYPES, LINK_TYPE
+from app.services.contact_link_service import CONTACT_LINK_TYPES, LINK_TYPE, contact_keys
 from app.services.vehicle_observation_service import USDOT
 
 SIGNAL_TYPE = "SHARED_CONTACT"
@@ -34,12 +36,6 @@ LABEL = {
     LINK_TYPE["email"]: "email",
     LINK_TYPE["address"]: "address",
     LINK_TYPE["officer"]: "officer",
-}
-FIELD = {
-    LINK_TYPE["phone"]: ("phone", "cell_phone", "fax"),
-    LINK_TYPE["email"]: ("email_address",),
-    LINK_TYPE["address"]: ("phy_street",),
-    LINK_TYPE["officer"]: ("company_officer_1", "company_officer_2"),
 }
 LEVELS = [Severity.LOW, Severity.MEDIUM, Severity.HIGH]
 
@@ -54,14 +50,12 @@ def _registered(payload: dict[str, object]) -> str:
     return f"{value[:4]}-{value[4:6]}-{value[6:8]}" if len(value) >= 8 else "unknown"
 
 
-def _shared_value(link: Relationship, payload: dict[str, object], own: dict[str, object]) -> str:
-    """The value both records hold (read from this carrier's own census row when possible)."""
-    for field in FIELD[link.relationship_type]:
-        theirs = str(payload.get(field) or "").strip().upper()
-        for own_field in FIELD[link.relationship_type]:
-            if theirs and theirs == str(own.get(own_field) or "").strip().upper():
-                return theirs
-    return str(payload.get(FIELD[link.relationship_type][0]) or "").strip().upper()
+def _display(kind: str, value: str) -> str:
+    if not value:
+        return "(value not recorded)"
+    if kind == "phone" and len(value) == 10:
+        return f"({value[:3]}) {value[3:6]}-{value[6:]}"
+    return value
 
 
 def _spread_note(count: int) -> str:
@@ -70,7 +64,7 @@ def _spread_note(count: int) -> str:
 
 class SharedContactRule(Rule):
     rule_id = "shared_contact"
-    rule_version = "1.0"
+    rule_version = "1.1"  # 1.1: evidence shows the exact shared value
 
     def evaluate(self, context: RuleContext) -> list[SignalValues]:
         usdot = context.carrier.usdot_number
@@ -80,13 +74,15 @@ class SharedContactRule(Rule):
             return []
         raw_ids = {link.raw_record_id for link in links if link.raw_record_id}
         raws = {r.id: r for r in context.db.query(RawRecord).filter(RawRecord.id.in_(raw_ids))}
-        own = self._own_census(context)
+        # Exactly which value is shared (a carrier may list an office phone, a cell and a fax).
+        keys = contact_keys(context.carrier, ObservedValueRepository(context.db))
 
         by_carrier: dict[int, list[Relationship]] = defaultdict(list)
         values: dict[int, str] = {}
         for link in links:
             by_carrier[link.target_entity_id].append(link)
-            values[link.id] = _shared_value(link, _payload(link, raws), own)
+            kind = LABEL[link.relationship_type]
+            values[link.id] = classify(_payload(link, raws), keys).values.get(kind, "")
         # How many other carriers share each exact value (a service provider's phone is on many).
         spread = Counter((link.relationship_type, values[link.id]) for link in links)
 
@@ -150,7 +146,8 @@ class SharedContactRule(Rule):
                             field_name=LABEL[link.relationship_type],
                             observed_value=(
                                 f"Same {LABEL[link.relationship_type]} "
-                                f"{values[link.id] or '(value not recorded)'} on USDOT {other}"
+                                f"{_display(LABEL[link.relationship_type], values[link.id])} "
+                                f"on USDOT {other}"
                                 f"{_spread_note(spread[(link.relationship_type, values[link.id])])}"
                             ),
                             observed_at=at_day(link.last_seen or date.today()),
@@ -161,16 +158,3 @@ class SharedContactRule(Rule):
                 )
             )
         return signals
-
-    @staticmethod
-    def _own_census(context: RuleContext) -> dict[str, object]:
-        row = (
-            context.db.query(RawRecord)
-            .filter(
-                RawRecord.source == "dot_socrata",
-                RawRecord.external_id == str(context.carrier.usdot_number),
-            )
-            .order_by(RawRecord.id.desc())
-            .first()
-        )
-        return row.payload if row else {}

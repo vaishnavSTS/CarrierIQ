@@ -108,3 +108,16 @@ def test_shared_contact_signals(db: Session) -> None:
     assert (client.severity, client.confidence) == (Severity.LOW, Confidence.LOW)
     assert "dispatch, compliance or filing service" in client.description
     assert "(shared by 5 carriers)" in (client.evidence[0].observed_value or "")
+
+
+def test_evidence_names_the_number_actually_shared(db: Session) -> None:
+    # Only the fax matches; the other carrier's office phone is different.
+    twin = other(900020, "FAX TWIN LLC", phone="2065550000", fax="3603732751")
+    api = setup(db, [twin])
+    build_contact_link_service(db, api.client()).ingest(295017)
+    carrier = CarrierRepository(db).get_by_usdot(295017)
+    assert carrier is not None
+
+    (signal,) = SharedContactRule().evaluate(RuleContext(db, carrier, date(2026, 10, 9)))
+
+    assert signal.evidence[0].observed_value == "Same phone (360) 373-2751 on USDOT 900020"
