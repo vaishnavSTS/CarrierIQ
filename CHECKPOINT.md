@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 7 (Equipment / VIN) — Parts 1–3 done, Part 4 next
+**Current phase:** Phase 8 (Intelligence Engine) — not started; Phase 7 done
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -20,7 +20,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 4 | Carrier Search | ✅ Done (2026-10-08) |
 | 5 | Safety | ✅ Done (2026-10-08) |
 | 6 | Authority & Insurance | ✅ Done (2026-10-08) |
-| 7 | Equipment / VIN | 🔄 In progress (Parts 1–3 of 4 done) |
+| 7 | Equipment / VIN | ✅ Done (2026-10-08) |
 | 8 | Intelligence Engine | Not started |
 | 9 | Intelligence UI | Not started |
 | 10 | Background Processing | Not started |
@@ -388,7 +388,7 @@ detection (authority + insurance events on the timeline), from Motus and legacy 
 
 ---
 
-## Phase 7 — Equipment / VIN 🔄
+## Phase 7 — Equipment / VIN ✅
 
 Built part by part: (1) VIN links for the carrier's own vehicles → (2) shared VINs across all
 FMCSA inspections (live) → (3) NHTSA vPIC decoding → (4) Equipment tab.
@@ -441,7 +441,23 @@ and returns a check-digit verdict; the units dataset answers VIN lookups in ~0.5
   - Test fixture first saved through the Windows console garbled "VEHÍCULOS … MÉXICO" (a
     Mexican-built Freightliner); re-saved as UTF-8. Live decoding was never affected.
   - 11 new tests (271 total).
-- [ ] **Part 4 — Equipment tab** (vehicles, decoded details, shared-VIN flags, fleet consistency)
+- [x] **Part 4 — Equipment tab.** New endpoint `GET /carriers/{usdot}/equipment`
+  (`services/carrier_equipment_service.py`, `schemas/carrier_equipment.py`): every VIN with its
+  vPIC decode, inspections and first/last seen, plus the other USDOT numbers it was inspected
+  under (name when loaded, inspections, dates, confidence); counts of shared VINs and invalid
+  check digits; fleet = registered power units vs. power units / trailers observed (all time and
+  last 24 months; power vs. trailer from the vPIC vehicle type). The tab shows 4 tiles, a neutral
+  fleet note (spec 12.5 wording: inspection coverage, never a verdict), filters (power units,
+  trailers, seen under other USDOTs, invalid check digit) + search, 25 rows with "Show all", and
+  an expandable row listing the other USDOTs (linked) with "not a finding" wording.
+  - vPIC is now an API dependency (`get_vpic_client`): every test replaces it with saved
+    answers (`offline_vpic` in `tests/conftest.py`); before this, API tests for carriers with
+    vehicles quietly called the real NHTSA service.
+  - Live (Supabase): 297080 → 2,446 registered, 647 power units + 246 trailers observed (502 in
+    24 months), 147 VINs under 92 other USDOTs, 7 invalid check digits (they decode to odd years,
+    e.g. a "1988" tank trailer — consistent with typos); response 1.2s for 893 VINs.
+    Checked in Chrome: filters, expansion and links work; no console errors.
+  - 3 new tests (274 total).
 
 ---
 
@@ -524,3 +540,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Explain private / non-for-hire carriers (census classification, migration 0007) after an empty Authority tab was reported. |
 | 2026-10-08 | Phase 7 Part 2: shared VINs across all FMCSA inspections (297080: 147 VINs shared with 92 carriers); batched 26s → 7s; 260 tests passing. |
 | 2026-10-08 | Phase 7 Part 3: NHTSA vPIC decoding (930 VINs), parallel batches 42s → 9.5s; migration 0008; 271 tests passing. |
+| 2026-10-08 | Phase 7 Part 4: Equipment tab + `/equipment` endpoint; tests never call real vPIC; Phase 7 done; 274 tests passing. |

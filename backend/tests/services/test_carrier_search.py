@@ -22,6 +22,7 @@ from app.services.carrier_search_service import CarrierSearchService
 from app.services.census_ingestion_service import build_census_ingestion_service
 from app.services.inspection_ingestion_service import build_inspection_ingestion_service
 from tests.ingestion.helpers import FakeDotApi, load_census_rows, load_inspection_rows
+from tests.ingestion.test_vpic import fake_vpic
 
 
 def census_row(**overrides: Any) -> dict[str, Any]:
@@ -232,7 +233,7 @@ def test_search_endpoint_rejects_unusable_queries(api_client: TestClient) -> Non
 
 
 def test_refresh_service_builder_uses_the_configured_age(db: Session, api: FakeDotApi) -> None:
-    assert build_refresh_service(db, api.client()).max_age == timedelta(hours=24)
+    assert build_refresh_service(db, api.client(), fake_vpic()).max_age == timedelta(hours=24)
 
 
 def test_name_search_puts_names_starting_with_the_query_first(db: Session) -> None:

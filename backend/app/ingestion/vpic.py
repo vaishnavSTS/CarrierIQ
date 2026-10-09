@@ -60,6 +60,9 @@ class VpicClient:
         logger.info("Decoded %d VIN(s) with NHTSA vPIC", len(results))
         return results
 
+    def close(self) -> None:
+        self.http.close()
+
     def _decode_batch(self, batch: Sequence[str]) -> list[Row]:
         response = send_with_retries(
             partial(self._post_batch, batch),

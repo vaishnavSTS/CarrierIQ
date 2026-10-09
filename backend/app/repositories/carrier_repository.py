@@ -1,5 +1,6 @@
 """Database access for carriers."""
 
+from collections.abc import Iterable
 from dataclasses import asdict
 from datetime import datetime
 
@@ -19,6 +20,16 @@ class CarrierRepository:
         return self.db.scalars(
             select(Carrier).where(Carrier.usdot_number == usdot_number)
         ).one_or_none()
+
+    def legal_names(self, usdot_numbers: Iterable[int]) -> dict[int, str]:
+        """Legal names of the given USDOT numbers that are loaded; the rest are left out."""
+        wanted = set(usdot_numbers)
+        if not wanted:
+            return {}
+        rows = self.db.execute(
+            select(Carrier.usdot_number, Carrier.legal_name).where(Carrier.usdot_number.in_(wanted))
+        )
+        return {usdot: name for usdot, name in rows}
 
     def upsert(self, values: CarrierValues, refreshed_at: datetime) -> Carrier:
         """Create the carrier or overwrite its current values (history is kept separately)."""

@@ -1,5 +1,6 @@
 import type { CarrierSearchResponse } from '../types/carrier'
 import type { CarrierAuthority } from '../types/carrierAuthority'
+import type { CarrierEquipment } from '../types/carrierEquipment'
 import type { CarrierProfile } from '../types/carrierProfile'
 import type { CarrierSafety, InspectionPage } from '../types/carrierSafety'
 import { apiGet } from './client'
@@ -32,4 +33,8 @@ export function fetchCarrierInspections(
 
 export function fetchCarrierAuthority(usdotNumber: number): Promise<CarrierAuthority> {
   return apiGet<CarrierAuthority>(`/carriers/${usdotNumber}/authority`)
+}
+
+export function fetchCarrierEquipment(usdotNumber: number): Promise<CarrierEquipment> {
+  return apiGet<CarrierEquipment>(`/carriers/${usdotNumber}/equipment`)
 }

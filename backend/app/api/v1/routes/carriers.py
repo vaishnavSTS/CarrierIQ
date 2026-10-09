@@ -9,6 +9,7 @@ from app.core.config import get_settings
 from app.db.session import get_db
 from app.ingestion.company_census import CompanyCensusAdapter
 from app.ingestion.socrata_client import SocrataClient
+from app.ingestion.vpic import VpicClient
 from app.repositories.authority_history_repository import AuthorityHistoryRepository
 from app.repositories.authority_repository import AuthorityRepository
 from app.repositories.carrier_history_repository import CarrierHistoryRepository
@@ -16,13 +17,17 @@ from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.inspection_repository import InspectionRepository
 from app.repositories.insurance_repository import InsuranceRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
+from app.repositories.relationship_repository import RelationshipRepository
 from app.repositories.timeline_repository import TimelineRepository
+from app.repositories.vehicle_repository import VehicleRepository
 from app.schemas.carrier_authority import CarrierAuthorityOut
+from app.schemas.carrier_equipment import CarrierEquipmentOut
 from app.schemas.carrier_profile import CarrierProfile
 from app.schemas.carrier_safety import CarrierSafetyOut, InspectionPageOut
 from app.schemas.carrier_search import CarrierSearchResponse
 from app.services.authority_ingestion_service import build_authority_ingestion_service
 from app.services.carrier_authority_service import CarrierAuthorityService
+from app.services.carrier_equipment_service import CarrierEquipmentService
 from app.services.carrier_profile_service import CarrierProfileService
 from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.carrier_safety_service import CarrierSafetyService
@@ -46,7 +51,17 @@ def get_socrata_client() -> Iterator[SocrataClient]:
         client.close()
 
 
-def build_refresh_service(db: Session, client: SocrataClient) -> CarrierRefreshService:
+def get_vpic_client() -> Iterator[VpicClient]:
+    client = VpicClient()
+    try:
+        yield client
+    finally:
+        client.close()
+
+
+def build_refresh_service(
+    db: Session, client: SocrataClient, vpic: VpicClient
+) -> CarrierRefreshService:
     return CarrierRefreshService(
         CarrierRepository(db),
         build_census_ingestion_service(db, client),
@@ -61,20 +76,32 @@ def build_refresh_service(db: Session, client: SocrataClient) -> CarrierRefreshS
         max_age=timedelta(hours=get_settings().carrier_refresh_hours),
         after_refresh=[
             build_vehicle_observation_service(db).rebuild_own,
-            build_vin_decode_service(db).decode_for_carrier,
+            build_vin_decode_service(db, vpic).decode_for_carrier,
             build_timeline_service(db).rebuild,
         ],
     )
 
 
+def get_refresh_service(
+    db: Annotated[Session, Depends(get_db)],
+    client: Annotated[SocrataClient, Depends(get_socrata_client)],
+    vpic: Annotated[VpicClient, Depends(get_vpic_client)],
+) -> CarrierRefreshService:
+    return build_refresh_service(db, client, vpic)
+
+
+Refresh = Annotated[CarrierRefreshService, Depends(get_refresh_service)]
+
+
 def get_carrier_search_service(
     db: Annotated[Session, Depends(get_db)],
     client: Annotated[SocrataClient, Depends(get_socrata_client)],
+    refresh: Refresh,
 ) -> CarrierSearchService:
     settings = get_settings()
     return CarrierSearchService(
         CompanyCensusAdapter(client),
-        build_refresh_service(db, client),
+        refresh,
         CarrierRepository(db),
         AuthorityRepository(db),
         ObservedValueRepository(db),
@@ -94,10 +121,10 @@ def search_carriers(
 
 def get_carrier_profile_service(
     db: Annotated[Session, Depends(get_db)],
-    client: Annotated[SocrataClient, Depends(get_socrata_client)],
+    refresh: Refresh,
 ) -> CarrierProfileService:
     return CarrierProfileService(
-        build_refresh_service(db, client),
+        refresh,
         ObservedValueRepository(db),
         AuthorityRepository(db),
         InspectionRepository(db),
@@ -118,9 +145,9 @@ def get_carrier_profile(
 
 def get_carrier_safety_service(
     db: Annotated[Session, Depends(get_db)],
-    client: Annotated[SocrataClient, Depends(get_socrata_client)],
+    refresh: Refresh,
 ) -> CarrierSafetyService:
-    return CarrierSafetyService(build_refresh_service(db, client), InspectionRepository(db))
+    return CarrierSafetyService(refresh, InspectionRepository(db))
 
 
 UsdotPath = Annotated[int, Path(gt=0, lt=100_000_000)]
@@ -147,10 +174,10 @@ def get_carrier_inspections(
 
 def get_carrier_authority_service(
     db: Annotated[Session, Depends(get_db)],
-    client: Annotated[SocrataClient, Depends(get_socrata_client)],
+    refresh: Refresh,
 ) -> CarrierAuthorityService:
     return CarrierAuthorityService(
-        build_refresh_service(db, client),
+        refresh,
         AuthorityRepository(db),
         InsuranceRepository(db),
         AuthorityHistoryRepository(db),
@@ -162,4 +189,21 @@ def get_carrier_authority(
     usdot_number: UsdotPath,
     service: Annotated[CarrierAuthorityService, Depends(get_carrier_authority_service)],
 ) -> CarrierAuthorityOut:
+    return service.get(usdot_number)
+
+
+def get_carrier_equipment_service(
+    db: Annotated[Session, Depends(get_db)],
+    refresh: Refresh,
+) -> CarrierEquipmentService:
+    return CarrierEquipmentService(
+        refresh, CarrierRepository(db), VehicleRepository(db), RelationshipRepository(db)
+    )
+
+
+@router.get("/{usdot_number}/equipment", response_model=CarrierEquipmentOut)
+def get_carrier_equipment(
+    usdot_number: UsdotPath,
+    service: Annotated[CarrierEquipmentService, Depends(get_carrier_equipment_service)],
+) -> CarrierEquipmentOut:
     return service.get(usdot_number)

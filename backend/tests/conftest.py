@@ -21,6 +21,17 @@ from app.main import app
 TEST_SCHEMA = "pytest_models"
 
 
+@pytest.fixture(autouse=True)
+def offline_vpic() -> Iterator[None]:
+    """API tests decode VINs with saved vPIC answers, never the real NHTSA service."""
+    from app.api.v1.routes.carriers import get_vpic_client
+    from tests.ingestion.test_vpic import fake_vpic
+
+    app.dependency_overrides[get_vpic_client] = fake_vpic
+    yield
+    app.dependency_overrides.pop(get_vpic_client, None)
+
+
 @pytest.fixture
 def client() -> Iterator[TestClient]:
     with TestClient(app) as test_client:

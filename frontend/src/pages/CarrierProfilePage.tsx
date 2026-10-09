@@ -111,7 +111,7 @@ export function CarrierProfilePage() {
         {tab === 'safety' && (
           <SafetySection usdotNumber={profile.usdot_number} safety={profile.safety} />
         )}
-        {tab === 'equipment' && <EquipmentSection equipment={profile.equipment} />}
+        {tab === 'equipment' && <EquipmentSection usdotNumber={profile.usdot_number} />}
         {tab === 'intelligence' && (
           <Section id="intelligence" title="Intelligence">
             <Empty>
