@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 10 (Background Processing) — not started; Phase 9 done
+**Current phase:** Phase 10 (Background Processing) — Part 1 done, Part 2 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -23,7 +23,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 7 | Equipment / VIN | ✅ Done (2026-10-08) |
 | 8 | Intelligence Engine | ✅ Done (2026-10-08) |
 | 9 | Intelligence UI | ✅ Done (2026-10-09) |
-| 10 | Background Processing | Not started |
+| 10 | Background Processing | 🔄 In progress (Part 1 of 3 done) |
 
 ---
 
@@ -590,13 +590,35 @@ relationship view.
 
 ---
 
-## Phase 10 — Background Processing
+## Phase 10 — Background Processing 🔄
 
-- [ ] Worker
-- [ ] Scheduled ingestion
-- [ ] Retry handling
-- [ ] Job status
-- [ ] Optional queue (evaluate Redis vs RabbitMQ vs cloud queue)
+Spec Section 18 / decision log: no Redis for the MVP — React → FastAPI → PostgreSQL → Python
+worker, with the queue swappable later. Built part by part: (1) job queue + worker + retries →
+(2) scheduled ingestion + Docker worker service → (3) job status API / dashboard, "refresh now",
+and the queue evaluation.
+
+- [x] **Part 1 — Job queue, worker, retry handling.**
+  - `jobs` table (migration `0011`): type, JSON payload, status QUEUED / RUNNING / SUCCEEDED /
+    FAILED, attempts / max attempts, `run_after`, lock (worker + time), last error, result. A
+    partial unique index on `dedupe_key` keeps one pending job per key (e.g. one refresh per
+    carrier).
+  - `jobs/queue.py`: `JobQueue` interface + `PostgresJobQueue` — claims with `SELECT … FOR
+    UPDATE SKIP LOCKED` (several workers never take the same job); failure → QUEUED again with
+    exponential backoff (1, 2, 4 minutes) until 4 attempts, then FAILED with the error kept; a
+    job locked longer than 30 minutes (dead worker) is requeued.
+  - `jobs/handlers.py`: `refresh_carrier` (the same refresh as opening a carrier; `force`
+    refreshes every source; a "stale" outcome — a source failed — counts as a failure so it is
+    retried) and `rebuild_signals` (stored data only).
+  - `workers/worker.py`: `python -m app.workers.worker` (runs until stopped) / `--once` (runs
+    due jobs, exits); one database session per job.
+  - The refresh assembly moved to `services/carrier_refresh_factory.py` so the API and the
+    worker build the identical refresh; `ensure_fresh(..., force=True)` added.
+  - Live (Supabase, migration 0011): a forced refresh of 297569 ran through the worker in 18s
+    (all sources, signals rebuilt), SUCCEEDED; a duplicate enqueue was refused.
+  - `alembic check`: migration matches the models. 6 new tests (303 total).
+- [ ] Scheduled ingestion (worker enqueues stale carriers) + Docker worker service
+- [ ] Job status (API + dashboard), "refresh now"
+- [ ] Optional queue: written evaluation of Redis vs RabbitMQ vs cloud queue
 
 ---
 
@@ -653,3 +675,4 @@ relationship view.
 | 2026-10-08 | Phase 9 Part 1: Intelligence tab — severity summary, signal cards grouped by type, evidence drawer. |
 | 2026-10-09 | Phase 9 Part 2: review actions (PATCH /signals/{id}, reviewed / dismissed with a note, reopen); migration 0010; 297 tests passing. |
 | 2026-10-09 | Phase 9 Part 3: timeline → signal links (signal in the URL), relationship view of carriers sharing equipment; Phase 9 done. |
+| 2026-10-09 | Phase 10 Part 1: PostgreSQL job queue (SKIP LOCKED, dedupe, backoff retries, dead-worker recovery), worker process; migration 0011; 303 tests passing. |

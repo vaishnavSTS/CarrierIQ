@@ -1,5 +1,4 @@
 from collections.abc import Iterator
-from datetime import timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Query
@@ -27,22 +26,14 @@ from app.schemas.carrier_profile import CarrierProfile
 from app.schemas.carrier_safety import CarrierSafetyOut, InspectionPageOut
 from app.schemas.carrier_search import CarrierSearchResponse
 from app.schemas.carrier_signals import CarrierSignalsOut
-from app.services.authority_ingestion_service import build_authority_ingestion_service
 from app.services.carrier_authority_service import CarrierAuthorityService
 from app.services.carrier_equipment_service import CarrierEquipmentService, EquipmentReader
 from app.services.carrier_profile_service import CarrierProfileService
+from app.services.carrier_refresh_factory import build_refresh_service
 from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.carrier_safety_service import CarrierSafetyService
 from app.services.carrier_search_service import CarrierSearchService
 from app.services.carrier_signals_service import CarrierSignalsService
-from app.services.census_ingestion_service import build_census_ingestion_service
-from app.services.inspection_ingestion_service import build_inspection_ingestion_service
-from app.services.insurance_ingestion_service import build_insurance_ingestion_service
-from app.services.shared_vin_service import build_shared_vin_service
-from app.services.signal_service import build_signal_service
-from app.services.timeline_service import build_timeline_service
-from app.services.vehicle_observation_service import build_vehicle_observation_service
-from app.services.vin_decode_service import build_vin_decode_service
 
 router = APIRouter(prefix="/carriers", tags=["carriers"])
 
@@ -61,31 +52,6 @@ def get_vpic_client() -> Iterator[VpicClient]:
         yield client
     finally:
         client.close()
-
-
-def build_refresh_service(
-    db: Session, client: SocrataClient, vpic: VpicClient
-) -> CarrierRefreshService:
-    return CarrierRefreshService(
-        CarrierRepository(db),
-        build_census_ingestion_service(db, client),
-        [
-            build_inspection_ingestion_service(db, client),
-            # After inspections: checks this carrier's VINs against all FMCSA inspections.
-            build_shared_vin_service(db, client),
-            build_authority_ingestion_service(db, client),
-            # After authority: uses its dockets to look up legacy insurance filings.
-            build_insurance_ingestion_service(db, client),
-        ],
-        max_age=timedelta(hours=get_settings().carrier_refresh_hours),
-        after_refresh=[
-            build_vehicle_observation_service(db).rebuild_own,
-            build_vin_decode_service(db, vpic).decode_for_carrier,
-            build_timeline_service(db).rebuild,
-            # Last: rules read everything loaded above.
-            build_signal_service(db).rebuild,
-        ],
-    )
 
 
 def get_refresh_service(

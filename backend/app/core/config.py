@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     carrier_refresh_hours: float = 24.0
     # Intelligence signals (spec Section 12): changes older than this are history, not signals.
     signal_lookback_days: int = 730
+    # Background worker (spec Section 18): a PostgreSQL-backed job queue, no Redis.
+    worker_poll_seconds: float = 5.0  # wait between checks when the queue is empty
+    job_max_attempts: int = 4
+    job_retry_base_seconds: float = 60.0  # retry n waits base * 2^(n-1): 1, 2, 4 minutes
+    job_lock_timeout_minutes: int = 30  # a RUNNING job older than this belonged to a dead worker
     search_result_limit: int = 20  # name search results
     docket_search_limit: int = 10  # carriers loaded for one docket search
 

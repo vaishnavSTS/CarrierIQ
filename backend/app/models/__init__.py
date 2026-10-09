@@ -13,6 +13,7 @@ from app.models.ingestion_run import IngestionRun
 from app.models.inspection import Inspection
 from app.models.insurance import Insurance
 from app.models.intelligence_signal import IntelligenceSignal
+from app.models.job import Job
 from app.models.officer import Officer
 from app.models.phone import Phone
 from app.models.raw_record import RawRecord
@@ -35,6 +36,7 @@ __all__ = [
     "Insurance",
     "Inspection",
     "IntelligenceSignal",
+    "Job",
     "Officer",
     "Phone",
     "RawRecord",

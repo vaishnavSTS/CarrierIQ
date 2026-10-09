@@ -58,13 +58,14 @@ class CarrierRefreshService:
     def _recent(self, refreshed_at: datetime | None) -> bool:
         return refreshed_at is not None and self.now() - refreshed_at <= self.max_age
 
-    def ensure_fresh(self, usdot_number: int) -> RefreshOutcome:
+    def ensure_fresh(self, usdot_number: int, *, force: bool = False) -> RefreshOutcome:
+        """Refresh what is due; `force` refreshes every source regardless of age."""
         existing = self.carriers.get_by_usdot(usdot_number)
-        census_due = existing is None or not self._recent(existing.last_refreshed_at)
+        census_due = force or existing is None or not self._recent(existing.last_refreshed_at)
         details_due = [
             source
             for source in self.details
-            if existing is None or not self._recent(source.last_refreshed_at(usdot_number))
+            if force or existing is None or not self._recent(source.last_refreshed_at(usdot_number))
         ]
         if not census_due and not details_due:
             return RefreshOutcome(existing, refreshed=False, stale=False)

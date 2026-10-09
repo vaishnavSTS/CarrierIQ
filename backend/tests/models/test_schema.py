@@ -31,6 +31,7 @@ TABLES = {
     "relationships",
     # Operational
     "ingestion_runs",
+    "jobs",
 }
 
 # Rows in these tables always come from a source record (Engineering Principle 5).

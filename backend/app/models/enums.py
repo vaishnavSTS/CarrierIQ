@@ -34,6 +34,13 @@ class IngestionStatus(StrEnum):
     FAILED = "FAILED"
 
 
+class JobStatus(StrEnum):
+    QUEUED = "QUEUED"  # waiting to run, possibly until run_after (a retry backoff)
+    RUNNING = "RUNNING"
+    SUCCEEDED = "SUCCEEDED"
+    FAILED = "FAILED"  # gave up after max_attempts
+
+
 class AddressType(StrEnum):
     PHYSICAL = "PHYSICAL"
     MAILING = "MAILING"
