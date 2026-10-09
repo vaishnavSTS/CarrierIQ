@@ -6,6 +6,41 @@ import { BASIC_TIPS, DATAQS_URL, groupTip } from './improvementTips'
 const TOP_BASICS = 3
 const TOP_GROUPS = 3
 
+/**
+ * Two sentences: which violations weigh most in the CSA measures (FMCSA's own weights), and what
+ * reducing them would change. It says the measures, not the rating: a rating changes only after
+ * an FMCSA review.
+ */
+function improvementSummary(
+  drivers: BasicDriver[] | null,
+  recent: OosWindow | null,
+): string | null {
+  if (drivers === null) return null
+  if (drivers.length === 0) {
+    return 'FMCSA counts no violations against this carrier in the current 24-month period. Keeping inspections free of violations keeps the CSA measures low; the safety rating itself changes only after an FMCSA review.'
+  }
+  const picks = drivers
+    .flatMap((b) => b.groups.slice(0, 2).map((g) => ({ basic: b.basic, group: g })))
+    .sort((a, b) => b.group.weight - a.group.weight)
+  // The heaviest group of the heaviest BASIC, then the heaviest from another BASIC if any.
+  const first = { basic: drivers[0].basic, group: drivers[0].groups[0] }
+  const second =
+    picks.find((p) => p.basic !== first.basic) ?? picks.find((p) => p.group !== first.group)
+  const named = [first, second]
+    .filter((p): p is NonNullable<typeof p> => Boolean(p?.group))
+    .map((p) => `${p.group.group.toLowerCase()} (${formatPercent(p.group.share)} of ${p.basic})`)
+  const oos =
+    recent &&
+    recent.vehicle_oos_rate !== null &&
+    recent.vehicle_oos_rate > recent.national_vehicle_oos_rate
+      ? `, and bring the vehicle out-of-service rate (${formatPercent(recent.vehicle_oos_rate)}) closer to FMCSA’s national average (${formatPercent(recent.national_vehicle_oos_rate)})`
+      : ''
+  return (
+    `According to FMCSA’s records, the most weight in this carrier’s CSA measures comes from ${named.join(' and ')} violations. ` +
+    `Fewer of these, and more inspections with no violations, would lower those measures the most${oos}; the safety rating itself changes only after an FMCSA review.`
+  )
+}
+
 function RatingNote({ rating, date }: { rating: string | null; date: string | null }) {
   if (!rating) {
     return (
@@ -50,6 +85,7 @@ export function ImprovementGuide({
   rating: string | null
   ratingDate: string | null
 }) {
+  const summary = improvementSummary(drivers, recent)
   const oos = recent
     ? [
         ['vehicle', recent.vehicle_oos_rate, recent.national_vehicle_oos_rate] as const,
@@ -59,6 +95,11 @@ export function ImprovementGuide({
 
   return (
     <div className="space-y-5 text-sm text-slate-700">
+      {summary && (
+        <p className="break-inside-avoid rounded-md border-l-4 border-accent bg-accent/10 px-3 py-2 font-medium text-slate-900">
+          {summary}
+        </p>
+      )}
       <div>
         <h4 className="font-semibold text-slate-900">Safety rating</h4>
         <p className="mt-1">
