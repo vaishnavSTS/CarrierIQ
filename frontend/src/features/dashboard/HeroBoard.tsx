@@ -45,8 +45,8 @@ const PLACEHOLDER: RecentSignal[] = [
   detected_at: null,
 }))
 
-const COLUMNS = 7
-const PER_COLUMN = 6
+const COLUMNS = 5
+const PER_COLUMN = 4
 
 /** Roads across the board (viewBox 0–1000). Each carries a few trucks and cars. */
 const ROUTES = [
@@ -63,7 +63,7 @@ const ROUTES = [
 /** A small truck (trailer + cab) pointing along +x, centred on 0,0. */
 function Truck() {
   return (
-    <g>
+    <g transform="scale(0.7)">
       <ellipse rx="22" ry="11" fill="#a78bfa" opacity="0.35" />
       <rect x="-17" y="-6" width="22" height="12" rx="2" fill="#ede9fe" />
       <rect x="6" y="-5" width="10" height="10" rx="2.5" fill="#c4b5fd" />
@@ -75,7 +75,7 @@ function Truck() {
 /** A small car pointing along +x, centred on 0,0. */
 function Car() {
   return (
-    <g>
+    <g transform="scale(0.7)">
       <ellipse rx="13" ry="8" fill="#f0abfc" opacity="0.3" />
       <rect x="-8" y="-4.5" width="16" height="9" rx="3.5" fill="#f5d0fe" />
       <rect x="-3" y="-3" width="6" height="6" rx="1.5" fill="#86198f" opacity="0.55" />
@@ -132,10 +132,29 @@ export function HeroBoard({ signals }: { signals: RecentSignal[] | undefined }) 
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       <div className="absolute inset-0 hidden [perspective:1400px] md:block">
-        <div className="hero-board absolute left-[-30%] top-[-70%] h-[240%] w-[160%] [transform:rotateX(52deg)_rotateZ(-26deg)] [transform-style:preserve-3d]">
+        <div className="hero-board absolute left-[22%] top-[0%] h-[240%] w-[160%] [transform:rotateX(52deg)_rotateZ(-26deg)] [transform-style:preserve-3d]">
+          <div className="absolute inset-0 flex justify-center gap-6">
+            {columns.map((cards, c) => (
+              <div
+                key={c}
+                className={`board-column flex flex-col gap-6 ${c % 2 ? 'reverse' : ''}`}
+                style={{ animationDuration: `${46 + c * 9}s` }}
+              >
+                {[...cards, ...cards].map((s, i) => (
+                  <Card key={`${s.id}-${i}`} signal={s} />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      {/* Roads on their own larger panel at the same tilt, drawn above the cards. They fade out
+          towards the top left so the headline and search stay clear. */}
+      <div className="absolute inset-0 hidden [mask-image:linear-gradient(150deg,transparent_38%,black_62%)] [perspective:1400px] md:block">
+        <div className="absolute left-[-50%] top-[-90%] h-[280%] w-[200%] [transform:rotateX(52deg)_rotateZ(-26deg)]">
           <svg
             ref={routes}
-            className="absolute inset-0 z-10 size-full"
+            className="absolute inset-0 size-full"
             viewBox="0 0 1000 1000"
             preserveAspectRatio="xMidYMid slice"
           >
@@ -182,20 +201,6 @@ export function HeroBoard({ signals }: { signals: RecentSignal[] | undefined }) 
               )
             })}
           </svg>
-
-          <div className="absolute inset-0 flex justify-center gap-6">
-            {columns.map((cards, c) => (
-              <div
-                key={c}
-                className={`board-column flex flex-col gap-6 ${c % 2 ? 'reverse' : ''}`}
-                style={{ animationDuration: `${46 + c * 9}s` }}
-              >
-                {[...cards, ...cards].map((s, i) => (
-                  <Card key={`${s.id}-${i}`} signal={s} />
-                ))}
-              </div>
-            ))}
-          </div>
         </div>
       </div>
       {/* A light tint and soft edges keep the board behind the cards, not competing with them. */}
