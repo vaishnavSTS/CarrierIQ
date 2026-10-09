@@ -19,6 +19,7 @@ from app.repositories.authority_repository import AuthorityRepository
 from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.insurance_repository import InsuranceRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
+from app.repositories.signal_repository import SignalRepository
 from app.schemas.carrier_search import CarrierSearchResponse, CarrierSearchResult, DocketOut
 from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.carrier_search_query import SearchKind, SearchQuery, parse_search_query
@@ -36,6 +37,7 @@ class CarrierSearchService:
         authorities: AuthorityRepository,
         observed: ObservedValueRepository,
         insurance: InsuranceRepository,
+        signals: SignalRepository,
         *,
         name_limit: int,
         docket_limit: int,
@@ -46,6 +48,7 @@ class CarrierSearchService:
         self.authorities = authorities
         self.observed = observed
         self.insurance = insurance
+        self.signals = signals
         self.name_limit = name_limit
         self.docket_limit = docket_limit
 
@@ -109,6 +112,7 @@ class CarrierSearchService:
         dockets = self.authorities.for_carriers(ids)
         addresses = self.observed.current_for_carriers(Address, ids)
         filings = self.insurance.for_carriers(ids)
+        reviews = self.signals.open_signals(ids)
         results = []
         for carrier in carriers:
             physical = next(
@@ -125,6 +129,9 @@ class CarrierSearchService:
                     insurance_status=insurance_status(
                         dockets[carrier.id], filings[carrier.id]
                     ).status,
+                    review_status=reviews[carrier.id].review_status,
+                    open_signal_count=reviews[carrier.id].count,
+                    highest_open_severity=reviews[carrier.id].highest_severity,
                     fleet_size=carrier.fleet_size,
                     city=physical.city if physical else None,
                     state=physical.state if physical else None,

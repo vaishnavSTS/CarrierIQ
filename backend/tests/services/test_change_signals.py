@@ -14,9 +14,14 @@ from app.intelligence.rules.authority_change import AuthorityChangeRule
 from app.intelligence.rules.insurance_change import InsuranceChangeRule
 from app.models import Authority, Carrier, Insurance
 from app.models.enums import Confidence, DocketPrefix, Severity
+from app.repositories.authority_history_repository import AuthorityHistoryRepository
+from app.repositories.authority_repository import AuthorityRepository
 from app.repositories.carrier_repository import CarrierRepository
+from app.repositories.insurance_repository import InsuranceRepository
 from app.repositories.signal_repository import SignalRepository
+from app.repositories.timeline_repository import TimelineRepository
 from app.services.signal_service import SignalService, default_rules
+from app.services.timeline_service import TimelineService
 from tests.factories import make_carrier, make_raw_record
 from tests.services.fmcsa import fmcsa_api, load_census_authority_insurance
 
@@ -125,12 +130,23 @@ def test_gap_has_evidence_on_both_sides(db: Session) -> None:
 def test_all_rules_save_together(db: Session) -> None:
     carrier = loaded(db)
     now = datetime(2022, 1, 1, tzinfo=UTC)
+    TimelineService(
+        db,
+        TimelineRepository(db),
+        AuthorityHistoryRepository(db),
+        AuthorityRepository(db),
+        InsuranceRepository(db),
+        today=lambda: now.date(),
+    ).rebuild(carrier)
 
-    results = SignalService(db, SignalRepository(db), default_rules(), now=lambda: now).rebuild(
-        carrier
-    )
+    results = SignalService(
+        db, SignalRepository(db), TimelineRepository(db), default_rules(), now=lambda: now
+    ).rebuild(carrier)
 
     assert results["authority_change"] == (2, 0)
+    linked = {e.title: e.signal_id for e in TimelineRepository(db).for_carrier(carrier.id)}
+    assert linked["Authority revoked (MC139446)"] is not None  # the timeline links its signal
+    assert linked["Authority granted (MC139446)"] is None  # 1986: history, no signal
     saved = SignalRepository(db).for_carrier(carrier.id)
     assert {s.signal_type for s in saved} >= {"AUTHORITY_CHANGE"}
     assert all(SignalRepository(db).evidence_for([s.id for s in saved]).values())

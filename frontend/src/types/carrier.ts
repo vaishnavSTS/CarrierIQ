@@ -16,7 +16,10 @@ export interface CarrierSearchResult {
   authority_status: string | null
   registration_status: string | null
   insurance_status: string | null
+  /** OPEN_SIGNALS | NO_OPEN_SIGNALS for loaded carriers; null when not loaded */
   review_status: string | null
+  open_signal_count: number
+  highest_open_severity: 'LOW' | 'MEDIUM' | 'HIGH' | null
   fleet_size: number | null
   city: string | null
   state: string | null

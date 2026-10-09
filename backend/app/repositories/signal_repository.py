@@ -1,7 +1,7 @@
 """Database access for intelligence_signals and signal_evidence."""
 
 from collections.abc import Sequence
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime
 
 from sqlalchemy import delete, select
@@ -9,6 +9,21 @@ from sqlalchemy.orm import Session
 
 from app.intelligence.base_rule import SignalValues
 from app.models import IntelligenceSignal, SignalEvidence
+from app.models.enums import Severity, SignalStatus
+
+_ORDER = [Severity.INFO, Severity.LOW, Severity.MEDIUM, Severity.HIGH]
+
+
+@dataclass(frozen=True)
+class OpenSignals:
+    """A carrier's active signals still to review (status OPEN, severity above INFO)."""
+
+    count: int = 0
+    highest_severity: Severity | None = None
+
+    @property
+    def review_status(self) -> str:
+        return "OPEN_SIGNALS" if self.count else "NO_OPEN_SIGNALS"
 
 
 class SignalRepository:
@@ -20,6 +35,26 @@ class SignalRepository:
         if active_only:
             query = query.where(IntelligenceSignal.is_active.is_(True))
         return list(self.db.scalars(query.order_by(IntelligenceSignal.id)))
+
+    def open_signals(self, carrier_ids: Sequence[int]) -> dict[int, OpenSignals]:
+        found = {carrier_id: OpenSignals() for carrier_id in carrier_ids}
+        if not carrier_ids:
+            return found
+        rows = self.db.execute(
+            select(IntelligenceSignal.carrier_id, IntelligenceSignal.severity).where(
+                IntelligenceSignal.carrier_id.in_(carrier_ids),
+                IntelligenceSignal.is_active.is_(True),
+                IntelligenceSignal.status == SignalStatus.OPEN,
+                IntelligenceSignal.severity != Severity.INFO,
+            )
+        )
+        for carrier_id, severity in rows:
+            current = found[carrier_id]
+            highest = current.highest_severity
+            if highest is None or _ORDER.index(severity) > _ORDER.index(highest):
+                highest = severity
+            found[carrier_id] = OpenSignals(current.count + 1, highest)
+        return found
 
     def evidence_for(self, signal_ids: Sequence[int]) -> dict[int, list[SignalEvidence]]:
         found: dict[int, list[SignalEvidence]] = {i: [] for i in signal_ids}

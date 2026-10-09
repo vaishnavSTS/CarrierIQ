@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { StatusBadge } from '../../components/StatusBadge'
 import type { CarrierSearchResult } from '../../types/carrier'
 import { formatDateTime } from '../../utils/format'
+import { reviewLabel, severityTone } from '../../utils/review'
 import { INSURANCE_LABEL, insuranceTone, statusTone } from '../../utils/status'
 
 function DocketList({ result }: { result: CarrierSearchResult }) {
@@ -97,11 +98,17 @@ export function CarrierSearchResults({ results }: { results: CarrierSearchResult
               <td className="px-3 py-2 whitespace-nowrap">
                 {[r.city, r.state].filter(Boolean).join(', ') || '—'}
               </td>
-              <td
-                className="px-3 py-2 whitespace-nowrap text-xs text-slate-400"
-                title="Intelligence signals arrive in a later phase"
-              >
-                {r.review_status ?? 'Not reviewed'}
+              <td className="px-3 py-2 whitespace-nowrap text-xs">
+                {r.review_status === 'OPEN_SIGNALS' ? (
+                  <StatusBadge
+                    label={reviewLabel(r.review_status, r.open_signal_count) ?? ''}
+                    tone={severityTone(r.highest_open_severity)}
+                  />
+                ) : (
+                  <span className="text-slate-400">
+                    {reviewLabel(r.review_status, r.open_signal_count) ?? '—'}
+                  </span>
+                )}
               </td>
               <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-500">
                 {r.loaded ? (

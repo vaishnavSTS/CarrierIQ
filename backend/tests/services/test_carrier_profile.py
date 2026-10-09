@@ -17,6 +17,7 @@ from app.repositories.carrier_history_repository import CarrierHistoryRepository
 from app.repositories.inspection_repository import InspectionRepository
 from app.repositories.insurance_repository import InsuranceRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
+from app.repositories.signal_repository import SignalRepository
 from app.repositories.timeline_repository import TimelineRepository
 from app.services.carrier_profile_service import CarrierProfileService
 from tests.ingestion.helpers import FakeDotApi, load_inspection_rows
@@ -40,6 +41,7 @@ def profile_service(
         CarrierHistoryRepository(db),
         InsuranceRepository(db),
         TimelineRepository(db),
+        SignalRepository(db),
     )
 
 

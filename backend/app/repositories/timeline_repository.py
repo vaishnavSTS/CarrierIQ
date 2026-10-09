@@ -54,3 +54,14 @@ class TimelineRepository:
                 removed += 1
         self.db.flush()
         return added, removed
+
+    def link_signals(self, carrier_id: int, signal_by_event_key: dict[str, int]) -> int:
+        """Point each of the carrier's events at the active signal raised for it (or at none);
+        returns how many events are linked."""
+        linked = 0
+        for event in self.for_carrier(carrier_id):
+            signal_id = signal_by_event_key.get(event.event_key or "")
+            event.signal_id = signal_id
+            linked += signal_id is not None
+        self.db.flush()
+        return linked

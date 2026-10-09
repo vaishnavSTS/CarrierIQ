@@ -80,6 +80,8 @@ export interface TimelineEvent {
   severity: 'INFO' | 'LOW' | 'MEDIUM' | 'HIGH'
   title: string
   description: string | null
+  /** The intelligence signal raised for this event, if any */
+  signal_id: number | null
 }
 
 export interface CarrierProfile {
@@ -108,5 +110,8 @@ export interface CarrierProfile {
   safety: Safety
   equipment: Equipment
   recent_changes: Change[]
+  /** OPEN_SIGNALS | NO_OPEN_SIGNALS: active signals above INFO not yet reviewed */
   review_status: string | null
+  open_signal_count: number
+  highest_open_severity: 'LOW' | 'MEDIUM' | 'HIGH' | null
 }

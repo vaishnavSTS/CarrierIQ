@@ -12,6 +12,7 @@ from app.models import IntelligenceSignal, Relationship, SignalEvidence, Vehicle
 from app.models.enums import Confidence, Severity, SignalStatus
 from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.signal_repository import SignalRepository
+from app.repositories.timeline_repository import TimelineRepository
 from app.services.signal_service import MissingEvidenceError, SignalService, default_rules
 from tests.factories import make_carrier
 from tests.ingestion.helpers import FakeDotApi
@@ -22,7 +23,9 @@ NOW = datetime(2026, 10, 8, 12, tzinfo=UTC)
 
 
 def service(db: Session) -> SignalService:
-    return SignalService(db, SignalRepository(db), default_rules(), now=lambda: NOW)
+    return SignalService(
+        db, SignalRepository(db), TimelineRepository(db), default_rules(), now=lambda: NOW
+    )
 
 
 def signals(db: Session) -> dict[str, IntelligenceSignal]:
@@ -114,7 +117,9 @@ def test_signal_without_evidence_is_never_saved(db: Session) -> None:
     rules = [*default_rules(), NoEvidenceRule()]
 
     with pytest.raises(MissingEvidenceError, match="broken:1"):
-        SignalService(db, SignalRepository(db), rules, now=lambda: NOW).rebuild(carrier)
+        SignalService(
+            db, SignalRepository(db), TimelineRepository(db), rules, now=lambda: NOW
+        ).rebuild(carrier)
     assert signals(db) == {}
 
 
@@ -129,6 +134,12 @@ def test_signals_endpoint(api_client: TestClient) -> None:  # noqa: F811
     assert first["status"] == "OPEN"
     assert len(first["evidence"]) == 2
     assert first["evidence"][0]["source"] == "dot_socrata"
+
+    profile = api_client.get("/api/v1/carriers/295017").json()
+    assert (profile["review_status"], profile["open_signal_count"]) == ("OPEN_SIGNALS", 3)
+    assert profile["highest_open_severity"] == "LOW"
+    (result,) = api_client.get("/api/v1/carriers/search", params={"q": "295017"}).json()["results"]
+    assert (result["review_status"], result["open_signal_count"]) == ("OPEN_SIGNALS", 3)
 
 
 def test_mistyped_vin_lowers_confidence(db: Session, api: FakeDotApi) -> None:  # noqa: F811

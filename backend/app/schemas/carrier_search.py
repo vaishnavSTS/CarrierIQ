@@ -22,7 +22,10 @@ class CarrierSearchResult(BaseModel):
     authority_status: str | None
     registration_status: str | None
     insurance_status: str | None = None  # ON_FILE | NOT_ON_FILE | None (insurance_status.py)
-    review_status: str | None = None  # intelligence signals arrive in Phase 8
+    # OPEN_SIGNALS | NO_OPEN_SIGNALS (loaded carriers); None: not loaded, no signals computed.
+    review_status: str | None = None
+    open_signal_count: int = 0
+    highest_open_severity: str | None = None
     fleet_size: int | None
     city: str | None
     state: str | None

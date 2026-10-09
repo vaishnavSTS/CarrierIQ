@@ -17,6 +17,7 @@ from app.repositories.authority_repository import AuthorityRepository
 from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.insurance_repository import InsuranceRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
+from app.repositories.signal_repository import SignalRepository
 from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.carrier_search_service import CarrierSearchService
 from app.services.census_ingestion_service import build_census_ingestion_service
@@ -79,6 +80,7 @@ def search_service(db: Session, api: FakeDotApi) -> CarrierSearchService:
         AuthorityRepository(db),
         ObservedValueRepository(db),
         InsuranceRepository(db),
+        SignalRepository(db),
         name_limit=20,
         docket_limit=10,
     )

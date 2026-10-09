@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 
 import { StatusBadge } from '../../components/StatusBadge'
 import type { CarrierProfile } from '../../types/carrierProfile'
 import { needsForHireAuthority } from '../../utils/classification'
 import { formatDateTime, sourceLabel } from '../../utils/format'
+import { reviewLabel, severityTone } from '../../utils/review'
 import { INSURANCE_LABEL, insuranceTone, statusTone } from '../../utils/status'
 
 function HeaderStatus({ label, children }: { label: string; children: ReactNode }) {
@@ -84,7 +86,27 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
           )}
         </HeaderStatus>
         <HeaderStatus label="Review status">
-          <span className="text-slate-500">{profile.review_status ?? 'Not reviewed yet'}</span>
+          {profile.review_status === 'OPEN_SIGNALS' ? (
+            <Link
+              to="?tab=intelligence"
+              replace
+              className="flex items-center gap-2 hover:underline"
+            >
+              <StatusBadge
+                label={reviewLabel(profile.review_status, profile.open_signal_count) ?? ''}
+                tone={severityTone(profile.highest_open_severity)}
+              />
+              {profile.highest_open_severity && (
+                <span className="text-xs text-slate-500">
+                  highest: {profile.highest_open_severity.toLowerCase()}
+                </span>
+              )}
+            </Link>
+          ) : (
+            <span className="text-slate-500">
+              {reviewLabel(profile.review_status, profile.open_signal_count) ?? 'Not reviewed yet'}
+            </span>
+          )}
         </HeaderStatus>
       </div>
     </header>

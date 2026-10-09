@@ -115,8 +115,10 @@ export function CarrierProfilePage() {
         {tab === 'intelligence' && (
           <Section id="intelligence" title="Intelligence">
             <Empty>
-              Review signals (authority and insurance changes, shared VINs, identity changes) arrive
-              with the intelligence engine. Every signal will link to the records behind it.
+              {profile.open_signal_count > 0
+                ? `${profile.open_signal_count} open review signal${profile.open_signal_count === 1 ? '' : 's'} found. `
+                : 'No open review signals. '}
+              Signal cards with the evidence behind each signal arrive in the next phase.
             </Empty>
           </Section>
         )}

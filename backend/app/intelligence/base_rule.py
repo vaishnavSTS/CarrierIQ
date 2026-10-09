@@ -36,6 +36,8 @@ class SignalValues:
     title: str
     description: str
     evidence: tuple[EvidenceValues, ...]
+    # The timeline event this signal was raised for, if any (its `event_key`).
+    timeline_event_key: str | None = None
 
 
 @dataclass(frozen=True)

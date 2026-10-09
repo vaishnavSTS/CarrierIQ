@@ -45,6 +45,7 @@ class TimelineEventOut(BaseModel):
     severity: str
     title: str
     description: str | None
+    signal_id: int | None = None  # the intelligence signal raised for this event, if any
 
 
 class InspectionOut(BaseModel):
@@ -127,4 +128,7 @@ class CarrierProfile(BaseModel):
     equipment: EquipmentOut
     recent_changes: list[ChangeOut]  # newest first; the first load is not a change
     timeline: list[TimelineEventOut]  # authority / insurance events, newest first
-    review_status: str | None = None  # intelligence signals arrive in Phase 8
+    # OPEN_SIGNALS | NO_OPEN_SIGNALS: active signals above INFO not yet reviewed.
+    review_status: str | None = None
+    open_signal_count: int = 0
+    highest_open_severity: str | None = None

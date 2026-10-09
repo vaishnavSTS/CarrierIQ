@@ -112,6 +112,7 @@ def get_carrier_search_service(
         AuthorityRepository(db),
         ObservedValueRepository(db),
         InsuranceRepository(db),
+        SignalRepository(db),
         name_limit=settings.search_result_limit,
         docket_limit=settings.docket_search_limit,
     )
@@ -137,6 +138,7 @@ def get_carrier_profile_service(
         CarrierHistoryRepository(db),
         InsuranceRepository(db),
         TimelineRepository(db),
+        SignalRepository(db),
     )
 
 

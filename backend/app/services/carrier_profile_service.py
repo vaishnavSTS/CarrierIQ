@@ -12,6 +12,7 @@ from app.repositories.carrier_history_repository import CarrierHistoryRepository
 from app.repositories.inspection_repository import InspectionRepository
 from app.repositories.insurance_repository import InsuranceRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
+from app.repositories.signal_repository import SignalRepository
 from app.repositories.timeline_repository import TimelineRepository
 from app.schemas.carrier_profile import (
     AddressOut,
@@ -50,6 +51,7 @@ class CarrierProfileService:
         history: CarrierHistoryRepository,
         insurance: InsuranceRepository,
         timeline: TimelineRepository,
+        signals: SignalRepository,
     ) -> None:
         self.refresh = refresh
         self.observed = observed
@@ -58,6 +60,7 @@ class CarrierProfileService:
         self.history = history
         self.insurance = insurance
         self.timeline = timeline
+        self.signals = signals
 
     def get(self, usdot_number: int) -> CarrierProfile:
         outcome = self.refresh.ensure_fresh(usdot_number)
@@ -67,6 +70,7 @@ class CarrierProfileService:
 
         dockets = self.authorities.for_carrier(carrier.id)
         coverage = insurance_status(dockets, self.insurance.for_carrier(carrier.id))
+        review = self.signals.open_signals([carrier.id])[carrier.id]
         return CarrierProfile(
             usdot_number=carrier.usdot_number,
             legal_name=carrier.legal_name,
@@ -109,11 +113,15 @@ class CarrierProfileService:
                     severity=e.severity.value,
                     title=e.title,
                     description=e.description,
+                    signal_id=e.signal_id,
                 )
                 for e in self.timeline.for_carrier(carrier.id)[:TIMELINE_EVENTS]
             ],
             safety=self._safety(carrier),
             equipment=self._equipment(carrier),
+            review_status=review.review_status,
+            open_signal_count=review.count,
+            highest_open_severity=review.highest_severity,
             recent_changes=recent_changes(self.history.all_for_carrier(carrier.id))[
                 :RECENT_CHANGES
             ],

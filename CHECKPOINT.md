@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 8 (Intelligence Engine) — Parts 1–3 done, Part 4 next
+**Current phase:** Phase 9 (Intelligence UI) — not started; Phase 8 done
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -21,7 +21,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 5 | Safety | ✅ Done (2026-10-08) |
 | 6 | Authority & Insurance | ✅ Done (2026-10-08) |
 | 7 | Equipment / VIN | ✅ Done (2026-10-08) |
-| 8 | Intelligence Engine | 🔄 In progress (Parts 1–3 of 4 done) |
+| 8 | Intelligence Engine | ✅ Done (2026-10-08) |
 | 9 | Intelligence UI | Not started |
 | 10 | Background Processing | Not started |
 
@@ -461,7 +461,7 @@ and returns a check-digit verdict; the units dataset answers VIN lookups in ~0.5
 
 ---
 
-## Phase 8 — Intelligence Engine 🔄
+## Phase 8 — Intelligence Engine ✅
 
 Deterministic signals; every signal must have evidence. Built part by part: (1) signal engine +
 shared VIN + `/signals` API → (2) authority and insurance changes → (3) identity change and fleet
@@ -523,8 +523,24 @@ consistency → (4) safety trend and timeline links.
   - Supabase: fleet signals for 297080 (501 of 2,446 = 20%) and 295017 (3 of 18). No identity
     changes yet: census history only began when each carrier was first loaded.
   - 6 new tests (291 total).
-- [ ] Safety trend
-- [ ] Federal event timeline (signals linked from timeline events)
+- [x] **Part 4 — Safety trend, timeline links, review status (spec 12.6, 12.7).**
+  - `rules/safety_trend.py`: the carrier against its own history only (no validated benchmark
+    exists, spec 12.6): last 12 months vs. the 12 before. "OOS rate rose" (vehicle / driver)
+    needs 5+ inspections in each period and a rise of 10+ points to 1.5x (LOW; MEDIUM at 20+
+    points; confidence by inspection count). "No inspections in the last 12 months" after 5+
+    the year before (LOW). Evidence: both period summaries, the threshold, and up to 10 recent
+    OOS inspections. Bug caught by a test: at exactly the threshold (20% → 30%) floating point
+    gave a 9.999…-point rise; comparisons are now rounded.
+  - Timeline: authority / insurance signals carry their `timeline_event_key`; after each rebuild
+    `timeline_events.signal_id` points at the active signal (or none). Exposed on the profile
+    timeline as `signal_id`.
+  - Review status: profile and search results now report `review_status` (OPEN_SIGNALS /
+    NO_OPEN_SIGNALS), `open_signal_count` and `highest_open_severity` (active, OPEN, above INFO).
+    Header and search column show "N open signals" coloured by the highest severity; the header
+    links to the Intelligence tab (cards arrive in Phase 9). Checked in Chrome, no errors.
+  - Supabase: no safety-trend signals among the 11 loaded carriers. BlueTriton shows 93 open
+    signals (92 shared equipment + fleet) — Phase 9 should group signals by type.
+  - 7 new tests (295 total).
 
 ---
 
@@ -597,3 +613,4 @@ consistency → (4) safety trend and timeline links.
 | 2026-10-08 | Phase 8 Part 1: signal engine (evidence enforced), Shared VIN rule, `/signals` API; migration 0009; 297080 → 92 signals; 279 tests passing. |
 | 2026-10-08 | Phase 8 Part 2: authority and insurance change signals (2-year lookback, evidence per source row); fixed evidence matching for legacy rows; 285 tests passing. |
 | 2026-10-08 | Phase 8 Part 3: identity change and fleet consistency signals; equipment reader shared with the rule; 291 tests passing. |
+| 2026-10-08 | Phase 8 Part 4: safety trend signal, timeline ↔ signal links, review status on profile and search; Phase 8 done; 295 tests passing. |

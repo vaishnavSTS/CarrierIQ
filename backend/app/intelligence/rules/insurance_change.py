@@ -89,6 +89,7 @@ class InsuranceChangeRule(Rule):
             signals.append(
                 SignalValues(
                     signal_key=f"{self.rule_id}:{event.event_key}",
+                    timeline_event_key=event.event_key,
                     signal_type=SIGNAL_TYPE,
                     severity=event.severity,
                     confidence=Confidence.MEDIUM if kind in INFERRED else Confidence.HIGH,
