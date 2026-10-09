@@ -7,6 +7,7 @@ in Vehicle Inspections and Violations (default 876r-jsdb), both keyed by inspect
 """
 
 import logging
+import re
 from collections.abc import Sequence
 
 from app.core.config import get_settings
@@ -21,6 +22,8 @@ SOURCE = "dot_socrata"
 # Inspection IDs per request for units / violations; keeps the $where clause well under URL
 # length limits.
 UNIT_BATCH_SIZE = 100
+VIN_BATCH_SIZE = 100
+VIN_SAFE = re.compile(r"^[A-HJ-NPR-Z0-9]{17}$")
 
 
 class VehicleInspectionAdapter:
@@ -61,6 +64,30 @@ class VehicleInspectionAdapter:
         return self._by_inspection_ids(
             self.violation_dataset_id, inspection_ids, "insp_violation_id"
         )
+
+    def fetch_units_by_vins(self, vins: Sequence[str]) -> list[Row]:
+        """Every unit row, on any carrier's inspection, carrying one of these VINs."""
+        for vin in vins:
+            # VINs go into a SoQL expression: only the 17-character VIN alphabet is allowed.
+            if not VIN_SAFE.match(vin):
+                raise SourceFetchError(f"Invalid VIN {vin!r}")
+        rows: list[Row] = []
+        for start in range(0, len(vins), VIN_BATCH_SIZE):
+            quoted = ",".join(f"'{vin}'" for vin in vins[start : start + VIN_BATCH_SIZE])
+            rows.extend(
+                self.client.get_all_rows(
+                    self.unit_dataset_id,
+                    {"$where": f"insp_unit_vehicle_id_number in ({quoted})"},
+                    order="insp_unit_id",
+                )
+            )
+        for row in rows:
+            _require_numeric_id(row, "insp_unit_id")
+        return rows
+
+    def fetch_headers(self, inspection_ids: Sequence[str]) -> list[Row]:
+        """Inspection headers by inspection id, whichever carrier they belong to."""
+        return self._by_inspection_ids(self.dataset_id, inspection_ids, "inspection_id")
 
     def _by_inspection_ids(
         self, dataset_id: str, inspection_ids: Sequence[str], key: str

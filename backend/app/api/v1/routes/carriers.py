@@ -30,6 +30,7 @@ from app.services.carrier_search_service import CarrierSearchService
 from app.services.census_ingestion_service import build_census_ingestion_service
 from app.services.inspection_ingestion_service import build_inspection_ingestion_service
 from app.services.insurance_ingestion_service import build_insurance_ingestion_service
+from app.services.shared_vin_service import build_shared_vin_service
 from app.services.timeline_service import build_timeline_service
 from app.services.vehicle_observation_service import build_vehicle_observation_service
 
@@ -50,6 +51,8 @@ def build_refresh_service(db: Session, client: SocrataClient) -> CarrierRefreshS
         build_census_ingestion_service(db, client),
         [
             build_inspection_ingestion_service(db, client),
+            # After inspections: checks this carrier's VINs against all FMCSA inspections.
+            build_shared_vin_service(db, client),
             build_authority_ingestion_service(db, client),
             # After authority: uses its dockets to look up legacy insurance filings.
             build_insurance_ingestion_service(db, client),

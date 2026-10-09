@@ -155,9 +155,20 @@ class FakeDotApi:
         if dataset == "az4n-8mr2":
             return httpx.Response(200, json=self._census(params, where))
         if dataset == "fx4q-ay7w":
-            dot = params["dot_number"]
-            return httpx.Response(200, json=[h for h in self.headers if h["dot_number"] == dot])
+            if "dot_number" in params:
+                dot = params["dot_number"]
+                return httpx.Response(200, json=[h for h in self.headers if h["dot_number"] == dot])
+            return httpx.Response(200, json=_for_inspections(self.headers, where))
         if dataset == "wt8s-2hbx":
+            if "insp_unit_vehicle_id_number" in where:
+                return httpx.Response(
+                    200,
+                    json=[
+                        u
+                        for u in self.units
+                        if f"'{u.get('insp_unit_vehicle_id_number')}'" in where
+                    ],
+                )
             return httpx.Response(200, json=_for_inspections(self.units, where))
         if dataset == "876r-jsdb":
             return httpx.Response(200, json=_for_inspections(self.violations, where))

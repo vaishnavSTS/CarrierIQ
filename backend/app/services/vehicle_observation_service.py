@@ -53,26 +53,29 @@ def confidence_for(inspections: int) -> Confidence:
 def save_observations(
     relationships: RelationshipRepository,
     vehicles: VehicleRepository,
-    usdot_number: int,
-    by_vin: dict[str, VinObservations],
+    by_usdot: dict[int, dict[str, VinObservations]],
 ) -> int:
-    found = vehicles.get_or_create(by_vin)
+    """Save VIN observations for any number of USDOT numbers in one batch."""
+    found = vehicles.get_or_create({vin for by_vin in by_usdot.values() for vin in by_vin})
     links = []
-    for vin, seen in by_vin.items():
-        dates = sorted(seen.dates.values())
-        links.append(
-            LinkValues(
-                source=(VEHICLE, found[vin].id),
-                relationship_type=VIN_OBSERVED_WITH,
-                target=(USDOT, usdot_number),
-                first_seen=dates[0],
-                last_seen=dates[-1],
-                observation_count=len(dates),
-                confidence=confidence_for(len(dates)),
-                raw_record_id=seen.latest_raw_id,
-            )
-        )
+    for usdot_number, by_vin in by_usdot.items():
+        for vin, seen in by_vin.items():
+            links.append(_link(found[vin].id, usdot_number, seen))
     return relationships.upsert_many(links)
+
+
+def _link(vehicle_id: int, usdot_number: int, seen: VinObservations) -> LinkValues:
+    dates = sorted(seen.dates.values())
+    return LinkValues(
+        source=(VEHICLE, vehicle_id),
+        relationship_type=VIN_OBSERVED_WITH,
+        target=(USDOT, usdot_number),
+        first_seen=dates[0],
+        last_seen=dates[-1],
+        observation_count=len(dates),
+        confidence=confidence_for(len(dates)),
+        raw_record_id=seen.latest_raw_id,
+    )
 
 
 class VehicleObservationService:
@@ -103,7 +106,7 @@ class VehicleObservationService:
             inspection_id = unit.payload.get("inspection_id")
             if vin and inspection_id in dates:
                 by_vin[vin].add(inspection_id, dates[inspection_id], unit.id)
-        save_observations(self.relationships, self.vehicles, carrier.usdot_number, by_vin)
+        save_observations(self.relationships, self.vehicles, {carrier.usdot_number: by_vin})
         self.db.commit()
         logger.info(
             "USDOT %d: %d VINs observed on its inspections", carrier.usdot_number, len(by_vin)

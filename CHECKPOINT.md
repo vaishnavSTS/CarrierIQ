@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 7 (Equipment / VIN) — Part 1 done, Part 2 next
+**Current phase:** Phase 7 (Equipment / VIN) — Parts 1–2 done, Part 3 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -20,7 +20,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 4 | Carrier Search | ✅ Done (2026-10-08) |
 | 5 | Safety | ✅ Done (2026-10-08) |
 | 6 | Authority & Insurance | ✅ Done (2026-10-08) |
-| 7 | Equipment / VIN | 🔄 In progress (Part 1 of 4 done) |
+| 7 | Equipment / VIN | 🔄 In progress (Parts 1–2 of 4 done) |
 | 8 | Intelligence Engine | Not started |
 | 9 | Intelligence UI | Not started |
 | 10 | Background Processing | Not started |
@@ -414,8 +414,19 @@ and returns a check-digit verdict; the units dataset answers VIN lookups in ~0.5
   header says "Not filed with FMCSA (not a for-hire carrier)", Identity shows "Operation".
   1.47M census carriers are PRIVATE PROPERTY only. Supabase migrated and backfilled from stored
   census records. 1 new test (256 total).
-- [ ] **Part 2 — Shared VINs**: each VIN looked up across all FMCSA inspections; other USDOT
-  numbers using it get their own VIN_OBSERVED_WITH links (with dates and raw evidence)
+- [x] **Part 2 — Shared VINs (spec 12.3).** The carrier's VINs are looked up in the whole
+  Inspections Per Unit dataset (batches of 100); inspections that aren't the carrier's are
+  fetched to learn their USDOT and date; each (VIN, other USDOT) becomes a VIN_OBSERVED_WITH link
+  with dates, inspection count and confidence (2+ HIGH, 1 MEDIUM), traced to the unit raw record.
+  Unit rows and headers are stored raw. A refresh detail source (after inspections, own 24h
+  freshness); an inspection whose USDOT is the carrier's own is never "another carrier".
+  Code: `services/shared_vin_service.py`, `VehicleInspectionAdapter.fetch_units_by_vins/
+  fetch_headers` (VINs validated before reaching SoQL).
+  - Supabase: 297080 BLUETRITON — 147 of 893 VINs on 266 inspections of 92 other carriers
+    (top: DS SERVICES OF AMERICA 49 VINs; PENSKE TRUCK LEASING 17). 295017 and 297569: none.
+    A relationship to review, not a verdict (leasing, related companies, sold equipment).
+  - Performance: per-carrier saves took 26.1s; batched across carriers → 6.8s.
+  - 4 new tests (260 total).
 - [ ] **Part 3 — NHTSA vPIC decoding** (make, model, year, body, weight class; cached forever)
 - [ ] **Part 4 — Equipment tab** (vehicles, decoded details, shared-VIN flags, fleet consistency)
 
@@ -498,3 +509,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 6 Part 4: authority endpoint, insurance status, Authority & Insurance tab, timeline tab with events. Phase 6 complete. |
 | 2026-10-08 | Phase 7 Part 1: VIN extraction and VIN → USDOT links (930 VINs in Supabase); batched upserts 69s → 1s; 255 tests passing. |
 | 2026-10-08 | Explain private / non-for-hire carriers (census classification, migration 0007) after an empty Authority tab was reported. |
+| 2026-10-08 | Phase 7 Part 2: shared VINs across all FMCSA inspections (297080: 147 VINs shared with 92 carriers); batched 26s → 7s; 260 tests passing. |
