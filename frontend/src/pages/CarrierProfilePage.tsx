@@ -14,20 +14,19 @@ import { TimelineSection } from '../features/carrier-profile/TimelineSection'
 import { useCarrierProfile } from '../hooks/useCarrierProfile'
 
 const TABS = [
-  ['packet', 'Packet'],
   ['identity', 'Identity'],
   ['authority', 'Authority & Insurance'],
   ['safety', 'Safety'],
   ['equipment', 'Equipment'],
   ['network', 'Network & Identity'],
+  ['packet', 'Packet'],
   ['intelligence', 'Intelligence'],
   ['timeline', 'Timeline'],
 ] as const
 
 type TabId = (typeof TABS)[number][0]
 
-// The packet is the overall view, so a carrier opens on it.
-const DEFAULT_TAB: TabId = 'packet'
+const DEFAULT_TAB: TabId = 'identity'
 
 function isTab(value: string | null): value is TabId {
   return TABS.some(([id]) => id === value)
