@@ -40,9 +40,47 @@ def clean(value: str | None) -> str:
     return " ".join(_UNSAFE.sub("", (value or "").upper()).split())
 
 
+# USPS standard abbreviations: FMCSA stores addresses as carriers typed them, so the same
+# building can be "3920 SOUTH LOOMIS" on one record and "3920 S LOOMIS" on another.
+_ABBREVIATIONS = {
+    "NORTH": "N",
+    "SOUTH": "S",
+    "EAST": "E",
+    "WEST": "W",
+    "NORTHEAST": "NE",
+    "NORTHWEST": "NW",
+    "SOUTHEAST": "SE",
+    "SOUTHWEST": "SW",
+    "STREET": "ST",
+    "AVENUE": "AVE",
+    "AV": "AVE",
+    "ROAD": "RD",
+    "DRIVE": "DR",
+    "BOULEVARD": "BLVD",
+    "LANE": "LN",
+    "COURT": "CT",
+    "PLACE": "PL",
+    "PARKWAY": "PKWY",
+    "HIGHWAY": "HWY",
+    "CIRCLE": "CIR",
+    "TERRACE": "TER",
+    "TRAIL": "TRL",
+    "SUITE": "STE",
+    "APARTMENT": "APT",
+    "BUILDING": "BLDG",
+}
+_HOUSE_NUMBER = re.compile(r"^(\d+[A-Z]?)\s")
+
+
+def normalize_street(street: str | None) -> str:
+    """A street address in USPS short form, for comparing two records of the same address."""
+    text = re.sub(r"[.,]", " ", clean(street))
+    return " ".join(_ABBREVIATIONS.get(word, word) for word in text.split())
+
+
 def street_base(street: str | None) -> str:
     """The building part of a street address (number + street), without any unit."""
-    text = clean(street).replace("#", " # ")
+    text = normalize_street(street).replace("#", " # ")
     text = " ".join(text.split())
     text = _UNIT.sub("", text)
     text = _TRAILING_UNIT.sub(r"\1", text)
@@ -60,13 +98,18 @@ class ContactKeys:
 
     phones: tuple[str, ...] = ()
     email: str = ""
-    street: str = ""  # full street, cleaned (unit included)
+    street: str = ""  # full street in USPS short form (unit included)
     zip: str = ""
     officers: tuple[str, ...] = ()
 
     @property
     def building(self) -> str:
         return street_base(self.street)
+
+    @property
+    def house_number(self) -> str:
+        found = _HOUSE_NUMBER.match(self.street)
+        return found.group(1) if found else ""
 
     def is_empty(self) -> bool:
         return not (self.phones or self.email or (self.building and self.zip) or self.officers)
@@ -90,7 +133,7 @@ def keys_for(
     return ContactKeys(
         phones=tuple(sorted({p for p in (normalize_phone(x) for x in phones) if p})),
         email=clean(email) if email and "@" in email else "",
-        street=clean(street),
+        street=normalize_street(street),
         zip=zip5(zip_code),
         officers=tuple(
             sorted({o for o in (clean(x) for x in officers) if len(o) >= MIN_OFFICER_LENGTH})
@@ -112,7 +155,10 @@ def build_where(keys: ContactKeys) -> str | None:
     if keys.email:
         parts.append(f"upper(email_address) = '{keys.email}'")
     if keys.building and keys.zip:
-        parts.append(f"(upper(phy_street) like '{keys.building}%' AND phy_zip like '{keys.zip}%')")
+        # By house number and ZIP, so spelling differences ("SOUTH" / "S") still match;
+        # classify() then compares the normalized street.
+        prefix = f"{keys.house_number} " if keys.house_number else keys.building
+        parts.append(f"(upper(phy_street) like '{prefix}%' AND phy_zip like '{keys.zip}%')")
     if keys.officers:
         parts += [f"upper({f}) in {_in(keys.officers)}" for f in OFFICER_FIELDS]
     return " OR ".join(parts) if parts else None
@@ -130,14 +176,16 @@ def classify(row: Row, keys: ContactKeys) -> Match:
     if keys.email and email == keys.email:
         match.kinds.add(EMAIL)
         match.values[EMAIL] = email.lower()
-    street = clean(row.get("phy_street") if isinstance(row.get("phy_street"), str) else "")
+    written = clean(row.get("phy_street") if isinstance(row.get("phy_street"), str) else "")
+    street = normalize_street(written)
     if keys.building and keys.zip and zip5(row.get("phy_zip")) == keys.zip:
+        # The value shown is the other record's address as FMCSA has it.
         if street and street == keys.street:
             match.kinds.add(ADDRESS)
-            match.values[ADDRESS] = street
+            match.values[ADDRESS] = written
         elif street and street_base(street) == keys.building:
             match.kinds.add(BUILDING)
-            match.values[BUILDING] = street
+            match.values[BUILDING] = written
     for f in OFFICER_FIELDS:
         name = clean(row.get(f) if isinstance(row.get(f), str) else "")
         if name and name in keys.officers:

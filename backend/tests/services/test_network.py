@@ -14,7 +14,7 @@ from app.db.session import get_db
 from app.main import app
 from app.models import Address, Authority, Carrier
 from app.models.enums import AddressType, DocketPrefix
-from app.services.registration_health import registration_checks
+from app.services.registration_health import address_peer, registration_checks
 from tests.ingestion.helpers import ORDER_DATASETS, FakeDotApi, load_census_rows
 from tests.services.test_contact_links import OTHERS
 
@@ -102,6 +102,31 @@ def test_orders_and_addresses() -> None:
     )
     assert "The census does not say why." in marked.detail
     assert "address" not in checks()
+
+
+def test_undeliverable_address_names_carriers_at_the_same_address() -> None:
+    """Vanek Brothers is marked; Vanek Re-Ship, same address written differently, is not."""
+    census = {"phy_street": "3920 SOUTH LOOMIS", "carrier_mailing_und_date": "20240723"}
+    peers = [
+        address_peer(
+            2389409, {"legal_name": "VANEK RE-SHIP CORPORATION", "phy_street": "3920 S LOOMIS"}
+        ),
+        address_peer(
+            1000001,
+            {"legal_name": "OTHER CO", "phy_street": "3920 SOUTH LOOMIS", "undeliv_phy": "U"},
+        ),
+    ]
+    bad = [Address(address_type=AddressType.MAILING, undeliverable=True)]
+
+    detail = checks(addresses=bad, census=census, address_peers=peers)["address"].detail
+
+    assert (
+        "FMCSA's census also lists USDOT 1000001 (OTHER CO) at the same address, and also marks "
+        "it undeliverable; USDOT 2389409 (VANEK RE-SHIP CORPORATION) at the same address, "
+        'written "3920 S LOOMIS" there (this carrier\'s record: "3920 SOUTH LOOMIS"), and does '
+        "not mark it undeliverable."
+    ) in detail
+    assert "why one record is marked and another is not" in detail
 
 
 @pytest.fixture

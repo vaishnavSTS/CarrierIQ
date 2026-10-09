@@ -40,7 +40,7 @@ from app.services.identity_events import (
     OWNERSHIP_CHANGE_ATTESTED,
     ownership_state,
 )
-from app.services.registration_health import registration_checks
+from app.services.registration_health import AddressPeer, address_peer, registration_checks
 from app.services.registration_orders_service import RegistrationOrdersService
 from app.services.signal_service import SignalService
 from app.services.timeline_service import TimelineService
@@ -94,6 +94,7 @@ class NetworkService:
             get_settings().legacy_li_frozen_on,
             self.today(),
             InsuranceRepository(self.db).for_carrier(carrier.id),
+            self._address_peers(carrier),
         )
         events = self.events.for_carrier(carrier.id)
         state = ownership_state(events)
@@ -175,6 +176,18 @@ class NetworkService:
                 created_at=e.created_at,
             )
             for e in events
+        ]
+
+    def _address_peers(self, carrier: Carrier) -> list[AddressPeer]:
+        links = self.relationships.from_source(
+            (USDOT, carrier.usdot_number), [LINK_TYPE["address"]]
+        )
+        raw_ids = {link.raw_record_id for link in links if link.raw_record_id}
+        raws = {r.id: r for r in self.db.query(RawRecord).filter(RawRecord.id.in_(raw_ids))}
+        return [
+            address_peer(link.target_entity_id, raws[link.raw_record_id].payload)
+            for link in links
+            if link.raw_record_id in raws
         ]
 
     def _linked(self, carrier: Carrier) -> list[LinkedCarrierOut]:

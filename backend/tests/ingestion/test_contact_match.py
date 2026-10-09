@@ -8,6 +8,7 @@ from app.ingestion.contact_match import (
     build_where,
     classify,
     keys_for,
+    normalize_street,
     street_base,
 )
 
@@ -29,7 +30,7 @@ def test_where_matches_every_detail_and_both_phone_forms() -> None:
     assert where is not None
     assert "phone in ('3604794800', '13604794800')" in where
     assert "upper(email_address) = 'OPS@UNITED.TEST'" in where
-    assert "(upper(phy_street) like '1770 NE FUSON RD%' AND phy_zip like '98311%')" in where
+    assert "(upper(phy_street) like '1770 %' AND phy_zip like '98311%')" in where
     assert "upper(company_officer_1) in ('CRAIG SMITH')" in where
 
 
@@ -41,7 +42,7 @@ def test_values_cannot_change_the_query() -> None:
     assert where is not None
     # Quotes, % and _ inside values are removed: only the filter's own quotes remain.
     assert "D'ANGELO" not in where and "'JOE DANGELO'" in where
-    assert "'AB@X.TEST'" in where and "1 OHARA ST%" in where
+    assert "'AB@X.TEST'" in where and "like '1 %'" in where
 
 
 def test_nothing_to_match() -> None:
@@ -58,3 +59,14 @@ def test_classify() -> None:
     assert classify(other_unit, KEYS).kinds == {BUILDING}
     assert classify(other_zip, KEYS).kinds == set()
     assert classify(officer, KEYS).kinds == {OFFICER}
+
+
+def test_same_address_written_differently() -> None:
+    """FMCSA stores addresses as typed: Vanek Brothers and Vanek Re-Ship (real records)."""
+    keys = keys_for([], None, "3920 SOUTH LOOMIS", "60609", [])
+    assert normalize_street("3920 South Loomis Street") == "3920 S LOOMIS ST"
+
+    match = classify({"phy_street": "3920 S LOOMIS", "phy_zip": "60609"}, keys)
+
+    assert match.kinds == {"address"}
+    assert match.values["address"] == "3920 S LOOMIS"  # as FMCSA has the other record

@@ -34,6 +34,29 @@ class Check:
     as_of: date | None = None
 
 
+@dataclass(frozen=True)
+class AddressPeer:
+    """Another carrier the census lists at the same street address and unit."""
+
+    usdot_number: int
+    legal_name: str | None
+    street: str | None  # as FMCSA has it on that carrier's record
+    undeliverable: bool  # physical or mailing address marked by FMCSA
+
+
+def address_peer(usdot_number: int, census_row: dict[str, Any]) -> AddressPeer:
+    return AddressPeer(
+        usdot_number=usdot_number,
+        legal_name=census_row.get("legal_name"),
+        street=census_row.get("phy_street"),
+        undeliverable=census_row.get("undeliv_phy") == "U"
+        or bool(census_row.get("carrier_mailing_und_date")),
+    )
+
+
+MAX_PEERS = 3
+
+
 def _yyyymmdd(value: object) -> date | None:
     text = str(value or "")
     try:
@@ -56,6 +79,7 @@ def registration_checks(
     legacy_frozen_on: date,
     today: date,
     insurance: Sequence[Insurance] = (),
+    address_peers: Sequence[AddressPeer] = (),
 ) -> list[Check]:
     checks = [
         _motus(authorities, carrier, legacy_frozen_on),
@@ -63,7 +87,7 @@ def registration_checks(
         _prior_revoke(carrier, census),
         _oos(oos_orders),
         _revocations(revocations, today),
-        _addresses(addresses, census),
+        _addresses(addresses, census, address_peers),
         *_renewals(insurance, today),
     ]
     return [c for c in checks if c is not None]
@@ -239,7 +263,33 @@ def _revocations(orders: Sequence[dict[str, Any]], today: date) -> Check:
     )
 
 
-def _addresses(addresses: Sequence[Address], census: dict[str, Any]) -> Check | None:
+def _peer_note(census: dict[str, Any], peers: Sequence[AddressPeer]) -> str:
+    """Other carriers at the same address, and whether FMCSA marks them too."""
+    if not peers:
+        return ""
+    own = census.get("phy_street")
+    notes = []
+    for p in sorted(peers, key=lambda p: p.usdot_number)[:MAX_PEERS]:
+        name = f" ({p.legal_name})" if p.legal_name else ""
+        written = (
+            f', written "{p.street}" there (this carrier\'s record: "{own}")'
+            if p.street and own and p.street != own
+            else ""
+        )
+        marked = (
+            "also marks it undeliverable" if p.undeliverable else "does not mark it undeliverable"
+        )
+        notes.append(f"USDOT {p.usdot_number}{name} at the same address{written}, and {marked}")
+    more = f" (and {len(peers) - MAX_PEERS} more)" if len(peers) > MAX_PEERS else ""
+    text = f" FMCSA's census also lists {'; '.join(notes)}{more}."
+    if any(not p.undeliverable for p in peers):
+        text += " The census does not say why one record is marked and another is not."
+    return text
+
+
+def _addresses(
+    addresses: Sequence[Address], census: dict[str, Any], peers: Sequence[AddressPeer] = ()
+) -> Check | None:
     bad = sorted({a.address_type.value.lower() for a in addresses if a.undeliverable})
     if not bad:
         return None
@@ -252,9 +302,9 @@ def _addresses(addresses: Sequence[Address], census: dict[str, Any]) -> Check | 
         "Address marked undeliverable by FMCSA",
         "attention",
         f"FMCSA's census marks the {which} {plural} as undeliverable{since}: FMCSA mail sent "
-        "there was returned. The census does not say why. FMCSA mail, such as audit or "
-        "MCS-150 notices, may not reach the carrier until the address is corrected or "
-        "confirmed on an MCS-150.",
+        f"there was returned. The census does not say why.{_peer_note(census, peers)} FMCSA "
+        "mail, such as audit or MCS-150 notices, may not reach the carrier until the address "
+        "is corrected or confirmed on an MCS-150.",
         "FMCSA census",
         marked,
     )
