@@ -18,6 +18,8 @@ export interface Evidence {
 export interface Signal {
   id: number
   signal_type: string
+  /** Stable within the carrier, e.g. "shared_vin:888" */
+  signal_key: string | null
   rule_id: string
   rule_version: string
   severity: Severity

@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 import { StatusBadge } from '../../../components/StatusBadge'
 import { useCarrierSignals } from '../../../hooks/useCarrierSignals'
@@ -7,6 +8,7 @@ import { formatLocalDate } from '../../../utils/format'
 import { severityTone } from '../../../utils/status'
 import { Empty, Section, Stat } from '../Section'
 import { EvidenceDrawer } from './EvidenceDrawer'
+import { RelationshipView } from './RelationshipView'
 import { TYPE_LABEL, TYPE_ORDER } from './labels'
 
 const SEVERITIES: Severity[] = ['HIGH', 'MEDIUM', 'LOW', 'INFO']
@@ -111,8 +113,24 @@ export function IntelligenceSection({ usdotNumber }: { usdotNumber: number }) {
   const [includeInfo, setIncludeInfo] = useState(false)
   const [type, setType] = useState<string | null>(null)
   const [status, setStatus] = useState<ReviewStatus | 'ALL'>('OPEN')
-  const [openId, setOpenId] = useState<number | null>(null)
-  const close = useCallback(() => setOpenId(null), [])
+  // The open signal lives in the URL (?signal=12), so timeline and relationship links can open
+  // it and a link to it can be shared.
+  const [params, setParams] = useSearchParams()
+  const openId = Number(params.get('signal')) || null
+  const setOpenId = useCallback(
+    (id: number | null) =>
+      setParams(
+        (current) => {
+          const next = new URLSearchParams(current)
+          if (id === null) next.delete('signal')
+          else next.set('signal', String(id))
+          return next
+        },
+        { replace: true },
+      ),
+    [setParams],
+  )
+  const close = useCallback(() => setOpenId(null), [setOpenId])
 
   const signals = useMemo(() => data?.signals ?? [], [data])
   const openSignals = signals.filter((s) => s.status === 'OPEN')
@@ -223,6 +241,7 @@ export function IntelligenceSection({ usdotNumber }: { usdotNumber: number }) {
               </div>
             </>
           )}
+          <RelationshipView usdotNumber={usdotNumber} signals={signals} onOpenSignal={setOpenId} />
           {open && <EvidenceDrawer usdotNumber={usdotNumber} signal={open} onClose={close} />}
         </>
       )}

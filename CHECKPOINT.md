@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 9 (Intelligence UI) — Parts 1–2 done, Part 3 next
+**Current phase:** Phase 10 (Background Processing) — not started; Phase 9 done
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -22,7 +22,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 6 | Authority & Insurance | ✅ Done (2026-10-08) |
 | 7 | Equipment / VIN | ✅ Done (2026-10-08) |
 | 8 | Intelligence Engine | ✅ Done (2026-10-08) |
-| 9 | Intelligence UI | 🔄 In progress (Parts 1–2 of 3 done) |
+| 9 | Intelligence UI | ✅ Done (2026-10-09) |
 | 10 | Background Processing | Not started |
 
 ---
@@ -544,7 +544,7 @@ consistency → (4) safety trend and timeline links.
 
 ---
 
-## Phase 9 — Intelligence UI 🔄
+## Phase 9 — Intelligence UI ✅
 
 Built part by part: (1) Intelligence tab: summary, grouped signal cards, evidence drawer →
 (2) review actions (reviewed / dismissed, with a note) → (3) timeline ↔ signal links and the
@@ -574,8 +574,19 @@ relationship view.
   - Checked in Chrome on USDOT 295017: reviewed with a note → header "No open signals", then
     reopened (database checked: back to OPEN, no note; no other signal touched).
   - Supabase at migration 0010. 2 new tests (297 total).
-- [ ] Timeline ↔ signals
-- [ ] Relationship view
+- [x] **Part 3 — Timeline ↔ signals and relationship view.**
+  - The open signal lives in the URL (`?tab=intelligence&signal=98`), so any link can open its
+    evidence drawer and it can be shared. Timeline events that raised a signal show "Review
+    signal ›" (only those within the 2-year window; older events are history).
+  - `RelationshipView` (Intelligence tab, under the signals): other USDOT numbers whose
+    inspections recorded this carrier's VINs, built from the Equipment data — carrier link and
+    name (or "not loaded yet"), shared vehicles (expandable VIN list with year / make / model),
+    their inspections, dates, and the Shared VIN signal (confidence, review state; opens the
+    drawer). Sorted by shared vehicles; 10 then "Show all". `signal_key` added to the signals
+    API for the match.
+  - Checked in Chrome: J2Z timeline → revocation signal drawer; BlueTriton relationships —
+    USDOT 155682 shares 49 vehicles (96 inspections, Nov 2023 – Oct 2026), not loaded yet.
+    No console errors; 297 tests passing.
 
 ---
 
@@ -641,3 +652,4 @@ relationship view.
 | 2026-10-08 | Phase 8 Part 4: safety trend signal, timeline ↔ signal links, review status on profile and search; Phase 8 done; 295 tests passing. |
 | 2026-10-08 | Phase 9 Part 1: Intelligence tab — severity summary, signal cards grouped by type, evidence drawer. |
 | 2026-10-09 | Phase 9 Part 2: review actions (PATCH /signals/{id}, reviewed / dismissed with a note, reopen); migration 0010; 297 tests passing. |
+| 2026-10-09 | Phase 9 Part 3: timeline → signal links (signal in the URL), relationship view of carriers sharing equipment; Phase 9 done. |

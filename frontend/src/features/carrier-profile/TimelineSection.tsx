@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import { StatusBadge } from '../../components/StatusBadge'
 import type { Change, TimelineEvent } from '../../types/carrierProfile'
@@ -12,6 +13,7 @@ interface Row {
   severity: TimelineEvent['severity']
   title: string
   description: string | null
+  signalId: number | null
 }
 
 const PREVIEW_ROWS = 25
@@ -23,6 +25,7 @@ function fromChange(c: Change): Row {
     severity: 'INFO',
     title: `${humanize(c.attribute)} changed`,
     description: `${c.old_value ?? '(empty)'} → ${c.new_value ?? '(empty)'}`,
+    signalId: null,
   }
 }
 
@@ -43,6 +46,7 @@ export function TimelineSection({
       severity: e.severity,
       title: e.title,
       description: e.description,
+      signalId: e.signal_id,
     })),
     ...changes.map(fromChange),
   ]
@@ -85,6 +89,14 @@ export function TimelineSection({
               </span>
               <span className="flex-1">
                 <span className="font-medium text-slate-900">{r.title}</span>
+                {r.signalId !== null && (
+                  <Link
+                    to={`?tab=intelligence&signal=${r.signalId}`}
+                    className="ml-2 text-xs text-slate-600 underline hover:text-slate-900"
+                  >
+                    Review signal ›
+                  </Link>
+                )}
                 {r.description && (
                   <span className="block text-xs text-slate-600">{r.description}</span>
                 )}

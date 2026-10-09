@@ -71,6 +71,7 @@ def signal_out(s: IntelligenceSignal, evidence: list[SignalEvidence]) -> SignalO
     return SignalOut(
         id=s.id,
         signal_type=s.signal_type,
+        signal_key=s.signal_key,
         rule_id=s.rule_id,
         rule_version=s.rule_version,
         severity=s.severity.value,

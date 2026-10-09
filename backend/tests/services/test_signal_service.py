@@ -134,6 +134,7 @@ def test_signals_endpoint(api_client: TestClient) -> None:  # noqa: F811
     assert first["status"] == "OPEN"
     assert len(first["evidence"]) == 2
     assert first["evidence"][0]["source"] == "dot_socrata"
+    assert first["signal_key"].startswith("shared_vin:")
 
     profile = api_client.get("/api/v1/carriers/295017").json()
     assert (profile["review_status"], profile["open_signal_count"]) == ("OPEN_SIGNALS", 3)

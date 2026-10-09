@@ -20,6 +20,7 @@ class EvidenceOut(BaseModel):
 class SignalOut(BaseModel):
     id: int
     signal_type: str
+    signal_key: str | None  # stable within the carrier, e.g. "shared_vin:888"
     rule_id: str
     rule_version: str
     severity: str  # INFO | LOW | MEDIUM | HIGH
