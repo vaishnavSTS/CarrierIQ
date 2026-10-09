@@ -17,7 +17,8 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Any
 
-from app.models import Address, Authority, Carrier
+from app.models import Address, Authority, Carrier, Insurance
+from app.services.insurance_renewal import describe, renewals
 
 MCS150_MONTHS = 24  # FMCSA requires an MCS-150 update at least every 24 months
 CHECK_STATUSES = ("ok", "attention", "alert", "info", "unknown")
@@ -54,6 +55,7 @@ def registration_checks(
     revocations: Sequence[dict[str, Any]],
     legacy_frozen_on: date,
     today: date,
+    insurance: Sequence[Insurance] = (),
 ) -> list[Check]:
     checks = [
         _motus(authorities, carrier, legacy_frozen_on),
@@ -62,6 +64,7 @@ def registration_checks(
         _oos(oos_orders),
         _revocations(revocations, today),
         _addresses(addresses, census),
+        *_renewals(insurance, today),
     ]
     return [c for c in checks if c is not None]
 
@@ -255,3 +258,26 @@ def _addresses(addresses: Sequence[Address], census: dict[str, Any]) -> Check | 
         "FMCSA census",
         marked,
     )
+
+
+_TYPE = {"BIPD": "liability (BI&PD)", "CARGO": "cargo", "BOND": "surety bond"}
+
+
+def _renewals(insurance: Sequence[Insurance], today: date) -> list[Check]:
+    """Renewals worth a look: expected soon, or expected after the data stopped updating."""
+    checks = []
+    for r in renewals(insurance, today):
+        if r.state not in ("unconfirmed", "upcoming"):
+            continue
+        kind = _TYPE.get(r.insurance_type, r.insurance_type.lower())
+        checks.append(
+            Check(
+                f"renewal_{r.insurance_type.lower()}",
+                f"Insurance renewal ({kind}, {r.docket})",
+                "attention" if r.state == "unconfirmed" else "info",
+                describe(r),
+                "FMCSA insurance filings",
+                r.expected,
+            )
+        )
+    return checks

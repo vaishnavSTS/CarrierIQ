@@ -14,6 +14,7 @@ from app.models import Address, Carrier, IdentityEvent, RawRecord
 from app.repositories.authority_repository import AuthorityRepository
 from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.identity_event_repository import IdentityEventRepository
+from app.repositories.insurance_repository import InsuranceRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
 from app.repositories.raw_record_repository import RawRecordRepository
 from app.repositories.relationship_repository import RelationshipRepository
@@ -92,6 +93,7 @@ class NetworkService:
             revocations,
             get_settings().legacy_li_frozen_on,
             self.today(),
+            InsuranceRepository(self.db).for_carrier(carrier.id),
         )
         events = self.events.for_carrier(carrier.id)
         state = ownership_state(events)

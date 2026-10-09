@@ -1,6 +1,8 @@
 """Authority & insurance detail for one carrier, refreshed on demand first."""
 
 import re
+from collections.abc import Callable
+from datetime import UTC, date, datetime
 
 from app.core.exceptions import CarrierNotFoundError
 from app.models import Insurance
@@ -12,8 +14,10 @@ from app.schemas.carrier_authority import (
     CarrierAuthorityOut,
     DocketDetailOut,
     InsuranceFilingOut,
+    RenewalOut,
 )
 from app.services.carrier_refresh_service import CarrierRefreshService
+from app.services.insurance_renewal import describe, renewals
 
 _EMAIL = re.compile(r"\S+@\S+")
 
@@ -25,11 +29,13 @@ class CarrierAuthorityService:
         authorities: AuthorityRepository,
         insurance: InsuranceRepository,
         history: AuthorityHistoryRepository,
+        today: Callable[[], date] = lambda: datetime.now(UTC).date(),
     ) -> None:
         self.refresh = refresh
         self.authorities = authorities
         self.insurance = insurance
         self.history = history
+        self.today = today
 
     def get(self, usdot_number: int) -> CarrierAuthorityOut:
         carrier = self.refresh.ensure_fresh(usdot_number).carrier
@@ -82,6 +88,20 @@ class CarrierAuthorityService:
                 )
             ],
             authority_history=list(actions.values()),
+            renewals=[
+                RenewalOut(
+                    docket=r.docket,
+                    insurance_type=r.insurance_type,
+                    current_effective=r.current_effective,
+                    since=r.since,
+                    filings=r.filings,
+                    expected=r.expected,
+                    data_as_of=r.data_as_of,
+                    state=r.state,
+                    summary=describe(r),
+                )
+                for r in renewals(filings, self.today())
+            ],
         )
 
 

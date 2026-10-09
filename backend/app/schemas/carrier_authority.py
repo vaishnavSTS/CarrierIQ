@@ -47,9 +47,24 @@ class AuthorityActionOut(BaseModel):
     source_system: str
 
 
+class RenewalOut(BaseModel):
+    """Expected renewal, estimated from the yearly pattern of FMCSA filing start dates."""
+
+    docket: str
+    insurance_type: str  # BIPD | CARGO | BOND | TRUST_FUND
+    current_effective: date
+    since: date
+    filings: int
+    expected: date
+    data_as_of: date | None
+    state: str  # pattern | upcoming | unconfirmed | passed
+    summary: str
+
+
 class CarrierAuthorityOut(BaseModel):
     usdot_number: int
     dockets: list[DocketDetailOut]
     current_insurance: list[InsuranceFilingOut]  # on file now
     insurance_history: list[InsuranceFilingOut]  # newest first
     authority_history: list[AuthorityActionOut]  # newest first, each action once
+    renewals: list[RenewalOut] = []  # insurance on file with a yearly renewal pattern

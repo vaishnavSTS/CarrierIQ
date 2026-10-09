@@ -41,10 +41,25 @@ export interface AuthorityAction {
   source_system: string
 }
 
+/** Usual renewal date, estimated from yearly filing start dates (FMCSA has no due date) */
+export interface Renewal {
+  docket: string
+  insurance_type: string
+  current_effective: string
+  since: string
+  filings: number
+  expected: string
+  data_as_of: string | null
+  /** pattern | upcoming (within 30 days) | unconfirmed (after the data stopped) | passed */
+  state: 'pattern' | 'upcoming' | 'unconfirmed' | 'passed'
+  summary: string
+}
+
 export interface CarrierAuthority {
   usdot_number: number
   dockets: DocketDetail[]
   current_insurance: InsuranceFiling[]
   insurance_history: InsuranceFiling[]
   authority_history: AuthorityAction[]
+  renewals: Renewal[]
 }

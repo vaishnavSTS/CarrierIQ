@@ -7,9 +7,9 @@ import {
   classifications,
   needsForHireAuthority,
 } from '../../utils/classification'
-import type { DocketDetail, InsuranceFiling } from '../../types/carrierAuthority'
+import type { DocketDetail, InsuranceFiling, Renewal } from '../../types/carrierAuthority'
 import { formatDate, formatMoney, humanize, sourceLabel } from '../../utils/format'
-import { statusTone } from '../../utils/status'
+import { statusTone, type Tone } from '../../utils/status'
 import { Empty, Section } from './Section'
 import { cellClass, headClass, tableClass } from './styles'
 
@@ -166,6 +166,42 @@ function FilingsTable({ filings, past }: { filings: InsuranceFiling[]; past: boo
   )
 }
 
+const RENEWAL_BADGE: Record<Renewal['state'], { label: string; tone: Tone }> = {
+  pattern: { label: 'estimate', tone: 'neutral' },
+  upcoming: { label: 'renewal soon', tone: 'pending' },
+  unconfirmed: { label: 'cannot confirm', tone: 'warn' },
+  passed: { label: 'still on file', tone: 'ok' },
+}
+
+function Renewals({ renewals }: { renewals: Renewal[] }) {
+  if (renewals.length === 0) return null
+  return (
+    <div className="mt-3 space-y-2">
+      {renewals.map((r) => {
+        const badge = RENEWAL_BADGE[r.state]
+        return (
+          <div
+            key={`${r.docket}-${r.insurance_type}`}
+            className="rounded-md border border-slate-200 p-3 text-sm"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-medium">
+                Usual renewal: {TYPE_LABEL[r.insurance_type] ?? r.insurance_type}{' '}
+                <span className="font-mono text-xs text-slate-500">{r.docket}</span>
+              </span>
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                Next expected around {formatDate(r.expected)}
+                <StatusBadge label={badge.label} tone={badge.tone} />
+              </div>
+            </div>
+            <p className="mt-1 text-xs text-slate-600">{r.summary}</p>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function ShowMore({
   total,
   shown,
@@ -241,6 +277,7 @@ export function AuthoritySection({
           ) : (
             <FilingsTable filings={data.current_insurance} past={false} />
           )}
+          <Renewals renewals={data.renewals ?? []} />
 
           <SubHeading>Insurance history</SubHeading>
           {data.insurance_history.length === 0 ? (

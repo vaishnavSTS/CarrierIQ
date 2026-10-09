@@ -716,6 +716,14 @@ and ownership events → (3) the Network & Identity tab.
     authority_change v1.2.
   - Checked in Chrome on MC 1363132: legacy-only registration flagged with how to clear it,
     5 same-building carriers, all other checks OK; no console errors. 327 tests passing.
+- [x] **Insurance renewal estimate.** FMCSA filings have only a start date (no due date), so
+  `services/insurance_renewal.py` looks for filings that started about a year apart (330–400
+  days, at least 2 yearly renewals) and estimates the next one. States: pattern, upcoming
+  (within 30 days), unconfirmed (expected after the source data stopped updating), passed.
+  Always worded as an estimate from FMCSA's filing history. Shown under "Insurance on file"
+  (`renewals` on `/authority`) and, for unconfirmed / upcoming, as a registration check on the
+  Network tab (`renewal_<type>`). Live check, USDOT 297569: BI&PD on MC207446 every June 18 since
+  2021, expected 2026-06-18, after L&I froze on 2026-05-14 → "cannot confirm". 333 tests passing.
 
 ---
 
@@ -779,3 +787,4 @@ and ownership events → (3) the Network & Identity tab.
 | 2026-10-09 | Phase 11 Part 1: linked carriers via shared phone / email / address / officer (census-wide), shared_contact signal; 319 tests passing. |
 | 2026-10-09 | Phase 11 Part 2: registration health checks, out-of-service orders and revocations, ownership events with timeline and signal, /network endpoint; migration 0013; 326 tests passing. |
 | 2026-10-09 | Phase 11 Part 3: Network & Identity tab (broker-flag summary, registration health, linked carriers, identity history, team notes); authority transfers recognised; 327 tests passing. |
+| 2026-10-09 | Insurance renewal estimate from yearly filing dates (Authority tab + Network check); wording pass; 333 tests passing. |

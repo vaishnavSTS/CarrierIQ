@@ -29,6 +29,9 @@ const FIX: Record<string, string> = {
   address: 'Correcting or confirming the address on an MCS-150.',
 }
 
+const RENEWAL_FIX =
+  'A current certificate of insurance from the carrier or its insurer, showing the policy dates.'
+
 const KIND_LABEL = { phone: 'phone', email: 'email', address: 'address', officer: 'officer' }
 
 /** Turn public-record findings into the checklist a broker's vetting is likely to run. */
@@ -42,7 +45,11 @@ export function brokerFlags(network: CarrierNetwork, profile: CarrierProfile): B
       level: check.status,
       title: check.label,
       why: check.detail,
-      fix: FIX[check.key] ?? 'Reviewing the FMCSA record and correcting it if needed.',
+      fix:
+        FIX[check.key] ??
+        (check.key.startsWith('renewal_')
+          ? RENEWAL_FIX
+          : 'Reviewing the FMCSA record and correcting it if needed.'),
     })
   }
 
