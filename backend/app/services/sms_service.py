@@ -1,53 +1,100 @@
 """Fetch a carrier's FMCSA SMS (CSA) results and crash reports.
 
-A refresh detail source, stored like BOC-3: each dataset's full answer for the carrier is one
-raw record (`{"rows": [...]}`, keyed by USDOT number), so the latest record is always the
-current answer. `sms_for()` and `crashes_for()` read them back for the Safety tab.
+A refresh detail source. Each dataset's full answer for the carrier is kept as one raw record
+(`{"rows": [...]}`, keyed by USDOT number) as proof, and normalized into `sms_results` (one row
+per BASIC per month) and `crashes` (one row per report). `sms_for()` and `crashes_for()` read
+those tables for the Safety tab and the packet.
 """
 
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from functools import partial
-from typing import Any
 
 from sqlalchemy.orm import Session
 
 from app.ingestion.sms import CRASH_YEARS, SOURCE, SmsAdapter
 from app.ingestion.socrata_client import SocrataClient
+from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.ingestion_run_repository import IngestionRunRepository
 from app.repositories.raw_record_repository import RawRecordRepository
-from app.schemas.carrier_safety import CrashSummaryOut, SmsOut
+from app.repositories.safety_record_repository import SafetyRecordRepository
+from app.schemas.carrier_safety import BasicOut, CrashOut, CrashSummaryOut, SmsOut
 from app.services.dataset_batch import DatasetBatch
-from app.services.sms_results import crash_summary, sms_result
+from app.services.sms_results import crash_reports, crash_summary, sms_result
 
 logger = logging.getLogger(__name__)
 
 DATASET_NAMES = ("SMS AB Pass", "SMS C Pass", "SMS AB PassProperty", "SMS C PassProperty")
 
 
-def _rows(raw_records: RawRecordRepository, dataset_id: str, usdot: int) -> list[Any] | None:
-    raw = raw_records.latest(SOURCE, dataset_id, str(usdot))
-    return list(raw.payload.get("rows", [])) if raw else None
+def _query(usdot_number: int) -> str:
+    return f"dot_number={usdot_number}"
 
 
-def sms_for(raw_records: RawRecordRepository, usdot_number: int) -> SmsOut | None:
-    """FMCSA's SMS row for the carrier as last fetched; None when not fetched yet."""
-    adapter_ids = SmsAdapter.dataset_ids()
-    fetched = [
-        (dataset_id, name, rows)
-        for dataset_id, name in zip(adapter_ids, DATASET_NAMES, strict=True)
-        if (rows := _rows(raw_records, dataset_id, usdot_number)) is not None
-    ]
-    return sms_result(fetched)
+def _fetched(db: Session, dataset_id: str, usdot_number: int) -> bool:
+    runs = IngestionRunRepository(db)
+    return runs.last_success_at(SOURCE, dataset_id, _query(usdot_number)) is not None
 
 
-def crashes_for(
-    raw_records: RawRecordRepository, usdot_number: int, today: date
-) -> CrashSummaryOut | None:
-    rows = _rows(raw_records, SmsAdapter.crash_id(), usdot_number)
-    return crash_summary(rows, today, CRASH_YEARS)
+def sms_for(db: Session, usdot_number: int) -> SmsOut | None:
+    """FMCSA's SMS results as last fetched; None when not fetched yet."""
+    if not _fetched(db, SmsAdapter.crash_id(), usdot_number):
+        return None
+    carrier = CarrierRepository(db).get_by_usdot(usdot_number)
+    rows = SafetyRecordRepository(db).latest_sms(carrier.id) if carrier else []
+    if not rows:
+        return sms_result([("", "", [])])  # fetched; the carrier is in no SMS file
+    first = rows[0]
+    return SmsOut(
+        dataset_id=first.dataset_id,
+        dataset=first.dataset,
+        passenger=first.passenger,
+        inspections=first.inspections,
+        driver_inspections=first.driver_inspections,
+        vehicle_inspections=first.vehicle_inspections,
+        basics=[
+            BasicOut(
+                key=r.basic,
+                label=r.label,
+                inspections_with_violation=r.inspections_with_violation,
+                measure=float(r.measure) if r.measure is not None else None,
+                percentile=float(r.percentile) if r.percentile is not None else None,
+                over_threshold=r.over_threshold,
+                alert=r.alert,
+                acute_critical=r.acute_critical,
+                note=r.note,
+            )
+            for r in rows
+        ],
+    )
+
+
+def crashes_for(db: Session, usdot_number: int, today: date) -> CrashSummaryOut | None:
+    """Crashes in the last CRASH_YEARS years; None when not fetched yet."""
+    if not _fetched(db, SmsAdapter.crash_id(), usdot_number):
+        return None
+    carrier = CarrierRepository(db).get_by_usdot(usdot_number)
+    since = today - timedelta(days=round(CRASH_YEARS * 365.25))
+    rows = SafetyRecordRepository(db).crashes(carrier.id, since) if carrier else []
+    return crash_summary(
+        [
+            CrashOut(
+                report_number=c.crash_id,
+                report_date=c.crash_date,
+                state=c.state,
+                city=c.city,
+                fatalities=c.fatalities,
+                injuries=c.injuries,
+                tow_away=c.tow_away,
+                hazmat_released=c.hazmat_released,
+            )
+            for c in rows
+        ],
+        today,
+        CRASH_YEARS,
+    )
 
 
 @dataclass(frozen=True)
@@ -70,10 +117,11 @@ class SmsService:
         self.runs = runs
         self.raw_records = raw_records
         self.today = today
+        self.records = SafetyRecordRepository(db)
 
     @staticmethod
     def query_for(usdot_number: int) -> str:
-        return f"dot_number={usdot_number}"
+        return _query(usdot_number)
 
     def last_refreshed_at(self, usdot_number: int) -> datetime | None:
         return self.runs.last_success_at(
@@ -95,13 +143,28 @@ class SmsService:
         crash_run, crashes = batch.fetch(
             a.crash_dataset_id, query, lambda: a.fetch_crashes(usdot_number, self.today())
         )
-        fetched.append((a.crash_dataset_id, crash_run, crashes))
         key = str(usdot_number)
-        for dataset_id, run, rows in fetched:
-            batch.store(dataset_id, [{"rows": rows}], run, lambda _: key)
-        batch.succeed({run: len(rows) for _, run, rows in fetched})
+        raw_ids = {}
+        for dataset_id, run, rows in [*fetched, (a.crash_dataset_id, crash_run, crashes)]:
+            stored = batch.store(dataset_id, [{"rows": rows}], run, lambda _: key)
+            raw_ids[dataset_id] = stored[key][0].id
+
+        carrier = CarrierRepository(self.db).get_by_usdot(usdot_number)
+        if carrier is not None:
+            month = self.today().replace(day=1)
+            names = dict(zip(a.sms_dataset_ids, DATASET_NAMES, strict=True))
+            sms = sms_result([(d, names[d], rows) for d, _, rows in fetched])
+            if sms is not None and sms.dataset_id is not None:
+                self.records.sync_sms(carrier.id, month, sms, a.source, raw_ids[sms.dataset_id])
+            else:
+                self.records.clear_sms_month(carrier.id, month)
+            self.records.sync_crashes(
+                carrier.id, crash_reports(crashes), a.source, raw_ids[a.crash_dataset_id]
+            )
+
+        batch.succeed({run: len(rows) for _, run, rows in fetched} | {crash_run: len(crashes)})
         self.db.commit()
-        sms_rows = sum(len(rows) for _, _, rows in fetched[:-1])
+        sms_rows = sum(len(rows) for _, _, rows in fetched)
         logger.info("USDOT %d: %d SMS rows, %d crash rows", usdot_number, sms_rows, len(crashes))
         return SmsResult(sms_rows, len(crashes))
 

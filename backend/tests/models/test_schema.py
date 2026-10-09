@@ -29,6 +29,9 @@ TABLES = {
     "signal_evidence",
     "timeline_events",
     "relationships",
+    # FMCSA safety and registration detail (post-MVP)
+    "sms_results",
+    "process_agents",
     # Operational
     "ingestion_runs",
     "jobs",
@@ -45,6 +48,8 @@ SOURCE_TRACED_TABLES = {
     "insurance",
     "inspections",
     "crashes",
+    "sms_results",
+    "process_agents",
     "carrier_attribute_history",
     "carrier_snapshots",
     "authority_history",

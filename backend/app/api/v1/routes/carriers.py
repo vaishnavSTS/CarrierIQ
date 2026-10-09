@@ -17,7 +17,6 @@ from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.inspection_repository import InspectionRepository
 from app.repositories.insurance_repository import InsuranceRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
-from app.repositories.raw_record_repository import RawRecordRepository
 from app.repositories.relationship_repository import RelationshipRepository
 from app.repositories.signal_repository import SignalRepository
 from app.repositories.timeline_repository import TimelineRepository
@@ -133,12 +132,11 @@ def get_carrier_safety_service(
     db: Annotated[Session, Depends(get_db)],
     refresh: Refresh,
 ) -> CarrierSafetyService:
-    raw = RawRecordRepository(db)
     return CarrierSafetyService(
         refresh,
         InspectionRepository(db),
-        sms=lambda usdot: sms_for(raw, usdot),
-        crashes=lambda usdot, today: crashes_for(raw, usdot, today),
+        sms=lambda usdot: sms_for(db, usdot),
+        crashes=lambda usdot, today: crashes_for(db, usdot, today),
     )
 
 
@@ -173,7 +171,7 @@ def get_carrier_authority_service(
         AuthorityRepository(db),
         InsuranceRepository(db),
         AuthorityHistoryRepository(db),
-        process_agents=lambda usdot: process_agents(RawRecordRepository(db), usdot),
+        process_agents=lambda usdot: process_agents(db, usdot),
     )
 
 

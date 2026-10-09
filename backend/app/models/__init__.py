@@ -16,9 +16,11 @@ from app.models.intelligence_signal import IntelligenceSignal
 from app.models.job import Job
 from app.models.officer import Officer
 from app.models.phone import Phone
+from app.models.process_agent import ProcessAgent
 from app.models.raw_record import RawRecord
 from app.models.relationship import Relationship
 from app.models.signal_evidence import SignalEvidence
+from app.models.sms_result import SmsResult
 from app.models.timeline_event import TimelineEvent
 from app.models.vehicle import Vehicle
 from app.models.worker_heartbeat import WorkerHeartbeat
@@ -40,9 +42,11 @@ __all__ = [
     "Job",
     "Officer",
     "Phone",
+    "ProcessAgent",
     "RawRecord",
     "Relationship",
     "SignalEvidence",
+    "SmsResult",
     "TimelineEvent",
     "Vehicle",
     "WorkerHeartbeat",

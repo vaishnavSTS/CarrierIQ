@@ -113,30 +113,40 @@ def _report_date(value: object) -> date | None:
     return None
 
 
-def crash_summary(
-    rows: list[dict[str, Any]] | None, today: date, years: int
-) -> CrashSummaryOut | None:
-    """Crashes FMCSA lists for the carrier; None when not fetched yet. One crash report can list
-    several of the carrier's vehicles, so rows are grouped by report."""
-    if rows is None:
-        return None
-    reports: dict[str, CrashOut] = {}
+def crash_reports(rows: list[dict[str, Any]]) -> list[tuple[CrashOut, int, str | None]]:
+    """One entry per crash report: (crash, the carrier's vehicles in it, first VIN). A report
+    can list several of the carrier's vehicles, one Crash File row each."""
+    reports: dict[str, tuple[CrashOut, int, str | None]] = {}
     for row in rows:
         when = _report_date(row.get("report_date"))
         key = str(row.get("report_number") or row.get("crash_id") or "")
-        if when is None or not key or key in reports:
+        if when is None or not key:
             continue
-        reports[key] = CrashOut(
-            report_number=key,
-            report_date=when,
-            state=row.get("report_state") or row.get("state"),
-            city=row.get("city"),
-            fatalities=_count(row.get("fatalities")),
-            injuries=_count(row.get("injuries")),
-            tow_away=_flag(row.get("tow_away")) is True,
-            hazmat_released=_flag(row.get("hazmat_released")) is True,
+        if key in reports:
+            crash, vehicles, vin = reports[key]
+            reports[key] = (crash, vehicles + 1, vin)
+            continue
+        vin = str(row.get("vehicle_identification_number") or "")[:17] or None
+        reports[key] = (
+            CrashOut(
+                report_number=key,
+                report_date=when,
+                state=row.get("report_state") or row.get("state"),
+                city=row.get("city"),
+                fatalities=_count(row.get("fatalities")),
+                injuries=_count(row.get("injuries")),
+                tow_away=_flag(row.get("tow_away")) is True,
+                hazmat_released=_flag(row.get("hazmat_released")) is True,
+            ),
+            1,
+            vin,
         )
-    crashes = sorted(reports.values(), key=lambda c: c.report_date, reverse=True)
+    return list(reports.values())
+
+
+def crash_summary(crashes: Sequence[CrashOut], today: date, years: int) -> CrashSummaryOut:
+    """Totals for the whole history fetched and for the last 24 months."""
+    crashes = sorted(crashes, key=lambda c: c.report_date, reverse=True)
     recent_from = today - timedelta(days=round(RECENT_MONTHS * 365.25 / 12))
     recent = [c for c in crashes if c.report_date >= recent_from]
     return CrashSummaryOut(

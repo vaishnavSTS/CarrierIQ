@@ -2,7 +2,7 @@
 
 from datetime import date
 
-from app.services.sms_results import NOT_PUBLISHED, crash_summary, sms_result
+from app.services.sms_results import NOT_PUBLISHED, crash_reports, crash_summary, sms_result
 
 # Vanek Brothers' real row in SMS AB PassProperty (no percentiles for property carriers).
 PROPERTY = {
@@ -78,11 +78,12 @@ def test_crashes_grouped_by_report_with_recent_window() -> None:
         {"report_number": "IL2", "report_date": "20210218", "fatalities": "1", "injuries": "2"},
     ]
 
-    summary = crash_summary(rows, today=date(2026, 10, 9), years=5)
+    reports = crash_reports(rows)
+    assert [(c.report_number, vehicles) for c, vehicles, _ in reports] == [("IL1", 2), ("IL2", 1)]
 
-    assert summary is not None
+    summary = crash_summary([c for c, _, _ in reports], today=date(2026, 10, 9), years=5)
+
     assert (summary.total, summary.fatal, summary.injury) == (2, 1, 1)
     assert (summary.recent_total, summary.recent_fatal) == (1, 0)  # the fatal one is from 2021
     assert [c.report_number for c in summary.crashes] == ["IL1", "IL2"]
     assert summary.crashes[0].tow_away is True
-    assert crash_summary(None, date(2026, 10, 9), 5) is None

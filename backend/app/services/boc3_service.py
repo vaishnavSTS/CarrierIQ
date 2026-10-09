@@ -9,7 +9,7 @@ registration checks.
 import logging
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -17,8 +17,11 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.ingestion.boc3 import SOURCE, Boc3Adapter
 from app.ingestion.socrata_client import SocrataClient
+from app.models import ProcessAgent as ProcessAgentRow
+from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.ingestion_run_repository import IngestionRunRepository
 from app.repositories.raw_record_repository import RawRecordRepository
+from app.repositories.safety_record_repository import SafetyRecordRepository
 from app.services.dataset_batch import DatasetBatch
 
 logger = logging.getLogger(__name__)
@@ -64,19 +67,32 @@ def _agents(rows: list[dict[str, Any]], source_system: str) -> list[ProcessAgent
     return list(found.values())
 
 
-def process_agents(
-    raw_records: RawRecordRepository, usdot_number: int
-) -> list[ProcessAgent] | None:
-    """Process agents as last fetched; None when BOC-3 data has not been fetched yet."""
-    settings = get_settings()
-    key = str(usdot_number)
-    motus = raw_records.latest(SOURCE, settings.motus_boc3_dataset_id, key)
-    legacy = raw_records.latest(SOURCE, settings.legacy_boc3_dataset_id, key)
-    if motus is None and legacy is None:
+def process_agents(db: Session, usdot_number: int) -> list[ProcessAgent] | None:
+    """Current process agents from `process_agents`; None when BOC-3 data was never fetched."""
+    runs = IngestionRunRepository(db)
+    if (
+        runs.last_success_at(SOURCE, get_settings().legacy_boc3_dataset_id, _query(usdot_number))
+        is None
+    ):
         return None
-    return _agents(motus.payload.get("rows", []) if motus else [], "MOTUS") + _agents(
-        legacy.payload.get("rows", []) if legacy else [], "LEGACY_LI"
-    )
+    carrier = CarrierRepository(db).get_by_usdot(usdot_number)
+    if carrier is None:
+        return []
+    return [
+        ProcessAgent(
+            docket=a.docket or None,
+            name=a.name,
+            attention=a.attention,
+            city=a.city,
+            state=a.state,
+            source_system=a.source_system,
+        )
+        for a in SafetyRecordRepository(db).current_agents(carrier.id)
+    ]
+
+
+def _query(usdot_number: int) -> str:
+    return f"dot_number={usdot_number}"
 
 
 @dataclass(frozen=True)
@@ -100,7 +116,7 @@ class Boc3Service:
 
     @staticmethod
     def query_for(usdot_number: int) -> str:
-        return f"dot_number={usdot_number}"
+        return _query(usdot_number)
 
     def last_refreshed_at(self, usdot_number: int) -> datetime | None:
         return self.runs.last_success_at(
@@ -120,8 +136,32 @@ class Boc3Service:
             a.legacy_dataset_id, query, lambda: a.fetch_legacy(usdot_number)
         )
         key = str(usdot_number)
-        batch.store(a.motus_dataset_id, [{"rows": motus}], motus_run, lambda _: key)
-        batch.store(a.legacy_dataset_id, [{"rows": legacy}], legacy_run, lambda _: key)
+        motus_raw = batch.store(a.motus_dataset_id, [{"rows": motus}], motus_run, lambda _: key)
+        legacy_raw = batch.store(a.legacy_dataset_id, [{"rows": legacy}], legacy_run, lambda _: key)
+        carrier = CarrierRepository(self.db).get_by_usdot(usdot_number)
+        if carrier is not None:
+            found = [(agent, motus_raw[key][0].id) for agent in _agents(motus, "MOTUS")] + [
+                (agent, legacy_raw[key][0].id) for agent in _agents(legacy, "LEGACY_LI")
+            ]
+            SafetyRecordRepository(self.db).sync_agents(
+                carrier.id,
+                [
+                    (
+                        ProcessAgentRow(
+                            docket=agent.docket or "",
+                            name=agent.name[:200],
+                            attention=agent.attention,
+                            city=agent.city,
+                            state=agent.state,
+                            source_system=agent.source_system,
+                        ),
+                        raw_id,
+                    )
+                    for agent, raw_id in found
+                ],
+                a.source,
+                datetime.now(UTC).date(),
+            )
         batch.succeed({motus_run: len(motus), legacy_run: len(legacy)})
         self.db.commit()
         logger.info(

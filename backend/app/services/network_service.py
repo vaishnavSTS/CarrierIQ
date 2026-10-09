@@ -96,7 +96,7 @@ class NetworkService:
             self.today(),
             InsuranceRepository(self.db).for_carrier(carrier.id),
             self._address_peers(carrier),
-            process_agents(self.raw_records, usdot_number),
+            process_agents(self.db, usdot_number),
         )
         events = self.events.for_carrier(carrier.id)
         state = ownership_state(events)
