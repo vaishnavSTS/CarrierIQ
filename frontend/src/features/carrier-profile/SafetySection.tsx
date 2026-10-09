@@ -15,10 +15,11 @@ const RATING_TONE: Record<string, 'ok' | 'warn' | 'down'> = {
   UNSATISFACTORY: 'down',
 }
 
-function SubHeading({ children }: { children: string }) {
+function SubHeading({ children, source }: { children: string; source?: string }) {
   return (
-    <h3 className="mb-3 mt-8 text-xs font-medium uppercase tracking-wide text-slate-500">
-      {children}
+    <h3 className="mb-3 mt-8 flex flex-wrap items-baseline justify-between gap-x-3 text-xs">
+      <span className="font-medium uppercase tracking-wide text-slate-500">{children}</span>
+      {source && <span className="text-[11px] text-accent-strong/80">Source: {source}</span>}
     </h3>
   )
 }
@@ -40,6 +41,7 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
               ? `${formatDate(safety.first_inspection_date)} – ${formatDate(safety.last_inspection_date)}`
               : 'None in FMCSA’s current window'
           }
+          source="FMCSA Vehicle Inspection File"
         />
         <Stat
           label={`Vehicle OOS · last ${recent?.months ?? 24} months`}
@@ -49,6 +51,7 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
               ? `${recent.vehicle_oos} of ${recent.vehicle_inspections} inspections that examined the vehicle · national average ${formatPercent(recent.national_vehicle_oos_rate)}`
               : undefined
           }
+          source="FMCSA inspections; national average from FMCSA SAFER"
         />
         <Stat
           label={`Driver OOS · last ${recent?.months ?? 24} months`}
@@ -58,15 +61,17 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
               ? `${recent.driver_oos} of ${recent.driver_inspections} inspections that examined the driver · national average ${formatPercent(recent.national_driver_oos_rate)}`
               : undefined
           }
+          source="FMCSA inspections; national average from FMCSA SAFER"
         />
         <Stat
           label={`Crashes · last ${crashes?.recent_months ?? 24} months`}
           value={crashes ? crashes.recent_total : '—'}
           note={
             crashes
-              ? `${crashes.recent_fatal} fatal · ${crashes.recent_injury} with injury · FMCSA Crash File`
+              ? `${crashes.recent_fatal} fatal · ${crashes.recent_injury} with injury`
               : 'Loading FMCSA crash reports…'
           }
+          source="FMCSA Crash File"
         />
         <Stat
           label="Safety rating"
@@ -83,14 +88,23 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
           note={
             safety.safety_rating_date ? `Since ${formatDate(safety.safety_rating_date)}` : undefined
           }
+          source="FMCSA Company Census (compliance review)"
         />
       </div>
 
       {detail.data && (
         <>
-          <SubHeading>CSA BASICs · FMCSA SMS</SubHeading>
+          <SubHeading
+            source={
+              detail.data.sms?.dataset
+                ? `FMCSA Safety Measurement System · ${detail.data.sms.dataset} (monthly)`
+                : 'FMCSA Safety Measurement System'
+            }
+          >
+            CSA BASICs
+          </SubHeading>
           <CsaBasics sms={detail.data.sms} />
-          <SubHeading>Crashes</SubHeading>
+          <SubHeading source="FMCSA Crash File (state crash reports)">Crashes</SubHeading>
           <CrashList crashes={detail.data.crashes} />
         </>
       )}
@@ -111,13 +125,13 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
           {detail.isPending && <p className="mt-6 text-sm text-slate-500">Loading trends…</p>}
           {detail.data && (
             <>
-              <SubHeading>Trends</SubHeading>
+              <SubHeading source="FMCSA Vehicle Inspection File">Trends</SubHeading>
               <SafetyTrends quarters={detail.data.quarters} />
-              <SubHeading>Violations</SubHeading>
+              <SubHeading source="FMCSA Inspections and Violations File">Violations</SubHeading>
               <ViolationBreakdown summary={detail.data.violations} />
             </>
           )}
-          <SubHeading>Inspection history</SubHeading>
+          <SubHeading source="FMCSA Vehicle Inspection File">Inspection history</SubHeading>
           <InspectionHistory usdotNumber={usdotNumber} />
         </>
       )}

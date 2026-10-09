@@ -201,16 +201,19 @@ export function EquipmentSection({ usdotNumber }: { usdotNumber: number }) {
               label="Registered power units"
               value={data.fleet.registered_power_units ?? '—'}
               note="As reported to FMCSA (MCS-150)"
+              source="FMCSA Company Census"
             />
             <Stat
               label="Power units observed"
               value={data.fleet.observed_power_units}
               note={`${data.fleet.recent_power_units} in the last ${data.fleet.recent_months} months`}
+              source="FMCSA inspections (VINs), NHTSA vPIC"
             />
             <Stat
               label="Trailers observed"
               value={data.fleet.observed_trailers}
               note="Distinct VINs on inspections"
+              source="FMCSA inspections (VINs), NHTSA vPIC"
             />
             <Stat
               label="VINs under other USDOTs"
@@ -220,6 +223,7 @@ export function EquipmentSection({ usdotNumber }: { usdotNumber: number }) {
                   ? `Across ${data.other_carrier_count} other USDOT number${data.other_carrier_count === 1 ? '' : 's'}`
                   : 'None found'
               }
+              source="FMCSA Inspections Per Unit"
             />
           </div>
           <FleetNote fleet={data.fleet} />

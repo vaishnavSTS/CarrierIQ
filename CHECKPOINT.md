@@ -797,3 +797,4 @@ and ownership events → (3) the Network & Identity tab.
 | 2026-10-09 | Source labels: header status boxes (equal height) name their FMCSA source (authority: Motus / L&I, registration: census, insurance, linked carriers: census); packet sections and non-census fields name theirs; Safety trend charts equal height. |
 | 2026-10-09 | Packet tab moved after Network & Identity; carriers open on Identity again. |
 | 2026-10-09 | CSA BASICs from FMCSA SMS (AB/C Pass and PassProperty; percentiles and alerts only where FMCSA publishes them, i.e. passenger carriers) and crashes from FMCSA's Crash File (5 years, grouped by report); Safety tab sections and Crashes stat, packet safety block and attention items; refresh detail source; 343 tests passing. |
+| 2026-10-09 | BOC-3, SMS and crash data fetched for all 14 loaded carriers; Safety and Equipment boxes and Safety sections name their FMCSA / NHTSA source. |

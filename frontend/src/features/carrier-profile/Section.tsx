@@ -34,12 +34,26 @@ export function Empty({ children }: { children: ReactNode }) {
 }
 
 /** A headline number with a label, e.g. inspection count. */
-export function Stat({ label, value, note }: { label: string; value: ReactNode; note?: string }) {
+export function Stat({
+  label,
+  value,
+  note,
+  source,
+}: {
+  label: string
+  value: ReactNode
+  note?: string
+  /** Where the value comes from; shown at the bottom so boxes in a row line up */
+  source?: string
+}) {
   return (
-    <div className="rounded-md border border-slate-200 px-3 py-2">
+    <div className="flex h-full flex-col rounded-md border border-slate-200 px-3 py-2">
       <div className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</div>
       <div className="mt-1 text-lg font-semibold tabular-nums text-slate-900">{value}</div>
       {note && <div className="text-xs text-slate-500">{note}</div>}
+      {source && (
+        <div className="mt-auto pt-1.5 text-[11px] text-accent-strong/80">Source: {source}</div>
+      )}
     </div>
   )
 }
