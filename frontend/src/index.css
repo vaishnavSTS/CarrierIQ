@@ -12,18 +12,18 @@
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 
-  --color-canvas: #0c0916; /* page background */
-  --color-surface: #161126; /* cards, header */
+  --color-canvas: #1a1430; /* page background */
+  --color-surface: #251d3d; /* cards */
   --color-accent: #8b5cf6; /* violet: primary actions, highlights */
   --color-accent-strong: #a78bfa;
-  --color-accent-soft: #2a1e4a;
+  --color-accent-soft: #3a2b66;
 
-  --color-slate-50: #1c1530;
-  --color-slate-100: #231a3a;
-  --color-slate-200: #2e2447;
-  --color-slate-300: #40355f;
-  --color-slate-400: #6e6491;
-  --color-slate-500: #9a90b9;
+  --color-slate-50: #2d2448;
+  --color-slate-100: #342a52;
+  --color-slate-200: #40355f;
+  --color-slate-300: #554a78;
+  --color-slate-400: #7d73a1;
+  --color-slate-500: #a59cc4;
   --color-slate-600: #b3aacd;
   --color-slate-700: #c9c2e1;
   --color-slate-800: #ddd8ee;
@@ -62,6 +62,41 @@ body {
   outline-offset: 2px;
 }
 
+/* Page spotlight: a beam that sweeps in on load, then sways slowly (see BackgroundSpotlight). */
+@keyframes spotlight-in {
+  0% {
+    opacity: 0;
+    transform: translate(-72%, -62%) rotate(-30deg) scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -40%) rotate(-30deg) scale(1);
+  }
+}
+
+@keyframes spotlight-sway {
+  0%,
+  100% {
+    rotate: 0deg;
+  }
+  50% {
+    rotate: 6deg;
+  }
+}
+
+.spotlight-beam {
+  opacity: 0;
+  animation:
+    spotlight-in 2s ease 0.4s forwards,
+    spotlight-sway 14s ease-in-out 2.4s infinite;
+}
+
+.spotlight-beam.second {
+  animation:
+    spotlight-in 2s ease 0.9s forwards,
+    spotlight-sway 18s ease-in-out 2.9s infinite reverse;
+}
+
 /* Dashboard hero: slow drifting glow. Turned off for people who prefer reduced motion. */
 @keyframes aurora-drift {
   0% {
@@ -97,7 +132,12 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .aurora-blob,
-  .live-ping {
+  .live-ping,
+  .spotlight-beam {
     animation: none;
+  }
+  .spotlight-beam {
+    opacity: 1;
+    transform: translate(-50%, -40%) rotate(-30deg);
   }
 }

@@ -1,6 +1,8 @@
 import { LayoutDashboard, Radar, Search, type LucideIcon } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 
+import { BackgroundSpotlight } from './BackgroundSpotlight'
+
 function NavItem({
   to,
   end,
@@ -32,7 +34,8 @@ function NavItem({
 
 export function AppLayout() {
   return (
-    <div className="min-h-screen">
+    <div className="relative isolate min-h-screen">
+      <BackgroundSpotlight />
       {/* The bar stays white on the dark theme, so it uses Tailwind's standard gray / violet
           (the slate scale is redefined for the dark surface in index.css). */}
       <header className="sticky top-0 z-30 border-b border-gray-200 bg-white shadow-sm">

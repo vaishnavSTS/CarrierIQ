@@ -1,5 +1,5 @@
 /**
- * Chart colours for the dark purple surface (#161126). The two series are the dark-mode steps
+ * Chart colours for the dark purple surface (#251d3d). The two series are the dark-mode steps
  * of slots 1–2 of the reference data-viz palette, re-validated on this surface: lightness band,
  * chroma, colour-blind separation (worst ΔE 26.8) and 3:1 contrast all pass.
  * Text never uses series colours; it uses the ink tokens below.
@@ -16,9 +16,9 @@ export const INK = {
 } as const
 
 export const CHROME = {
-  surface: '#161126',
-  grid: '#2e2447',
-  baseline: '#40355f',
+  surface: '#251d3d',
+  grid: '#40355f',
+  baseline: '#554a78',
 } as const
 
 /** A "nice" upper bound for an axis (1, 2, 2.5, 5, 10 × 10^n) and its tick step. */
