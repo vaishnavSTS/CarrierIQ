@@ -6,6 +6,7 @@ import type { CarrierProfile } from '../../types/carrierProfile'
 import { needsForHireAuthority } from '../../utils/classification'
 import { formatDateTime, sourceLabel } from '../../utils/format'
 import { reviewLabel } from '../../utils/review'
+import { LinkedHeadsUp } from './network/LinkedHeadsUp'
 import { RefreshButton } from './RefreshButton'
 import { INSURANCE_LABEL, insuranceTone, severityTone, statusTone } from '../../utils/status'
 
@@ -110,6 +111,7 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
             </span>
           )}
         </HeaderStatus>
+        <LinkedHeadsUp usdotNumber={profile.usdot_number} />
       </div>
     </header>
   )
