@@ -1,7 +1,6 @@
 """HTTP client for Socrata (SODA) datasets on data.transportation.gov (spec Section 19.1).
 
-Network errors, HTTP 429 and 5xx are retried with exponential backoff; other failures raise
-SourceFetchError straight away.
+Retries come from ingestion/http_retry.py.
 """
 
 import logging
@@ -13,6 +12,7 @@ import httpx
 
 from app.core.config import get_settings
 from app.core.exceptions import SourceFetchError
+from app.ingestion.http_retry import send_with_retries
 
 logger = logging.getLogger(__name__)
 
@@ -74,36 +74,13 @@ class SocrataClient:
                 return rows
 
     def _get_with_retries(self, dataset_id: str, params: dict[str, str]) -> httpx.Response:
-        url = f"/resource/{dataset_id}.json"
-        for attempt in range(1, self.max_attempts + 1):
-            try:
-                response = self.http.get(url, params=params)
-            except httpx.HTTPError as exc:
-                problem = f"request failed: {exc}"
-            else:
-                if response.status_code == httpx.codes.OK:
-                    return response
-                problem = f"returned HTTP {response.status_code}: {response.text[:200]}"
-                if not _is_retryable(response.status_code):
-                    raise SourceFetchError(f"Dataset {dataset_id} {problem}")
-
-            if attempt == self.max_attempts:
-                raise SourceFetchError(f"Dataset {dataset_id} {problem} (after {attempt} attempts)")
-            delay = self.retry_base_seconds * 2 ** (attempt - 1)
-            logger.warning(
-                "Dataset %s %s; retrying in %.1fs (attempt %d of %d)",
-                dataset_id,
-                problem,
-                delay,
-                attempt,
-                self.max_attempts,
-            )
-            self.sleep(delay)
-        raise AssertionError("unreachable")  # the loop always returns or raises
+        return send_with_retries(
+            lambda: self.http.get(f"/resource/{dataset_id}.json", params=params),
+            label=f"Dataset {dataset_id}",
+            max_attempts=self.max_attempts,
+            base_seconds=self.retry_base_seconds,
+            sleep=self.sleep,
+        )
 
     def close(self) -> None:
         self.http.close()
-
-
-def _is_retryable(status_code: int) -> bool:
-    return status_code == httpx.codes.TOO_MANY_REQUESTS or status_code >= 500

@@ -1,0 +1,74 @@
+[
+  {
+    "VIN": "1FUBCXBS9DHFG2386",
+    "Make": "FREIGHTLINER",
+    "Model": "M2",
+    "ModelYear": "2013",
+    "BodyClass": "Truck-Tractor",
+    "VehicleType": "TRUCK",
+    "GVWR": "Class 7: 26,001 - 33,000 lb (11,794 - 14,969 kg)",
+    "Manufacturer": "DAIMLER TRUCK NORTH AMERICA LLC",
+    "ErrorCode": "0",
+    "ErrorText": "0 - VIN decoded clean. Check Digit (9th position) is correct"
+  },
+  {
+    "VIN": "1KKVE4823RL099385",
+    "Make": "KENTUCKY",
+    "Model": "Electronics Trailer",
+    "ModelYear": "2024",
+    "BodyClass": "Trailer",
+    "VehicleType": "TRAILER",
+    "GVWR": "",
+    "Manufacturer": "KENTUCKY MANUFACTURING CO.",
+    "ErrorCode": "0",
+    "ErrorText": "0 - VIN decoded clean. Check Digit (9th position) is correct"
+  },
+  {
+    "VIN": "JALB4B141Y7006238",
+    "Make": "ISUZU",
+    "Model": "NPR/NPR-HD",
+    "ModelYear": "2000",
+    "BodyClass": "Truck",
+    "VehicleType": "INCOMPLETE VEHICLE",
+    "GVWR": "Class 3: 10,001 - 14,000 lb (4,536 - 6,350 kg)",
+    "Manufacturer": "ISUZU MOTORS LIMITED, JAPAN",
+    "ErrorCode": "0",
+    "ErrorText": "0 - VIN decoded clean. Check Digit (9th position) is correct"
+  },
+  {
+    "VIN": "3ALACXFC1RDUW8608",
+    "Make": "FREIGHTLINER",
+    "Model": "M2",
+    "ModelYear": "2024",
+    "BodyClass": "Truck",
+    "VehicleType": "INCOMPLETE VEHICLE",
+    "GVWR": "Class 7: 26,001 - 33,000 lb (11,794 - 14,969 kg)",
+    "Manufacturer": "DAIMLER VEHÍCULOS COMERCIALES MÉXICO S. DE R.L. DE C.V.",
+    "ErrorCode": "0",
+    "ErrorText": "0 - VIN decoded clean. Check Digit (9th position) is correct"
+  },
+  {
+    "VIN": "4P5T82224D1195316",
+    "Make": "PJ",
+    "Model": "PJ",
+    "ModelYear": "2013",
+    "BodyClass": "Trailer",
+    "VehicleType": "TRAILER",
+    "GVWR": "",
+    "Manufacturer": "PJ TRAILERS MANUFACTURING, INC.",
+    "ErrorCode": "0",
+    "ErrorText": "0 - VIN decoded clean. Check Digit (9th position) is correct"
+  },
+  {
+    "VIN": "1FUBCXBS9DHFG2387",
+    "Make": "FREIGHTLINER",
+    "Model": "M2",
+    "ModelYear": "2013",
+    "BodyClass": "Truck-Tractor",
+    "VehicleType": "TRUCK",
+    "GVWR": "Class 7: 26,001 - 33,000 lb (11,794 - 14,969 kg)",
+    "Manufacturer": "DAIMLER TRUCK NORTH AMERICA LLC",
+    "ErrorCode": "1",
+    "ErrorText": "1 - Check Digit (9th position) does not calculate properly"
+  }
+]

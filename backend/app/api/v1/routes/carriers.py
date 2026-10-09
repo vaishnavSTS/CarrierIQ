@@ -33,6 +33,7 @@ from app.services.insurance_ingestion_service import build_insurance_ingestion_s
 from app.services.shared_vin_service import build_shared_vin_service
 from app.services.timeline_service import build_timeline_service
 from app.services.vehicle_observation_service import build_vehicle_observation_service
+from app.services.vin_decode_service import build_vin_decode_service
 
 router = APIRouter(prefix="/carriers", tags=["carriers"])
 
@@ -60,6 +61,7 @@ def build_refresh_service(db: Session, client: SocrataClient) -> CarrierRefreshS
         max_age=timedelta(hours=get_settings().carrier_refresh_hours),
         after_refresh=[
             build_vehicle_observation_service(db).rebuild_own,
+            build_vin_decode_service(db).decode_for_carrier,
             build_timeline_service(db).rebuild,
         ],
     )

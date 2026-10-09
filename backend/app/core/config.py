@@ -31,6 +31,12 @@ class Settings(BaseSettings):
     search_result_limit: int = 20  # name search results
     docket_search_limit: int = 10  # carriers loaded for one docket search
 
+    # NHTSA vPIC VIN decoding (spec Section 19.1): batch endpoint, up to 50 VINs per call.
+    vpic_base_url: str = "https://vpic.nhtsa.dot.gov/api/vehicles"
+    vpic_batch_size: int = 50
+    vpic_parallel_requests: int = 4
+    vpic_timeout_seconds: float = 60.0
+
     # data.transportation.gov dataset IDs (spec Section 19.1: IDs live in configuration).
     census_dataset_id: str = "az4n-8mr2"  # Company Census File
     inspection_dataset_id: str = "fx4q-ay7w"  # Vehicle Inspection File

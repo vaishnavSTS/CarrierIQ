@@ -4,7 +4,7 @@ Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
 **Last updated:** 2026-10-08
-**Current phase:** Phase 7 (Equipment / VIN) — Parts 1–2 done, Part 3 next
+**Current phase:** Phase 7 (Equipment / VIN) — Parts 1–3 done, Part 4 next
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 
@@ -20,7 +20,7 @@ Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 | 4 | Carrier Search | ✅ Done (2026-10-08) |
 | 5 | Safety | ✅ Done (2026-10-08) |
 | 6 | Authority & Insurance | ✅ Done (2026-10-08) |
-| 7 | Equipment / VIN | 🔄 In progress (Parts 1–2 of 4 done) |
+| 7 | Equipment / VIN | 🔄 In progress (Parts 1–3 of 4 done) |
 | 8 | Intelligence Engine | Not started |
 | 9 | Intelligence UI | Not started |
 | 10 | Background Processing | Not started |
@@ -427,7 +427,20 @@ and returns a check-digit verdict; the units dataset answers VIN lookups in ~0.5
     A relationship to review, not a verdict (leasing, related companies, sold equipment).
   - Performance: per-carrier saves took 26.1s; batched across carriers → 6.8s.
   - 4 new tests (260 total).
-- [ ] **Part 3 — NHTSA vPIC decoding** (make, model, year, body, weight class; cached forever)
+- [x] **Part 3 — NHTSA vPIC decoding (spec 8.4).** `ingestion/vpic.py` posts to
+  DecodeVINValuesBatch (50 VINs per call, 4 calls in parallel, retries shared with the Socrata
+  client via `ingestion/http_retry.py`); `ingestion/vpic_normalizer.py` keeps make, model, year,
+  body class, vehicle type, GVWR class, manufacturer, error code + text, and `check_digit_valid`
+  (False when vPIC reports error 1). `vehicles` gains those columns + `decode_raw_record_id`
+  (migration `0008`); each vPIC result is stored raw (`nhtsa_vpic`). Only undecoded VINs are sent
+  — a decode is kept forever; a vPIC outage is logged and retried next refresh, never fails it.
+  Runs after VIN links in the refresh. Decoding enriches; it is never a risk judgement.
+  - Supabase: all 930 VINs decoded (e.g. 297569: 16 Great Dane trailers, 13 Mack trucks;
+    297080: 7 VINs with an invalid check digit — likely mistyped on the inspection report).
+  - Performance: sequential batches took 42.0s for 893 VINs; 4 in parallel → 9.5s.
+  - Test fixture first saved through the Windows console garbled "VEHÍCULOS … MÉXICO" (a
+    Mexican-built Freightliner); re-saved as UTF-8. Live decoding was never affected.
+  - 11 new tests (271 total).
 - [ ] **Part 4 — Equipment tab** (vehicles, decoded details, shared-VIN flags, fleet consistency)
 
 ---
@@ -510,3 +523,4 @@ Deterministic signals; every signal must have evidence.
 | 2026-10-08 | Phase 7 Part 1: VIN extraction and VIN → USDOT links (930 VINs in Supabase); batched upserts 69s → 1s; 255 tests passing. |
 | 2026-10-08 | Explain private / non-for-hire carriers (census classification, migration 0007) after an empty Authority tab was reported. |
 | 2026-10-08 | Phase 7 Part 2: shared VINs across all FMCSA inspections (297080: 147 VINs shared with 92 carriers); batched 26s → 7s; 260 tests passing. |
+| 2026-10-08 | Phase 7 Part 3: NHTSA vPIC decoding (930 VINs), parallel batches 42s → 9.5s; migration 0008; 271 tests passing. |
