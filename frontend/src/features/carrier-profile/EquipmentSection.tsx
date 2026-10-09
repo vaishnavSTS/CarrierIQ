@@ -1,3 +1,4 @@
+import { SOURCES } from '../../utils/sources'
 import { Fragment, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -186,7 +187,7 @@ export function EquipmentSection({ usdotNumber }: { usdotNumber: number }) {
   )
 
   return (
-    <Section id="equipment" title="Equipment">
+    <Section id="equipment" title="Equipment" source={SOURCES.vins}>
       {isPending && (
         <p className="text-sm text-slate-500">
           Loading equipment… new VINs are decoded with NHTSA the first time, which can take a few

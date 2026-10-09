@@ -1,3 +1,4 @@
+import { SourceTag } from '../../components/SourceTag'
 import { StatusBadge } from '../../components/StatusBadge'
 import { useCarrierSafety } from '../../hooks/useCarrierSafety'
 import type { Safety } from '../../types/carrierProfile'
@@ -19,7 +20,7 @@ function SubHeading({ children, source }: { children: string; source?: string })
   return (
     <h3 className="mb-3 mt-8 flex flex-wrap items-baseline justify-between gap-x-3 text-xs">
       <span className="font-medium uppercase tracking-wide text-slate-500">{children}</span>
-      {source && <span className="text-[11px] text-accent-strong/80">Source: {source}</span>}
+      {source && <SourceTag>{source}</SourceTag>}
     </h3>
   )
 }
@@ -31,7 +32,11 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
   const crashes = detail.data?.crashes ?? null
 
   return (
-    <Section id="safety" title="Safety">
+    <Section
+      id="safety"
+      title="Safety"
+      source="FMCSA inspections, SMS, Crash File and Company Census"
+    >
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Stat
           label="Inspections"

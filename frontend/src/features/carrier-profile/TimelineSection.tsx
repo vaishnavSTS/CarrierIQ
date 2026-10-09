@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { SourceTag } from '../../components/SourceTag'
 import { StatusBadge } from '../../components/StatusBadge'
 import type { Change, TimelineEvent } from '../../types/carrierProfile'
 import { formatDate, humanize } from '../../utils/format'
+import { eventSource } from '../../utils/sources'
 import { severityTone } from '../../utils/status'
 import { Empty, Section } from './Section'
 
@@ -14,6 +16,7 @@ interface Row {
   title: string
   description: string | null
   signalId: number | null
+  source: string
 }
 
 const PREVIEW_ROWS = 25
@@ -26,6 +29,7 @@ function fromChange(c: Change): Row {
     title: `${humanize(c.attribute)} changed`,
     description: `${c.old_value ?? '(empty)'} → ${c.new_value ?? '(empty)'}`,
     signalId: null,
+    source: 'FMCSA Company Census (changes CarrierIQ has seen)',
   }
 }
 
@@ -47,6 +51,7 @@ export function TimelineSection({
       title: e.title,
       description: e.description,
       signalId: e.signal_id,
+      source: eventSource(e.event_type),
     })),
     ...changes.map(fromChange),
   ]
@@ -55,7 +60,11 @@ export function TimelineSection({
   const shown = showAll ? rows : rows.slice(0, PREVIEW_ROWS)
 
   return (
-    <Section id="timeline" title="Timeline">
+    <Section
+      id="timeline"
+      title="Timeline"
+      source="FMCSA authority, insurance and census records; your team"
+    >
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-slate-500">
           Authority and insurance events from FMCSA records, plus changes CarrierIQ has recorded
@@ -100,6 +109,7 @@ export function TimelineSection({
                 {r.description && (
                   <span className="block text-xs text-slate-600">{r.description}</span>
                 )}
+                <SourceTag className="block">{r.source}</SourceTag>
               </span>
             </li>
           ))}

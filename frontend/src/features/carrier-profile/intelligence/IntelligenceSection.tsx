@@ -1,3 +1,5 @@
+import { SourceTag } from '../../../components/SourceTag'
+import { signalSource, SOURCES } from '../../../utils/sources'
 import { useCallback, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
@@ -89,6 +91,7 @@ function SignalGroup({
               .map(([s, n]) => `${n} ${s.toLowerCase()}`)
               .join(', ')}`}
         </span>
+        <SourceTag className="ml-auto">{signalSource(type)}</SourceTag>
       </h3>
       <ul className="space-y-2">
         {shown.map((s) => (
@@ -155,7 +158,7 @@ export function IntelligenceSection({ usdotNumber }: { usdotNumber: number }) {
   const infoCount = signals.filter((s) => s.severity === 'INFO').length
 
   return (
-    <Section id="intelligence" title="Intelligence">
+    <Section id="intelligence" title="Intelligence" source={SOURCES.signals}>
       {isPending && <p className="text-sm text-slate-500">Loading review signals…</p>}
       {error && <p className="text-sm text-red-700">Could not load signals: {error.message}</p>}
       {data && (

@@ -99,25 +99,25 @@ export function DashboardHero({
             icon={Building2}
             label="Carriers"
             value={totals?.carriers}
-            note="Loaded in CarrierIQ"
+            note="FMCSA Company Census, loaded in CarrierIQ"
           />
           <StatTile
             icon={ClipboardCheck}
             label="Inspections"
             value={totals?.inspections}
-            note="Roadside inspections stored"
+            note="FMCSA Vehicle Inspection File"
           />
           <StatTile
             icon={Truck}
             label="Vehicles"
             value={totals?.vehicles}
-            note="VINs decoded by NHTSA"
+            note="FMCSA inspections (VINs), decoded by NHTSA vPIC"
           />
           <StatTile
             icon={ShieldAlert}
             label="Open signals"
             value={totals?.open_signals}
-            note="Waiting for review"
+            note="CarrierIQ rules over FMCSA records"
           />
         </motion.div>
       </motion.div>

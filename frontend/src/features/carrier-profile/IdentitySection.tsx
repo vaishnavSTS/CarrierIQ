@@ -1,3 +1,4 @@
+import { SOURCES } from '../../utils/sources'
 import { StatusBadge } from '../../components/StatusBadge'
 import type { CarrierProfile } from '../../types/carrierProfile'
 import { classificationLabel, classifications } from '../../utils/classification'
@@ -25,7 +26,7 @@ function entityTypes(codes: string | null): string {
 
 export function IdentitySection({ profile }: { profile: CarrierProfile }) {
   return (
-    <Section id="identity" title="Identity">
+    <Section id="identity" title="Identity" source={SOURCES.census}>
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="Entity type">{entityTypes(profile.entity_type)}</Field>
         <Field label="Operation">

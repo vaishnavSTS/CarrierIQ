@@ -1,3 +1,4 @@
+import { SourceTag } from '../../components/SourceTag'
 import {
   BadgeAlert,
   Copy,
@@ -35,7 +36,10 @@ export function LiveSignalFeed({ signals }: { signals: RecentSignal[] | undefine
           <Radio className="size-4 text-accent-strong" aria-hidden />
           Live intelligence
         </h2>
-        <span className="text-xs text-slate-500">Newest signals · updates every 15 s</span>
+        <span className="flex flex-col items-end text-xs text-slate-500">
+          Newest signals · updates every 15 s
+          <SourceTag>CarrierIQ rules over FMCSA and NHTSA records</SourceTag>
+        </span>
       </div>
 
       {signals === undefined ? (

@@ -1,7 +1,9 @@
+import { SOURCES } from '../../../utils/sources'
 import { AlertTriangle, CircleAlert, CircleCheck, Info, type LucideIcon } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { SourceTag } from '../../../components/SourceTag'
 import { StatusBadge } from '../../../components/StatusBadge'
 import { useCarrierNetwork } from '../../../hooks/useNetwork'
 import type { CarrierProfile } from '../../../types/carrierProfile'
@@ -35,10 +37,21 @@ const SHARE_LABEL: Record<string, string> = {
   officer: 'Officer',
 }
 
-function SubHeading({ children, note }: { children: ReactNode; note?: string }) {
+function SubHeading({
+  children,
+  note,
+  source,
+}: {
+  children: ReactNode
+  note?: string
+  source?: string
+}) {
   return (
     <div className="mb-2 mt-8 first:mt-0">
-      <h3 className="text-xs font-medium uppercase tracking-wide text-slate-500">{children}</h3>
+      <h3 className="flex flex-wrap items-baseline justify-between gap-x-3 text-xs">
+        <span className="font-medium uppercase tracking-wide text-slate-500">{children}</span>
+        {source && <SourceTag>{source}</SourceTag>}
+      </h3>
       {note && <p className="mt-0.5 text-xs text-slate-500">{note}</p>}
     </div>
   )
@@ -177,7 +190,10 @@ function NetworkBody({
 
   return (
     <>
-      <SubHeading note="Built from public FMCSA records. These are prompts for review, not findings.">
+      <SubHeading
+        note="Built from public FMCSA records. These are prompts for review, not findings."
+        source={SOURCES.checks}
+      >
         What a broker’s check may flag
       </SubHeading>
       {flags.length === 0 ? (
@@ -209,7 +225,10 @@ function NetworkBody({
         </ul>
       )}
 
-      <SubHeading note="Live checks against FMCSA's census, Motus, out-of-service and revocation records.">
+      <SubHeading
+        note="Live checks against FMCSA's records, refreshed with the carrier."
+        source={SOURCES.registration}
+      >
         Registration health
       </SubHeading>
       <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
@@ -221,10 +240,10 @@ function NetworkBody({
             <span className="min-w-0 flex-1">
               <span className="font-medium text-slate-900">{c.label}</span>
               <span className="mt-0.5 block text-slate-700">{c.detail}</span>
-              <span className="mt-0.5 block text-xs text-slate-500">
+              <SourceTag className="mt-0.5 block">
                 {c.source}
                 {c.as_of && ` · ${formatDate(c.as_of)}`}
-              </span>
+              </SourceTag>
             </span>
           </li>
         ))}
@@ -232,6 +251,7 @@ function NetworkBody({
 
       <SubHeading
         note={`Other FMCSA carriers with the same phone, email, address or officer. Checked ${formatDateTime(data.links_checked_at)}.`}
+        source={SOURCES.linked}
       >
         Linked carriers
       </SubHeading>
@@ -264,7 +284,10 @@ function NetworkBody({
         </div>
       )}
 
-      <SubHeading note="Changes CarrierIQ has seen in FMCSA records since it first loaded this carrier, plus authority transfers.">
+      <SubHeading
+        note="Changes CarrierIQ has seen in FMCSA records since it first loaded this carrier, plus authority transfers."
+        source={SOURCES.identityHistory}
+      >
         Identity and ownership history
       </SubHeading>
       {history.length === 0 ? (
@@ -283,7 +306,10 @@ function NetworkBody({
         </ol>
       )}
 
-      <SubHeading note="Optional. Only for what no public source publishes, such as an ownership attestation on Highway.">
+      <SubHeading
+        note="Optional. Only for what no public source publishes, such as an ownership attestation on Highway."
+        source={SOURCES.team}
+      >
         Notes from your team
       </SubHeading>
       <TeamNotes usdotNumber={data.usdot_number} events={data.identity_events} />

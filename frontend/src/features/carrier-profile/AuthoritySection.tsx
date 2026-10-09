@@ -1,5 +1,7 @@
+import { SOURCES } from '../../utils/sources'
 import { useState, type ReactNode } from 'react'
 
+import { SourceTag } from '../../components/SourceTag'
 import { StatusBadge } from '../../components/StatusBadge'
 import { useCarrierAuthority } from '../../hooks/useCarrierAuthority'
 import {
@@ -27,10 +29,11 @@ const TYPE_LABEL: Record<string, string> = {
 const CLASS_LABEL: Record<string, string> = { P: 'Primary', E: 'Excess' }
 const PREVIEW_ROWS = 10
 
-function SubHeading({ children }: { children: ReactNode }) {
+function SubHeading({ children, source }: { children: ReactNode; source?: string }) {
   return (
-    <h3 className="mb-2 mt-6 text-xs font-medium uppercase tracking-wide text-slate-500 first:mt-0">
-      {children}
+    <h3 className="mb-2 mt-6 flex flex-wrap items-baseline justify-between gap-x-3 text-xs first:mt-0">
+      <span className="font-medium uppercase tracking-wide text-slate-500">{children}</span>
+      {source && <SourceTag>{source}</SourceTag>}
     </h3>
   )
 }
@@ -233,6 +236,7 @@ function Renewals({ renewals }: { renewals: Renewal[] }) {
               </div>
             </div>
             <p className="mt-1 text-xs text-slate-600">{r.summary}</p>
+            <SourceTag className="mt-1 block">{SOURCES.renewal}</SourceTag>
           </div>
         )
       })}
@@ -296,7 +300,7 @@ export function AuthoritySection({
       )}
       {data && (
         <>
-          <SubHeading>Operating authority</SubHeading>
+          <SubHeading source={SOURCES.authority}>Operating authority</SubHeading>
           {data.dockets.length === 0 && needsForHireAuthority(classification) === false ? (
             <NotForHire classification={classification} />
           ) : data.dockets.length === 0 ? (
@@ -319,7 +323,7 @@ export function AuthoritySection({
             </div>
           )}
 
-          <SubHeading>Insurance on file</SubHeading>
+          <SubHeading source={SOURCES.insurance}>Insurance on file</SubHeading>
           {data.current_insurance.length === 0 ? (
             <Empty>No insurance filings on file in FMCSA records.</Empty>
           ) : (
@@ -327,7 +331,7 @@ export function AuthoritySection({
           )}
           <Renewals renewals={data.renewals ?? []} />
 
-          <SubHeading>Insurance history</SubHeading>
+          <SubHeading source={SOURCES.insuranceHistory}>Insurance history</SubHeading>
           {data.insurance_history.length === 0 ? (
             <Empty>No past insurance filings in FMCSA records.</Empty>
           ) : (
@@ -350,7 +354,7 @@ export function AuthoritySection({
             </>
           )}
 
-          <SubHeading>Authority history</SubHeading>
+          <SubHeading source={SOURCES.authorityHistory}>Authority history</SubHeading>
           {data.authority_history.length === 0 ? (
             <Empty>No authority actions in FMCSA records.</Empty>
           ) : (

@@ -1,18 +1,24 @@
 import type { ReactNode } from 'react'
 
+import { SourceTag } from '../../components/SourceTag'
+
 export function Section({
   id,
   title,
+  source,
   children,
 }: {
   id: string
   title: string
+  /** Where the section's information comes from */
+  source?: string
   children: ReactNode
 }) {
   return (
     <section id={id} className="scroll-mt-4 rounded-lg border border-slate-200 bg-surface">
-      <h2 className="border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-900">
+      <h2 className="flex flex-wrap items-baseline justify-between gap-x-3 border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-900">
         {title}
+        {source && <SourceTag>{source}</SourceTag>}
       </h2>
       <div className="p-4">{children}</div>
     </section>
@@ -52,7 +58,9 @@ export function Stat({
       <div className="mt-1 text-lg font-semibold tabular-nums text-slate-900">{value}</div>
       {note && <div className="text-xs text-slate-500">{note}</div>}
       {source && (
-        <div className="mt-auto pt-1.5 text-[11px] text-accent-strong/80">Source: {source}</div>
+        <div className="mt-auto pt-1.5">
+          <SourceTag>{source}</SourceTag>
+        </div>
       )}
     </div>
   )
