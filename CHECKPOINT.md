@@ -677,9 +677,32 @@ and ownership events → (3) the Network & Identity tab.
     (4 active carriers; two of them share unit H103), no phone / email / officer links, no
     signal — matching the manual research. 3.8s.
   - 8 new tests (319 total).
-- [ ] Part 2 — Registration health (Motus vs legacy-only, MCS-150 age, fleet consistency,
-  `prior_revoke_dot_number`, out-of-service orders `p2mt-9ige`, revocations `wb4f-neki`) and
-  ownership events (manual, with documents)
+- [x] **Part 2 — Registration health and ownership events.**
+  - Open-data research (subagent, verified on data.transportation.gov): legacy L&I stopped
+    updating 2026-05-14; carriers had to claim their USDOT number in Motus (FMCSA Portal +
+    Login.gov). Added: Out of Service Orders `p2mt-9ige`, Motus RevokeSuspend `wb4f-neki`
+    (`services/registration_orders_service.py`, a refresh detail source; each dataset's full
+    answer is one raw record per carrier, so a rescinded order never lingers), and the census
+    `prior_revoke_flag` / `prior_revoke_dot_number`. Not usable: Highway, Carrier Assure, RMIS,
+    MyCarrierPackets (no open feed). Later candidates: BOC-3 `2emp-mxtb` / `6snj-ed7q`, rejected
+    insurance `96tg-4mhf`, crash VINs `aayw-vxb3`, QCMobile API (needs a free webKey).
+  - `services/registration_health.py` (pure): checks with status ok / attention / alert / info /
+    unknown — Motus vs legacy-only (explained, not alarming), MCS-150 age (24 months),
+    prior revocation link (another USDOT = alert; itself = info), out-of-service orders,
+    recent revocations / suspensions, undeliverable addresses.
+  - Ownership events (spec 29): `identity_events` gains `platform` (migration `0013`).
+    `POST /carriers/{usdot}/identity-events` records OWNERSHIP_CHANGE_ATTESTED,
+    ATTESTATION_CORRECTED (must point at an attestation of the same carrier, not before it),
+    PLATFORM_ALERT, OWNERSHIP_VERIFIED or NOTE; never edited or deleted. Each event goes on
+    the timeline; `rules/ownership_event.py` raises "Conflicting ownership attestation on
+    Highway" in the spec's Event → Correction → Current state wording ("not a finding of fraud").
+  - `GET /carriers/{usdot}/network`: linked carriers (with the shared values), checks,
+    ownership state and events, for the Part 3 tab.
+  - Bug found: the tests' fake NHTSA override had optional parameters, which FastAPI read as
+    request body on POST endpoints that refresh; now a no-argument wrapper.
+  - Live (Supabase, migration 0013), MC 1363132: legacy-only registration (attention), MCS-150
+    current, no prior revocation / out-of-service / revocation, 5 same-building links. 8.8s.
+  - 7 new tests (326 total).
 - [ ] Part 3 — Network & Identity tab
 
 ---
@@ -742,3 +765,4 @@ and ownership events → (3) the Network & Identity tab.
 | 2026-10-09 | Phase 10 Part 3: job status API + dashboard card, worker heartbeat, Refresh now, queue evaluation doc; migration 0012; 310 tests passing. All 10 phases done. |
 | 2026-10-09 | Dark purple theme (slate scale redefined in `index.css`; charts re-validated for the dark surface) and animated live dashboard (`/api/v1/dashboard`, lucide-react + motion); docs/architecture.md + .html; 311 tests passing. |
 | 2026-10-09 | Phase 11 Part 1: linked carriers via shared phone / email / address / officer (census-wide), shared_contact signal; 319 tests passing. |
+| 2026-10-09 | Phase 11 Part 2: registration health checks, out-of-service orders and revocations, ownership events with timeline and signal, /network endpoint; migration 0013; 326 tests passing. |

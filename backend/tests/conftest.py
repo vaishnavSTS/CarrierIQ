@@ -27,7 +27,8 @@ def offline_vpic() -> Iterator[None]:
     from app.api.v1.routes.carriers import get_vpic_client
     from tests.ingestion.test_vpic import fake_vpic
 
-    app.dependency_overrides[get_vpic_client] = fake_vpic
+    # A no-argument wrapper: FastAPI would read fake_vpic's optional arguments as request body.
+    app.dependency_overrides[get_vpic_client] = lambda: fake_vpic()
     yield
     app.dependency_overrides.pop(get_vpic_client, None)
 

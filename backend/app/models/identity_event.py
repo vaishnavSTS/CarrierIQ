@@ -20,6 +20,7 @@ class IdentityEvent(IdMixin, Base):
         BigInteger, ForeignKey("carriers.id", ondelete="CASCADE"), index=True
     )
     event_type: Mapped[str] = mapped_column(String(50))  # e.g. OWNERSHIP_CHANGE_ATTESTED
+    platform: Mapped[str | None] = mapped_column(String(100))  # where it happened, e.g. Highway
     event_date: Mapped[date] = mapped_column(Date)
     description: Mapped[str | None] = mapped_column(Text)
     corrects_event_id: Mapped[int | None] = mapped_column(

@@ -27,13 +27,14 @@ from app.ingestion.contact_match import (
     EMAIL,
     OFFICER,
     PHONE,
+    ContactKeys,
     Match,
     build_where,
     classify,
     keys_for,
 )
 from app.ingestion.socrata_client import Row, SocrataClient
-from app.models import Address, Officer, Phone
+from app.models import Address, Carrier, Officer, Phone
 from app.models.enums import AddressType, Confidence
 from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.ingestion_run_repository import IngestionRunRepository
@@ -80,6 +81,25 @@ class ContactLinkResult:
     truncated: bool  # the source returned the maximum number of rows
 
 
+def contact_keys(carrier: Carrier, observed: ObservedValueRepository) -> ContactKeys:
+    """The carrier's current phones, email, physical address and officers, ready to match."""
+    physical = next(
+        (
+            a
+            for a in observed.current(Address, carrier.id)
+            if a.address_type == AddressType.PHYSICAL
+        ),
+        None,
+    )
+    return keys_for(
+        [p.number_normalized for p in observed.current(Phone, carrier.id)],
+        carrier.email,
+        physical.street if physical else None,
+        physical.zip if physical else None,
+        [o.name for o in observed.current(Officer, carrier.id)],
+    )
+
+
 class ContactLinkService:
     def __init__(
         self,
@@ -117,21 +137,7 @@ class ContactLinkService:
             raise CarrierNotFoundError(
                 f"USDOT {usdot_number} is not loaded yet; ingest its census record first"
             )
-        physical = next(
-            (
-                a
-                for a in self.observed.current(Address, carrier.id)
-                if a.address_type == AddressType.PHYSICAL
-            ),
-            None,
-        )
-        keys = keys_for(
-            [p.number_normalized for p in self.observed.current(Phone, carrier.id)],
-            carrier.email,
-            physical.street if physical else None,
-            physical.zip if physical else None,
-            [o.name for o in self.observed.current(Officer, carrier.id)],
-        )
+        keys = contact_keys(carrier, self.observed)
         where = build_where(keys)
 
         a = self.adapter

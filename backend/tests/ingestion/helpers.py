@@ -115,6 +115,9 @@ def inspection_api(
     return socrata_client(handler)
 
 
+ORDER_DATASETS = ("p2mt-9ige", "wb4f-neki")  # out-of-service orders, Motus RevokeSuspend
+
+
 class FakeDotApi:
     """Fake data.transportation.gov: census (by USDOT, docket, name), inspections and units.
 
@@ -136,6 +139,8 @@ class FakeDotApi:
         self.headers = headers or []
         self.units = units or []
         self.violations = violations or []
+        # Out-of-service orders and Motus revocations by dataset ID; empty unless given.
+        self.orders: dict[str, list[Row]] = {}
         self.calls: dict[str, int] = {}
         self.down = False
         self.failing: set[str] = set()
@@ -186,6 +191,10 @@ class FakeDotApi:
             return httpx.Response(  # legacy L&I: zero-padded USDOT
                 200, json=[r for r in rows if r.get("dot_number") == params["dot_number"]]
             )
+        if dataset in ORDER_DATASETS:  # out-of-service orders / Motus revocations
+            key = "dot_number" if dataset == ORDER_DATASETS[0] else "usdot_number"
+            rows = self.orders.get(dataset, [])
+            return httpx.Response(200, json=[r for r in rows if r.get(key) == params.get(key)])
         return httpx.Response(404, json={"message": "unknown dataset"})
 
     def _census(self, params: httpx.QueryParams, where: str) -> list[Row]:

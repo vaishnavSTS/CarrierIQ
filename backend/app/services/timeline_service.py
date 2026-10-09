@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.models import Carrier
 from app.repositories.authority_history_repository import AuthorityHistoryRepository
 from app.repositories.authority_repository import AuthorityRepository
+from app.repositories.identity_event_repository import IdentityEventRepository
 from app.repositories.insurance_repository import InsuranceRepository
 from app.repositories.timeline_repository import TimelineRepository
 from app.services.change_detection import (
@@ -17,6 +18,7 @@ from app.services.change_detection import (
     authority_events,
     insurance_events,
 )
+from app.services.identity_events import IDENTITY_PREFIX, timeline_events
 
 logger = logging.getLogger(__name__)
 
@@ -45,8 +47,11 @@ class TimelineService:
             self.authorities.for_carrier(carrier.id),
             self.today(),
         )
+        events += timeline_events(IdentityEventRepository(self.db).for_carrier(carrier.id))
         added, removed = self.timeline.sync(
-            carrier.id, events, managed_prefixes=(AUTHORITY_PREFIX, INSURANCE_PREFIX)
+            carrier.id,
+            events,
+            managed_prefixes=(AUTHORITY_PREFIX, INSURANCE_PREFIX, IDENTITY_PREFIX),
         )
         self.db.commit()
         logger.info(

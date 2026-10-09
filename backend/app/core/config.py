@@ -66,6 +66,8 @@ class Settings(BaseSettings):
     motus_insurance_history_dataset_id: str = "3uet-3z4i"  # Motus InsHist - All With History
     legacy_insurance_dataset_id: str = "ypjt-5ydn"  # Insur - All With History (legacy L&I)
     legacy_insurance_history_dataset_id: str = "6sqe-dvqs"  # InsHist - All With History (legacy)
+    oos_orders_dataset_id: str = "p2mt-9ige"  # Out of Service Orders (FMCSA)
+    motus_revoke_suspend_dataset_id: str = "wb4f-neki"  # Motus RevokeSuspend - All With History
     legacy_li_frozen_on: date = date(2026, 5, 14)  # "last refreshed on 05/14/2026"
 
     @property

@@ -28,6 +28,7 @@ from app.schemas.carrier_safety import CarrierSafetyOut, InspectionPageOut
 from app.schemas.carrier_search import CarrierSearchResponse
 from app.schemas.carrier_signals import CarrierSignalsOut
 from app.schemas.jobs import RefreshQueuedOut
+from app.schemas.network import IdentityEventIn, IdentityEventOut, NetworkOut
 from app.services.carrier_authority_service import CarrierAuthorityService
 from app.services.carrier_equipment_service import CarrierEquipmentService, EquipmentReader
 from app.services.carrier_profile_service import CarrierProfileService
@@ -36,7 +37,12 @@ from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.carrier_safety_service import CarrierSafetyService
 from app.services.carrier_search_service import CarrierSearchService
 from app.services.carrier_signals_service import CarrierSignalsService
+from app.services.contact_link_service import build_contact_link_service
 from app.services.job_status_service import JobStatusService
+from app.services.network_service import NetworkService
+from app.services.registration_orders_service import build_registration_orders_service
+from app.services.signal_service import build_signal_service
+from app.services.timeline_service import build_timeline_service
 
 router = APIRouter(prefix="/carriers", tags=["carriers"])
 
@@ -211,3 +217,42 @@ def queue_carrier_refresh(
 ) -> RefreshQueuedOut:
     """Ask the background worker to re-fetch this carrier from every source now."""
     return service.queue_refresh(usdot_number)
+
+
+def get_network_service(
+    db: Annotated[Session, Depends(get_db)],
+    refresh: Refresh,
+    client: Annotated[SocrataClient, Depends(get_socrata_client)],
+) -> NetworkService:
+    return NetworkService(
+        db,
+        refresh,
+        build_contact_link_service(db, client),
+        build_registration_orders_service(db, client),
+        timeline=lambda: build_timeline_service(db),
+        signals=lambda: build_signal_service(db),
+    )
+
+
+@router.get("/{usdot_number}/network", response_model=NetworkOut)
+def get_carrier_network(
+    usdot_number: UsdotPath,
+    service: Annotated[NetworkService, Depends(get_network_service)],
+) -> NetworkOut:
+    """Linked carriers, registration health and recorded ownership events."""
+    return service.get(usdot_number)
+
+
+@router.post(
+    "/{usdot_number}/identity-events",
+    response_model=IdentityEventOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def add_identity_event(
+    usdot_number: UsdotPath,
+    event: IdentityEventIn,
+    service: Annotated[NetworkService, Depends(get_network_service)],
+) -> IdentityEventOut:
+    """Record an ownership or identity event (e.g. an attestation on Highway, or its correction).
+    Events are never edited or deleted; a correction is a new event."""
+    return service.add_event(usdot_number, event)
