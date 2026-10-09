@@ -650,6 +650,40 @@ and the queue evaluation.
 
 ---
 
+## Phase 11 — Network & Identity tab (post-MVP, spec Sections 7 "Network / Fraud", 29) 🔄
+
+Prompted by a real client case (MC 1363132: an accidental "ownership change" attestation on
+Highway left brokers seeing "MC previously reported as sold"). Goal: per carrier, show what
+broker vetting tools are likely to react to, from public records plus team-entered events.
+Built part by part: (1) linked carriers via shared contact details → (2) registration health
+and ownership events → (3) the Network & Identity tab.
+
+- [x] **Part 1 — Linked carriers through shared contact details.**
+  - `ingestion/contact_match.py` (pure): one SoQL filter over the whole Company Census File for
+    the carrier's phones (with and without the leading 1), email, physical street address
+    (building = street without unit, plus ZIP) and officer names; values are cleaned so they
+    cannot alter the query. `classify` says what each row shares: phone, email, address (same
+    unit), building (another unit) or officer.
+  - `services/contact_link_service.py`: a refresh detail source; each other USDOT becomes
+    relationships SHARES_PHONE / SHARES_EMAIL / SHARES_ADDRESS / SHARES_BUILDING /
+    SHARES_OFFICER, traced to that carrier's census row (stored under `contact-link:<usdot>`,
+    never the bare USDOT key, which is the carrier's own census record). Re-runs keep
+    first_seen, count observations, and drop details no longer shared.
+  - `rules/shared_contact.py`: one signal per other carrier for phone / email / address /
+    officer (a building alone is not a signal). MEDIUM for phone or email, LOW for address or
+    officer, +1 when 2+ details are shared with a carrier no longer active; a value shared by
+    5+ carriers is most likely a dispatch / compliance / filing service → LOW / LOW, said so.
+  - Live (Supabase): MC 1363132 (USDOT 3794204) → 5 same-building links at 7799 Valley View St
+    (4 active carriers; two of them share unit H103), no phone / email / officer links, no
+    signal — matching the manual research. 3.8s.
+  - 8 new tests (319 total).
+- [ ] Part 2 — Registration health (Motus vs legacy-only, MCS-150 age, fleet consistency,
+  `prior_revoke_dot_number`, out-of-service orders `p2mt-9ige`, revocations `wb4f-neki`) and
+  ownership events (manual, with documents)
+- [ ] Part 3 — Network & Identity tab
+
+---
+
 ## MVP done when a user can (spec Section 33)
 
 - [x] 1. Open the application
@@ -707,3 +741,4 @@ and the queue evaluation.
 | 2026-10-09 | Phase 10 Part 2: scheduled ingestion (stale carriers queued every 15 min, batch 50, failure cooldown), Docker worker service; 307 tests passing. |
 | 2026-10-09 | Phase 10 Part 3: job status API + dashboard card, worker heartbeat, Refresh now, queue evaluation doc; migration 0012; 310 tests passing. All 10 phases done. |
 | 2026-10-09 | Dark purple theme (slate scale redefined in `index.css`; charts re-validated for the dark surface) and animated live dashboard (`/api/v1/dashboard`, lucide-react + motion); docs/architecture.md + .html; 311 tests passing. |
+| 2026-10-09 | Phase 11 Part 1: linked carriers via shared phone / email / address / officer (census-wide), shared_contact signal; 319 tests passing. |

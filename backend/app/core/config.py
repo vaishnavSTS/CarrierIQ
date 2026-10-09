@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     carrier_refresh_hours: float = 24.0
     # Intelligence signals (spec Section 12): changes older than this are history, not signals.
     signal_lookback_days: int = 730
+    # Carriers sharing a phone, email, address or officer; more matches than this are cut off.
+    contact_link_limit: int = 200
     # Background worker (spec Section 18): a PostgreSQL-backed job queue, no Redis.
     worker_poll_seconds: float = 5.0  # wait between checks when the queue is empty
     worker_heartbeat_seconds: float = 30.0  # how often a running worker checks in

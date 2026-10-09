@@ -70,6 +70,25 @@ class RelationshipRepository:
         self.db.flush()
         return len(links)
 
+    def from_source(
+        self, source: tuple[str, int], relationship_types: Iterable[str]
+    ) -> list[Relationship]:
+        """Links leaving one entity, e.g. every contact link of USDOT 3794204."""
+        return list(
+            self.db.scalars(
+                select(Relationship).where(
+                    Relationship.source_entity_type == source[0],
+                    Relationship.source_entity_id == source[1],
+                    Relationship.relationship_type.in_(set(relationship_types)),
+                )
+            )
+        )
+
+    def delete_many(self, rows: Sequence[Relationship]) -> None:
+        for row in rows:
+            self.db.delete(row)
+        self.db.flush()
+
     def to_target(self, relationship_type: str, target: tuple[str, int]) -> list[Relationship]:
         """Links pointing at one entity, e.g. every VIN seen with USDOT 295017."""
         return list(

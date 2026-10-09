@@ -53,6 +53,12 @@ class CompanyCensusAdapter:
             )
         return row
 
+    def find_contact_matches(self, where: str, limit: int) -> list[Row]:
+        """Census rows matching a contact filter built by ingestion/contact_match.py."""
+        return self.client.get_rows(
+            self.dataset_id, {"$where": where, "$order": "dot_number", "$limit": str(limit)}
+        )
+
     def find_usdots_by_docket(self, prefix: DocketPrefix, number: str, limit: int) -> list[int]:
         """USDOT numbers holding this docket in any of the three docket slots.
 

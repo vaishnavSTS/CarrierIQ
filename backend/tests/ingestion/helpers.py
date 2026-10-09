@@ -202,6 +202,8 @@ class FakeDotApi:
                 )
             ]
             return [{"dot_number": r["dot_number"]} for r in matches]
+        if "company_officer_1" in where or "email_address" in where or "phy_zip" in where:
+            return [r for r in self.census if _contact_hit(r, where)]  # a contact-link query
         names = lambda r: (r.get("legal_name", "").upper(), r.get("dba_name", "").upper())  # noqa: E731
         if "starts_with" in where:
             text = re.findall(r"starts_with\(upper\(legal_name\), '(.*?)'\)", where)[0]
@@ -211,3 +213,23 @@ class FakeDotApi:
             text = re.findall(r"like '%(.*?)%'", where)[0].replace("''", "'")
             return [r for r in self.census if any(text in n for n in names(r))]
         return []
+
+
+def _contact_hit(row: Row, where: str) -> bool:
+    """Whether a census row matches a contact-link filter (ingestion/contact_match.py)."""
+    quoted = [
+        row.get("phone"),
+        row.get("cell_phone"),
+        row.get("fax"),
+        (row.get("email_address") or "").upper(),
+        (row.get("company_officer_1") or "").upper(),
+        (row.get("company_officer_2") or "").upper(),
+    ]
+    if any(value and f"'{value}'" in where for value in quoted):
+        return True
+    for street, zip_code in re.findall(r"like '([^%']+)%' AND phy_zip like '(\d+)%'", where):
+        if (row.get("phy_street") or "").upper().startswith(street) and (
+            row.get("phy_zip") or ""
+        ).startswith(zip_code):
+            return True
+    return False

@@ -17,6 +17,7 @@ from app.intelligence.rules.fleet_consistency import FleetConsistencyRule
 from app.intelligence.rules.identity_change import IdentityChangeRule
 from app.intelligence.rules.insurance_change import InsuranceChangeRule
 from app.intelligence.rules.safety_trend import SafetyTrendRule
+from app.intelligence.rules.shared_contact import SharedContactRule
 from app.intelligence.rules.shared_vin import SharedVinRule
 from app.models import Carrier
 from app.repositories.signal_repository import SignalRepository
@@ -37,6 +38,7 @@ def default_rules() -> list[Rule]:
         FleetConsistencyRule(),
         SafetyTrendRule(),
         SharedVinRule(),
+        SharedContactRule(),
     ]
 
 
