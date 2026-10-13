@@ -1,6 +1,7 @@
 import { ChevronRight, Clock, Truck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
+import { PortalHero } from '../features/portal/PortalHero'
 import { usePortalOverview, useMe } from '../hooks/useAuth'
 import { formatDateTime } from '../utils/format'
 
@@ -11,12 +12,11 @@ export function PortalHomePage() {
 
   return (
     <div className="space-y-6">
-      <section>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
-          Welcome{user ? `, ${user.full_name.split(' ')[0]}` : ''}
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">{data?.organization_name}</p>
-      </section>
+      <PortalHero
+        firstName={user?.full_name.split(' ')[0]}
+        organizationName={data?.organization_name}
+        carriers={data?.carriers}
+      />
 
       <section className="rounded-2xl border border-slate-200 bg-surface p-5">
         <h2 className="text-sm font-semibold text-slate-900">My carriers</h2>
