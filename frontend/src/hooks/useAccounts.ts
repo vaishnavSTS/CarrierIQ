@@ -1,6 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { addAccountCarrier, approveAccount, disableAccount, fetchAccounts } from '../api/admin'
+import {
+  addAccountCarrier,
+  disableAccount,
+  fetchAccounts,
+  markAccountsSeen,
+  reactivateAccount,
+} from '../api/admin'
 import { useMe } from './useAuth'
 
 const ACCOUNTS_KEY = ['admin', 'accounts'] as const
@@ -16,9 +22,18 @@ export function useAccounts() {
   })
 }
 
-export function usePendingAccountCount(): number {
+/** Client sign-ups STS hasn't seen yet (the Accounts pop-up and the nav badge). */
+export function useNewAccountCount(): number {
   const { data } = useAccounts()
-  return data?.filter((a) => a.status === 'PENDING').length ?? 0
+  return data?.filter((a) => a.is_new).length ?? 0
+}
+
+export function useMarkAccountsSeen() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: markAccountsSeen,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY }),
+  })
 }
 
 export function useAddAccountCarrier() {
@@ -33,8 +48,8 @@ export function useAddAccountCarrier() {
 export function useAccountAction() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, action }: { id: number; action: 'approve' | 'disable' }) =>
-      action === 'approve' ? approveAccount(id) : disableAccount(id),
+    mutationFn: ({ id, action }: { id: number; action: 'reactivate' | 'disable' }) =>
+      action === 'reactivate' ? reactivateAccount(id) : disableAccount(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY }),
   })
 }

@@ -6,12 +6,17 @@ export function fetchAccounts(status?: UserStatus): Promise<AdminUser[]> {
   return apiGet<AdminUser[]>(`/admin/users${status ? `?status=${status}` : ''}`)
 }
 
-/** Opens the account and confirms the USDOT numbers its company gave. */
-export function approveAccount(id: number): Promise<AdminUser> {
-  return apiRequest<AdminUser>(`/admin/users/${id}/approve`, { method: 'POST' })
+/** Lets a disabled account log in again. */
+export function reactivateAccount(id: number): Promise<AdminUser> {
+  return apiRequest<AdminUser>(`/admin/users/${id}/reactivate`, { method: 'POST' })
 }
 
-/** Rejects a sign-up or closes an account; it can no longer log in. */
+/** Dismisses the "new sign-up" pop-up: every new account is marked as seen. */
+export function markAccountsSeen(): Promise<{ marked: number }> {
+  return apiRequest<{ marked: number }>('/admin/users/seen', { method: 'POST' })
+}
+
+/** Closes an account; it can no longer log in. */
 export function disableAccount(id: number): Promise<AdminUser> {
   return apiRequest<AdminUser>(`/admin/users/${id}/disable`, { method: 'POST' })
 }

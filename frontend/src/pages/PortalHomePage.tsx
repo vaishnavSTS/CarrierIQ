@@ -29,10 +29,7 @@ export function PortalHomePage() {
         {data && data.carriers.length === 0 && (
           <div className="mt-3 flex items-start gap-3 text-sm text-slate-600">
             <Clock className="mt-0.5 size-4 shrink-0 text-slate-400" aria-hidden />
-            <p>
-              No carriers linked yet. STS links your USDOT number after confirming it belongs to
-              your company. Contact STS if you expected to see one here.
-            </p>
+            <p>No carriers linked to your account yet. Contact STS to add your USDOT number.</p>
           </div>
         )}
         {data && data.carriers.length > 0 && (

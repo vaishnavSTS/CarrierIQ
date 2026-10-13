@@ -1,8 +1,9 @@
 """A USDOT number a client organization operates, as shown in its client portal.
 
 Keyed by USDOT number rather than carriers.id: a client can name a carrier CarrierIQ has not
-loaded yet. `verified` stays false until STS confirms the client really operates that carrier,
-and the client portal shows verified carriers only, so nobody can claim someone else's USDOT.
+loaded yet. The client portal shows every linked carrier at once (public FMCSA data only); STS
+checks a new sign-up's company, phone and email against FMCSA on the Accounts page. `verified`
+is true for carriers STS linked itself.
 """
 
 from sqlalchemy import BigInteger, ForeignKey, UniqueConstraint, false

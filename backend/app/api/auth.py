@@ -59,9 +59,9 @@ def require_own_carrier(
     user: ClientUser,
     db: Annotated[Session, Depends(get_db)],
 ) -> int:
-    """A client may open only the USDOT numbers STS verified for their organization. Any other
-    number answers 404, so the portal never confirms whether a carrier exists."""
-    verified = UserRepository(db).organization_carriers(user.organization_id, verified_only=True)
-    if usdot_number not in {link.usdot_number for link in verified}:
+    """A client may open only the USDOT numbers linked to their organization. Any other number
+    answers 404, so the portal never confirms whether a carrier exists."""
+    links = UserRepository(db).organization_carriers(user.organization_id)
+    if usdot_number not in {link.usdot_number for link in links}:
         raise CarrierNotFoundError(f"USDOT {usdot_number} is not one of your carriers")
     return usdot_number

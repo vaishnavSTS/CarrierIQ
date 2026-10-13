@@ -1,13 +1,13 @@
-"""Registration, login, account approval and the client portal overview.
+"""Registration, login, account management and the client portal overview.
 
 Rules:
-- A client who registers gets a new CLIENT organization and a PENDING CLIENT_ADMIN account. The
-  USDOT number they name is saved unverified; nothing is shown to them until an STS admin
-  approves the account, which also verifies that USDOT number.
-- PENDING and DISABLED accounts cannot log in.
+- A client who registers gets a new CLIENT organization and an ACTIVE CLIENT_ADMIN account, is
+  logged in at once and sees the USDOT number they gave in their portal (public FMCSA data only).
+  STS is shown each new account once ("new sign-up" pop-up, `seen_at`) and can disable it.
+- DISABLED accounts cannot log in (nor can PENDING ones, a status new accounts no longer get).
 - Google sign-in (verified emails only) logs in an existing account with that Google id or email.
-  Someone new must first give their mobile number and USDOT ("finish signing up"); they then get
-  the same PENDING client account as a password sign-up, with no password.
+  Someone new must first give their company, mobile number and USDOT ("finish signing up"); they
+  then get the same client account as a password sign-up, with no password.
 - STS staff never self-register: they are created with `python -m app.workers.create_staff_user`.
   Google sign-in never creates staff; it only logs in staff accounts that already exist.
 """
@@ -40,7 +40,6 @@ from app.schemas.auth import (
     PortalCarrierOut,
     PortalOverviewOut,
     RegisterIn,
-    RegisterOut,
     UserOut,
 )
 
@@ -78,7 +77,7 @@ class AuthService:
         self.users = users
         self.now = now
 
-    def register(self, data: RegisterIn) -> RegisterOut:
+    def register(self, data: RegisterIn) -> User:
         check_password_strength(data.password)
         if self.users.by_email(data.email) is not None:
             raise ConflictError("An account with this email already exists")
@@ -101,30 +100,27 @@ class AuthService:
         usdot_number: int,
         password_hash: str | None = None,
         google_sub: str | None = None,
-    ) -> RegisterOut:
-        """A new CLIENT organization with one PENDING account and its (unverified) USDOT."""
+    ) -> User:
+        """A new CLIENT organization with one ACTIVE account, ready to log in, and its USDOT
+        (unconfirmed: `verified` marks carriers STS itself linked or checked)."""
         organization = Organization(name=company_name, kind=OrganizationKind.CLIENT)
         self.db.add(organization)
         self.db.flush()
-        self.db.add(
-            User(
-                organization_id=organization.id,
-                email=email,
-                full_name=full_name,
-                phone=phone,
-                password_hash=password_hash,
-                google_sub=google_sub,
-                role=UserRole.CLIENT_ADMIN,
-                status=UserStatus.PENDING,
-            )
+        user = User(
+            organization_id=organization.id,
+            email=email,
+            full_name=full_name,
+            phone=phone,
+            password_hash=password_hash,
+            google_sub=google_sub,
+            role=UserRole.CLIENT_ADMIN,
+            status=UserStatus.ACTIVE,
+            last_login_at=self.now(),
         )
+        self.db.add(user)
         self.db.add(OrganizationCarrier(organization_id=organization.id, usdot_number=usdot_number))
         self.db.commit()
-        return RegisterOut(
-            status=UserStatus.PENDING.value,
-            message="Thanks for registering. STS will review your account; you can log in once "
-            "it is approved.",
-        )
+        return user
 
     def login(self, data: LoginIn) -> User:
         user = self.users.by_email(data.email)
@@ -153,7 +149,7 @@ class AuthService:
             raise UnauthorizedError("This email is linked to a different Google account")
         return self._admit(user)
 
-    def complete_google_signup(self, identity: GoogleIdentity, data: GoogleSignupIn) -> RegisterOut:
+    def complete_google_signup(self, identity: GoogleIdentity, data: GoogleSignupIn) -> User:
         if self.users.by_google_sub(identity.sub) or self.users.by_email(identity.email):
             raise ConflictError("An account with this email already exists; log in instead")
         return self._create_client(
@@ -183,13 +179,20 @@ class AuthService:
     def list_users(self, status: UserStatus | None) -> list[AdminUserOut]:
         return [self._admin_out(user) for user in self.users.list_users(status)]
 
-    def approve(self, user_id: int) -> AdminUserOut:
+    def reactivate(self, user_id: int) -> AdminUserOut:
+        """Let a disabled account log in again."""
         user = self._get(user_id)
         user.status = UserStatus.ACTIVE
-        for link in self.users.organization_carriers(user.organization_id):
-            link.verified = True
         self.db.commit()
         return self._admin_out(user)
+
+    def mark_new_accounts_seen(self) -> int:
+        """Dismiss the "new sign-up" pop-up: every client account not yet seen is now seen."""
+        new = [u for u in self.users.list_users() if u.seen_at is None and not u.role.is_staff]
+        for user in new:
+            user.seen_at = self.now()
+        self.db.commit()
+        return len(new)
 
     def disable(self, user_id: int, acting_user: User) -> AdminUserOut:
         user = self._get(user_id)
@@ -230,6 +233,7 @@ class AuthService:
         return AdminUserOut(
             **_user_fields(user, organization),
             usdot_numbers=usdots,
+            is_new=user.seen_at is None and not user.role.is_staff,
             carrier_checks=self._contact_checks(user, usdots),
         )
 
@@ -262,7 +266,7 @@ class AuthService:
 
     def portal_overview(self, user: User) -> PortalOverviewOut:
         organization = self.users.organization(user.organization_id)
-        links = self.users.organization_carriers(user.organization_id, verified_only=True)
+        links = self.users.organization_carriers(user.organization_id)
         carriers = self.users.carriers_by_usdot([link.usdot_number for link in links])
         return PortalOverviewOut(
             organization_name=organization.name if organization else "",

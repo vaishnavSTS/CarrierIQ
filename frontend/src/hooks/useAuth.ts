@@ -43,8 +43,16 @@ export function useLogout() {
   })
 }
 
+/** Sign-up logs the client in: show their portal straight away. */
 export function useRegister() {
-  return useMutation({ mutationFn: (input: RegisterInput) => register(input) })
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: RegisterInput) => register(input),
+    onSuccess: (user) => {
+      queryClient.clear()
+      queryClient.setQueryData(ME_KEY, user)
+    },
+  })
 }
 
 export function usePortalOverview() {
@@ -65,5 +73,12 @@ export function useGoogleSignup() {
 }
 
 export function useCompleteGoogleSignup() {
-  return useMutation({ mutationFn: (input: GoogleSignupInput) => completeGoogleSignup(input) })
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: GoogleSignupInput) => completeGoogleSignup(input),
+    onSuccess: (user) => {
+      queryClient.clear()
+      queryClient.setQueryData(ME_KEY, user)
+    },
+  })
 }

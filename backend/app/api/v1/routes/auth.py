@@ -25,7 +25,6 @@ from app.schemas.auth import (
     GoogleSignupPendingOut,
     LoginIn,
     RegisterIn,
-    RegisterOut,
     UserOut,
 )
 from app.services.auth_service import AuthService
@@ -84,10 +83,12 @@ def options() -> AuthOptionsOut:
     return AuthOptionsOut(google=get_settings().google_enabled)
 
 
-@router.post("/register", response_model=RegisterOut, status_code=status.HTTP_201_CREATED)
-def register(data: RegisterIn, service: Service) -> RegisterOut:
-    """A client signs up. The account stays PENDING until an STS admin approves it."""
-    return service.register(data)
+@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+def register(data: RegisterIn, response: Response, service: Service) -> UserOut:
+    """A client signs up and is logged in at once; STS sees the new account in a pop-up."""
+    user = service.register(data)
+    _start_session(response, user)
+    return service.user_out(user)
 
 
 @router.post("/login", response_model=UserOut)
@@ -181,11 +182,12 @@ def google_signup_pending(request: Request) -> GoogleSignupPendingOut:
     return GoogleSignupPendingOut(email=identity.email, full_name=identity.name)
 
 
-@router.post("/google/signup", response_model=RegisterOut, status_code=status.HTTP_201_CREATED)
+@router.post("/google/signup", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def google_signup_complete(
     data: GoogleSignupIn, request: Request, response: Response, service: Service
-) -> RegisterOut:
-    """Mobile number and USDOT for a new Google user; the account then waits for approval."""
-    result = service.complete_google_signup(_pending_google_signup(request), data)
+) -> UserOut:
+    """Company, mobile number and USDOT for a new Google user, who is then logged in."""
+    user = service.complete_google_signup(_pending_google_signup(request), data)
     _clear_cookie(response, GOOGLE_SIGNUP_COOKIE)
-    return result
+    _start_session(response, user)
+    return service.user_out(user)

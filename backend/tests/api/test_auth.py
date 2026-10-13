@@ -109,45 +109,41 @@ def sign_up(email: str = "Owner@Client.com", **changes: object) -> dict[str, obj
 def register(api: TestClient, email: str = "Owner@Client.com") -> None:
     response = api.post("/api/v1/auth/register", json=sign_up(email))
     assert response.status_code == 201, response.text
-    assert response.json()["status"] == "PENDING"
+    assert (response.json()["status"], response.json()["portal"]) == ("ACTIVE", "client")
 
 
-def test_client_registers_waits_for_approval_then_sees_portal(api: TestClient, db: Session) -> None:
+def test_client_signs_up_and_sees_portal_at_once(api: TestClient, db: Session) -> None:
     db.add(Carrier(usdot_number=295017, legal_name="CLIENT TRUCKING LLC"))
-    make_user(db, "admin@sts.test", UserRole.STS_ADMIN, UserStatus.ACTIVE)
     register(api)
 
-    pending = api.post(
-        "/api/v1/auth/login", json={"email": "owner@client.com", "password": PASSWORD}
-    )
-    assert pending.status_code == 403
-    assert pending.json()["error"]["code"] == "account_pending"
-
-    log_in(api, "admin@sts.test")
-    waiting = api.get("/api/v1/admin/users", params={"status": "PENDING"}).json()
-    assert [(u["email"], u["usdot_numbers"]) for u in waiting] == [("owner@client.com", [295017])]
-    approved = api.post(f"/api/v1/admin/users/{waiting[0]['id']}/approve")
-    assert approved.json()["status"] == "ACTIVE"
-    api.post("/api/v1/auth/logout")
-
-    me = log_in(api, "OWNER@client.com")  # email case does not matter
-    assert (me["role"], me["portal"]) == ("CLIENT_ADMIN", "client")
+    # Logged in by the sign-up itself: no approval step.
+    me = api.get("/api/v1/auth/me").json()
+    assert (me["email"], me["role"], me["portal"]) == ("owner@client.com", "CLIENT_ADMIN", "client")
     overview = api.get("/api/v1/portal/overview").json()
     assert overview["organization_name"] == "Client Trucking LLC"
     assert [(c["usdot_number"], c["legal_name"]) for c in overview["carriers"]] == [
         (295017, "CLIENT TRUCKING LLC")
     ]
 
+    api.post("/api/v1/auth/logout")
+    assert log_in(api, "OWNER@client.com")["status"] == "ACTIVE"  # email case does not matter
 
-def test_unapproved_usdot_is_not_shown(api: TestClient, db: Session) -> None:
-    client_user = make_user(db, "c@client.test", UserRole.CLIENT_ADMIN, UserStatus.ACTIVE)
-    from app.models import OrganizationCarrier
 
-    db.add(OrganizationCarrier(organization_id=client_user.organization_id, usdot_number=1))
-    db.flush()
+def test_admin_sees_new_sign_ups_until_marked_seen(api: TestClient, db: Session) -> None:
+    make_user(db, "admin@sts.test", UserRole.STS_ADMIN, UserStatus.ACTIVE)
+    register(api)
+    register(api, "second@client.com")
 
-    log_in(api, "c@client.test")
-    assert api.get("/api/v1/portal/overview").json()["carriers"] == []
+    log_in(api, "admin@sts.test")
+    accounts = api.get("/api/v1/admin/users").json()
+    assert sorted(a["email"] for a in accounts if a["is_new"]) == [
+        "owner@client.com",
+        "second@client.com",
+    ]  # staff accounts are never "new"
+
+    assert api.post("/api/v1/admin/users/seen").json() == {"marked": 2}
+    assert not any(a["is_new"] for a in api.get("/api/v1/admin/users").json())
+    assert api.post("/api/v1/admin/users/seen").json() == {"marked": 0}
 
 
 def test_register_rejects_duplicate_email_and_short_password(api: TestClient) -> None:

@@ -1,4 +1,3 @@
-import { CheckCircle2 } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 
@@ -22,6 +21,7 @@ export function RegisterPage() {
   const { data: current } = useMe()
   const register = useRegister()
 
+  // Signing up logs the client in, so this also sends them to their portal afterwards.
   if (current) return <Navigate to={homeFor(current.portal)} replace />
 
   const set = (key: keyof typeof form) => (e: { target: { value: string } }) =>
@@ -59,28 +59,6 @@ export function RegisterPage() {
     })
   }
 
-  if (register.isSuccess) {
-    return (
-      <AuthCard
-        title="Account requested"
-        subtitle={register.data.message}
-        footer={
-          <Link to="/" className="font-medium text-accent-strong hover:underline">
-            Back to the home page
-          </Link>
-        }
-      >
-        <div className="flex items-start gap-3 rounded-lg border border-emerald-600/30 bg-emerald-50 p-4 text-sm text-emerald-700">
-          <CheckCircle2 className="mt-0.5 size-5 shrink-0" aria-hidden />
-          <p>
-            You can log in once STS has approved the account. STS confirms your USDOT number belongs
-            to your company before it appears in your portal.
-          </p>
-        </div>
-      </AuthCard>
-    )
-  }
-
   const error =
     localError ??
     (register.error instanceof ApiError
@@ -92,7 +70,7 @@ export function RegisterPage() {
   return (
     <AuthCard
       title="Create a client account"
-      subtitle="For STS clients. STS reviews every new account before it is opened."
+      subtitle="For STS clients. Your portal opens as soon as you sign up."
       footer={
         <>
           Already have an account?{' '}
@@ -140,7 +118,7 @@ export function RegisterPage() {
           label="USDOT number"
           inputMode="numeric"
           required
-          hint="The carrier you operate. STS verifies it before it shows in your portal."
+          hint="The carrier you operate; it opens in your portal."
           value={form.usdot}
           onChange={set('usdot')}
         />
@@ -162,7 +140,7 @@ export function RegisterPage() {
           onChange={set('confirm')}
         />
         <FormError message={error} />
-        <SubmitButton busy={register.isPending}>Request account</SubmitButton>
+        <SubmitButton busy={register.isPending}>Create account</SubmitButton>
       </form>
     </AuthCard>
   )

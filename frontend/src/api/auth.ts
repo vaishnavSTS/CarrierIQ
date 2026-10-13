@@ -4,7 +4,6 @@ import type {
   GoogleSignupPending,
   PortalOverview,
   RegisterInput,
-  RegisterResult,
   User,
 } from '../types/auth'
 import { ApiError, apiGet, apiRequest } from './client'
@@ -36,8 +35,9 @@ export function logout(): Promise<void> {
   return postJson<void>('/auth/logout')
 }
 
-export function register(input: RegisterInput): Promise<RegisterResult> {
-  return postJson<RegisterResult>('/auth/register', input)
+/** Creates the client account and logs it in (the API sets the session cookie). */
+export function register(input: RegisterInput): Promise<User> {
+  return postJson<User>('/auth/register', input)
 }
 
 export function fetchPortalOverview(): Promise<PortalOverview> {
@@ -58,8 +58,9 @@ export async function fetchGoogleSignup(): Promise<GoogleSignupPending | null> {
   }
 }
 
-export function completeGoogleSignup(input: GoogleSignupInput): Promise<RegisterResult> {
-  return postJson<RegisterResult>('/auth/google/signup', input)
+/** Creates the client account for a new Google user and logs it in. */
+export function completeGoogleSignup(input: GoogleSignupInput): Promise<User> {
+  return postJson<User>('/auth/google/signup', input)
 }
 
 /** Full-page navigation (not fetch): the browser must go to Google and come back. */

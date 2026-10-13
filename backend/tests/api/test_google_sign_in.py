@@ -117,9 +117,7 @@ def test_options_and_start_are_off_without_google_settings(
 # --- Flows (database) ----------------------------------------------------------------------------
 
 
-def test_new_google_user_finishes_sign_up_then_waits_for_approval(
-    api: TestClient, db: Session
-) -> None:
+def test_new_google_user_finishes_sign_up_and_is_logged_in(api: TestClient, db: Session) -> None:
     db.add(Carrier(usdot_number=297569, legal_name="VANEK BROTHERS TRUCKING COMPANY"))
     db.flush()
     assert api.get("/api/v1/auth/options").json() == {"google": True}
@@ -141,10 +139,12 @@ def test_new_google_user_finishes_sign_up_then_waits_for_approval(
         assert api.post("/api/v1/auth/google/signup", json=partial).status_code == 422, required
     done = api.post("/api/v1/auth/google/signup", json=details)
     assert done.status_code == 201, done.text
+    assert (done.json()["status"], done.json()["portal"]) == ("ACTIVE", "client")
+    assert api.get("/api/v1/auth/me").json()["email"] == "new@gmail.com"  # logged in
 
     user = db.query(User).filter_by(email="new@gmail.com").one()
     assert (user.status, user.google_sub, user.password_hash, user.phone) == (
-        UserStatus.PENDING,
+        UserStatus.ACTIVE,
         "g-111",
         None,
         "6105900223",
@@ -154,9 +154,10 @@ def test_new_google_user_finishes_sign_up_then_waits_for_approval(
     org = UserRepository(db).organization(user.organization_id)
     assert org is not None and org.name == "Vanek Brothers Trucking Co."  # as they typed it
 
-    # The sign-up step is used up, and the next Google sign-in says "pending".
+    # The sign-up step is used up; next time Google goes straight to the portal.
     assert api.get("/api/v1/auth/google/signup").status_code == 401
-    assert round_trip(api) == "/login?google=pending"
+    api.post("/api/v1/auth/logout")
+    assert round_trip(api) == "/portal"
 
 
 def test_existing_account_signs_in_with_google_and_is_linked(

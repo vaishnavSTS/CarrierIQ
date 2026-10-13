@@ -1,9 +1,14 @@
-import { Check, Inbox, X } from 'lucide-react'
+import { UserPlus } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 
 import { StatusBadge } from '../components/StatusBadge'
-import { useAccountAction, useAccounts, useAddAccountCarrier } from '../hooks/useAccounts'
+import {
+  useAccountAction,
+  useAccounts,
+  useAddAccountCarrier,
+  useMarkAccountsSeen,
+} from '../hooks/useAccounts'
 import { useMe } from '../hooks/useAuth'
 import type { AdminUser, CarrierContactCheck, UserRole } from '../types/auth'
 import { formatDateTime } from '../utils/format'
@@ -87,71 +92,69 @@ function ContactCheck({ check }: { check: CarrierContactCheck }) {
   )
 }
 
-/** One sign-up waiting for approval. Reject needs a second click, so it is never a slip. */
-function PendingCard({ account }: { account: AdminUser }) {
-  const action = useAccountAction()
-  const [confirmReject, setConfirmReject] = useState(false)
-  const busy = action.isPending
+/**
+ * Pop-up listing client sign-ups STS hasn't seen yet. Sign-ups no longer wait for approval:
+ * this is the heads-up, with the FMCSA checks to spot someone claiming a carrier that isn't
+ * theirs (then Disable them in the table). "Got it" marks them all as seen.
+ */
+function NewSignupsDialog({ accounts }: { accounts: AdminUser[] }) {
+  const markSeen = useMarkAccountsSeen()
+  const count = accounts.length
 
   return (
-    <li className="flex flex-col gap-4 rounded-xl border border-amber-600/30 bg-amber-50 p-4 md:flex-row md:items-center">
-      <div className="min-w-0 flex-1 text-sm">
-        <div className="font-medium text-slate-900">
-          {account.full_name} · {account.organization_name}
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="new-signups-title"
+    >
+      <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-surface p-6 shadow-2xl">
+        <div className="flex items-center gap-3">
+          <span className="grid size-10 place-items-center rounded-full bg-accent-soft text-accent-strong">
+            <UserPlus className="size-5" aria-hidden />
+          </span>
+          <div>
+            <h2 id="new-signups-title" className="text-lg font-semibold text-slate-950">
+              {count === 1 ? '1 new user signed up' : `${count} new users signed up`}
+            </h2>
+            <p className="text-sm text-slate-500">
+              They can already use their portal. Check the details against FMCSA below.
+            </p>
+          </div>
         </div>
-        <div className="mt-0.5 text-slate-600">
-          {account.email} · {formatPhone(account.phone)}
-        </div>
-        <div className="mt-1 text-xs text-slate-500">
-          USDOT: <UsdotLinks numbers={account.usdot_numbers} /> · Signed up{' '}
-          {formatDateTime(account.created_at)}
-        </div>
-        {account.carrier_checks.map((check) => (
-          <ContactCheck key={check.usdot_number} check={check} />
-        ))}
-        {action.isError && <div className="mt-1 text-xs text-red-700">{action.error.message}</div>}
-      </div>
-      <div className="flex shrink-0 gap-2">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => action.mutate({ id: account.id, action: 'approve' })}
-          className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-gray-950 hover:bg-emerald-700 disabled:opacity-50"
-        >
-          <Check className="size-4" aria-hidden />
-          Approve
-        </button>
-        {confirmReject ? (
-          <>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => action.mutate({ id: account.id, action: 'disable' })}
-              className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-gray-950 hover:bg-red-700 disabled:opacity-50"
-            >
-              Confirm reject
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirmReject(false)}
-              className="rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
-            >
-              Cancel
-            </button>
-          </>
-        ) : (
+        <ul className="mt-5 space-y-3">
+          {accounts.map((a) => (
+            <li key={a.id} className="rounded-xl border border-slate-200 bg-canvas p-4 text-sm">
+              <div className="font-medium text-slate-900">
+                {a.full_name} · {a.organization_name}
+              </div>
+              <div className="mt-0.5 text-slate-600">
+                {a.email} · {formatPhone(a.phone)}
+              </div>
+              <div className="mt-1 text-xs text-slate-500">
+                USDOT: <UsdotLinks numbers={a.usdot_numbers} /> · Signed up{' '}
+                {formatDateTime(a.created_at)}
+              </div>
+              {a.carrier_checks.map((check) => (
+                <ContactCheck key={check.usdot_number} check={check} />
+              ))}
+            </li>
+          ))}
+        </ul>
+        {markSeen.isError && <p className="mt-3 text-sm text-red-700">{markSeen.error.message}</p>}
+        <div className="mt-5 flex justify-end">
           <button
             type="button"
-            disabled={busy}
-            onClick={() => setConfirmReject(true)}
-            className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+            autoFocus
+            disabled={markSeen.isPending}
+            onClick={() => markSeen.mutate()}
+            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong disabled:opacity-50"
           >
-            <X className="size-4" aria-hidden />
-            Reject
+            Got it
           </button>
-        )}
+        </div>
       </div>
-    </li>
+    </div>
   )
 }
 
@@ -233,6 +236,9 @@ function AccountRow({ account, isMe }: { account: AdminUser; isMe: boolean }) {
       <td className="py-2.5 pr-4 text-slate-700">{ROLE_LABELS[account.role]}</td>
       <td className="py-2.5 pr-4 text-xs">
         <UsdotLinks numbers={account.usdot_numbers} />
+        {account.carrier_checks.map((check) => (
+          <ContactCheck key={check.usdot_number} check={check} />
+        ))}
         {!account.role.startsWith('STS_') && account.status !== 'DISABLED' && (
           <AddUsdot accountId={account.id} />
         )}
@@ -258,7 +264,7 @@ function AccountRow({ account, isMe }: { account: AdminUser; isMe: boolean }) {
           <button
             type="button"
             disabled={action.isPending}
-            onClick={() => action.mutate({ id: account.id, action: 'approve' })}
+            onClick={() => action.mutate({ id: account.id, action: 'reactivate' })}
             className="rounded-md px-2 py-1 text-xs text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
           >
             Re-activate
@@ -269,7 +275,7 @@ function AccountRow({ account, isMe }: { account: AdminUser; isMe: boolean }) {
   )
 }
 
-/** STS admin: approve client sign-ups and manage every account. */
+/** STS admin: see new sign-ups (pop-up) and manage every account. */
 export function AccountsPage() {
   const { data: me } = useMe()
   const { data, isPending, isError } = useAccounts()
@@ -280,41 +286,24 @@ export function AccountsPage() {
     )
   }
 
-  const pending = data?.filter((a) => a.status === 'PENDING') ?? []
-  const others = data?.filter((a) => a.status !== 'PENDING') ?? []
+  const newAccounts = data?.filter((a) => a.is_new) ?? []
+  const accounts = data ?? []
 
   return (
     <div className="space-y-6">
+      {newAccounts.length > 0 && <NewSignupsDialog accounts={newAccounts} />}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Accounts</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Approve client sign-ups and manage who can log in. STS staff accounts are created with the{' '}
+          Everyone who can log in. Clients get into their portal as soon as they sign up; disable an
+          account to stop it. STS staff accounts are created with the{' '}
           <code className="text-xs">create_staff_user</code> command.
         </p>
       </div>
 
-      <section className="rounded-2xl border border-slate-200 bg-surface p-5">
-        <h2 className="text-sm font-semibold text-slate-900">
-          Waiting for approval{pending.length > 0 && ` (${pending.length})`}
-        </h2>
-        {isPending && <p className="mt-3 text-sm text-slate-500">Loading…</p>}
-        {isError && <p className="mt-3 text-sm text-red-700">Couldn’t load accounts.</p>}
-        {data && pending.length === 0 && (
-          <p className="mt-3 flex items-center gap-2 text-sm text-slate-500">
-            <Inbox className="size-4" aria-hidden />
-            No sign-ups waiting.
-          </p>
-        )}
-        {pending.length > 0 && (
-          <ul className="mt-3 space-y-3">
-            {pending.map((a) => (
-              <PendingCard key={a.id} account={a} />
-            ))}
-          </ul>
-        )}
-      </section>
-
-      {others.length > 0 && (
+      {isPending && <p className="text-sm text-slate-500">Loading…</p>}
+      {isError && <p className="text-sm text-red-700">Couldn’t load accounts.</p>}
+      {accounts.length > 0 && (
         <section className="rounded-2xl border border-slate-200 bg-surface p-5">
           <h2 className="text-sm font-semibold text-slate-900">All accounts</h2>
           <div className="mt-3 overflow-x-auto">
@@ -331,7 +320,7 @@ export function AccountsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {others.map((a) => (
+                {accounts.map((a) => (
                   <AccountRow key={a.id} account={a} isMe={a.id === me.id} />
                 ))}
               </tbody>

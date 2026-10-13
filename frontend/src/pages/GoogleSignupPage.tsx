@@ -1,4 +1,3 @@
-import { CheckCircle2 } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 
@@ -7,8 +6,8 @@ import { AuthCard, Field, FormError, GoogleButton, SubmitButton } from '../featu
 import { homeFor, useCompleteGoogleSignup, useGoogleSignup, useMe } from '../hooks/useAuth'
 
 /**
- * After "Continue with Google", a new person gives their mobile number and USDOT before
- * anything else; the account then waits for STS approval like any other sign-up.
+ * After "Continue with Google", a new person gives their company, mobile number and USDOT before
+ * anything else; they are then logged in and land on their portal, like any other sign-up.
  */
 export function GoogleSignupPage() {
   const { data: current } = useMe()
@@ -17,29 +16,8 @@ export function GoogleSignupPage() {
   const [form, setForm] = useState({ phone: '', usdot: '', company: '' })
   const [localError, setLocalError] = useState<string | null>(null)
 
+  // Finishing the sign-up logs them in, so this then sends them to their portal.
   if (current) return <Navigate to={homeFor(current.portal)} replace />
-
-  if (complete.isSuccess) {
-    return (
-      <AuthCard
-        title="Account requested"
-        subtitle={complete.data.message}
-        footer={
-          <Link to="/" className="font-medium text-accent-strong hover:underline">
-            Back to the home page
-          </Link>
-        }
-      >
-        <div className="flex items-start gap-3 rounded-lg border border-emerald-600/30 bg-emerald-50 p-4 text-sm text-emerald-700">
-          <CheckCircle2 className="mt-0.5 size-5 shrink-0" aria-hidden />
-          <p>
-            Once STS approves the account, use <strong>Continue with Google</strong> on the login
-            page to open your portal.
-          </p>
-        </div>
-      </AuthCard>
-    )
-  }
 
   if (pending.isPending) {
     return <p className="py-20 text-center text-sm text-slate-500">Loading…</p>
@@ -135,12 +113,12 @@ export function GoogleSignupPage() {
           label="USDOT number"
           inputMode="numeric"
           required
-          hint="The carrier you operate. STS verifies it before it shows in your portal."
+          hint="The carrier you operate; it opens in your portal."
           value={form.usdot}
           onChange={set('usdot')}
         />
         <FormError message={error} />
-        <SubmitButton busy={complete.isPending}>Request account</SubmitButton>
+        <SubmitButton busy={complete.isPending}>Open my portal</SubmitButton>
       </form>
     </AuthCard>
   )

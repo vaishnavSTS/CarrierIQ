@@ -64,17 +64,16 @@ def test_client_opens_own_carrier_without_internal_fields(portal: TestClient, db
 
 
 @pytest.mark.parametrize("verified", [True, False])
-def test_client_cannot_open_other_or_unverified_carriers(
+def test_client_opens_only_carriers_linked_to_them(
     portal: TestClient, db: Session, verified: bool
 ) -> None:
-    client_with_carrier(db, verified=verified)
+    client_with_carrier(db, verified=verified)  # sign-ups no longer wait for STS to confirm
     log_in(portal, "owner@client.test")
 
     other = portal.get("/api/v1/portal/carriers/1234567")
     assert other.status_code == 404
     assert other.json()["error"]["code"] == "carrier_not_found"
-    own = portal.get(f"/api/v1/portal/carriers/{USDOT}/safety")
-    assert own.status_code == (200 if verified else 404)
+    assert portal.get(f"/api/v1/portal/carriers/{USDOT}/safety").status_code == 200
 
 
 def test_each_side_is_kept_to_its_own_carrier_routes(portal: TestClient, db: Session) -> None:

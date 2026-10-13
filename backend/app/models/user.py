@@ -1,9 +1,9 @@
 """A person who logs in. Emails are stored lower-case, so lookups ignore case.
 
 Only the password's scrypt hash is stored (app/core/security.py); Google sign-in stores Google's
-stable account id (`google_sub`) instead of, or as well as, a password. A client who registers
-starts PENDING and cannot log in until an STS admin approves them; STS staff are created by an
-admin.
+stable account id (`google_sub`) instead of, or as well as, a password. A client who registers is
+ACTIVE and logged in at once; STS sees the new account in a pop-up (`seen_at`). STS staff are
+created by an admin. (PENDING is no longer given to new accounts.)
 """
 
 from datetime import datetime
@@ -35,3 +35,5 @@ class User(IdMixin, UpdatedAtMixin, Base):
         server_default=UserStatus.PENDING.value,
     )
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # When an STS admin dismissed the "new sign-up" pop-up for this account; None = new.
+    seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

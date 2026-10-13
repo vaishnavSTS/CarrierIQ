@@ -97,9 +97,8 @@ class UserOut(BaseModel):
     last_login_at: datetime | None
 
 
-class RegisterOut(BaseModel):
-    status: str  # PENDING
-    message: str
+class SeenOut(BaseModel):
+    marked: int  # new sign-ups now marked as seen
 
 
 class AddCarrierIn(BaseModel):
@@ -126,6 +125,7 @@ class AdminUserOut(UserOut):
     """A user as an STS admin sees them, with the USDOT numbers their organization named."""
 
     usdot_numbers: list[int]
+    is_new: bool  # a client sign-up STS has not seen yet (the Accounts pop-up)
     carrier_checks: list[CarrierContactCheckOut]
 
 

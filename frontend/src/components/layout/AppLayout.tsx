@@ -2,7 +2,7 @@ import { LayoutDashboard, Search, UserCheck, type LucideIcon } from 'lucide-reac
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { useMe } from '../../hooks/useAuth'
-import { usePendingAccountCount } from '../../hooks/useAccounts'
+import { useNewAccountCount } from '../../hooks/useAccounts'
 import { BackgroundSpotlight } from './BackgroundSpotlight'
 import { Brand } from './Brand'
 import { UserMenu } from './UserMenu'
@@ -18,7 +18,7 @@ function NavItem({
   end?: boolean
   icon: LucideIcon
   label: string
-  /** e.g. sign-ups waiting for approval; hidden at 0 */
+  /** e.g. new sign-ups not seen yet; hidden at 0 */
   badge?: number
 }) {
   return (
@@ -47,7 +47,7 @@ function NavItem({
 /** Internal portal frame (STS staff). */
 export function AppLayout() {
   const { data: me } = useMe()
-  const pendingAccounts = usePendingAccountCount()
+  const newAccounts = useNewAccountCount()
 
   return (
     <div className="relative isolate min-h-screen">
@@ -61,7 +61,7 @@ export function AppLayout() {
             <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
             <NavItem to="/search" icon={Search} label="Search" />
             {me?.role === 'STS_ADMIN' && (
-              <NavItem to="/accounts" icon={UserCheck} label="Accounts" badge={pendingAccounts} />
+              <NavItem to="/accounts" icon={UserCheck} label="Accounts" badge={newAccounts} />
             )}
           </nav>
           <UserMenu />

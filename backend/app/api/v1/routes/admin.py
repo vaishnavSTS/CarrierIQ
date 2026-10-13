@@ -8,7 +8,7 @@ from app.db.session import get_db
 from app.models import User
 from app.models.enums import UserStatus
 from app.repositories.user_repository import UserRepository
-from app.schemas.auth import AddCarrierIn, AdminUserOut
+from app.schemas.auth import AddCarrierIn, AdminUserOut, SeenOut
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -30,12 +30,18 @@ def list_users(
     return service.list_users(status)
 
 
-@router.post("/users/{user_id}/approve", response_model=AdminUserOut)
-def approve_user(
+@router.post("/users/seen", response_model=SeenOut)
+def mark_new_accounts_seen(_: StsAdmin, service: Service) -> SeenOut:
+    """Dismiss the "new sign-up" pop-up for every account in it."""
+    return SeenOut(marked=service.mark_new_accounts_seen())
+
+
+@router.post("/users/{user_id}/reactivate", response_model=AdminUserOut)
+def reactivate_user(
     user_id: Annotated[int, Path(gt=0)], _: StsAdmin, service: Service
 ) -> AdminUserOut:
-    """Activates the account and verifies the USDOT numbers its organization named."""
-    return service.approve(user_id)
+    """Let a disabled account log in again."""
+    return service.reactivate(user_id)
 
 
 @router.post("/users/{user_id}/disable", response_model=AdminUserOut)

@@ -135,7 +135,7 @@ Also hidden from clients: Refresh now / jobs, search of other carriers, review a
 - [ ] Domain name for the portals (one domain with roles, or separate subdomains).
 - [ ] Should clients see linked carriers by name?
 - [ ] ISS estimate: stays internal-only until validated; data-source permission still to confirm.
-- [x] Client registration: **self-sign-up with STS approval** (confirmed 2026-10-13).
+- [x] Client registration: self-sign-up, **no approval** (2026-10-14; was "with STS approval" on 2026-10-13). Admins get a new-sign-up pop-up.
 - [ ] Landing page: simple (name, description, Log in / Sign up) or full marketing page?
 - [x] Login methods: email + password **and Google** (2026-10-14). Microsoft still open.
 
@@ -170,4 +170,5 @@ Also hidden from clients: Refresh now / jobs, search of other carriers, review a
 | 2026-10-13 | Sign-up requires name, email, mobile number and USDOT; admin sees whether phone / email match FMCSA's record | Faster, safer approval |
 | 2026-10-13 | Client tabs: Identity, Authority & Insurance, Safety, Equipment, Network & Identity (with linked carrier names), Packet. Timeline and Intelligence internal only | User decision |
 | 2026-10-14 | Google sign-in: new Google users must give mobile + USDOT before the request reaches STS; approval unchanged | User decision |
+| 2026-10-14 | No approval step: clients get their portal as soon as they sign up; admins see a "new sign-up" pop-up on Accounts and can disable an account. Replaces the approval decision of 2026-10-13 | User decision; client data is public FMCSA data |
 | 2026-10-13 | Internal pages keep their URLs (`/dashboard`, `/search`, `/carriers/*`) | Fewer link changes than moving everything under `/app` |

@@ -37,14 +37,10 @@ class UserRepository:
             query = query.where(User.status == status)
         return list(self.db.scalars(query))
 
-    def organization_carriers(
-        self, organization_id: int, *, verified_only: bool = False
-    ) -> list[OrganizationCarrier]:
+    def organization_carriers(self, organization_id: int) -> list[OrganizationCarrier]:
         query = select(OrganizationCarrier).where(
             OrganizationCarrier.organization_id == organization_id
         )
-        if verified_only:
-            query = query.where(OrganizationCarrier.verified.is_(True))
         return list(self.db.scalars(query.order_by(OrganizationCarrier.usdot_number)))
 
     def current_phones(self, carrier_id: int) -> set[str]:

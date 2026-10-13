@@ -82,8 +82,8 @@ export function LandingPage() {
               </span>
               <h2 className="mt-4 text-base font-semibold text-slate-900">I’m an STS client</h2>
               <p className="mt-1.5 flex-1 text-sm text-slate-600">
-                Create an account with your company and USDOT number. STS confirms the carrier is
-                yours, then your portal opens with its profile, what to improve, and your packet.
+                Create an account with your company and USDOT number and your portal opens right
+                away: your carrier’s profile, what to improve, and a packet to send brokers.
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-3">
                 <Link
