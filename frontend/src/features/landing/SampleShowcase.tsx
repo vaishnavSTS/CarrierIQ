@@ -173,7 +173,7 @@ export function SampleShowcase() {
 
       {/* Holds the space while one card leaves and the next arrives, so nothing jumps. */}
       <div className="relative min-h-[410px]">
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="wait">
           <motion.div
             key={index}
             // The whole card drops in from above and bounces to rest, each bounce smaller, like a

@@ -1,9 +1,34 @@
+import { CircleCheck, FileText, ShieldCheck, TrendingDown, type LucideIcon } from 'lucide-react'
+import { motion } from 'motion/react'
 import type { InputHTMLAttributes, ReactNode } from 'react'
 
 import { GOOGLE_START_URL } from '../../api/auth'
 import { useAuthOptions } from '../../hooks/useAuth'
 
-/** Centered card that frames the login and sign-up forms. */
+const ease = [0.16, 1, 0.3, 1] as const
+
+const BENEFITS: { icon: LucideIcon; title: string; text: string }[] = [
+  {
+    icon: ShieldCheck,
+    title: 'See what a broker’s check sees',
+    text: 'Authority, insurance, BOC-3 and safety, straight from FMCSA.',
+  },
+  {
+    icon: TrendingDown,
+    title: 'Know what to fix',
+    text: 'What weighs most in each CSA measure, and what usually helps.',
+  },
+  {
+    icon: FileText,
+    title: 'A packet you can send',
+    text: 'A dated, sourced carrier packet for brokers and shippers.',
+  },
+]
+
+/**
+ * Frame for the login and sign-up forms: a brand panel (large screens) beside the form, on the
+ * same grid-and-glow backdrop as the landing page.
+ */
 export function AuthCard({
   title,
   subtitle,
@@ -16,14 +41,96 @@ export function AuthCard({
   footer: ReactNode
 }) {
   return (
-    <div className="mx-auto w-full max-w-md px-4 py-12 md:py-20">
-      <section className="rounded-2xl border border-slate-200 bg-surface/90 p-6 shadow-xl backdrop-blur md:p-8">
-        <h1 className="text-xl font-semibold tracking-tight text-slate-900">{title}</h1>
-        <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
-        <div className="mt-6">{children}</div>
-      </section>
-      <p className="mt-4 text-center text-sm text-slate-500">{footer}</p>
+    <div className="relative overflow-hidden">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(167,139,250,0.07)_1px,transparent_1px),linear-gradient(to_bottom,rgba(167,139,250,0.07)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_30%,black,transparent)]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-24 -z-10 size-[520px] -translate-x-1/2 rounded-full bg-violet-600/20 blur-[120px]"
+      />
+
+      <div className="mx-auto max-w-5xl px-4 py-10 md:py-16">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease }}
+          className="grid overflow-hidden rounded-3xl border border-slate-200 bg-surface/80 shadow-2xl backdrop-blur lg:grid-cols-[1fr_1.05fr]"
+        >
+          <BrandPanel />
+
+          <section className="p-6 sm:p-10">
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15, ease }}
+            >
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-950">{title}</h1>
+              <p className="mt-1.5 text-sm text-slate-500">{subtitle}</p>
+              <div className="mt-7">{children}</div>
+              <p className="mt-6 text-center text-sm text-slate-500">{footer}</p>
+            </motion.div>
+          </section>
+        </motion.div>
+      </div>
     </div>
+  )
+}
+
+function BrandPanel() {
+  return (
+    <aside className="relative hidden overflow-hidden bg-gradient-to-br from-violet-700/50 via-violet-900/40 to-fuchsia-800/40 p-10 lg:flex lg:flex-col">
+      <div
+        aria-hidden
+        className="absolute -right-24 -top-24 size-72 rounded-full bg-fuchsia-500/25 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="absolute -bottom-28 -left-20 size-72 rounded-full bg-violet-500/25 blur-3xl"
+      />
+
+      <div className="relative">
+        <h2 className="text-3xl font-semibold leading-tight tracking-tight text-slate-950">
+          Understand your carrier{' '}
+          <span className="bg-gradient-to-r from-violet-200 via-fuchsia-200 to-violet-300 bg-clip-text text-transparent">
+            the way brokers do
+          </span>
+        </h2>
+        <p className="mt-3 text-sm text-slate-700">
+          Public FMCSA data, turned into a clear picture and what to do about it.
+        </p>
+      </div>
+
+      <ul className="relative mt-10 space-y-6">
+        {BENEFITS.map(({ icon: Icon, title, text }, i) => (
+          <motion.li
+            key={title}
+            initial={{ opacity: 0, x: -14 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.25 + i * 0.1, ease }}
+            className="flex gap-4"
+          >
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-white/15 bg-white/10 text-violet-100 backdrop-blur">
+              <Icon className="size-5" aria-hidden />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold text-slate-950">{title}</span>
+              <span className="mt-0.5 block text-sm text-slate-700">{text}</span>
+            </span>
+          </motion.li>
+        ))}
+      </ul>
+
+      <ul className="relative mt-auto flex flex-wrap gap-x-5 gap-y-2 pt-10 text-xs text-slate-700">
+        {['Public FMCSA & NHTSA data', 'Source named on every value'].map((point) => (
+          <li key={point} className="flex items-center gap-1.5">
+            <CircleCheck className="size-3.5 text-emerald-600" aria-hidden />
+            {point}
+          </li>
+        ))}
+      </ul>
+    </aside>
   )
 }
 
@@ -37,7 +144,7 @@ export function Field({
       <span className="text-sm font-medium text-slate-700">{label}</span>
       <input
         {...input}
-        className="mt-1 w-full rounded-md border border-slate-300 bg-canvas px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+        className="mt-1.5 w-full rounded-xl border border-slate-300 bg-canvas/70 px-3.5 py-2.5 text-sm text-slate-900 transition-shadow placeholder:text-slate-400 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/20"
       />
       {hint && <span className="mt-1 block text-xs text-slate-500">{hint}</span>}
     </label>
@@ -49,7 +156,7 @@ export function FormError({ message }: { message: string | null }) {
   return (
     <p
       role="alert"
-      className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+      className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700"
     >
       {message}
     </p>
@@ -61,7 +168,7 @@ export function SubmitButton({ busy, children }: { busy: boolean; children: Reac
     <button
       type="submit"
       disabled={busy}
-      className="w-full rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-white hover:bg-accent-strong disabled:opacity-60"
+      className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-3 text-sm font-medium text-white shadow-[0_8px_30px_rgba(139,92,246,0.35)] transition-all hover:shadow-[0_10px_40px_rgba(139,92,246,0.5)] hover:brightness-110 disabled:opacity-60"
     >
       {busy ? 'Please wait…' : children}
     </button>
@@ -76,7 +183,7 @@ export function GoogleButton({ label = 'Continue with Google' }: { label?: strin
     <>
       <a
         href={GOOGLE_START_URL}
-        className="flex w-full items-center justify-center gap-2.5 rounded-md border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50"
+        className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-gray-800 shadow-sm transition-colors hover:bg-gray-50"
       >
         <GoogleLogo />
         {label}
