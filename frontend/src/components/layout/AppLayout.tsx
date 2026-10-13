@@ -1,18 +1,25 @@
-import { LayoutDashboard, Radar, Search, type LucideIcon } from 'lucide-react'
+import { LayoutDashboard, Search, UserCheck, type LucideIcon } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 
+import { useMe } from '../../hooks/useAuth'
+import { usePendingAccountCount } from '../../hooks/useAccounts'
 import { BackgroundSpotlight } from './BackgroundSpotlight'
+import { Brand } from './Brand'
+import { UserMenu } from './UserMenu'
 
 function NavItem({
   to,
   end,
   icon: Icon,
   label,
+  badge = 0,
 }: {
   to: string
   end?: boolean
   icon: LucideIcon
   label: string
+  /** e.g. sign-ups waiting for approval; hidden at 0 */
+  badge?: number
 }) {
   return (
     <NavLink
@@ -28,11 +35,20 @@ function NavItem({
     >
       <Icon className="size-4" aria-hidden />
       {label}
+      {badge > 0 && (
+        <span className="rounded-full bg-amber-400 px-1.5 text-xs font-semibold text-gray-950">
+          {badge}
+        </span>
+      )}
     </NavLink>
   )
 }
 
+/** Internal portal frame (STS staff). */
 export function AppLayout() {
+  const { data: me } = useMe()
+  const pendingAccounts = usePendingAccountCount()
+
   return (
     <div className="relative isolate min-h-screen">
       <BackgroundSpotlight />
@@ -40,19 +56,15 @@ export function AppLayout() {
           (the slate scale is redefined for the dark surface in index.css). */}
       <header className="sticky top-0 z-30 border-b border-gray-200 bg-white shadow-sm">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4">
-          <NavLink
-            to="/"
-            className="flex items-center gap-2 text-base font-semibold tracking-tight text-gray-900"
-          >
-            <span className="grid size-7 place-items-center rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-[0_0_12px_rgba(139,92,246,0.35)]">
-              <Radar className="size-4" aria-hidden />
-            </span>
-            CarrierIQ
-          </NavLink>
+          <Brand to="/dashboard" />
           <nav className="flex gap-1 text-sm">
-            <NavItem to="/" end icon={LayoutDashboard} label="Dashboard" />
+            <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
             <NavItem to="/search" icon={Search} label="Search" />
+            {me?.role === 'STS_ADMIN' && (
+              <NavItem to="/accounts" icon={UserCheck} label="Accounts" badge={pendingAccounts} />
+            )}
           </nav>
+          <UserMenu />
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-6">

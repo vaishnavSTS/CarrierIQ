@@ -4,18 +4,26 @@ import type { CarrierEquipment } from '../types/carrierEquipment'
 import type { CarrierProfile } from '../types/carrierProfile'
 import type { CarrierSafety, InspectionPage } from '../types/carrierSafety'
 import type { CarrierSignals, ReviewStatus, Signal } from '../types/carrierSignals'
+import type { CarrierApiBase } from '../hooks/usePortalMode'
 import { apiGet, apiRequest } from './client'
 
 export function searchCarriers(query: string): Promise<CarrierSearchResponse> {
   return apiGet<CarrierSearchResponse>(`/carriers/search?q=${encodeURIComponent(query)}`)
 }
 
-export function fetchCarrierProfile(usdotNumber: number): Promise<CarrierProfile> {
-  return apiGet<CarrierProfile>(`/carriers/${usdotNumber}`)
+/** `base` is /portal/carriers in the client portal (see usePortalMode). */
+export function fetchCarrierProfile(
+  usdotNumber: number,
+  base: CarrierApiBase = '/carriers',
+): Promise<CarrierProfile> {
+  return apiGet<CarrierProfile>(`${base}/${usdotNumber}`)
 }
 
-export function fetchCarrierSafety(usdotNumber: number): Promise<CarrierSafety> {
-  return apiGet<CarrierSafety>(`/carriers/${usdotNumber}/safety`)
+export function fetchCarrierSafety(
+  usdotNumber: number,
+  base: CarrierApiBase = '/carriers',
+): Promise<CarrierSafety> {
+  return apiGet<CarrierSafety>(`${base}/${usdotNumber}/safety`)
 }
 
 export function fetchCarrierInspections(
@@ -23,21 +31,28 @@ export function fetchCarrierInspections(
   page: number,
   pageSize: number,
   oosOnly: boolean,
+  base: CarrierApiBase = '/carriers',
 ): Promise<InspectionPage> {
   const params = new URLSearchParams({
     page: String(page),
     page_size: String(pageSize),
     oos_only: String(oosOnly),
   })
-  return apiGet<InspectionPage>(`/carriers/${usdotNumber}/inspections?${params}`)
+  return apiGet<InspectionPage>(`${base}/${usdotNumber}/inspections?${params}`)
 }
 
-export function fetchCarrierAuthority(usdotNumber: number): Promise<CarrierAuthority> {
-  return apiGet<CarrierAuthority>(`/carriers/${usdotNumber}/authority`)
+export function fetchCarrierAuthority(
+  usdotNumber: number,
+  base: CarrierApiBase = '/carriers',
+): Promise<CarrierAuthority> {
+  return apiGet<CarrierAuthority>(`${base}/${usdotNumber}/authority`)
 }
 
-export function fetchCarrierEquipment(usdotNumber: number): Promise<CarrierEquipment> {
-  return apiGet<CarrierEquipment>(`/carriers/${usdotNumber}/equipment`)
+export function fetchCarrierEquipment(
+  usdotNumber: number,
+  base: CarrierApiBase = '/carriers',
+): Promise<CarrierEquipment> {
+  return apiGet<CarrierEquipment>(`${base}/${usdotNumber}/equipment`)
 }
 
 export function fetchCarrierSignals(usdotNumber: number): Promise<CarrierSignals> {

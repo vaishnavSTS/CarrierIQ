@@ -1,8 +1,12 @@
 import type { CarrierNetwork, IdentityEvent, IdentityEventInput } from '../types/network'
+import type { CarrierApiBase } from '../hooks/usePortalMode'
 import { apiGet, apiRequest } from './client'
 
-export function fetchCarrierNetwork(usdotNumber: number): Promise<CarrierNetwork> {
-  return apiGet<CarrierNetwork>(`/carriers/${usdotNumber}/network`)
+export function fetchCarrierNetwork(
+  usdotNumber: number,
+  base: CarrierApiBase = '/carriers',
+): Promise<CarrierNetwork> {
+  return apiGet<CarrierNetwork>(`${base}/${usdotNumber}/network`)
 }
 
 export function addIdentityEvent(

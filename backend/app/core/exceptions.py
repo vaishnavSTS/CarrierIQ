@@ -33,6 +33,33 @@ class ValidationError(CarrierIQError):
     code = "validation_error"
 
 
+class UnauthorizedError(CarrierIQError):
+    """Not logged in, or the session has expired."""
+
+    status_code = 401
+    code = "not_authenticated"
+
+
+class ForbiddenError(CarrierIQError):
+    """Logged in, but this user may not do this (wrong portal, pending or disabled account)."""
+
+    status_code = 403
+    code = "forbidden"
+
+
+class AccountPendingError(ForbiddenError):
+    code = "account_pending"
+
+
+class AccountDisabledError(ForbiddenError):
+    code = "account_disabled"
+
+
+class ConflictError(CarrierIQError):
+    status_code = 409
+    code = "conflict"
+
+
 class SourceFetchError(CarrierIQError):
     """An external data source (data.transportation.gov, NHTSA, ...) failed or returned bad data."""
 

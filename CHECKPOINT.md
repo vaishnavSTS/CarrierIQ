@@ -3,7 +3,7 @@
 Running record of what has been built and what is left, phase by phase.
 Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at the end of every work session.
 
-**Last updated:** 2026-10-08
+**Last updated:** 2026-10-13
 **Current phase:** All 10 phases done — the MVP checklist below is met
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
@@ -802,3 +802,6 @@ and ownership events → (3) the Network & Identity tab.
 | 2026-10-09 | Source labels everywhere: shared SourceTag; every tab heading, sub-section, registration check, timeline event, signal group, header box and dashboard card names where it comes from (utils/sources.ts). |
 | 2026-10-09 | How to improve: FMCSA SMS Input - Violation (8mt8-2mdr) fetched per carrier into sms_violations (migration 0015, applied to Supabase, all 14 carriers); per BASIC the heaviest violation groups by FMCSA weight with what usually helps (49 CFR), rating explainer, OOS vs national, how FMCSA counts, DataQs; Safety tab and packet; 344 tests passing. |
 | 2026-10-09 | How to improve: two-sentence summary at the top (heaviest violation groups by FMCSA weight; what fewer of them would lower; rating changes only after an FMCSA review). |
+| 2026-10-13 | Client and internal portals, Phase A: landing page at `/`, login, client sign-up (PENDING until an STS admin approves via `/api/v1/admin`), client portal home `/portal`; dashboard moved to `/dashboard`; every carrier, signal, job and dashboard endpoint now needs an STS staff login; users / organizations / organization_carriers (migration 0016, applied to Supabase); staff created with `python -m app.workers.create_staff_user`; plan in docs/client-internal-portal-plan.md; 357 tests passing. |
+| 2026-10-13 | Accounts page for STS admins (approve / reject sign-ups, disable / re-activate, pending badge in the nav); landing page leads with client / STS-team choice; sign-up requires mobile number and USDOT, admin sees whether they match FMCSA's phone / email (migration 0017, applied to Supabase); 363 tests passing. |
+| 2026-10-13 | Client carrier view: /portal/carriers/{usdot} with Identity, Authority & Insurance, Safety, Equipment, How brokers see you (Network), Packet; API /api/v1/portal/carriers/... serves only the client's verified carriers (404 otherwise) and strips signals, review status and STS team notes; admins can link a USDOT to a client from Accounts; checked live on Supabase with a temporary account (deleted); 370 tests passing. |

@@ -63,6 +63,28 @@ class DocketPrefix(StrEnum):
     FF = "FF"
 
 
+class OrganizationKind(StrEnum):
+    STS = "STS"  # STS itself: its users get the internal portal
+    CLIENT = "CLIENT"  # an STS client: its users get the client portal
+
+
+class UserRole(StrEnum):
+    STS_ADMIN = "STS_ADMIN"  # internal portal + approves client accounts
+    STS_ANALYST = "STS_ANALYST"  # internal portal
+    CLIENT_ADMIN = "CLIENT_ADMIN"  # client portal, their organization
+    CLIENT_USER = "CLIENT_USER"  # client portal, view only
+
+    @property
+    def is_staff(self) -> bool:
+        return self in (UserRole.STS_ADMIN, UserRole.STS_ANALYST)
+
+
+class UserStatus(StrEnum):
+    PENDING = "PENDING"  # registered, waiting for STS approval; cannot log in
+    ACTIVE = "ACTIVE"
+    DISABLED = "DISABLED"
+
+
 def enum_type(enum_cls: type[StrEnum], name: str) -> Enum:
     """VARCHAR column restricted to the enum's values by a CHECK constraint named after `name`."""
     return Enum(

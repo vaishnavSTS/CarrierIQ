@@ -33,6 +33,31 @@ def offline_vpic() -> Iterator[None]:
     app.dependency_overrides.pop(get_vpic_client, None)
 
 
+@pytest.fixture(autouse=True)
+def staff_login() -> Iterator[None]:
+    """Internal-portal routes need an STS staff login; tests act as one unless they opt out.
+
+    Login and access rules are tested in tests/api/test_auth.py with `real_auth`.
+    """
+    from app.api.auth import require_staff
+    from app.models import User
+    from app.models.enums import UserRole, UserStatus
+
+    staff = User(id=0, organization_id=0, email="staff@test", full_name="Test Staff")
+    staff.role, staff.status = UserRole.STS_ADMIN, UserStatus.ACTIVE
+    app.dependency_overrides[require_staff] = lambda: staff
+    yield
+    app.dependency_overrides.pop(require_staff, None)
+
+
+@pytest.fixture
+def real_auth() -> None:
+    """Use the real session-cookie checks instead of the stand-in staff login."""
+    from app.api.auth import require_staff
+
+    app.dependency_overrides.pop(require_staff, None)
+
+
 @pytest.fixture
 def client() -> Iterator[TestClient]:
     with TestClient(app) as test_client:

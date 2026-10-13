@@ -5,6 +5,9 @@ from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Default session key for local development only; create_app refuses it anywhere else.
+DEV_AUTH_SECRET_KEY = "local-development-only-key-never-use-in-production"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
@@ -78,6 +81,18 @@ class Settings(BaseSettings):
     crash_dataset_id: str = "aayw-vxb3"  # Crash File (FMCSA)
     sms_violation_dataset_id: str = "8mt8-2mdr"  # SMS Input - Violation (weights per violation)
     legacy_li_frozen_on: date = date(2026, 5, 14)  # "last refreshed on 05/14/2026"
+
+    # Login (client and internal portals). The session is a signed token in an HttpOnly cookie.
+    # AUTH_SECRET_KEY must be set to a long random value outside local development.
+    auth_secret_key: str = DEV_AUTH_SECRET_KEY
+    auth_token_hours: float = 8.0
+    auth_cookie_name: str = "carrieriq_session"
+    auth_min_password_length: int = 10
+
+    @property
+    def auth_cookie_secure(self) -> bool:
+        """Send the cookie over HTTPS only, everywhere except local development."""
+        return self.environment != "local"
 
     @property
     def cors_origin_list(self) -> list[str]:

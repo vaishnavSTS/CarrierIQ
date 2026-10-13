@@ -1,0 +1,80 @@
+import { ChevronRight, Clock, Truck } from 'lucide-react'
+import { Link } from 'react-router-dom'
+
+import { usePortalOverview, useMe } from '../hooks/useAuth'
+import { formatDateTime } from '../utils/format'
+
+/** Client portal home: the carriers STS has verified for this client's organization. */
+export function PortalHomePage() {
+  const { data: user } = useMe()
+  const { data, isPending, isError } = usePortalOverview()
+
+  return (
+    <div className="space-y-6">
+      <section>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
+          Welcome{user ? `, ${user.full_name.split(' ')[0]}` : ''}
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">{data?.organization_name}</p>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-surface p-5">
+        <h2 className="text-sm font-semibold text-slate-900">My carriers</h2>
+        {isPending && <p className="mt-3 text-sm text-slate-500">Loading…</p>}
+        {isError && (
+          <p className="mt-3 text-sm text-red-700">
+            Couldn’t load your carriers. Try again shortly.
+          </p>
+        )}
+        {data && data.carriers.length === 0 && (
+          <div className="mt-3 flex items-start gap-3 text-sm text-slate-600">
+            <Clock className="mt-0.5 size-4 shrink-0 text-slate-400" aria-hidden />
+            <p>
+              No carriers linked yet. STS links your USDOT number after confirming it belongs to
+              your company. Contact STS if you expected to see one here.
+            </p>
+          </div>
+        )}
+        {data && data.carriers.length > 0 && (
+          <ul className="mt-3 divide-y divide-slate-100">
+            {data.carriers.map((c) => (
+              <li key={c.usdot_number}>
+                <Link
+                  to={`/portal/carriers/${c.usdot_number}`}
+                  className="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-3 hover:bg-slate-50"
+                >
+                  <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent-strong">
+                    <Truck className="size-4" aria-hidden />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium text-slate-900">
+                      {c.legal_name ?? 'Details not loaded yet'}
+                      {c.dba_name && <span className="text-slate-500"> · DBA {c.dba_name}</span>}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      USDOT <span className="font-mono">{c.usdot_number}</span>
+                      {c.registration_status && <> · {c.registration_status}</>}
+                      {c.last_refreshed_at && (
+                        <> · FMCSA data as of {formatDateTime(c.last_refreshed_at)}</>
+                      )}
+                    </div>
+                  </div>
+                  <ChevronRight
+                    className="ml-auto size-4 shrink-0 text-slate-400 group-hover:text-slate-700"
+                    aria-hidden
+                  />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="rounded-2xl border border-dashed border-slate-300 p-5 text-sm text-slate-500">
+        Open a carrier to see its FMCSA record, what brokers’ checks may flag, what to improve in
+        each CSA BASIC, and a packet you can send to brokers. Coming next: alerts when your FMCSA
+        records change.
+      </section>
+    </div>
+  )
+}

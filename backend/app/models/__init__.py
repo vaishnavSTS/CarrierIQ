@@ -15,6 +15,8 @@ from app.models.insurance import Insurance
 from app.models.intelligence_signal import IntelligenceSignal
 from app.models.job import Job
 from app.models.officer import Officer
+from app.models.organization import Organization
+from app.models.organization_carrier import OrganizationCarrier
 from app.models.phone import Phone
 from app.models.process_agent import ProcessAgent
 from app.models.raw_record import RawRecord
@@ -23,6 +25,7 @@ from app.models.signal_evidence import SignalEvidence
 from app.models.sms_result import SmsResult
 from app.models.sms_violation import SmsViolation
 from app.models.timeline_event import TimelineEvent
+from app.models.user import User
 from app.models.vehicle import Vehicle
 from app.models.worker_heartbeat import WorkerHeartbeat
 
@@ -42,6 +45,8 @@ __all__ = [
     "IntelligenceSignal",
     "Job",
     "Officer",
+    "Organization",
+    "OrganizationCarrier",
     "Phone",
     "ProcessAgent",
     "RawRecord",
@@ -50,6 +55,7 @@ __all__ = [
     "SmsResult",
     "SmsViolation",
     "TimelineEvent",
+    "User",
     "Vehicle",
     "WorkerHeartbeat",
 ]

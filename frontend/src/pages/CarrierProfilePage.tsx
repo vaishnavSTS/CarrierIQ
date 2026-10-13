@@ -12,6 +12,7 @@ import { ProfileHeader } from '../features/carrier-profile/ProfileHeader'
 import { SafetySection } from '../features/carrier-profile/SafetySection'
 import { TimelineSection } from '../features/carrier-profile/TimelineSection'
 import { useCarrierProfile } from '../hooks/useCarrierProfile'
+import { useIsClientPortal } from '../hooks/usePortalMode'
 
 const TABS = [
   ['identity', 'Identity'],
@@ -26,21 +27,40 @@ const TABS = [
 
 type TabId = (typeof TABS)[number][0]
 
+/** Tabs a client sees for their own carrier (docs/client-internal-portal-plan.md, 4a). */
+const CLIENT_TABS: readonly TabId[] = [
+  'identity',
+  'authority',
+  'safety',
+  'equipment',
+  'network',
+  'packet',
+]
+const CLIENT_LABELS: Partial<Record<TabId, string>> = {
+  network: 'How brokers see you',
+}
+
 const DEFAULT_TAB: TabId = 'identity'
 
-function isTab(value: string | null): value is TabId {
-  return TABS.some(([id]) => id === value)
+function isTab(value: string | null, client: boolean): value is TabId {
+  return TABS.some(([id]) => id === value && (!client || CLIENT_TABS.includes(id)))
 }
 
 export function CarrierProfilePage() {
   const { usdot = '' } = useParams()
   const usdotNumber = Number(usdot)
+  const client = useIsClientPortal()
   const { data: profile, error, isPending } = useCarrierProfile(usdotNumber)
   const navigate = useNavigate()
   // The open tab lives in the URL (?tab=safety) so a refresh or shared link keeps it.
   const [params, setParams] = useSearchParams()
   const requested = params.get('tab')
-  const tab: TabId = isTab(requested) ? requested : DEFAULT_TAB
+  const tab: TabId = isTab(requested, client) ? requested : DEFAULT_TAB
+  const tabs = client
+    ? TABS.filter(([id]) => CLIENT_TABS.includes(id)).map(
+        ([id, label]) => [id, CLIENT_LABELS[id] ?? label] as const,
+      )
+    : TABS
 
   function openTab(id: TabId) {
     // replace: switching tabs shouldn't fill the history, so Back still returns to the search.
@@ -54,7 +74,9 @@ export function CarrierProfilePage() {
     return (
       <Notice>
         {error instanceof ApiError && error.status === 404
-          ? `No carrier with USDOT ${usdotNumber} was found in CarrierIQ or FMCSA data.`
+          ? client
+            ? `USDOT ${usdotNumber} isn’t one of your carriers. Contact STS if it should be.`
+            : `No carrier with USDOT ${usdotNumber} was found in CarrierIQ or FMCSA data.`
           : `Could not load USDOT ${usdotNumber}: ${error.message}`}
       </Notice>
     )
@@ -84,7 +106,7 @@ export function CarrierProfilePage() {
         aria-label="Profile sections"
         className="flex flex-wrap gap-1 border-b border-slate-200"
       >
-        {TABS.map(([id, label]) => (
+        {tabs.map(([id, label]) => (
           <button
             key={id}
             id={`tab-${id}`}
@@ -128,6 +150,7 @@ export function CarrierProfilePage() {
 }
 
 function Notice({ children }: { children: ReactNode }) {
+  const client = useIsClientPortal()
   return (
     <div className="space-y-3">
       <div
@@ -136,8 +159,11 @@ function Notice({ children }: { children: ReactNode }) {
       >
         {children}
       </div>
-      <Link to="/search" className="text-sm text-slate-500 hover:text-slate-900">
-        ← Search for a carrier
+      <Link
+        to={client ? '/portal' : '/search'}
+        className="text-sm text-slate-500 hover:text-slate-900"
+      >
+        {client ? '← My carriers' : '← Search for a carrier'}
       </Link>
     </div>
   )

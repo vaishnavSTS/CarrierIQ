@@ -1,7 +1,7 @@
 import { SOURCES } from '../../utils/sources'
 import { Fragment, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 
+import { CarrierLink } from '../../components/CarrierLink'
 import { StatusBadge } from '../../components/StatusBadge'
 import { useCarrierEquipment } from '../../hooks/useCarrierEquipment'
 import type { EquipmentVehicle, Fleet, VinCarrier } from '../../types/carrierEquipment'
@@ -86,12 +86,7 @@ function OtherCarriers({ carriers }: { carriers: VinCarrier[] }) {
           {carriers.map((c) => (
             <tr key={c.usdot_number}>
               <td className="py-1 pr-4">
-                <Link
-                  to={`/carriers/${c.usdot_number}`}
-                  className="font-mono text-slate-900 underline hover:text-slate-600"
-                >
-                  USDOT {c.usdot_number}
-                </Link>
+                <CarrierLink usdotNumber={c.usdot_number} />
               </td>
               <td className="py-1 pr-4 text-slate-700">{c.legal_name ?? 'Not loaded yet'}</td>
               <td className="py-1 pr-4 tabular-nums text-slate-700">

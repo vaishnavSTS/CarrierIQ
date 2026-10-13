@@ -3,9 +3,11 @@ import { AlertTriangle, CircleAlert, CircleCheck, Info, type LucideIcon } from '
 import { type ReactNode, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { CarrierLink } from '../../../components/CarrierLink'
 import { SourceTag } from '../../../components/SourceTag'
 import { StatusBadge } from '../../../components/StatusBadge'
 import { useCarrierNetwork } from '../../../hooks/useNetwork'
+import { useIsClientPortal } from '../../../hooks/usePortalMode'
 import type { CarrierProfile } from '../../../types/carrierProfile'
 import type { CheckStatus, LinkedCarrier } from '../../../types/network'
 import { formatDate, formatDateTime, formatPhone, humanize } from '../../../utils/format'
@@ -63,6 +65,7 @@ function shownValue(kind: string, value: string | null): string {
 }
 
 function LinkedTable({ carriers }: { carriers: LinkedCarrier[] }) {
+  const client = useIsClientPortal()
   return (
     <div className="overflow-x-auto">
       <table className={tableClass}>
@@ -72,19 +75,14 @@ function LinkedTable({ carriers }: { carriers: LinkedCarrier[] }) {
             <th className={cellClass}>Shares</th>
             <th className={cellClass}>Status</th>
             <th className={cellClass}>Registered</th>
-            <th className={cellClass}>Signal</th>
+            {!client && <th className={cellClass}>Signal</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
           {carriers.map((c) => (
             <tr key={c.usdot_number} className="align-top">
               <td className={cellClass}>
-                <Link
-                  to={`/carriers/${c.usdot_number}`}
-                  className="font-mono text-slate-900 underline hover:text-slate-600"
-                >
-                  USDOT {c.usdot_number}
-                </Link>
+                <CarrierLink usdotNumber={c.usdot_number} />
                 <div className="text-xs text-slate-500">
                   {c.legal_name ?? 'Unknown'}
                   {c.city && ` · ${c.city}, ${c.state}`}
@@ -111,18 +109,20 @@ function LinkedTable({ carriers }: { carriers: LinkedCarrier[] }) {
                 )}
               </td>
               <td className={`${cellClass} whitespace-nowrap`}>{formatDate(c.registered)}</td>
-              <td className={`${cellClass} whitespace-nowrap text-xs`}>
-                {c.signal_id ? (
-                  <Link
-                    to={`?tab=intelligence&signal=${c.signal_id}`}
-                    className="text-slate-900 underline hover:text-slate-600"
-                  >
-                    Review signal ›
-                  </Link>
-                ) : (
-                  <span className="text-slate-400">—</span>
-                )}
-              </td>
+              {!client && (
+                <td className={`${cellClass} whitespace-nowrap text-xs`}>
+                  {c.signal_id ? (
+                    <Link
+                      to={`?tab=intelligence&signal=${c.signal_id}`}
+                      className="text-slate-900 underline hover:text-slate-600"
+                    >
+                      Review signal ›
+                    </Link>
+                  ) : (
+                    <span className="text-slate-400">—</span>
+                  )}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -134,9 +134,10 @@ function LinkedTable({ carriers }: { carriers: LinkedCarrier[] }) {
 export function NetworkSection({ profile }: { profile: CarrierProfile }) {
   const { data, error, isPending } = useCarrierNetwork(profile.usdot_number)
   const [showBuilding, setShowBuilding] = useState(false)
+  const client = useIsClientPortal()
 
   return (
-    <Section id="network" title="Network & Identity">
+    <Section id="network" title={client ? 'How brokers’ checks may see you' : 'Network & Identity'}>
       {isPending && (
         <p className="text-sm text-slate-500">
           Checking FMCSA records for linked carriers and registration status…
@@ -167,6 +168,7 @@ function NetworkBody({
   onShowBuilding: () => void
 }) {
   const flags = brokerFlags(data, profile)
+  const client = useIsClientPortal()
   const strong = data.linked_carriers.filter((c) => c.shares.some((s) => s.kind !== 'building'))
   const building = data.linked_carriers.filter((c) => c.shares.every((s) => s.kind === 'building'))
   const history = [
@@ -306,13 +308,17 @@ function NetworkBody({
         </ol>
       )}
 
-      <SubHeading
-        note="Optional. Only for what no public source publishes, such as an ownership attestation on Highway."
-        source={SOURCES.team}
-      >
-        Notes from your team
-      </SubHeading>
-      <TeamNotes usdotNumber={data.usdot_number} events={data.identity_events} />
+      {!client && (
+        <>
+          <SubHeading
+            note="Optional. Only for what no public source publishes, such as an ownership attestation on Highway."
+            source={SOURCES.team}
+          >
+            Notes from your team
+          </SubHeading>
+          <TeamNotes usdotNumber={data.usdot_number} events={data.identity_events} />
+        </>
+      )}
     </>
   )
 }

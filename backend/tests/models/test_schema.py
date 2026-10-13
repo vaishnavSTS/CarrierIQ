@@ -37,6 +37,10 @@ TABLES = {
     "ingestion_runs",
     "jobs",
     "worker_heartbeats",
+    # Accounts (client and internal portals)
+    "organizations",
+    "users",
+    "organization_carriers",
 }
 
 # Rows in these tables always come from a source record (Engineering Principle 5).

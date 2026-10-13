@@ -4,6 +4,7 @@ import { StatusBadge } from '../../components/StatusBadge'
 import type { CarrierProfile } from '../../types/carrierProfile'
 import { needsForHireAuthority } from '../../utils/classification'
 import { censusLabel, formatDateTime, sourceLabel } from '../../utils/format'
+import { useIsClientPortal } from '../../hooks/usePortalMode'
 import { reviewLabel } from '../../utils/review'
 import { HeaderCard } from './HeaderCard'
 import { LinkedHeadsUp } from './network/LinkedHeadsUp'
@@ -12,6 +13,7 @@ import { INSURANCE_LABEL, insuranceTone, severityTone, statusTone } from '../../
 
 export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
   const dockets = profile.authority.dockets
+  const client = useIsClientPortal()
   return (
     <header className="rounded-lg border border-slate-200 bg-surface p-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -29,7 +31,7 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
         </div>
         <div className="text-right text-xs text-slate-500">
           Data refreshed {formatDateTime(profile.last_refreshed_at)}
-          <RefreshButton usdotNumber={profile.usdot_number} />
+          {!client && <RefreshButton usdotNumber={profile.usdot_number} />}
           {profile.stale && (
             <div className="mt-1 text-amber-700">
               <StatusBadge label="stale" tone="warn" /> FMCSA could not be reached; showing stored
@@ -88,29 +90,32 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
             </span>
           )}
         </HeaderCard>
-        <HeaderCard label="Review status" source="CarrierIQ checks of FMCSA records">
-          {profile.review_status === 'OPEN_SIGNALS' ? (
-            <Link
-              to="?tab=intelligence"
-              replace
-              className="flex items-center gap-2 hover:underline"
-            >
-              <StatusBadge
-                label={reviewLabel(profile.review_status, profile.open_signal_count) ?? ''}
-                tone={severityTone(profile.highest_open_severity ?? 'LOW')}
-              />
-              {profile.highest_open_severity && (
-                <span className="text-xs text-slate-500">
-                  highest: {profile.highest_open_severity.toLowerCase()}
-                </span>
-              )}
-            </Link>
-          ) : (
-            <span className="text-slate-500">
-              {reviewLabel(profile.review_status, profile.open_signal_count) ?? 'Not reviewed yet'}
-            </span>
-          )}
-        </HeaderCard>
+        {!client && (
+          <HeaderCard label="Review status" source="CarrierIQ checks of FMCSA records">
+            {profile.review_status === 'OPEN_SIGNALS' ? (
+              <Link
+                to="?tab=intelligence"
+                replace
+                className="flex items-center gap-2 hover:underline"
+              >
+                <StatusBadge
+                  label={reviewLabel(profile.review_status, profile.open_signal_count) ?? ''}
+                  tone={severityTone(profile.highest_open_severity ?? 'LOW')}
+                />
+                {profile.highest_open_severity && (
+                  <span className="text-xs text-slate-500">
+                    highest: {profile.highest_open_severity.toLowerCase()}
+                  </span>
+                )}
+              </Link>
+            ) : (
+              <span className="text-slate-500">
+                {reviewLabel(profile.review_status, profile.open_signal_count) ??
+                  'Not reviewed yet'}
+              </span>
+            )}
+          </HeaderCard>
+        )}
         <LinkedHeadsUp usdotNumber={profile.usdot_number} />
       </div>
     </header>

@@ -16,6 +16,8 @@ export class ApiError extends Error {
 
 interface ErrorBody {
   error?: { code?: string; message?: string }
+  /** FastAPI's request-validation answer (422) */
+  detail?: { msg?: string }[]
 }
 
 export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
@@ -27,11 +29,14 @@ export async function apiRequest<T>(path: string, init?: RequestInit): Promise<T
   const body: unknown = await response.json().catch(() => null)
 
   if (!response.ok) {
-    const error = (body as ErrorBody | null)?.error
+    const { error, detail } = (body as ErrorBody | null) ?? {}
+    const validation = Array.isArray(detail)
+      ? detail[0]?.msg?.replace(/^Value error, /, '')
+      : undefined
     throw new ApiError(
       response.status,
       error?.code ?? 'http_error',
-      error?.message ?? `Request failed with status ${response.status}`,
+      error?.message ?? validation ?? `Request failed with status ${response.status}`,
     )
   }
 
