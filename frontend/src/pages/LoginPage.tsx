@@ -2,9 +2,16 @@ import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { ApiError } from '../api/client'
-import { AuthCard, Field, FormError, SubmitButton } from '../features/auth/AuthCard'
+import { AuthCard, Field, FormError, GoogleButton, SubmitButton } from '../features/auth/AuthCard'
 import { homeFor, useLogin, useMe } from '../hooks/useAuth'
 import type { Portal } from '../types/auth'
+
+/** Where a Google sign-in that did not log in ended up (/login?google=...). */
+const GOOGLE_NOTICES: Record<string, string> = {
+  pending: 'Your account is waiting for approval by STS. You can log in once it is approved.',
+  disabled: 'This account has been disabled. Contact STS for help.',
+  failed: 'Google sign-in didn’t finish. Please try again.',
+}
 
 /** Only follow ?next= to a page inside the portal the user just logged in to. */
 function safeNext(next: string | null, portal: Portal): string {
@@ -34,12 +41,13 @@ export function LoginPage() {
     )
   }
 
+  const googleNotice = GOOGLE_NOTICES[params.get('google') ?? '']
   const error =
     login.error instanceof ApiError
       ? login.error.message
       : login.error
         ? 'Could not reach CarrierIQ. Try again in a moment.'
-        : null
+        : (googleNotice ?? null)
 
   return (
     <AuthCard
@@ -54,6 +62,7 @@ export function LoginPage() {
         </>
       }
     >
+      <GoogleButton />
       <form onSubmit={submit} className="space-y-4">
         <Field
           label="Email"

@@ -59,4 +59,23 @@ export interface CarrierContactCheck {
   legal_name: string | null
   phone_matches_fmcsa: boolean | null
   email_matches_fmcsa: boolean | null
+  /** Company name given vs FMCSA legal / DBA name, ignoring case, punctuation, LLC / Inc */
+  company_matches_fmcsa: boolean | null
+}
+
+export interface AuthOptions {
+  /** Show "Continue with Google" */
+  google: boolean
+}
+
+export interface GoogleSignupPending {
+  email: string
+  full_name: string
+}
+
+export interface GoogleSignupInput {
+  phone: string
+  usdot_number: number
+  /** Compared with FMCSA's legal / DBA name on the Accounts page */
+  company_name: string
 }

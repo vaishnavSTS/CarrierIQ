@@ -137,7 +137,7 @@ Also hidden from clients: Refresh now / jobs, search of other carriers, review a
 - [ ] ISS estimate: stays internal-only until validated; data-source permission still to confirm.
 - [x] Client registration: **self-sign-up with STS approval** (confirmed 2026-10-13).
 - [ ] Landing page: simple (name, description, Log in / Sign up) or full marketing page?
-- [ ] Login methods: email + password only, or also Google / Microsoft sign-in?
+- [x] Login methods: email + password **and Google** (2026-10-14). Microsoft still open.
 
 ---
 
@@ -169,4 +169,5 @@ Also hidden from clients: Refresh now / jobs, search of other carriers, review a
 | 2026-10-13 | Clients self-register and wait for STS approval; staff are created by command | Confirmed by the user. Nobody can claim another company's USDOT number |
 | 2026-10-13 | Sign-up requires name, email, mobile number and USDOT; admin sees whether phone / email match FMCSA's record | Faster, safer approval |
 | 2026-10-13 | Client tabs: Identity, Authority & Insurance, Safety, Equipment, Network & Identity (with linked carrier names), Packet. Timeline and Intelligence internal only | User decision |
+| 2026-10-14 | Google sign-in: new Google users must give mobile + USDOT before the request reaches STS; approval unchanged | User decision |
 | 2026-10-13 | Internal pages keep their URLs (`/dashboard`, `/search`, `/carriers/*`) | Fewer link changes than moving everything under `/app` |

@@ -1,4 +1,12 @@
-import type { PortalOverview, RegisterInput, RegisterResult, User } from '../types/auth'
+import type {
+  AuthOptions,
+  GoogleSignupInput,
+  GoogleSignupPending,
+  PortalOverview,
+  RegisterInput,
+  RegisterResult,
+  User,
+} from '../types/auth'
 import { ApiError, apiGet, apiRequest } from './client'
 
 function postJson<T>(path: string, body?: unknown): Promise<T> {
@@ -35,3 +43,24 @@ export function register(input: RegisterInput): Promise<RegisterResult> {
 export function fetchPortalOverview(): Promise<PortalOverview> {
   return apiGet<PortalOverview>('/portal/overview')
 }
+
+export function fetchAuthOptions(): Promise<AuthOptions> {
+  return apiGet<AuthOptions>('/auth/options')
+}
+
+/** Who is finishing a Google sign-up, or null when the Google step expired or never happened. */
+export async function fetchGoogleSignup(): Promise<GoogleSignupPending | null> {
+  try {
+    return await apiGet<GoogleSignupPending>('/auth/google/signup')
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) return null
+    throw error
+  }
+}
+
+export function completeGoogleSignup(input: GoogleSignupInput): Promise<RegisterResult> {
+  return postJson<RegisterResult>('/auth/google/signup', input)
+}
+
+/** Full-page navigation (not fetch): the browser must go to Google and come back. */
+export const GOOGLE_START_URL = '/api/v1/auth/google/start'

@@ -212,6 +212,7 @@ def test_admin_sees_phone_and_whether_it_matches_fmcsa(api: TestClient, db: Sess
             "legal_name": "CLIENT TRUCKING LLC",
             "phone_matches_fmcsa": True,
             "email_matches_fmcsa": False,
+            "company_matches_fmcsa": True,  # "Client Trucking LLC"
         }
     ]
     # Carrier not loaded yet: no answer either way.

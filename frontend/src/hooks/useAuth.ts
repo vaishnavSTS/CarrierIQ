@@ -1,7 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { fetchMe, fetchPortalOverview, login, logout, register } from '../api/auth'
-import type { Portal, RegisterInput } from '../types/auth'
+import {
+  completeGoogleSignup,
+  fetchAuthOptions,
+  fetchGoogleSignup,
+  fetchMe,
+  fetchPortalOverview,
+  login,
+  logout,
+  register,
+} from '../api/auth'
+import type { GoogleSignupInput, Portal, RegisterInput } from '../types/auth'
 
 export const ME_KEY = ['auth', 'me'] as const
 
@@ -45,4 +54,16 @@ export function usePortalOverview() {
 /** The first page each portal opens on. */
 export function homeFor(portal: Portal): string {
   return portal === 'internal' ? '/dashboard' : '/portal'
+}
+
+export function useAuthOptions() {
+  return useQuery({ queryKey: ['auth', 'options'], queryFn: fetchAuthOptions, staleTime: Infinity })
+}
+
+export function useGoogleSignup() {
+  return useQuery({ queryKey: ['auth', 'google-signup'], queryFn: fetchGoogleSignup })
+}
+
+export function useCompleteGoogleSignup() {
+  return useMutation({ mutationFn: (input: GoogleSignupInput) => completeGoogleSignup(input) })
 }

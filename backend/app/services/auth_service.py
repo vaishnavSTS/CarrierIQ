@@ -5,9 +5,14 @@ Rules:
   USDOT number they name is saved unverified; nothing is shown to them until an STS admin
   approves the account, which also verifies that USDOT number.
 - PENDING and DISABLED accounts cannot log in.
-- STS staff never self-register: they are created with `python -m app.cli.create_staff_user`.
+- Google sign-in (verified emails only) logs in an existing account with that Google id or email.
+  Someone new must first give their mobile number and USDOT ("finish signing up"); they then get
+  the same PENDING client account as a password sign-up, with no password.
+- STS staff never self-register: they are created with `python -m app.workers.create_staff_user`.
+  Google sign-in never creates staff; it only logs in staff accounts that already exist.
 """
 
+import re
 from collections.abc import Callable
 from datetime import UTC, datetime
 
@@ -22,6 +27,7 @@ from app.core.exceptions import (
     UnauthorizedError,
     ValidationError,
 )
+from app.core.google_oauth import GoogleIdentity
 from app.core.security import hash_password, verify_password
 from app.models import Organization, OrganizationCarrier, User
 from app.models.enums import OrganizationKind, UserRole, UserStatus
@@ -29,6 +35,7 @@ from app.repositories.user_repository import UserRepository
 from app.schemas.auth import (
     AdminUserOut,
     CarrierContactCheckOut,
+    GoogleSignupIn,
     LoginIn,
     PortalCarrierOut,
     PortalOverviewOut,
@@ -39,6 +46,19 @@ from app.schemas.auth import (
 
 # Compared against when the email is unknown, so a wrong email takes as long as a wrong password.
 _DUMMY_HASH = hash_password("not-a-real-password")
+
+
+_COMPANY_ENDINGS = {
+    "LLC", "INC", "INCORPORATED", "CO", "COMPANY", "CORP", "CORPORATION", "LTD", "LIMITED",
+    "LP", "LLP", "PLLC", "THE",
+}  # fmt: skip
+
+
+def company_key(name: str | None) -> str:
+    """A company name reduced for comparison: "Vanek Brothers Trucking Co." and "VANEK
+    BROTHERS TRUCKING COMPANY" both become "VANEK BROTHERS TRUCKING"; "&" counts as "AND"."""
+    words = re.sub(r"[^A-Z0-9 ]", " ", (name or "").upper().replace("&", " AND ")).split()
+    return " ".join(w for w in words if w not in _COMPANY_ENDINGS)
 
 
 def check_password_strength(password: str) -> None:
@@ -62,24 +82,43 @@ class AuthService:
         check_password_strength(data.password)
         if self.users.by_email(data.email) is not None:
             raise ConflictError("An account with this email already exists")
+        return self._create_client(
+            email=data.email,
+            full_name=data.full_name,
+            company_name=data.company_name,
+            phone=data.phone,
+            usdot_number=data.usdot_number,
+            password_hash=hash_password(data.password),
+        )
 
-        organization = Organization(name=data.company_name, kind=OrganizationKind.CLIENT)
+    def _create_client(
+        self,
+        *,
+        email: str,
+        full_name: str,
+        company_name: str,
+        phone: str,
+        usdot_number: int,
+        password_hash: str | None = None,
+        google_sub: str | None = None,
+    ) -> RegisterOut:
+        """A new CLIENT organization with one PENDING account and its (unverified) USDOT."""
+        organization = Organization(name=company_name, kind=OrganizationKind.CLIENT)
         self.db.add(organization)
         self.db.flush()
         self.db.add(
             User(
                 organization_id=organization.id,
-                email=data.email,
-                full_name=data.full_name,
-                phone=data.phone,
-                password_hash=hash_password(data.password),
+                email=email,
+                full_name=full_name,
+                phone=phone,
+                password_hash=password_hash,
+                google_sub=google_sub,
                 role=UserRole.CLIENT_ADMIN,
                 status=UserStatus.PENDING,
             )
         )
-        self.db.add(
-            OrganizationCarrier(organization_id=organization.id, usdot_number=data.usdot_number)
-        )
+        self.db.add(OrganizationCarrier(organization_id=organization.id, usdot_number=usdot_number))
         self.db.commit()
         return RegisterOut(
             status=UserStatus.PENDING.value,
@@ -92,8 +131,41 @@ class AuthService:
         if user is None:
             verify_password(data.password, _DUMMY_HASH)
             raise UnauthorizedError("Email or password is incorrect")
-        if not verify_password(data.password, user.password_hash):
+        # A Google-only account has no password: it fails here like a wrong password.
+        if not verify_password(data.password, user.password_hash or _DUMMY_HASH):
             raise UnauthorizedError("Email or password is incorrect")
+        return self._admit(user)
+
+    # --- Google sign-in ------------------------------------------------------------------------
+
+    def google_sign_in(self, identity: GoogleIdentity) -> User | None:
+        """The logged-in account, or None when this Google user has no account yet (they must
+        finish signing up). Raises for pending or disabled accounts, as password login does."""
+        if not identity.email_verified:
+            raise UnauthorizedError("Google has not verified this email address")
+        user = self.users.by_google_sub(identity.sub) or self.users.by_email(identity.email)
+        if user is None:
+            return None
+        if user.google_sub is None:
+            user.google_sub = identity.sub  # first Google sign-in for an existing account
+            self.db.commit()
+        elif user.google_sub != identity.sub:
+            raise UnauthorizedError("This email is linked to a different Google account")
+        return self._admit(user)
+
+    def complete_google_signup(self, identity: GoogleIdentity, data: GoogleSignupIn) -> RegisterOut:
+        if self.users.by_google_sub(identity.sub) or self.users.by_email(identity.email):
+            raise ConflictError("An account with this email already exists; log in instead")
+        return self._create_client(
+            email=identity.email,
+            full_name=identity.name,
+            company_name=data.company_name,
+            phone=data.phone,
+            usdot_number=data.usdot_number,
+            google_sub=identity.sub,
+        )
+
+    def _admit(self, user: User) -> User:
         if user.status == UserStatus.PENDING:
             raise AccountPendingError("Your account is waiting for approval by STS")
         if user.status == UserStatus.DISABLED:
@@ -162,8 +234,10 @@ class AuthService:
         )
 
     def _contact_checks(self, user: User, usdots: list[int]) -> list[CarrierContactCheckOut]:
-        """Compare the sign-up's phone and email with FMCSA's record for each USDOT it gave."""
+        """Compare the sign-up's company, phone and email with FMCSA's record for each USDOT."""
         carriers = self.users.carriers_by_usdot(usdots)
+        organization = self.users.organization(user.organization_id)
+        company = company_key(organization.name if organization else "")
         checks = []
         for usdot in usdots:
             carrier = carriers.get(usdot)
@@ -175,6 +249,11 @@ class AuthService:
                     legal_name=carrier.legal_name if carrier else None,
                     phone_matches_fmcsa=(user.phone in phones) if phones and user.phone else None,
                     email_matches_fmcsa=(user.email == fmcsa_email) if fmcsa_email else None,
+                    company_matches_fmcsa=(
+                        company in {company_key(carrier.legal_name), company_key(carrier.dba_name)}
+                        if carrier and company
+                        else None
+                    ),
                 )
             )
         return checks

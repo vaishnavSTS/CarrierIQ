@@ -72,19 +72,16 @@ function ContactCheck({ check }: { check: CarrierContactCheck }) {
       </div>
     )
   }
-  const noFmcsaContact = check.phone_matches_fmcsa === null && check.email_matches_fmcsa === null
   return (
     <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
       <span>
         FMCSA record for <span className="text-slate-700">{check.legal_name}</span>:
       </span>
-      {noFmcsaContact ? (
-        <span>no phone or email on file to compare.</span>
-      ) : (
-        <>
-          <MatchBadge label="Phone" match={check.phone_matches_fmcsa} />
-          <MatchBadge label="Email" match={check.email_matches_fmcsa} />
-        </>
+      <MatchBadge label="Company" match={check.company_matches_fmcsa} />
+      <MatchBadge label="Phone" match={check.phone_matches_fmcsa} />
+      <MatchBadge label="Email" match={check.email_matches_fmcsa} />
+      {check.phone_matches_fmcsa === null && check.email_matches_fmcsa === null && (
+        <span>(no phone or email on file to compare)</span>
       )}
     </div>
   )

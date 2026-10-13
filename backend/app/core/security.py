@@ -67,6 +67,26 @@ def read_session_token(token: str) -> int | None:
     """The user id in a valid, unexpired token; None for anything else."""
     try:
         claims = jwt.decode(token, get_settings().auth_secret_key, algorithms=[_TOKEN_ALGORITHM])
+        if "purpose" in claims:  # a one-step token (create_purpose_token) is never a session
+            return None
         return int(claims["sub"])
     except (jwt.PyJWTError, KeyError, ValueError):
         return None
+
+
+def create_purpose_token(claims: dict[str, str], purpose: str, minutes: int) -> str:
+    """A short-lived signed token for one step, e.g. carrying a Google identity from the
+    callback to the "finish signing up" form. `purpose` stops it being used as a session."""
+    now = datetime.now(UTC)
+    payload = {**claims, "purpose": purpose, "iat": now, "exp": now + timedelta(minutes=minutes)}
+    return jwt.encode(payload, get_settings().auth_secret_key, algorithm=_TOKEN_ALGORITHM)
+
+
+def read_purpose_token(token: str, purpose: str) -> dict[str, str] | None:
+    try:
+        claims = jwt.decode(token, get_settings().auth_secret_key, algorithms=[_TOKEN_ALGORITHM])
+    except jwt.PyJWTError:
+        return None
+    if claims.get("purpose") != purpose:
+        return None
+    return {k: str(v) for k, v in claims.items() if k not in ("purpose", "iat", "exp")}

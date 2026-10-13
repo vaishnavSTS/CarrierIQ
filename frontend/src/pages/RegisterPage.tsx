@@ -3,7 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 
 import { ApiError } from '../api/client'
-import { AuthCard, Field, FormError, SubmitButton } from '../features/auth/AuthCard'
+import { AuthCard, Field, FormError, GoogleButton, SubmitButton } from '../features/auth/AuthCard'
 import { homeFor, useMe, useRegister } from '../hooks/useAuth'
 
 const MIN_PASSWORD = 10 // matches the API's AUTH_MIN_PASSWORD_LENGTH default
@@ -102,6 +102,7 @@ export function RegisterPage() {
         </>
       }
     >
+      <GoogleButton label="Sign up with Google" />
       <form onSubmit={submit} className="space-y-4">
         <Field
           label="Your name"

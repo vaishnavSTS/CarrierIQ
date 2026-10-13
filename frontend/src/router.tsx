@@ -7,6 +7,7 @@ import { PublicLayout } from './components/layout/PublicLayout'
 import { AccountsPage } from './pages/AccountsPage'
 import { CarrierProfilePage } from './pages/CarrierProfilePage'
 import { DashboardPage } from './pages/DashboardPage'
+import { GoogleSignupPage } from './pages/GoogleSignupPage'
 import { LandingPage } from './pages/LandingPage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -26,6 +27,7 @@ export const router = createBrowserRouter([
       { index: true, element: <LandingPage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
+      { path: 'register/google', element: <GoogleSignupPage /> },
     ],
   },
   {

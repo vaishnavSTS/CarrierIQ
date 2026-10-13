@@ -89,6 +89,17 @@ class Settings(BaseSettings):
     auth_cookie_name: str = "carrieriq_session"
     auth_min_password_length: int = 10
 
+    # "Continue with Google" (OAuth 2.0 / OpenID Connect). Off unless both are set. The redirect
+    # URI must match the one registered in Google Cloud Console exactly; in development it goes
+    # through the Vite proxy so the session cookie lands on the frontend's origin.
+    google_client_id: str | None = None
+    google_client_secret: str | None = None
+    google_redirect_uri: str = "http://localhost:5173/api/v1/auth/google/callback"
+
+    @property
+    def google_enabled(self) -> bool:
+        return bool(self.google_client_id and self.google_client_secret)
+
     @property
     def auth_cookie_secure(self) -> bool:
         """Send the cookie over HTTPS only, everywhere except local development."""

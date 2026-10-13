@@ -56,6 +56,33 @@ class RegisterIn(BaseModel):
         return value
 
 
+class GoogleSignupIn(BaseModel):
+    """Finishing a Google sign-up: Google gave the name and a verified email; we need the rest."""
+
+    company_name: str = Field(min_length=1, max_length=200)  # compared with FMCSA's name
+    phone: str = Field(max_length=30)
+    usdot_number: int = Field(gt=0, lt=100_000_000)
+
+    _normalize_phone = field_validator("phone")(normalize_phone)
+
+    @field_validator("company_name")
+    @classmethod
+    def _strip(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Required")
+        return value
+
+
+class GoogleSignupPendingOut(BaseModel):
+    email: str
+    full_name: str
+
+
+class AuthOptionsOut(BaseModel):
+    google: bool  # show "Continue with Google"
+
+
 class UserOut(BaseModel):
     id: int
     email: str
@@ -90,6 +117,9 @@ class CarrierContactCheckOut(BaseModel):
     legal_name: str | None
     phone_matches_fmcsa: bool | None
     email_matches_fmcsa: bool | None
+    # The company name they gave against FMCSA's legal or DBA name, ignoring case, punctuation
+    # and endings such as LLC / Inc.
+    company_matches_fmcsa: bool | None
 
 
 class AdminUserOut(UserOut):

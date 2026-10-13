@@ -17,6 +17,9 @@ class UserRepository:
     def by_email(self, email: str) -> User | None:
         return self.db.scalar(select(User).where(User.email == email.strip().lower()))
 
+    def by_google_sub(self, google_sub: str) -> User | None:
+        return self.db.scalar(select(User).where(User.google_sub == google_sub))
+
     def organization(self, organization_id: int) -> Organization | None:
         return self.db.get(Organization, organization_id)
 
