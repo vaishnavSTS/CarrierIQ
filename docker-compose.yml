@@ -18,28 +18,34 @@ services:
       timeout: 5s
       retries: 10
 
+  # Settings come from backend/.env, the same file local (venv) runs use: database, Socrata
+  # token, Google sign-in. Jobs run in the worker container below, not inside the API.
   backend:
     build: ./backend
+    env_file: ./backend/.env
     environment:
-      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env}
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
-      SOCRATA_APP_TOKEN: ${SOCRATA_APP_TOKEN:-}
+      RUN_WORKER_IN_API: "false"
     ports:
       - "8000:8000"
+    # Healthy once migrations have run and the API answers (startup takes a few seconds).
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health', timeout=5)"]
+      interval: 5s
+      timeout: 6s
+      retries: 30
 
   # Background worker (spec Section 18): runs queued jobs and refreshes stale carriers on a
   # schedule. Same image as the backend; starts after it so migrations have been applied.
   worker:
     build: ./backend
     command: ["python", "-m", "app.workers.worker"]
+    env_file: ./backend/.env
     environment:
-      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in .env}
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      SOCRATA_APP_TOKEN: ${SOCRATA_APP_TOKEN:-}
+      RUN_WORKER_IN_API: "false"
       SCHEDULER_ENABLED: ${SCHEDULER_ENABLED:-true}
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
   frontend:
@@ -49,7 +55,8 @@ services:
     ports:
       - "5173:5173"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   pgdata:

@@ -16,18 +16,27 @@ authority, insurance and a federal event timeline; data loaded from FMCSA on dem
 
 ## Run everything with Docker
 
-Requires Docker Desktop.
+Requires Docker Desktop. The backend and worker containers read `backend/.env` (the same file
+local runs use: database, Socrata token, Google sign-in); start from `.env.example`.
 
 ```bash
-cp .env.example .env
-docker compose up --build
+cp .env.example backend/.env       # then fill in DATABASE_URL (Supabase) etc.
+docker compose up --build          # backend, worker, frontend on Supabase
 ```
 
 - Frontend: http://localhost:5173
 - API health: http://localhost:8000/api/v1/health
 - API docs: http://localhost:8000/docs
 
-Migrations run automatically when the backend container starts.
+Migrations run automatically when the backend container starts; the frontend and worker wait
+until the backend is healthy. Jobs run in the worker container (`RUN_WORKER_IN_API` is off in
+Docker). Stop local `uvicorn` / `npm run dev` first: they use the same ports.
+
+To use the local PostgreSQL container instead of Supabase:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.localdb.yml --profile localdb up --build
+```
 
 ## Run locally without Docker
 

@@ -1,0 +1,13 @@
+# Run the whole stack on the local PostgreSQL container instead of Supabase:
+#   docker compose -f docker-compose.yml -f docker-compose.localdb.yml --profile localdb up --build
+# The backend applies every migration to the empty database on its first start.
+x-localdb: &localdb
+  environment:
+    DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-carrieriq}:${POSTGRES_PASSWORD:-carrieriq}@db:5432/${POSTGRES_DB:-carrieriq}
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  backend: *localdb
+  worker: *localdb
