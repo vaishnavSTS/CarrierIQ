@@ -30,7 +30,7 @@ export function EstimatedIssCard({ iss }: { iss: EstimatedIss | null | undefined
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="text-xs font-medium uppercase tracking-wider text-slate-500">
-            Estimated ISS · inspection priority
+            Estimated ISS – Safety score · inspection priority
           </div>
           <p className="mt-1 text-xs text-slate-500">
             CarrierIQ estimate from public FMCSA data — not FMCSA’s official ISS. 1–49 Pass

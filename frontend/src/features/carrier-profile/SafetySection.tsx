@@ -13,12 +13,6 @@ import { SafetyTrends } from './safety/SafetyTrends'
 import { ViolationBreakdown } from './safety/ViolationBreakdown'
 import { Empty, Section, Stat } from './Section'
 
-const RATING_TONE: Record<string, 'ok' | 'warn' | 'down'> = {
-  SATISFACTORY: 'ok',
-  CONDITIONAL: 'warn',
-  UNSATISFACTORY: 'down',
-}
-
 function SubHeading({ children, source }: { children: string; source?: string }) {
   return (
     <h3 className="mb-3 mt-8 flex flex-wrap items-baseline justify-between gap-x-3 text-xs">
@@ -42,7 +36,7 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
       title="Safety"
       source="FMCSA inspections, SMS, Crash File and Company Census"
     >
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <Stat
           label="Inspections"
           value={safety.inspection_count}
@@ -84,24 +78,7 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
           source="FMCSA Crash File"
         />
         <Stat
-          label="Safety rating"
-          value={
-            safety.safety_rating ? (
-              <StatusBadge
-                label={safety.safety_rating}
-                tone={RATING_TONE[safety.safety_rating] ?? 'neutral'}
-              />
-            ) : (
-              <span className="text-sm font-normal text-slate-500">Not rated</span>
-            )
-          }
-          note={
-            safety.safety_rating_date ? `Since ${formatDate(safety.safety_rating_date)}` : undefined
-          }
-          source="FMCSA Company Census (compliance review)"
-        />
-        <Stat
-          label="Estimated ISS"
+          label="Estimated ISS – Safety score"
           value={
             iss?.value != null && issBand ? (
               <span className="flex flex-wrap items-center gap-2">
@@ -124,7 +101,7 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
       {detail.data && (
         <>
           <SubHeading source="CarrierIQ estimate · FMCSA ISS-CSA and SMS methods · FMCSA SMS national file (monthly)">
-            Estimated ISS
+            Estimated ISS – Safety score
           </SubHeading>
           <EstimatedIssCard iss={detail.data.estimated_iss} />
           <SubHeading

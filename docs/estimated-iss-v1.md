@@ -227,7 +227,8 @@ always be explained.
 
 - Always "**Estimated ISS**" and "CarrierIQ estimate from public FMCSA data — not FMCSA's
   official ISS".
-- Never "safety score" or "rating"; FMCSA's own safety rating (Satisfactory / Conditional /
+- "Safety score" only together with the name: "Estimated ISS – Safety score" (Safety tab,
+  agreed 2026-10-14). Never "rating"; FMCSA's own safety rating (Satisfactory / Conditional /
   Unsatisfactory) stays as it is, beside it.
 - Clients see what drives the value and what would lower it, linking to How to improve.
 
