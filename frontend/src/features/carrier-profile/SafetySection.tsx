@@ -5,6 +5,7 @@ import type { Safety } from '../../types/carrierProfile'
 import { formatDate, formatPercent } from '../../utils/format'
 import { CrashList } from './safety/CrashList'
 import { CsaBasics } from './safety/CsaBasics'
+import { EstimatedIssCard } from './safety/EstimatedIssCard'
 import { ImprovementGuide } from './safety/ImprovementGuide'
 import { InspectionHistory } from './safety/InspectionHistory'
 import { SafetyTrends } from './safety/SafetyTrends'
@@ -100,6 +101,10 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
 
       {detail.data && (
         <>
+          <SubHeading source="CarrierIQ estimate · FMCSA ISS-CSA and SMS methods · FMCSA SMS national file (monthly)">
+            Estimated ISS
+          </SubHeading>
+          <EstimatedIssCard iss={detail.data.estimated_iss} />
           <SubHeading
             source={
               detail.data.sms?.dataset

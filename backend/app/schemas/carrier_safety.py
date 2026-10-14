@@ -126,6 +126,27 @@ class BasicDriverOut(BaseModel):
     groups: list[ViolationGroupOut]  # heaviest first
 
 
+class EstimatedIssBasicOut(BaseModel):
+    basic: str  # unsafe_driv | hos_driv | driv_fit | contr_subst | veh_maint
+    label: str
+    percentile: float | None  # estimated; None: not enough data, or hidden from clients
+    assessed: bool  # FMCSA would assign a percentile (enough inspections with violations)
+    threshold: float  # FMCSA intervention threshold
+    over_threshold: bool
+
+
+class EstimatedIssOut(BaseModel):
+    """CarrierIQ's estimate of FMCSA's ISS value (docs/estimated-iss-v1.md)."""
+
+    value: int | None  # 1-100, lower is better; None: not enough data
+    band: str | None  # INSPECT (75-100) | OPTIONAL (50-74) | PASS (1-49)
+    group: int | None  # FMCSA ISS-CSA group 1-13; 0 = out-of-service order
+    reason: str
+    basics: list[EstimatedIssBasicOut]
+    data_month: date  # FMCSA SMS month the lookup tables were built from
+    version: str
+
+
 class CarrierSafetyOut(BaseModel):
     usdot_number: int
     inspection_count: int
@@ -136,6 +157,7 @@ class CarrierSafetyOut(BaseModel):
     sms: SmsOut | None = None  # None: not fetched yet
     crashes: CrashSummaryOut | None = None  # None: not fetched yet
     drivers: list[BasicDriverOut] | None = None  # None: not fetched yet; heaviest BASIC first
+    estimated_iss: EstimatedIssOut | None = None  # None: tables or carrier SMS not loaded yet
 
 
 class ViolationOut(BaseModel):

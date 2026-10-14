@@ -10,7 +10,8 @@ function YesNo({ value, yes }: { value: boolean | null; yes: string }) {
 
 /**
  * FMCSA's SMS (CSA) results for the carrier, exactly as FMCSA publishes them. Percentiles and
- * alerts appear only where FMCSA publishes them (passenger carriers); CarrierIQ estimates none.
+ * alerts appear only where FMCSA publishes them (passenger carriers); CarrierIQ's own estimate
+ * is the Estimated ISS card above, labelled as such.
  */
 export function CsaBasics({ sms }: { sms: Sms | null }) {
   if (sms === null) {

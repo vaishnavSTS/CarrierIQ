@@ -29,7 +29,7 @@ from app.services.carrier_authority_service import CarrierAuthorityService
 from app.services.carrier_equipment_service import CarrierEquipmentService
 from app.services.carrier_profile_service import CarrierProfileService
 from app.services.carrier_safety_service import CarrierSafetyService
-from app.services.client_view import client_network, client_profile
+from app.services.client_view import client_network, client_profile, client_safety
 from app.services.network_service import NetworkService
 
 router = APIRouter(prefix="/portal", tags=["portal"])
@@ -63,7 +63,7 @@ def carrier_safety(
     usdot_number: OwnCarrier,
     service: Annotated[CarrierSafetyService, Depends(get_carrier_safety_service)],
 ) -> CarrierSafetyOut:
-    return service.safety(usdot_number)
+    return client_safety(service.safety(usdot_number))
 
 
 @router.get("/carriers/{usdot_number}/inspections", response_model=InspectionPageOut)

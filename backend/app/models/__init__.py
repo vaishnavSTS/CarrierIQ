@@ -13,6 +13,7 @@ from app.models.ingestion_run import IngestionRun
 from app.models.inspection import Inspection
 from app.models.insurance import Insurance
 from app.models.intelligence_signal import IntelligenceSignal
+from app.models.iss_reference import IssReference
 from app.models.job import Job
 from app.models.officer import Officer
 from app.models.organization import Organization
@@ -43,6 +44,7 @@ __all__ = [
     "Insurance",
     "Inspection",
     "IntelligenceSignal",
+    "IssReference",
     "Job",
     "Officer",
     "Organization",

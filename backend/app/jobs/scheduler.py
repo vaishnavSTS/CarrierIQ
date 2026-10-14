@@ -16,9 +16,9 @@ from sqlalchemy import String, and_, cast, exists, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.jobs.handlers import REFRESH_CARRIER, refresh_dedupe_key
+from app.jobs.handlers import BUILD_ISS_REFERENCE, REFRESH_CARRIER, refresh_dedupe_key
 from app.jobs.queue import JobQueue
-from app.models import Carrier, Job
+from app.models import Carrier, IssReference, Job
 from app.models.enums import JobStatus
 
 logger = logging.getLogger(__name__)
@@ -67,6 +67,27 @@ def schedule_stale_refreshes(
     if queued:
         logger.info("Scheduled refresh of %d stale carrier(s): %s", len(queued), queued)
     return queued
+
+
+def schedule_iss_reference(db: Session, queue: JobQueue, now: datetime) -> bool:
+    """Queue this month's Estimated ISS tables when they haven't been built yet (FMCSA publishes
+    SMS results monthly). Returns whether a job was queued."""
+    month = now.date().replace(day=1)
+    if db.scalar(select(IssReference.id).where(IssReference.data_month == month)) is not None:
+        return False
+    key = f"{BUILD_ISS_REFERENCE}:{month:%Y-%m}"
+    cooldown = now - timedelta(hours=get_settings().schedule_failed_cooldown_hours)
+    gave_up = db.scalar(
+        select(Job.id).where(
+            Job.dedupe_key == key, Job.status == JobStatus.FAILED, Job.finished_at >= cooldown
+        )
+    )
+    if gave_up is not None:  # a large download that keeps failing waits before trying again
+        return False
+    queued = queue.enqueue(BUILD_ISS_REFERENCE, {}, key)
+    if queued is not None:
+        logger.info("Scheduled Estimated ISS tables for %s", f"{month:%Y-%m}")
+    return queued is not None
 
 
 class Schedule:

@@ -134,6 +134,33 @@ export interface CarrierSafety {
   crashes: CrashSummary | null
   /** null: not fetched yet; heaviest BASIC first */
   drivers: BasicDriver[] | null
+  /** CarrierIQ's estimate of FMCSA's ISS; null: monthly tables or carrier SMS not loaded */
+  estimated_iss?: EstimatedIss | null
+}
+
+/** docs/estimated-iss-v1.md — mirrors EstimatedIssOut */
+export interface EstimatedIss {
+  /** 1-100, lower is better; null: not enough data */
+  value: number | null
+  band: 'INSPECT' | 'OPTIONAL' | 'PASS' | null
+  /** FMCSA ISS-CSA group 1-13; 0 = out-of-service order */
+  group: number | null
+  reason: string
+  basics: EstimatedIssBasic[]
+  /** FMCSA SMS month the lookup tables were built from (YYYY-MM-DD) */
+  data_month: string
+  version: string
+}
+
+export interface EstimatedIssBasic {
+  basic: string
+  label: string
+  /** estimated percentile; null when FMCSA would assign none, or hidden from clients */
+  percentile: number | null
+  /** FMCSA would assign a percentile (enough inspections with violations) */
+  assessed: boolean
+  threshold: number
+  over_threshold: boolean
 }
 
 export interface Violation {

@@ -16,6 +16,7 @@ from app.services.signal_service import build_signal_service
 
 REFRESH_CARRIER = "refresh_carrier"
 REBUILD_SIGNALS = "rebuild_signals"
+BUILD_ISS_REFERENCE = "build_iss_reference"
 
 Handler = Callable[[Session, dict[str, Any]], dict[str, Any]]
 
@@ -58,7 +59,18 @@ def rebuild_signals(db: Session, payload: dict[str, Any]) -> dict[str, Any]:
     return {"usdot_number": usdot, "signals": {rule: new for rule, (new, _) in results.items()}}
 
 
+def build_iss_tables(db: Session, payload: dict[str, Any]) -> dict[str, Any]:
+    """Download FMCSA's national SMS file and store this month's Estimated ISS lookup tables."""
+    from datetime import UTC, datetime
+
+    from app.services.iss_service import build_iss_reference
+
+    carriers = build_iss_reference(db, datetime.now(UTC).date())
+    return {"carriers": carriers}
+
+
 HANDLERS: dict[str, Handler] = {
     REFRESH_CARRIER: refresh_carrier,
     REBUILD_SIGNALS: rebuild_signals,
+    BUILD_ISS_REFERENCE: build_iss_tables,
 }

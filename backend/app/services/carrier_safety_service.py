@@ -10,6 +10,7 @@ from app.schemas.carrier_safety import (
     BasicDriverOut,
     CarrierSafetyOut,
     CrashSummaryOut,
+    EstimatedIssOut,
     InspectionDetailOut,
     InspectionPageOut,
     SmsOut,
@@ -32,7 +33,9 @@ class CarrierSafetyService:
         sms: Callable[[int], SmsOut | None] = lambda _: None,
         crashes: Callable[[int, date], CrashSummaryOut | None] = lambda _u, _d: None,
         drivers: Callable[[int, date], list[BasicDriverOut] | None] = lambda _u, _d: None,
+        iss: Callable[[int], EstimatedIssOut | None] = lambda _: None,
     ) -> None:
+        self.iss = iss
         self.drivers = drivers
         self.sms = sms
         self.crashes = crashes
@@ -65,6 +68,7 @@ class CarrierSafetyService:
             sms=self.sms(carrier.usdot_number),
             crashes=self.crashes(carrier.usdot_number, self.today()),
             drivers=self.drivers(carrier.usdot_number, self.today()),
+            estimated_iss=self.iss(carrier.usdot_number),
         )
 
     def inspection_page(

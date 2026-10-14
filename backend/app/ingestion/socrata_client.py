@@ -56,8 +56,12 @@ class SocrataClient:
         logger.info("Fetched %d row(s) from dataset %s", len(rows), dataset_id)
         return rows
 
-    def get_all_rows(self, dataset_id: str, params: dict[str, str], order: str) -> list[Row]:
-        """Every matching row, fetched page by page. `order` must give a stable sort."""
+    def get_all_rows(
+        self, dataset_id: str, params: dict[str, str], order: str, page_size: int | None = None
+    ) -> list[Row]:
+        """Every matching row, fetched page by page. `order` must give a stable sort.
+        `page_size` overrides the setting for whole-dataset downloads."""
+        size = page_size or self.page_size
         rows: list[Row] = []
         while True:
             page = self.get_rows(
@@ -65,12 +69,12 @@ class SocrataClient:
                 {
                     **params,
                     "$order": order,
-                    "$limit": str(self.page_size),
+                    "$limit": str(size),
                     "$offset": str(len(rows)),
                 },
             )
             rows.extend(page)
-            if len(page) < self.page_size:
+            if len(page) < size:
                 return rows
 
     def _get_with_retries(self, dataset_id: str, params: dict[str, str]) -> httpx.Response:

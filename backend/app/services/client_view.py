@@ -6,6 +6,7 @@ reaches the timeline as IDENTITY_* events. Everything else is public FMCSA / NHT
 """
 
 from app.schemas.carrier_profile import CarrierProfile
+from app.schemas.carrier_safety import CarrierSafetyOut
 from app.schemas.network import NetworkOut, OwnershipStateOut
 from app.services.identity_events import IDENTITY_PREFIX
 
@@ -36,3 +37,13 @@ def client_network(network: NetworkOut) -> NetworkOut:
             "ownership": OwnershipStateOut(state="NONE", summary="", action=None),
         }
     )
+
+
+def client_safety(safety: CarrierSafetyOut) -> CarrierSafetyOut:
+    """Clients see whether each BASIC is over FMCSA's threshold, not the estimated percentile:
+    property carriers' percentiles are kept from public view (docs/estimated-iss-v1.md, 8.2)."""
+    iss = safety.estimated_iss
+    if iss is None:
+        return safety
+    hidden = [b.model_copy(update={"percentile": None}) for b in iss.basics]
+    return safety.model_copy(update={"estimated_iss": iss.model_copy(update={"basics": hidden})})
