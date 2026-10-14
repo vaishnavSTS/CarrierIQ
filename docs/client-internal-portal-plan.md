@@ -124,7 +124,10 @@ Also hidden from clients: Refresh now / jobs, search of other carriers, review a
 
 ## 7. Open questions
 
-- [ ] **Who are STS's clients — carriers, brokers, or both?**
+- [x] **Who are STS's clients — carriers, brokers, or both?** Both (2026-10-15): carriers use the
+  client portal (own carriers); brokers have their own sign-up (/broker/register, MC or USDOT number
+  checked against FMCSA for active broker authority) and broker portal (/broker: search and vet any
+  carrier, client view without STS-internal data).
   - Carriers → client portal is a self-check of their own company; they see only their USDOT numbers.
   - Brokers → client portal is a vetting tool (search any carrier, watchlist, packets); competes
     with Highway, CarrierOK and others.

@@ -9,6 +9,8 @@ const ROLE_LABELS: Record<UserRole, string> = {
   STS_ANALYST: 'STS analyst',
   CLIENT_ADMIN: 'Account owner',
   CLIENT_USER: 'Viewer',
+  BROKER_ADMIN: 'Broker owner',
+  BROKER_USER: 'Broker',
 }
 
 /** Logged-in user's name, organization and role, with a log-out button (white header bar). */

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 
 import { StatusBadge } from '../../components/StatusBadge'
+import { useCarrierPath, useIsClientPortal } from '../../hooks/usePortalMode'
 import type { CarrierSearchResult } from '../../types/carrier'
 import { formatDateTime } from '../../utils/format'
 import { reviewLabel } from '../../utils/review'
@@ -25,6 +26,9 @@ function DocketList({ result }: { result: CarrierSearchResult }) {
 
 export function CarrierSearchResults({ results }: { results: CarrierSearchResult[] }) {
   const navigate = useNavigate()
+  const carrierPath = useCarrierPath()
+  // STS review status is internal; the broker portal's search answers without it.
+  const showReview = !useIsClientPortal()
 
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200 bg-surface">
@@ -39,7 +43,7 @@ export function CarrierSearchResults({ results }: { results: CarrierSearchResult
             <th className="px-3 py-2">Insurance</th>
             <th className="px-3 py-2 text-right">Fleet</th>
             <th className="px-3 py-2">Location</th>
-            <th className="px-3 py-2">Review status</th>
+            {showReview && <th className="px-3 py-2">Review status</th>}
             <th className="px-3 py-2">Last updated</th>
           </tr>
         </thead>
@@ -47,15 +51,15 @@ export function CarrierSearchResults({ results }: { results: CarrierSearchResult
           {results.map((r) => (
             <tr
               key={r.usdot_number}
-              onClick={() => navigate(`/carriers/${r.usdot_number}`)}
+              onClick={() => navigate(carrierPath(r.usdot_number))}
               className="cursor-pointer align-top hover:bg-slate-50"
             >
               <td className="px-3 py-2">
                 <a
-                  href={`/carriers/${r.usdot_number}`}
+                  href={carrierPath(r.usdot_number)}
                   onClick={(event) => {
                     event.preventDefault()
-                    navigate(`/carriers/${r.usdot_number}`)
+                    navigate(carrierPath(r.usdot_number))
                   }}
                   className="font-medium text-slate-900 hover:underline"
                 >
@@ -98,18 +102,20 @@ export function CarrierSearchResults({ results }: { results: CarrierSearchResult
               <td className="px-3 py-2 whitespace-nowrap">
                 {[r.city, r.state].filter(Boolean).join(', ') || '—'}
               </td>
-              <td className="px-3 py-2 whitespace-nowrap text-xs">
-                {r.review_status === 'OPEN_SIGNALS' ? (
-                  <StatusBadge
-                    label={reviewLabel(r.review_status, r.open_signal_count) ?? ''}
-                    tone={severityTone(r.highest_open_severity ?? 'LOW')}
-                  />
-                ) : (
-                  <span className="text-slate-400">
-                    {reviewLabel(r.review_status, r.open_signal_count) ?? '—'}
-                  </span>
-                )}
-              </td>
+              {showReview && (
+                <td className="px-3 py-2 whitespace-nowrap text-xs">
+                  {r.review_status === 'OPEN_SIGNALS' ? (
+                    <StatusBadge
+                      label={reviewLabel(r.review_status, r.open_signal_count) ?? ''}
+                      tone={severityTone(r.highest_open_severity ?? 'LOW')}
+                    />
+                  ) : (
+                    <span className="text-slate-400">
+                      {reviewLabel(r.review_status, r.open_signal_count) ?? '—'}
+                    </span>
+                  )}
+                </td>
+              )}
               <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-500">
                 {r.loaded ? (
                   <>

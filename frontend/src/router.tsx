@@ -2,9 +2,13 @@ import { createBrowserRouter } from 'react-router-dom'
 
 import { RequireAuth } from './components/auth/RequireAuth'
 import { AppLayout } from './components/layout/AppLayout'
+import { BrokerLayout } from './components/layout/BrokerLayout'
 import { PortalLayout } from './components/layout/PortalLayout'
 import { PublicLayout } from './components/layout/PublicLayout'
 import { AccountsPage } from './pages/AccountsPage'
+import { BrokerGoogleSignupPage } from './pages/BrokerGoogleSignupPage'
+import { BrokerHomePage } from './pages/BrokerHomePage'
+import { BrokerRegisterPage } from './pages/BrokerRegisterPage'
 import { CarrierProfilePage } from './pages/CarrierProfilePage'
 import { DashboardPage } from './pages/DashboardPage'
 import { GoogleSignupPage } from './pages/GoogleSignupPage'
@@ -16,9 +20,10 @@ import { RegisterPage } from './pages/RegisterPage'
 import { SearchPage } from './pages/SearchPage'
 
 /**
- * Public: landing, login, sign-up.
+ * Public: landing, login, sign-up (clients at /register, brokers at /broker/register).
  * Internal portal (STS staff): dashboard, search, carrier profiles, accounts (STS admins).
  * Client portal (STS clients): /portal, /portal/carriers/:usdot (own verified carriers only).
+ * Broker portal (freight brokers): /broker (search), /broker/carriers/:usdot (any carrier).
  */
 export const router = createBrowserRouter([
   {
@@ -28,6 +33,9 @@ export const router = createBrowserRouter([
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
       { path: 'register/google', element: <GoogleSignupPage /> },
+      { path: 'broker/login', element: <LoginPage audience="broker" /> },
+      { path: 'broker/register', element: <BrokerRegisterPage /> },
+      { path: 'broker/register/google', element: <BrokerGoogleSignupPage /> },
     ],
   },
   {
@@ -52,6 +60,19 @@ export const router = createBrowserRouter([
         element: <PortalLayout />,
         children: [
           { index: true, element: <PortalHomePage /> },
+          { path: 'carriers/:usdot', element: <CarrierProfilePage /> },
+        ],
+      },
+    ],
+  },
+  {
+    path: 'broker',
+    element: <RequireAuth portal="broker" />,
+    children: [
+      {
+        element: <BrokerLayout />,
+        children: [
+          { index: true, element: <BrokerHomePage /> },
           { path: 'carriers/:usdot', element: <CarrierProfilePage /> },
         ],
       },

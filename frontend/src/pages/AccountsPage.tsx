@@ -10,7 +10,7 @@ import {
   useMarkAccountsSeen,
 } from '../hooks/useAccounts'
 import { useMe } from '../hooks/useAuth'
-import type { AdminUser, CarrierContactCheck, UserRole } from '../types/auth'
+import type { AdminUser, Brokerage, CarrierContactCheck, UserRole } from '../types/auth'
 import { formatDateTime } from '../utils/format'
 import type { Tone } from '../utils/status'
 
@@ -19,6 +19,8 @@ const ROLE_LABELS: Record<UserRole, string> = {
   STS_ANALYST: 'STS analyst',
   CLIENT_ADMIN: 'Client owner',
   CLIENT_USER: 'Client viewer',
+  BROKER_ADMIN: 'Broker owner',
+  BROKER_USER: 'Broker',
 }
 
 const STATUS_TONES: Record<AdminUser['status'], Tone> = {
@@ -132,8 +134,14 @@ function NewSignupsDialog({ accounts }: { accounts: AdminUser[] }) {
                 {a.email} · {formatPhone(a.phone)}
               </div>
               <div className="mt-1 text-xs text-slate-500">
-                USDOT: <UsdotLinks numbers={a.usdot_numbers} /> · Signed up{' '}
-                {formatDateTime(a.created_at)}
+                {a.broker ? (
+                  <BrokerIdentity broker={a.broker} />
+                ) : (
+                  <>
+                    USDOT: <UsdotLinks numbers={a.usdot_numbers} />
+                  </>
+                )}{' '}
+                · Signed up {formatDateTime(a.created_at)}
               </div>
               {a.carrier_checks.map((check) => (
                 <ContactCheck key={check.usdot_number} check={check} />
@@ -235,12 +243,18 @@ function AccountRow({ account, isMe }: { account: AdminUser; isMe: boolean }) {
       <td className="py-2.5 pr-4 text-slate-700">{account.organization_name}</td>
       <td className="py-2.5 pr-4 text-slate-700">{ROLE_LABELS[account.role]}</td>
       <td className="py-2.5 pr-4 text-xs">
-        <UsdotLinks numbers={account.usdot_numbers} />
-        {account.carrier_checks.map((check) => (
-          <ContactCheck key={check.usdot_number} check={check} />
-        ))}
-        {!account.role.startsWith('STS_') && account.status !== 'DISABLED' && (
-          <AddUsdot accountId={account.id} />
+        {account.broker ? (
+          <BrokerIdentity broker={account.broker} />
+        ) : (
+          <>
+            <UsdotLinks numbers={account.usdot_numbers} />
+            {account.carrier_checks.map((check) => (
+              <ContactCheck key={check.usdot_number} check={check} />
+            ))}
+            {account.role.startsWith('CLIENT_') && account.status !== 'DISABLED' && (
+              <AddUsdot accountId={account.id} />
+            )}
+          </>
         )}
       </td>
       <td className="py-2.5 pr-4">
@@ -329,5 +343,18 @@ export function AccountsPage() {
         </section>
       )}
     </div>
+  )
+}
+
+/** A broker account's brokerage: the MC / USDOT whose broker authority FMCSA confirmed. */
+function BrokerIdentity({ broker }: { broker: Brokerage }) {
+  return (
+    <span className="text-slate-600">
+      Broker {broker.docket_number ?? '—'}
+      {broker.usdot_number && <> · USDOT {broker.usdot_number}</>}
+      <span className="ml-1 text-emerald-700">
+        ✓ broker authority ({broker.authority_source === 'MOTUS' ? 'Motus' : 'L&I'})
+      </span>
+    </span>
   )
 }

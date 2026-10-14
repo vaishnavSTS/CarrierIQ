@@ -1,5 +1,11 @@
-export type UserRole = 'STS_ADMIN' | 'STS_ANALYST' | 'CLIENT_ADMIN' | 'CLIENT_USER'
-export type Portal = 'internal' | 'client'
+export type UserRole =
+  | 'STS_ADMIN'
+  | 'STS_ANALYST'
+  | 'CLIENT_ADMIN'
+  | 'CLIENT_USER'
+  | 'BROKER_ADMIN'
+  | 'BROKER_USER'
+export type Portal = 'internal' | 'client' | 'broker'
 export type UserStatus = 'PENDING' | 'ACTIVE' | 'DISABLED'
 
 export interface User {
@@ -47,6 +53,8 @@ export interface AdminUser extends User {
   /** A client sign-up STS hasn't seen yet (shown in the Accounts pop-up) */
   is_new: boolean
   carrier_checks: CarrierContactCheck[]
+  /** Broker accounts: the brokerage FMCSA confirmed at sign-up */
+  broker: Brokerage | null
 }
 
 /** Sign-up phone / email against FMCSA's record for a USDOT they gave. null = no answer yet. */
@@ -68,6 +76,39 @@ export interface AuthOptions {
 export interface GoogleSignupPending {
   email: string
   full_name: string
+  /** Which sign-up the Google round trip started from */
+  portal: 'client' | 'broker'
+}
+
+/** A brokerage is identified by its MC number or, failing that, its USDOT number. */
+export type BrokerIdKind = 'MC' | 'USDOT'
+
+export interface BrokerRegisterInput {
+  full_name: string
+  company_name: string
+  email: string
+  phone: string
+  password: string
+  id_kind: BrokerIdKind
+  id_number: number
+}
+
+export interface BrokerGoogleSignupInput {
+  company_name: string
+  phone: string
+  id_kind: BrokerIdKind
+  id_number: number
+}
+
+/** A brokerage's FMCSA identity, as checked at sign-up. */
+export interface Brokerage {
+  organization_name: string
+  usdot_number: number | null
+  /** e.g. "MC261603" */
+  docket_number: string | null
+  /** MOTUS | LEGACY_LI */
+  authority_source: string | null
+  authority_checked_at: string | null
 }
 
 export interface GoogleSignupInput {

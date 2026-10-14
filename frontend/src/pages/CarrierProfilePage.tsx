@@ -12,7 +12,7 @@ import { ProfileHeader } from '../features/carrier-profile/ProfileHeader'
 import { SafetySection } from '../features/carrier-profile/SafetySection'
 import { TimelineSection } from '../features/carrier-profile/TimelineSection'
 import { useCarrierProfile } from '../hooks/useCarrierProfile'
-import { useIsClientPortal } from '../hooks/usePortalMode'
+import { useIsClientPortal, usePortalMode, useSearchPath } from '../hooks/usePortalMode'
 
 const TABS = [
   ['identity', 'Identity'],
@@ -27,7 +27,8 @@ const TABS = [
 
 type TabId = (typeof TABS)[number][0]
 
-/** Tabs a client sees for their own carrier (docs/client-internal-portal-plan.md, 4a). */
+/** Tabs a client sees for their own carrier (docs/client-internal-portal-plan.md, 4a), and a
+ * broker for any carrier. */
 const CLIENT_TABS: readonly TabId[] = [
   'identity',
   'authority',
@@ -50,6 +51,7 @@ export function CarrierProfilePage() {
   const { usdot = '' } = useParams()
   const usdotNumber = Number(usdot)
   const client = useIsClientPortal()
+  const ownCarriersOnly = usePortalMode() === 'client'
   const { data: profile, error, isPending } = useCarrierProfile(usdotNumber)
   const navigate = useNavigate()
   // The open tab lives in the URL (?tab=safety) so a refresh or shared link keeps it.
@@ -58,7 +60,7 @@ export function CarrierProfilePage() {
   const tab: TabId = isTab(requested, client) ? requested : DEFAULT_TAB
   const tabs = client
     ? TABS.filter(([id]) => CLIENT_TABS.includes(id)).map(
-        ([id, label]) => [id, CLIENT_LABELS[id] ?? label] as const,
+        ([id, label]) => [id, (ownCarriersOnly && CLIENT_LABELS[id]) || label] as const,
       )
     : TABS
 
@@ -74,7 +76,7 @@ export function CarrierProfilePage() {
     return (
       <Notice>
         {error instanceof ApiError && error.status === 404
-          ? client
+          ? ownCarriersOnly
             ? `USDOT ${usdotNumber} isn’t one of your carriers. Contact STS if it should be.`
             : `No carrier with USDOT ${usdotNumber} was found in CarrierIQ or FMCSA data.`
           : `Could not load USDOT ${usdotNumber}: ${error.message}`}
@@ -150,7 +152,8 @@ export function CarrierProfilePage() {
 }
 
 function Notice({ children }: { children: ReactNode }) {
-  const client = useIsClientPortal()
+  const client = usePortalMode() === 'client'
+  const searchPath = useSearchPath()
   return (
     <div className="space-y-3">
       <div
@@ -160,7 +163,7 @@ function Notice({ children }: { children: ReactNode }) {
         {children}
       </div>
       <Link
-        to={client ? '/portal' : '/search'}
+        to={client ? '/portal' : searchPath}
         className="text-sm text-slate-500 hover:text-slate-900"
       >
         {client ? '← My carriers' : '← Search for a carrier'}

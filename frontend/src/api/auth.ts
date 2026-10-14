@@ -1,5 +1,8 @@
 import type {
   AuthOptions,
+  BrokerGoogleSignupInput,
+  Brokerage,
+  BrokerRegisterInput,
   GoogleSignupInput,
   GoogleSignupPending,
   PortalOverview,
@@ -40,6 +43,19 @@ export function register(input: RegisterInput): Promise<User> {
   return postJson<User>('/auth/register', input)
 }
 
+/** Checks FMCSA for active broker authority, then creates the broker account and logs it in. */
+export function registerBroker(input: BrokerRegisterInput): Promise<User> {
+  return postJson<User>('/auth/broker/register', input)
+}
+
+export function fetchBrokerOverview(): Promise<Brokerage> {
+  return apiGet<Brokerage>('/broker/overview')
+}
+
+export function completeBrokerGoogleSignup(input: BrokerGoogleSignupInput): Promise<User> {
+  return postJson<User>('/auth/broker/google/signup', input)
+}
+
 export function fetchPortalOverview(): Promise<PortalOverview> {
   return apiGet<PortalOverview>('/portal/overview')
 }
@@ -63,5 +79,9 @@ export function completeGoogleSignup(input: GoogleSignupInput): Promise<User> {
   return postJson<User>('/auth/google/signup', input)
 }
 
-/** Full-page navigation (not fetch): the browser must go to Google and come back. */
-export const GOOGLE_START_URL = '/api/v1/auth/google/start'
+/** Full-page navigation (not fetch): the browser must go to Google and come back. A new Google
+ * user then finishes signing up as a client or, from the broker pages, as a broker. */
+export function googleStartUrl(portal: 'client' | 'broker' = 'client'): string {
+  const start = '/api/v1/auth/google/start'
+  return portal === 'broker' ? `${start}?portal=broker` : start
+}

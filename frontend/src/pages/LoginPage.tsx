@@ -13,15 +13,26 @@ const GOOGLE_NOTICES: Record<string, string> = {
   failed: 'Google sign-in didn’t finish. Please try again.',
 }
 
+/** The portal a page belongs to, from its path. */
+function portalOf(path: string): Portal {
+  const under = (prefix: string) => path === prefix || path.startsWith(`${prefix}/`)
+  return under('/portal') ? 'client' : under('/broker') ? 'broker' : 'internal'
+}
+
 /** Only follow ?next= to a page inside the portal the user just logged in to. */
 function safeNext(next: string | null, portal: Portal): string {
   if (!next || !next.startsWith('/') || next.startsWith('//')) return homeFor(portal)
-  const isClientPage = next === '/portal' || next.startsWith('/portal/')
-  if ((portal === 'client') !== isClientPage) return homeFor(portal)
+  const path = next.split(/[?#]/)[0]
+  if (portalOf(path) !== portal || path.startsWith('/broker/register')) return homeFor(portal)
   return next
 }
 
-export function LoginPage() {
+/**
+ * Log in. One login for everyone (the API says which portal to open); /broker/login is the same
+ * form worded for brokers, linking to the broker sign-up.
+ */
+export function LoginPage({ audience = 'client' }: { audience?: 'client' | 'broker' }) {
+  const broker = audience === 'broker'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [params] = useSearchParams()
@@ -51,18 +62,25 @@ export function LoginPage() {
 
   return (
     <AuthCard
-      title="Log in to CarrierIQ"
-      subtitle="Clients and STS staff use the same login; we open the right portal for you."
+      title={broker ? 'Broker login' : 'Log in to CarrierIQ'}
+      subtitle={
+        broker
+          ? 'Vet any carrier: authority, insurance, safety and the Estimated ISS.'
+          : 'Clients and STS staff use the same login; we open the right portal for you.'
+      }
       footer={
         <>
-          New client?{' '}
-          <Link to="/register" className="font-medium text-accent-strong hover:underline">
-            Create an account
+          {broker ? 'New broker?' : 'New client?'}{' '}
+          <Link
+            to={broker ? '/broker/register' : '/register'}
+            className="font-medium text-accent-strong hover:underline"
+          >
+            {broker ? 'Create a broker account' : 'Create an account'}
           </Link>
         </>
       }
     >
-      <GoogleButton />
+      <GoogleButton portal={audience} />
       <form onSubmit={submit} className="space-y-4">
         <Field
           label="Email"

@@ -7,11 +7,15 @@ import type { CarrierSignals, ReviewStatus, Signal } from '../types/carrierSigna
 import type { CarrierApiBase } from '../hooks/usePortalMode'
 import { apiGet, apiRequest } from './client'
 
-export function searchCarriers(query: string): Promise<CarrierSearchResponse> {
-  return apiGet<CarrierSearchResponse>(`/carriers/search?q=${encodeURIComponent(query)}`)
+/** `path` is /broker/search in the broker portal (no STS review status in the answer). */
+export function searchCarriers(
+  query: string,
+  path: '/carriers/search' | '/broker/search' = '/carriers/search',
+): Promise<CarrierSearchResponse> {
+  return apiGet<CarrierSearchResponse>(`${path}?q=${encodeURIComponent(query)}`)
 }
 
-/** `base` is /portal/carriers in the client portal (see usePortalMode). */
+/** `base` is /portal/carriers or /broker/carriers outside the internal portal (usePortalMode). */
 export function fetchCarrierProfile(
   usdotNumber: number,
   base: CarrierApiBase = '/carriers',

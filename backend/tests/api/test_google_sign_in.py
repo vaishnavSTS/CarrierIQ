@@ -127,6 +127,7 @@ def test_new_google_user_finishes_sign_up_and_is_logged_in(api: TestClient, db: 
     assert api.get("/api/v1/auth/google/signup").json() == {
         "email": "new@gmail.com",
         "full_name": "Ana Ruiz",
+        "portal": "client",  # started from the client sign-up page
     }
 
     details = {

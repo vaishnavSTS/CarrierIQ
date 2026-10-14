@@ -1,4 +1,5 @@
-"""What a client may see of their own carrier: the staff answers minus STS-internal data.
+"""What a client (own carriers) or broker (any carrier) may see of a carrier: the staff answers
+minus STS-internal data.
 
 Internal (never sent to clients): intelligence signal links and review status, and anything the
 STS team entered by hand (identity events: ownership attestations, platform alerts, notes), which
@@ -7,6 +8,7 @@ reaches the timeline as IDENTITY_* events. Everything else is public FMCSA / NHT
 
 from app.schemas.carrier_profile import CarrierProfile
 from app.schemas.carrier_safety import CarrierSafetyOut
+from app.schemas.carrier_search import CarrierSearchResponse
 from app.schemas.network import NetworkOut, OwnershipStateOut
 from app.services.identity_events import IDENTITY_PREFIX
 
@@ -47,3 +49,21 @@ def client_safety(safety: CarrierSafetyOut) -> CarrierSafetyOut:
         return safety
     hidden = [b.model_copy(update={"percentile": None}) for b in iss.basics]
     return safety.model_copy(update={"estimated_iss": iss.model_copy(update={"basics": hidden})})
+
+
+def client_search(response: CarrierSearchResponse) -> CarrierSearchResponse:
+    """Search results without STS review status or signal counts."""
+    return response.model_copy(
+        update={
+            "results": [
+                r.model_copy(
+                    update={
+                        "review_status": None,
+                        "open_signal_count": 0,
+                        "highest_open_severity": None,
+                    }
+                )
+                for r in response.results
+            ]
+        }
+    )

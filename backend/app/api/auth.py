@@ -46,8 +46,15 @@ def require_sts_admin(user: CurrentUser) -> User:
 
 def require_client(user: CurrentUser) -> User:
     """Client portal: users of a client organization."""
-    if user.role.is_staff:
+    if not user.role.is_client:
         raise ForbiddenError("This area is for STS clients")
+    return user
+
+
+def require_broker(user: CurrentUser) -> User:
+    """Broker portal: users of a brokerage."""
+    if not user.role.is_broker:
+        raise ForbiddenError("This area is for brokers")
     return user
 
 

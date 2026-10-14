@@ -66,6 +66,7 @@ class DocketPrefix(StrEnum):
 class OrganizationKind(StrEnum):
     STS = "STS"  # STS itself: its users get the internal portal
     CLIENT = "CLIENT"  # an STS client: its users get the client portal
+    BROKER = "BROKER"  # a freight brokerage: its users get the broker portal
 
 
 class UserRole(StrEnum):
@@ -73,10 +74,25 @@ class UserRole(StrEnum):
     STS_ANALYST = "STS_ANALYST"  # internal portal
     CLIENT_ADMIN = "CLIENT_ADMIN"  # client portal, their organization
     CLIENT_USER = "CLIENT_USER"  # client portal, view only
+    BROKER_ADMIN = "BROKER_ADMIN"  # broker portal, their brokerage
+    BROKER_USER = "BROKER_USER"  # broker portal
 
     @property
     def is_staff(self) -> bool:
         return self in (UserRole.STS_ADMIN, UserRole.STS_ANALYST)
+
+    @property
+    def is_client(self) -> bool:
+        return self in (UserRole.CLIENT_ADMIN, UserRole.CLIENT_USER)
+
+    @property
+    def is_broker(self) -> bool:
+        return self in (UserRole.BROKER_ADMIN, UserRole.BROKER_USER)
+
+    @property
+    def portal(self) -> str:
+        """internal | client | broker: where this role's users land after logging in."""
+        return "internal" if self.is_staff else "broker" if self.is_broker else "client"
 
 
 class UserStatus(StrEnum):

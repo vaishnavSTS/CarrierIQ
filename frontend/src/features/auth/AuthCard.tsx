@@ -3,7 +3,7 @@ import { motion } from 'motion/react'
 import type { InputHTMLAttributes, ReactNode } from 'react'
 
 import { AuroraBackdrop } from '../../components/layout/AuroraBackdrop'
-import { GOOGLE_START_URL } from '../../api/auth'
+import { googleStartUrl } from '../../api/auth'
 import { useAuthOptions } from '../../hooks/useAuth'
 
 const ease = [0.16, 1, 0.3, 1] as const
@@ -170,13 +170,20 @@ export function SubmitButton({ busy, children }: { busy: boolean; children: Reac
 }
 
 /** "Continue with Google" plus an "or" divider; hidden when the API has no Google settings. */
-export function GoogleButton({ label = 'Continue with Google' }: { label?: string }) {
+/** `portal`: a new Google user finishes signing up as a client (default) or a broker. */
+export function GoogleButton({
+  label = 'Continue with Google',
+  portal = 'client',
+}: {
+  label?: string
+  portal?: 'client' | 'broker'
+}) {
   const { data } = useAuthOptions()
   if (!data?.google) return null
   return (
     <>
       <a
-        href={GOOGLE_START_URL}
+        href={googleStartUrl(portal)}
         className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-medium text-gray-800 shadow-sm transition-colors hover:bg-gray-50"
       >
         <GoogleLogo />

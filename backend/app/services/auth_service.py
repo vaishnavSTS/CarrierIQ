@@ -8,6 +8,10 @@ Rules:
 - Google sign-in (verified emails only) logs in an existing account with that Google id or email.
   Someone new must first give their company, mobile number and USDOT ("finish signing up"); they
   then get the same client account as a password sign-up, with no password.
+- A broker who registers gives their brokerage's MC (or USDOT) number; FMCSA must show active
+  broker authority for it (services/broker_authority.py). They get a new BROKER organization
+  holding that identity and an ACTIVE BROKER_ADMIN account, logged in at once. Brokers can open
+  any carrier (broker portal), so no carriers are linked to them.
 - STS staff never self-register: they are created with `python -m app.workers.create_staff_user`.
   Google sign-in never creates staff; it only logs in staff accounts that already exist.
 """
@@ -34,6 +38,9 @@ from app.models.enums import OrganizationKind, UserRole, UserStatus
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import (
     AdminUserOut,
+    BrokerGoogleSignupIn,
+    BrokerOut,
+    BrokerRegisterIn,
     CarrierContactCheckOut,
     GoogleSignupIn,
     LoginIn,
@@ -42,6 +49,7 @@ from app.schemas.auth import (
     RegisterIn,
     UserOut,
 )
+from app.services.broker_authority import BrokerAuthority
 
 # Compared against when the email is unknown, so a wrong email takes as long as a wrong password.
 _DUMMY_HASH = hash_password("not-a-real-password")
@@ -122,6 +130,56 @@ class AuthService:
         self.db.commit()
         return user
 
+    def register_broker(self, data: BrokerRegisterIn, authority: BrokerAuthority) -> User:
+        """`authority`: what FMCSA showed for the number the broker gave (checked by the route)."""
+        check_password_strength(data.password)
+        if self.users.by_email(data.email) is not None:
+            raise ConflictError("An account with this email already exists")
+        return self._create_broker(
+            email=data.email,
+            full_name=data.full_name,
+            company_name=data.company_name,
+            phone=data.phone,
+            authority=authority,
+            password_hash=hash_password(data.password),
+        )
+
+    def _create_broker(
+        self,
+        *,
+        email: str,
+        full_name: str,
+        company_name: str,
+        phone: str,
+        authority: BrokerAuthority,
+        password_hash: str | None = None,
+        google_sub: str | None = None,
+    ) -> User:
+        organization = Organization(
+            name=company_name,
+            kind=OrganizationKind.BROKER,
+            usdot_number=authority.usdot_number,
+            docket_number=authority.docket_number,
+            authority_source=authority.source,
+            authority_checked_at=self.now(),
+        )
+        self.db.add(organization)
+        self.db.flush()
+        user = User(
+            organization_id=organization.id,
+            email=email,
+            full_name=full_name,
+            phone=phone,
+            password_hash=password_hash,
+            google_sub=google_sub,
+            role=UserRole.BROKER_ADMIN,
+            status=UserStatus.ACTIVE,
+            last_login_at=self.now(),
+        )
+        self.db.add(user)
+        self.db.commit()
+        return user
+
     def login(self, data: LoginIn) -> User:
         user = self.users.by_email(data.email)
         if user is None:
@@ -158,6 +216,20 @@ class AuthService:
             company_name=data.company_name,
             phone=data.phone,
             usdot_number=data.usdot_number,
+            google_sub=identity.sub,
+        )
+
+    def complete_google_broker_signup(
+        self, identity: GoogleIdentity, data: BrokerGoogleSignupIn, authority: BrokerAuthority
+    ) -> User:
+        if self.users.by_google_sub(identity.sub) or self.users.by_email(identity.email):
+            raise ConflictError("An account with this email already exists; log in instead")
+        return self._create_broker(
+            email=identity.email,
+            full_name=identity.name,
+            company_name=data.company_name,
+            phone=data.phone,
+            authority=authority,
             google_sub=identity.sub,
         )
 
@@ -207,6 +279,8 @@ class AuthService:
         user = self._get(user_id)
         if user.role.is_staff:
             raise ValidationError("STS staff accounts have no carriers of their own")
+        if user.role.is_broker:
+            raise ValidationError("Brokers can already open any carrier")
         links = self.users.organization_carriers(user.organization_id)
         existing = next((link for link in links if link.usdot_number == usdot_number), None)
         if existing is None:
@@ -235,6 +309,7 @@ class AuthService:
             usdot_numbers=usdots,
             is_new=user.seen_at is None and not user.role.is_staff,
             carrier_checks=self._contact_checks(user, usdots),
+            broker=_broker_out(organization) if user.role.is_broker and organization else None,
         )
 
     def _contact_checks(self, user: User, usdots: list[int]) -> list[CarrierContactCheckOut]:
@@ -262,7 +337,13 @@ class AuthService:
             )
         return checks
 
-    # --- Client portal -------------------------------------------------------------------------
+    # --- Client and broker portals -------------------------------------------------------------
+
+    def broker_overview(self, user: User) -> BrokerOut:
+        organization = self.users.organization(user.organization_id)
+        if organization is None:
+            raise NotFoundError("No brokerage for this account")
+        return _broker_out(organization)
 
     def portal_overview(self, user: User) -> PortalOverviewOut:
         organization = self.users.organization(user.organization_id)
@@ -292,9 +373,19 @@ def _user_fields(user: User, organization: Organization | None) -> dict[str, obj
         "phone": user.phone,
         "role": user.role.value,
         "status": user.status.value,
-        "portal": "internal" if user.role.is_staff else "client",
+        "portal": user.role.portal,
         "organization_id": user.organization_id,
         "organization_name": organization.name if organization else "",
         "created_at": user.created_at,
         "last_login_at": user.last_login_at,
     }
+
+
+def _broker_out(organization: Organization) -> BrokerOut:
+    return BrokerOut(
+        organization_name=organization.name,
+        usdot_number=organization.usdot_number,
+        docket_number=organization.docket_number,
+        authority_source=organization.authority_source,
+        authority_checked_at=organization.authority_checked_at,
+    )

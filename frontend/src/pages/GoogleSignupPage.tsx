@@ -39,6 +39,9 @@ export function GoogleSignupPage() {
     )
   }
 
+  // Started from the broker sign-up: finish there.
+  if (pending.data.portal === 'broker') return <Navigate to="/broker/register/google" replace />
+
   const set = (key: keyof typeof form) => (e: { target: { value: string } }) =>
     setForm((f) => ({ ...f, [key]: e.target.value }))
 

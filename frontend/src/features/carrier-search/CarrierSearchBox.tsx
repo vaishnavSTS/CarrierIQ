@@ -1,20 +1,24 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { useSearchPath } from '../../hooks/usePortalMode'
+
 interface Props {
   initialQuery?: string
   autoFocus?: boolean
 }
 
-/** Submitting navigates to /search?q=…, so a search can be bookmarked and the back button works. */
+/** Submitting navigates to /search?q=… (/broker?q=… for brokers), so a search can be bookmarked
+ * and the back button works. */
 export function CarrierSearchBox({ initialQuery = '', autoFocus = false }: Props) {
   const [query, setQuery] = useState(initialQuery)
   const navigate = useNavigate()
+  const searchPath = useSearchPath()
 
   function submit(event: FormEvent) {
     event.preventDefault()
     const trimmed = query.trim()
-    if (trimmed) navigate(`/search?q=${encodeURIComponent(trimmed)}`)
+    if (trimmed) navigate(`${searchPath}?q=${encodeURIComponent(trimmed)}`)
   }
 
   return (

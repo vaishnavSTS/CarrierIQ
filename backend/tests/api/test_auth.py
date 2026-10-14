@@ -70,7 +70,13 @@ def api(db: Session, real_auth: None) -> Iterator[TestClient]:
 
 
 def make_user(db: Session, email: str, role: UserRole, status: UserStatus) -> User:
-    kind = OrganizationKind.STS if role.is_staff else OrganizationKind.CLIENT
+    kind = (
+        OrganizationKind.STS
+        if role.is_staff
+        else OrganizationKind.BROKER
+        if role.is_broker
+        else OrganizationKind.CLIENT
+    )
     organization = Organization(name=f"Org of {email}", kind=kind)
     db.add(organization)
     db.flush()

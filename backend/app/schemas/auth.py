@@ -1,7 +1,9 @@
-"""Login, registration, account approval and the client portal's carrier list."""
+"""Login, registration, account approval, the client portal's carrier list and the broker
+portal's brokerage."""
 
 import re
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -74,9 +76,55 @@ class GoogleSignupIn(BaseModel):
         return value
 
 
+class BrokerIdIn(BaseModel):
+    """The brokerage's MC number (or USDOT), checked against FMCSA for active broker authority."""
+
+    id_kind: Literal["MC", "USDOT"]
+    id_number: int = Field(gt=0, lt=100_000_000)
+
+
+class BrokerRegisterIn(BrokerIdIn):
+    """A freight broker signs up their brokerage."""
+
+    full_name: str = Field(min_length=1, max_length=200)
+    company_name: str = Field(min_length=1, max_length=200)
+    email: str = Field(max_length=254)
+    phone: str = Field(max_length=30)
+    password: str = Field(max_length=200)
+
+    _normalize_email = field_validator("email")(_email)
+    _normalize_phone = field_validator("phone")(normalize_phone)
+
+    @field_validator("full_name", "company_name")
+    @classmethod
+    def _strip(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Required")
+        return value
+
+
+class BrokerGoogleSignupIn(BrokerIdIn):
+    """Finishing a broker's Google sign-up."""
+
+    company_name: str = Field(min_length=1, max_length=200)
+    phone: str = Field(max_length=30)
+
+    _normalize_phone = field_validator("phone")(normalize_phone)
+
+    @field_validator("company_name")
+    @classmethod
+    def _strip(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Required")
+        return value
+
+
 class GoogleSignupPendingOut(BaseModel):
     email: str
     full_name: str
+    portal: str = "client"  # client | broker: which sign-up the Google round trip started from
 
 
 class AuthOptionsOut(BaseModel):
@@ -88,9 +136,9 @@ class UserOut(BaseModel):
     email: str
     full_name: str
     phone: str | None  # 10 digits; clients give one at sign-up, staff may have none
-    role: str  # STS_ADMIN | STS_ANALYST | CLIENT_ADMIN | CLIENT_USER
+    role: str  # STS_ADMIN | STS_ANALYST | CLIENT_ADMIN | CLIENT_USER | BROKER_ADMIN | BROKER_USER
     status: str  # PENDING | ACTIVE | DISABLED
-    portal: str  # internal | client: where this user lands after logging in
+    portal: str  # internal | client | broker: where this user lands after logging in
     organization_id: int
     organization_name: str
     created_at: datetime
@@ -125,8 +173,9 @@ class AdminUserOut(UserOut):
     """A user as an STS admin sees them, with the USDOT numbers their organization named."""
 
     usdot_numbers: list[int]
-    is_new: bool  # a client sign-up STS has not seen yet (the Accounts pop-up)
+    is_new: bool  # a client or broker sign-up STS has not seen yet (the Accounts pop-up)
     carrier_checks: list[CarrierContactCheckOut]
+    broker: "BrokerOut | None" = None  # broker accounts: the brokerage FMCSA confirmed
 
 
 class PortalCarrierOut(BaseModel):
@@ -140,3 +189,16 @@ class PortalCarrierOut(BaseModel):
 class PortalOverviewOut(BaseModel):
     organization_name: str
     carriers: list[PortalCarrierOut]
+
+
+class BrokerOut(BaseModel):
+    """A brokerage's FMCSA identity, as checked at sign-up."""
+
+    organization_name: str
+    usdot_number: int | None
+    docket_number: str | None  # "MC261603"
+    authority_source: str | None  # MOTUS | LEGACY_LI
+    authority_checked_at: datetime | None
+
+
+AdminUserOut.model_rebuild()  # BrokerOut is defined after it

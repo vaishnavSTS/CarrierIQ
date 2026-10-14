@@ -1,16 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
+  completeBrokerGoogleSignup,
   completeGoogleSignup,
   fetchAuthOptions,
+  fetchBrokerOverview,
   fetchGoogleSignup,
   fetchMe,
   fetchPortalOverview,
   login,
   logout,
   register,
+  registerBroker,
 } from '../api/auth'
-import type { GoogleSignupInput, Portal, RegisterInput } from '../types/auth'
+import type {
+  BrokerGoogleSignupInput,
+  BrokerRegisterInput,
+  GoogleSignupInput,
+  Portal,
+  RegisterInput,
+  User,
+} from '../types/auth'
 
 export const ME_KEY = ['auth', 'me'] as const
 
@@ -55,13 +65,40 @@ export function useRegister() {
   })
 }
 
+/** Broker sign-up also logs in: the broker portal opens straight away. */
+export function useRegisterBroker() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: BrokerRegisterInput) => registerBroker(input),
+    onSuccess: (user: User) => {
+      queryClient.clear()
+      queryClient.setQueryData(ME_KEY, user)
+    },
+  })
+}
+
+export function useBrokerOverview() {
+  return useQuery({ queryKey: ['broker', 'overview'], queryFn: fetchBrokerOverview })
+}
+
+export function useCompleteBrokerGoogleSignup() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: BrokerGoogleSignupInput) => completeBrokerGoogleSignup(input),
+    onSuccess: (user: User) => {
+      queryClient.clear()
+      queryClient.setQueryData(ME_KEY, user)
+    },
+  })
+}
+
 export function usePortalOverview() {
   return useQuery({ queryKey: ['portal', 'overview'], queryFn: fetchPortalOverview })
 }
 
 /** The first page each portal opens on. */
 export function homeFor(portal: Portal): string {
-  return portal === 'internal' ? '/dashboard' : '/portal'
+  return { internal: '/dashboard', client: '/portal', broker: '/broker' }[portal]
 }
 
 export function useAuthOptions() {

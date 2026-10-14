@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  Briefcase,
   CircleCheck,
   FileText,
   Network,
@@ -178,7 +179,7 @@ export function LandingPage() {
         {!user && (
           <section className="py-20">
             <SectionHeading eyebrow="Who it’s for" title="One login, the right portal" />
-            <div className="mt-10 grid gap-5 md:grid-cols-2">
+            <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               <motion.article
                 {...reveal(0)}
                 className="group relative flex flex-col overflow-hidden rounded-2xl border border-accent/50 bg-surface/90 p-7 shadow-[0_0_40px_rgba(139,92,246,0.15)]"
@@ -198,6 +199,25 @@ export function LandingPage() {
                     Create a client account
                   </PrimaryLink>
                   <Link to="/login" className="text-sm text-slate-600 hover:text-slate-900">
+                    Already have one? <span className="font-medium underline">Log in</span>
+                  </Link>
+                </div>
+              </motion.article>
+              <motion.article
+                {...reveal(0.05)}
+                className="flex flex-col rounded-2xl border border-slate-200 bg-surface/90 p-7"
+              >
+                <IconBadge icon={Briefcase} />
+                <h3 className="mt-5 text-lg font-semibold text-slate-900">I’m a freight broker</h3>
+                <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">
+                  Sign up with your brokerage’s MC number and vet any carrier: authority, insurance,
+                  safety and Estimated ISS, and the registration checks behind fraud screens.
+                </p>
+                <div className="mt-6 flex flex-wrap items-center gap-4">
+                  <PrimaryLink to="/broker/register" small>
+                    Create a broker account
+                  </PrimaryLink>
+                  <Link to="/broker/login" className="text-sm text-slate-600 hover:text-slate-900">
                     Already have one? <span className="font-medium underline">Log in</span>
                   </Link>
                 </div>
