@@ -2,6 +2,7 @@ import { CircleCheck, FileText, ShieldCheck, TrendingDown, type LucideIcon } fro
 import { motion } from 'motion/react'
 import type { InputHTMLAttributes, ReactNode } from 'react'
 
+import { AuroraBackdrop } from '../../components/layout/AuroraBackdrop'
 import { GOOGLE_START_URL } from '../../api/auth'
 import { useAuthOptions } from '../../hooks/useAuth'
 
@@ -42,14 +43,7 @@ export function AuthCard({
 }) {
   return (
     <div className="relative overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(167,139,250,0.07)_1px,transparent_1px),linear-gradient(to_bottom,rgba(167,139,250,0.07)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_30%,black,transparent)]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-24 -z-10 size-[520px] -translate-x-1/2 rounded-full bg-violet-600/20 blur-[120px]"
-      />
+      <AuroraBackdrop />
 
       <div className="mx-auto max-w-5xl px-4 py-10 md:py-16">
         <motion.div

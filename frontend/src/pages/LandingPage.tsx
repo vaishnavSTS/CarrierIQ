@@ -15,6 +15,7 @@ import { motion } from 'motion/react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
+import { AuroraBackdrop } from '../components/layout/AuroraBackdrop'
 import { SampleShowcase } from '../features/landing/SampleShowcase'
 import { homeFor, useMe } from '../hooks/useAuth'
 
@@ -86,15 +87,8 @@ export function LandingPage() {
 
   return (
     <div className="relative overflow-hidden">
-      {/* Soft grid and glow behind the hero; decorative only. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[780px] bg-[linear-gradient(to_right,rgba(167,139,250,0.07)_1px,transparent_1px),linear-gradient(to_bottom,rgba(167,139,250,0.07)_1px,transparent_1px)] bg-[size:56px_56px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black,transparent)]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute left-1/2 top-24 -z-10 size-[560px] -translate-x-1/2 rounded-full bg-violet-600/20 blur-[120px]"
-      />
+      {/* Aurora glow and film grain behind the hero; decorative only. */}
+      <AuroraBackdrop className="inset-x-0 top-0 h-[900px]" />
 
       <div className="mx-auto max-w-6xl px-4">
         {/* Hero */}
@@ -159,7 +153,7 @@ export function LandingPage() {
             initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.25, ease }}
-            className="mx-auto w-full max-w-md lg:max-w-none"
+            className="mx-auto w-full max-w-md lg:mt-8 lg:max-w-none"
           >
             <SampleShowcase />
           </motion.div>

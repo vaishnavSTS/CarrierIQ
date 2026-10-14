@@ -9,29 +9,27 @@ import {
   Wrench,
   type LucideIcon,
 } from 'lucide-react'
-import { AnimatePresence, motion, useReducedMotion, type Easing } from 'motion/react'
+import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useState, type ReactNode } from 'react'
 
 /**
- * Landing-page illustration: sample cards of what CarrierIQ shows, one every 3 seconds. Every
+ * Landing-page illustration: sample cards of what CarrierIQ shows, as a stack of papers. Every
+ * 3 seconds the front card slides up and away and the next one comes forward. Every
  * card is a made-up carrier and labelled SAMPLE; the national OOS averages are FMCSA's published
  * figures. Pauses on hover; holds still for people who prefer reduced motion.
  */
 
 const INTERVAL_MS = 3000
 const ease = [0.16, 1, 0.3, 1] as const
-// Drop then three shrinking bounces: impacts at 32%, 66% and 88% of the landing.
-const BOUNCE_TIMES = [0, 0.32, 0.5, 0.66, 0.78, 0.88, 0.95, 1]
-// Falls speed up (easeIn), rises slow down (easeOut).
-const BOUNCE_EASE: Easing[] = [
-  'easeIn',
-  'easeOut',
-  'easeIn',
-  'easeOut',
-  'easeIn',
-  'easeOut',
-  'easeIn',
+// The stack: the front card plus two peeking out behind it, each a little lower and smaller.
+const STACK = [
+  { y: 0, scale: 1, opacity: 1 },
+  { y: 16, scale: 0.95, opacity: 0.75 },
+  { y: 32, scale: 0.9, opacity: 0.45 },
 ]
+const HIDDEN_BACK = { y: 32, scale: 0.9, opacity: 0 } // waiting behind the stack
+// The card that just left: lifted up and away like a sheet of paper, solid until the very end.
+const LEFT = { y: -180, scale: 1.02, opacity: [1, 1, 0] }
 
 interface Slide {
   title: string
@@ -148,15 +146,13 @@ export function SampleShowcase() {
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const reduceMotion = useReducedMotion()
+  const count = SLIDES.length
 
   useEffect(() => {
     if (paused || reduceMotion) return
-    const timer = window.setTimeout(() => setIndex((i) => (i + 1) % SLIDES.length), INTERVAL_MS)
+    const timer = window.setTimeout(() => setIndex((i) => (i + 1) % count), INTERVAL_MS)
     return () => window.clearTimeout(timer)
-  }, [index, paused, reduceMotion])
-
-  const slide = SLIDES[index]
-  const Icon = slide.icon
+  }, [index, paused, reduceMotion, count])
 
   return (
     <div
@@ -171,50 +167,62 @@ export function SampleShowcase() {
         className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-violet-500/30 to-fuchsia-500/20 blur-2xl"
       />
 
-      {/* Holds the space while one card leaves and the next arrives, so nothing jumps. */}
-      <div className="relative min-h-[410px]">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={index}
-            // The whole card drops in from above and bounces to rest, each bounce smaller, like a
-            // dropped ball (ease-in on the falls, ease-out on the rises); the old one falls away.
-            // Squash and stretch: taller while falling, flattened on each impact, springing
-            // back as it rises, with a small wobble that settles level.
-            initial={{ opacity: 0, y: -140 }}
-            animate={{
-              opacity: 1,
-              y: [-140, 0, -36, 0, -16, 0, -6, 0],
-              scaleY: [1.06, 0.88, 1.04, 0.94, 1.02, 0.98, 1, 1],
-              scaleX: [0.95, 1.1, 0.98, 1.05, 0.99, 1.02, 1, 1],
-              rotate: [-3, 1.5, -1, 0.6, -0.3, 0.2, 0, 0],
-              transition: {
-                default: { duration: 1.2, times: BOUNCE_TIMES, ease: BOUNCE_EASE },
-                opacity: { duration: 0.25 },
-              },
-            }}
-            style={{ transformOrigin: '50% 100%' }} // squash against the "floor"
-            exit={{ opacity: 0, y: 70, transition: { duration: 0.28, ease: 'easeIn' } }}
-            className="relative flex min-h-[410px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-surface/95 p-5 shadow-2xl backdrop-blur md:p-6"
-            aria-live={paused ? 'polite' : 'off'}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-base font-semibold text-slate-900">EXAMPLE FREIGHT LLC</div>
-                <div className="font-mono text-xs text-slate-500">USDOT 0000000 · MC 000000</div>
-              </div>
-              <span className="rounded-md border border-slate-300 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-500">
-                Sample
-              </span>
-            </div>
-            <div className="mt-5 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-slate-500">
-              <Icon className="size-3.5 text-accent-strong" aria-hidden />
-              {slide.title}
-            </div>
-            <div className="mt-2 flex flex-1 flex-col justify-center">{slide.body}</div>
-            <div className="mt-3">{slide.footer}</div>
-          </motion.div>
-        </AnimatePresence>
+      {/* Room for the cards peeking out below the front one. */}
+      <div className="relative h-[442px]">
+        {SLIDES.map((slide, i) => {
+          // 0 = front, 1-2 = peeking behind, count-1 = the one that just slid away.
+          const depth = (i - index + count) % count
+          const justLeft = depth === count - 1
+          const target = justLeft ? LEFT : (STACK[depth] ?? HIDDEN_BACK)
+          return (
+            <motion.div
+              key={slide.title}
+              initial={false}
+              animate={target}
+              transition={
+                justLeft
+                  ? {
+                      duration: 0.6,
+                      ease: [0.4, 0, 1, 1], // speeds up as it lifts away
+                      opacity: { duration: 0.6, times: [0, 0.7, 1] },
+                    }
+                  : { duration: 0.6, ease }
+              }
+              style={{ zIndex: justLeft ? count + 1 : count - depth, transformOrigin: '50% 100%' }}
+              className="absolute inset-x-0 top-0"
+              aria-hidden={depth !== 0}
+            >
+              <SlideCard slide={slide} replayKey={depth === 0 ? index : -1} />
+            </motion.div>
+          )
+        })}
       </div>
+    </div>
+  )
+}
+
+/** One paper in the stack. `replayKey` changes when it reaches the front, replaying its bars. */
+function SlideCard({ slide, replayKey }: { slide: Slide; replayKey: number }) {
+  const Icon = slide.icon
+  return (
+    <div className="flex h-[410px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-surface p-5 shadow-2xl md:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-base font-semibold text-slate-900">EXAMPLE FREIGHT LLC</div>
+          <div className="font-mono text-xs text-slate-500">USDOT 0000000 · MC 000000</div>
+        </div>
+        <span className="rounded-md border border-slate-300 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-500">
+          Sample
+        </span>
+      </div>
+      <div className="mt-5 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-slate-500">
+        <Icon className="size-3.5 text-accent-strong" aria-hidden />
+        {slide.title}
+      </div>
+      <div key={replayKey} className="mt-2 flex flex-1 flex-col justify-center">
+        {slide.body}
+      </div>
+      <div className="mt-3">{slide.footer}</div>
     </div>
   )
 }
