@@ -268,3 +268,20 @@ def test_crash_only_alert_is_group_12() -> None:
 
     assert (result.band, result.group) == (OPTIONAL, 12)
     assert result.reason == "Crash Indicator over FMCSA's threshold"
+
+
+# --- v2.1: Unsafe Driving segment ----------------------------------------------------------------
+
+
+def test_straight_truck_carriers_rank_in_straight_unsafe_driving_groups() -> None:
+    row = {**CARRIERS["4157195"]}  # MAJHA: Unsafe Driving over threshold as a tractor fleet
+
+    combination = estimate(row_to_sms(row), REFERENCE)
+    straight = estimate(row_to_sms(row, straight=True), REFERENCE)
+
+    def unsafe(e: Any) -> float:
+        return next(b.percentile for b in e.basics if b.basic == "unsafe_driv")
+
+    assert row_to_sms(row, straight=True).basics["unsafe_driv"].straight
+    assert not row_to_sms(row, straight=True).basics["hos_driv"].straight  # no segments
+    assert unsafe(straight) != unsafe(combination)  # ranked against other straight-truck fleets

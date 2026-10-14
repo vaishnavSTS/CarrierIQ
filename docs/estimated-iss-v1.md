@@ -1,6 +1,6 @@
 # CarrierIQ Estimated ISS — v1 methodology
 
-**Status:** v2 built 2026-10-14 — safety algorithm (v1), FMCSA's insufficient-data rules (v1.1) and the Crash Indicator BASIC (v2). Replaces the earlier "Safety Index" points draft.
+**Status:** v2.1 built 2026-10-14 — safety algorithm (v1), FMCSA's insufficient-data rules (v1.1), the Crash Indicator BASIC (v2) and segment-based Unsafe Driving groups (v2.1). Replaces the earlier "Safety Index" points draft.
 **Created:** 2026-10-14
 **Shown to:** STS staff (internal Safety tab) and clients (client portal Safety tab).
 
@@ -47,7 +47,7 @@ inspections *with violations* in that BASIC.
 
 | BASIC | Ranked when | Peer groups by | Groups | Percentile assigned when |
 |---|---|---|---|---|
-| Unsafe Driving | ≥ 3 inspections with Unsafe Driving violations | inspections with violations (combination segment) | 3–8 · 9–21 · 22–57 · 58–149 · 150+ | ≥ 3 inspections with violations |
+| Unsafe Driving | ≥ 3 inspections with Unsafe Driving violations | inspections with violations, by segment (v2.1) | combination 3–8 · 9–21 · 22–57 · 58–149 · 150+; straight 3–4 · 5–8 · 9–18 · 19–49 · 50+ | ≥ 3 inspections with violations |
 | HOS Compliance | ≥ 3 driver inspections and ≥ 1 with a violation | driver inspections | 3–10 · 11–20 · 21–100 · 101–500 · 501+ | ≥ 3 inspections with violations |
 | Driver Fitness | ≥ 5 driver inspections and ≥ 1 with a violation | driver inspections | 5–10 · 11–20 · 21–100 · 101–500 · 501+ | ≥ 5 inspections with violations |
 | Controlled Substances/Alcohol | ≥ 1 inspection with a violation | inspections with violations | 1 · 2 · 3 · 4+ | ≥ 1 |
@@ -59,7 +59,10 @@ utilization factor). Severity: tow-away 1, injury or fatality 2, +1 for an HM re
 ≤ 6 months 3, ≤ 12 months 2, older 1. The utilization factor raises the denominator for fleets
 driving many miles per truck (combination: 1 below 80,000, rising to 1.6 at 160,000–200,000;
 straight: 1 below 20,000, up to 3 at 60,000–200,000; 1 above 200,000 or with no mileage).
-Combination segment = tractors and motorcoaches ≥ 70% of power units. Every carrier with two or
+Combination segment = tractors and motorcoaches ≥ 70% of power units (census fleet, owned +
+term- + trip-leased; no fleet on file → combination). The same segment sets the Unsafe Driving
+peer groups (v2.1); FMCSA's published Unsafe Driving measure already includes its utilization
+factor. Every carrier with two or
 more crashes is ranked (~32,000), not only those in the SMS property file.
 
 An FMCSA **acute/critical violation** found in an investigation (the `*_ac` flags) sets that
@@ -171,9 +174,12 @@ Estimates: the three 77s → 77, Kang and Marathon → 63, Sekhon → 74, Mann �
    census, and the segment from the current census fleet. Crashes ruled not preventable are
    excluded because FMCSA gives them no weight. Passenger and HM thresholds (50% / 60%) are not
    applied.
-2. **Unsafe Driving segment** — assumed "combination" (tractor) for every carrier; straight-truck
-   carriers use different peer groups. The v2 segment rule could be reused here, but that needs
-   the fleet of every Unsafe Driving carrier, not just the crash carriers.
+2. **Unsafe Driving segment** (v2.1): taken from the current census fleet, so a carrier whose
+   fleet changed recently may be in a different segment from FMCSA's. Of 12,761 straight-truck
+   carriers ranked in Unsafe Driving, 712 moved more than 5 points and 626 changed band when
+   v2.1 stopped ranking them against tractor fleets. All 22 validated carriers are unchanged
+   (every one is a tractor fleet, or in Pass); a straight-truck carrier's real ISS would
+   validate it.
 3. **HM thresholds** (60% / 75%) and the **HM Compliance BASIC** are not applied.
 4. **"Violation in the last 12 months"** rule — the national file has no violation dates.
 5. **Group 6** (insurance / other serious violations) needs investigation results, which are
@@ -191,11 +197,12 @@ Estimates: the three 77s → 77, Kang and Marathon → 63, Sekhon → 74, Mann �
    - per ISS band: how the percentile sums are spread;
    - (v2) the Crash Indicator of every carrier with two or more crashes (crashes, segment,
      measure, recent), because the per-carrier crash weights are not ingested elsewhere.
-   Then the SMS Input crash file (~252,000 rows) and, for the ~32,000 carriers with two or
-   more crashes, their SMS census and fleet (a few hundred carriers per request).
+   Then the active census with fleet by vehicle type (~2.24 million carriers: sizes and
+   segments), the SMS Input crash file (~252,000 rows) and, for the ~32,000 carriers with two
+   or more crashes, their SMS census (a few hundred carriers per request).
    About 1.2 MB per month instead of ~100–150 MB; the month is stored with them.
-2. **Calculator** `app/intelligence/iss_estimate.py`, version `iss-est v2`: a carrier's own SMS
-   row (already ingested) + its Crash Indicator from the tables → percentiles, alerts, group,
+2. **Calculator** `app/intelligence/iss_estimate.py`, version `iss-est v2.1`: a carrier's own SMS
+   row (already ingested), its segment from its census record + its Crash Indicator from the tables → percentiles, alerts, group,
    value, explanation. Out-of-service order → 100. Tests pin the validated carriers.
 3. **API:** the estimate and its explanation in the carrier's Safety data.
 4. **Safety tab card** for clients and STS:
@@ -234,8 +241,9 @@ always be explained.
 2. **Estimated BASIC percentiles:** clients see only over / under FMCSA's threshold (and "not
    enough data"); STS staff also see the estimated percentiles. ✅
 3. **Crashes:** a known gap in v1; Crash Indicator added in v2. ✅
-4. **Landing page claim** "0 made-up ratings, only FMCSA evidence" — to be reworded before
-   release, e.g. "Estimates follow FMCSA's own published methods". ⏳
+4. **Landing page claim** "0 made-up ratings, only FMCSA evidence" — reworded 2026-10-14 to
+   "1–100 · Estimated ISS, by FMCSA's published method", and the packet card to "Facts from
+   FMCSA, and estimates that follow FMCSA's own published methods". ✅
 
 ---
 
@@ -244,5 +252,6 @@ always be explained.
 - **v1.1 — insufficient-data carriers:** done 2026-10-14 (section 3, step 5).
 - **v2 — Crash Indicator:** done 2026-10-14 (section 3, step 1). Brought the Optional and lower
   Inspect carriers to within ±1; Hira and RANB still miss (section 4).
-- **Next:** more real ISS values, high-risk and near-threshold carriers especially, to test
+- **v2.1 — Unsafe Driving segment:** done 2026-10-14 (section 5, gap 2).
+- **Next:** more real ISS values (a straight-truck carrier with Unsafe Driving violations too), high-risk and near-threshold carriers especially, to test
   FMCSA's current high-risk rule (Hira) and month-to-month timing (RANB).

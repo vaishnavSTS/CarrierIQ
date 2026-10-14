@@ -54,14 +54,14 @@ const FEATURES: { icon: LucideIcon; title: string; text: string }[] = [
   {
     icon: FileText,
     title: 'A packet you can send',
-    text: 'A dated, sourced carrier packet to share with brokers and shippers. Facts from FMCSA, not a made-up rating.',
+    text: 'A dated, sourced carrier packet to share with brokers and shippers. Facts from FMCSA, and estimates that follow FMCSA’s own published methods.',
   },
 ]
 
 const FACTS = [
   { value: '20+', label: 'public FMCSA & NHTSA datasets' },
   { value: '6', label: 'views of every carrier' },
-  { value: '0', label: 'made-up ratings, only FMCSA evidence' },
+  { value: '1–100', label: 'Estimated ISS, by FMCSA’s published method' },
 ]
 
 const STEPS: { icon: LucideIcon; title: string; text: string }[] = [

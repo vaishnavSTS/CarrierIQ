@@ -14,18 +14,21 @@ Two pure parts:
 v2 adds the Crash Indicator BASIC (not public in SMS results): rebuilt from FMCSA's SMS Input
 crash and census files, which carry each crash's severity and time weight (`crash_basic`).
 
-Known gaps (methodology section 5): Unsafe Driving assumes the combination segment, HM
-thresholds and the 12-month recent-violation rule (other than for crashes) are not applied.
+Both Unsafe Driving and the Crash Indicator rank carriers within their segment (combination or
+straight trucks, from the census fleet: `is_straight`).
+
+Known gaps (methodology section 5): HM thresholds and the 12-month recent-violation rule (other
+than for crashes) are not applied.
 """
 
 import bisect
 from collections import defaultdict
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Container, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 from typing import Any
 
-VERSION = "iss-est v2"
+VERSION = "iss-est v2.1"
 SAMPLE = 501  # points kept per sorted distribution (0.2-percentile resolution)
 
 HIGH = 10**9
@@ -51,6 +54,7 @@ BASICS: dict[str, BasicSpec] = {
     "unsafe_driv": BasicSpec(
         "Unsafe Driving", "violations", 3, 3,
         [(3, 8), (9, 21), (22, 57), (58, 149), (150, HIGH)], 65, False,
+        [(3, 4), (5, 8), (9, 18), (19, 49), (50, HIGH)],
     ),
     "hos_driv": BasicSpec("HOS Compliance", "driver", 3, 3, GROUPS_3, 65, True),
     "driv_fit": BasicSpec("Driver Fitness", "driver", 5, 5, GROUPS_5, 80, True),
@@ -145,8 +149,9 @@ def _num(value: object) -> float:
         return 0.0
 
 
-def row_to_sms(row: Mapping[str, Any]) -> CarrierSms:
-    """A row of FMCSA's SMS file (data.transportation.gov column names) as CarrierSms."""
+def row_to_sms(row: Mapping[str, Any], straight: bool = False) -> CarrierSms:
+    """A row of FMCSA's SMS file (data.transportation.gov column names) as CarrierSms;
+    `straight`: the carrier's segment, for Unsafe Driving."""
     return CarrierSms(
         driver_inspections=int(_num(row.get("driver_insp_total"))),
         vehicle_inspections=int(_num(row.get("vehicle_insp_total"))),
@@ -155,6 +160,7 @@ def row_to_sms(row: Mapping[str, Any]) -> CarrierSms:
                 measure=_num(row.get(f"{key}_measure")),
                 inspections_with_violation=int(_num(row.get(f"{key}_insp_w_viol"))),
                 acute_critical=str(row.get(f"{key}_ac") or "N").upper() == "Y",
+                straight=straight and BASICS[key].straight_groups is not None,
             )
             for key in SMS_FILE_BASICS
         },
@@ -285,14 +291,16 @@ def build_reference(
     data_month: str,
     sizes: Mapping[str, tuple[float, float]] | None = None,
     crashes: Mapping[str, SmsBasic] | None = None,
+    straight: Container[str] = (),
 ) -> dict[str, Any]:
     """Lookup tables for `estimate`, from every row of FMCSA's national SMS property file.
     `sizes` (USDOT -> power units, drivers, from FMCSA's census) adds the inspection-rate
     ranking the insufficient-data algorithm uses for carriers with a few inspections.
-    `crashes` (USDOT -> `crash_basic`) adds the Crash Indicator."""
+    `crashes` (USDOT -> `crash_basic`) adds the Crash Indicator; `straight` holds the USDOT
+    numbers of straight-truck carriers (Unsafe Driving peer groups)."""
     rows = list(rows)
     crashes = crashes or {}
-    carriers = [row_to_sms(r) for r in rows]
+    carriers = [row_to_sms(r, str(r.get("dot_number")) in straight) for r in rows]
 
     pools: dict[str, dict[int, list[float]]] = {k: defaultdict(list) for k in BASICS}
     for sms in carriers:

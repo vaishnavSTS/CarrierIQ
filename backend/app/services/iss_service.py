@@ -51,7 +51,7 @@ SMS_COLUMNS = ",".join(
         for part in ("measure", "insp_w_viol", "ac")
     ]
 )
-CENSUS_COLUMNS = "dot_number,power_units,total_drivers"
+CENSUS_COLUMNS = ",".join(["dot_number", "power_units", "total_drivers", *FLEET_COLUMNS])
 CRASH_COLUMNS = "dot_number,report_number,severity_weight,time_weight"
 SMS_CENSUS_COLUMNS = "dot_number,nbr_power_unit,recent_mileage"
 PAGE_SIZE = 50_000
@@ -90,14 +90,16 @@ def build_iss_reference(db: Session, today: date, client: SocrataClient | None =
         rows = client.get_all_rows(
             dataset, {"$select": SMS_COLUMNS}, order="dot_number", page_size=PAGE_SIZE
         )
-        # Fleet sizes of active carriers, for the insufficient-data inspection-rate ranking.
+        # Active carriers' fleet sizes (insufficient-data inspection-rate ranking) and vehicle
+        # types (combination / straight segment for Unsafe Driving and the Crash Indicator).
         census = client.get_all_rows(
             settings.census_dataset_id,
             {"$select": CENSUS_COLUMNS, "$where": "status_code='A'"},
             order="dot_number",
             page_size=PAGE_SIZE,
         )
-        crashes = _crash_basics(client)
+        fleets = {str(r.get("dot_number")): r for r in census}
+        crashes = _crash_basics(client, fleets)
     finally:
         if own_client:
             client.close()
@@ -107,7 +109,8 @@ def build_iss_reference(db: Session, today: date, client: SocrataClient | None =
         str(r.get("dot_number")): (_number(r.get("power_units")), _number(r.get("total_drivers")))
         for r in census
     }
-    tables = build_reference(rows, month.isoformat()[:7], sizes, crashes)
+    straight = {dot for dot, fleet in fleets.items() if is_straight(fleet)}
+    tables = build_reference(rows, month.isoformat()[:7], sizes, crashes, straight)
     existing = db.scalar(select(IssReference).where(IssReference.data_month == month))
     if existing is None:
         db.add(
@@ -139,7 +142,7 @@ def _by_dot(
     return found
 
 
-def _crash_basics(client: SocrataClient) -> dict[str, SmsBasic]:
+def _crash_basics(client: SocrataClient, fleets: dict[str, Any]) -> dict[str, SmsBasic]:
     """Every carrier's Crash Indicator measure from FMCSA's SMS Input files (crash weights,
     average power units, recent mileage) and the census fleet (combination or straight)."""
     settings = get_settings()
@@ -158,9 +161,6 @@ def _crash_basics(client: SocrataClient) -> dict[str, SmsBasic]:
             )
     dots = sorted(d for d, reports in weights.items() if len(reports) >= 2)
     census = _by_dot(client, settings.sms_census_dataset_id, SMS_CENSUS_COLUMNS, dots)
-    fleet = _by_dot(
-        client, settings.census_dataset_id, ",".join(["dot_number", *FLEET_COLUMNS]), dots
-    )
     basics = {}
     for dot in dots:
         facts = census.get(dot, {})
@@ -168,7 +168,7 @@ def _crash_basics(client: SocrataClient) -> dict[str, SmsBasic]:
             list(weights[dot].values()),
             _number(facts.get("nbr_power_unit")),
             _number(facts.get("recent_mileage")),
-            is_straight(fleet.get(dot, {})),
+            is_straight(fleets.get(dot, {})),
         )
         if basic is not None:
             basics[dot] = basic
@@ -212,7 +212,17 @@ def _carrier_facts(db: Session, carrier: Carrier, today: date) -> CarrierFacts:
     )
 
 
-def _carrier_sms(db: Session, carrier_id: int) -> tuple[CarrierSms | None, bool]:
+def _straight(db: Session, usdot_number: int) -> bool:
+    """Whether the carrier is in FMCSA's straight-truck segment, from its census fleet."""
+    census = RawRecordRepository(db).latest(
+        CompanyCensusAdapter.source, get_settings().census_dataset_id, str(usdot_number)
+    )
+    return is_straight(census.payload) if census else False
+
+
+def _carrier_sms(
+    db: Session, carrier_id: int, straight: bool = False
+) -> tuple[CarrierSms | None, bool]:
     """(the carrier's newest SMS row, whether it is a passenger carrier)."""
     rows = SafetyRecordRepository(db).latest_sms(carrier_id)
     if not rows:
@@ -227,6 +237,7 @@ def _carrier_sms(db: Session, carrier_id: int) -> tuple[CarrierSms | None, bool]
                     measure=float(r.measure or 0),
                     inspections_with_violation=r.inspections_with_violation,
                     acute_critical=bool(r.acute_critical),
+                    straight=straight and r.basic == "unsafe_driv",
                 )
                 for r in rows
             },
@@ -260,7 +271,7 @@ def iss_for(db: Session, usdot_number: int) -> EstimatedIssOut | None:
     reference = latest_reference(db)
     if carrier is None or reference is None:
         return None
-    sms, passenger = _carrier_sms(db, carrier.id)
+    sms, passenger = _carrier_sms(db, carrier.id, _straight(db, usdot_number))
     if passenger:
         return EstimatedIssOut(
             value=None,

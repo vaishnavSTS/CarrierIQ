@@ -65,9 +65,13 @@ ruff check . && ruff format --check .
 mypy app
 
 # frontend
+npx prettier --check src
 npm run lint
 npm run build
 ```
+
+GitHub Actions (`.github/workflows/ci.yml`) runs the same checks on every push to `main` and
+every pull request, plus `alembic upgrade head` on an empty PostgreSQL and the database tests.
 
 ### Database tests
 
