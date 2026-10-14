@@ -4,7 +4,7 @@ import { DashboardHero } from '../features/dashboard/DashboardHero'
 import { LiveSignalFeed } from '../features/dashboard/LiveSignalFeed'
 import { SeverityBreakdown } from '../features/dashboard/SeverityBreakdown'
 import { JobsCard } from '../features/system-status/JobsCard'
-import { SystemStatusCard } from '../features/system-status/SystemStatusCard'
+import { SystemAlerts } from '../features/system-status/SystemAlerts'
 import { useDashboard } from '../hooks/useDashboard'
 
 const rise = (delay: number) => ({
@@ -19,6 +19,7 @@ export function DashboardPage() {
   return (
     <>
       <div className="space-y-6">
+        <SystemAlerts />
         <DashboardHero totals={data?.totals} signals={data?.recent_signals} />
 
         <div className="grid gap-6 lg:grid-cols-3">
@@ -27,7 +28,6 @@ export function DashboardPage() {
           </motion.div>
           <motion.div className="space-y-6" {...rise(0.4)}>
             <SeverityBreakdown totals={data?.totals} />
-            <SystemStatusCard />
           </motion.div>
         </div>
 
