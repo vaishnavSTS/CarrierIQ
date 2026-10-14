@@ -75,6 +75,7 @@ export function BrokerRegisterPage() {
 
   return (
     <AuthCard
+      audience="broker"
       title="Create a broker account"
       subtitle="For freight brokers. Vet any carrier as soon as you sign up."
       footer={

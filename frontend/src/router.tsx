@@ -34,6 +34,7 @@ export const router = createBrowserRouter([
       { path: 'register', element: <RegisterPage /> },
       { path: 'register/google', element: <GoogleSignupPage /> },
       { path: 'broker/login', element: <LoginPage audience="broker" /> },
+      { path: 'team/login', element: <LoginPage audience="staff" /> },
       { path: 'broker/register', element: <BrokerRegisterPage /> },
       { path: 'broker/register/google', element: <BrokerGoogleSignupPage /> },
     ],

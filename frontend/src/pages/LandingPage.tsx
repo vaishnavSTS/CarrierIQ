@@ -234,7 +234,7 @@ export function LandingPage() {
                 </p>
                 <div className="mt-6">
                   <Link
-                    to="/login"
+                    to="/team/login"
                     className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-900 transition-colors hover:border-slate-400 hover:bg-slate-50"
                   >
                     STS team login

@@ -29,7 +29,7 @@ export function RequireAuth({ portal }: { portal: Portal }) {
   }
   if (!user) {
     const next = encodeURIComponent(location.pathname + location.search)
-    const login = portal === 'broker' ? '/broker/login' : '/login'
+    const login = { internal: '/team/login', client: '/login', broker: '/broker/login' }[portal]
     return <Navigate to={`${login}?next=${next}`} replace />
   }
   if (user.portal !== portal) return <Navigate to={homeFor(user.portal)} replace />

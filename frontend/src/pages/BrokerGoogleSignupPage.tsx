@@ -29,6 +29,7 @@ export function BrokerGoogleSignupPage() {
   if (!pending.data) {
     return (
       <AuthCard
+        audience="broker"
         title="Your Google sign-in has expired"
         subtitle="It is kept for 30 minutes. Continue with Google again to finish signing up."
         footer={
@@ -80,6 +81,7 @@ export function BrokerGoogleSignupPage() {
 
   return (
     <AuthCard
+      audience="broker"
       title="Finish signing up"
       subtitle="Your brokerage and its MC number, so we can confirm your broker authority."
       footer={

@@ -2,7 +2,14 @@ import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { ApiError } from '../api/client'
-import { AuthCard, Field, FormError, GoogleButton, SubmitButton } from '../features/auth/AuthCard'
+import {
+  AuthCard,
+  Field,
+  FormError,
+  GoogleButton,
+  SubmitButton,
+  type Audience,
+} from '../features/auth/AuthCard'
 import { homeFor, useLogin, useMe } from '../hooks/useAuth'
 import type { Portal } from '../types/auth'
 
@@ -27,12 +34,28 @@ function safeNext(next: string | null, portal: Portal): string {
   return next
 }
 
+/** Wording per entry point. Any account can log in on any of them: the API says which portal
+ * to open. */
+const COPY: Record<Audience, { title: string; subtitle: string }> = {
+  client: {
+    title: 'Log in to CarrierIQ',
+    subtitle: 'For STS clients: your carrier’s FMCSA record and what to improve.',
+  },
+  broker: {
+    title: 'Broker login',
+    subtitle: 'Vet any carrier: authority, insurance, safety and the Estimated ISS.',
+  },
+  staff: {
+    title: 'STS team login',
+    subtitle: 'For STS admins and analysts. Accounts are created by an STS admin.',
+  },
+}
+
 /**
- * Log in. One login for everyone (the API says which portal to open); /broker/login is the same
- * form worded for brokers, linking to the broker sign-up.
+ * Log in: /login (clients), /broker/login (brokers, linking to the broker sign-up) and
+ * /team/login (STS staff, no sign-up). The same form and the same API on each.
  */
-export function LoginPage({ audience = 'client' }: { audience?: 'client' | 'broker' }) {
-  const broker = audience === 'broker'
+export function LoginPage({ audience = 'client' }: { audience?: Audience }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [params] = useSearchParams()
@@ -62,25 +85,12 @@ export function LoginPage({ audience = 'client' }: { audience?: 'client' | 'brok
 
   return (
     <AuthCard
-      title={broker ? 'Broker login' : 'Log in to CarrierIQ'}
-      subtitle={
-        broker
-          ? 'Vet any carrier: authority, insurance, safety and the Estimated ISS.'
-          : 'Clients and STS staff use the same login; we open the right portal for you.'
-      }
-      footer={
-        <>
-          {broker ? 'New broker?' : 'New client?'}{' '}
-          <Link
-            to={broker ? '/broker/register' : '/register'}
-            className="font-medium text-accent-strong hover:underline"
-          >
-            {broker ? 'Create a broker account' : 'Create an account'}
-          </Link>
-        </>
-      }
+      audience={audience}
+      title={COPY[audience].title}
+      subtitle={COPY[audience].subtitle}
+      footer={<LoginFooter audience={audience} />}
     >
-      <GoogleButton portal={audience} />
+      <GoogleButton portal={audience === 'broker' ? 'broker' : 'client'} />
       <form onSubmit={submit} className="space-y-4">
         <Field
           label="Email"
@@ -103,5 +113,33 @@ export function LoginPage({ audience = 'client' }: { audience?: 'client' | 'brok
         <SubmitButton busy={login.isPending}>Log in</SubmitButton>
       </form>
     </AuthCard>
+  )
+}
+
+const linkClass = 'font-medium text-accent-strong hover:underline'
+
+function LoginFooter({ audience }: { audience: Audience }) {
+  if (audience === 'staff') {
+    return (
+      <>
+        Not on the STS team?{' '}
+        <Link to="/login" className={linkClass}>
+          Client login
+        </Link>{' '}
+        ·{' '}
+        <Link to="/broker/login" className={linkClass}>
+          Broker login
+        </Link>
+      </>
+    )
+  }
+  const broker = audience === 'broker'
+  return (
+    <>
+      {broker ? 'New broker?' : 'New client?'}{' '}
+      <Link to={broker ? '/broker/register' : '/register'} className={linkClass}>
+        {broker ? 'Create a broker account' : 'Create an account'}
+      </Link>
+    </>
   )
 }

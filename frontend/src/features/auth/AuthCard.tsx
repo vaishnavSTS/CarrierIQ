@@ -1,4 +1,14 @@
-import { CircleCheck, FileText, ShieldCheck, TrendingDown, type LucideIcon } from 'lucide-react'
+import {
+  CircleCheck,
+  FileText,
+  Gauge,
+  Network,
+  Search,
+  ShieldCheck,
+  TrendingDown,
+  UserCheck,
+  type LucideIcon,
+} from 'lucide-react'
 import { motion } from 'motion/react'
 import type { InputHTMLAttributes, ReactNode } from 'react'
 
@@ -8,7 +18,15 @@ import { useAuthOptions } from '../../hooks/useAuth'
 
 const ease = [0.16, 1, 0.3, 1] as const
 
-const BENEFITS: { icon: LucideIcon; title: string; text: string }[] = [
+export type Audience = 'client' | 'broker' | 'staff'
+
+interface Benefit {
+  icon: LucideIcon
+  title: string
+  text: string
+}
+
+const CLIENT_BENEFITS: Benefit[] = [
   {
     icon: ShieldCheck,
     title: 'See what a broker’s check sees',
@@ -26,6 +44,64 @@ const BENEFITS: { icon: LucideIcon; title: string; text: string }[] = [
   },
 ]
 
+/** Clients (carriers) look at their own record; brokers vet carriers before booking them; the
+ * STS team works the internal dashboard. */
+const PANEL: Record<
+  Audience,
+  { lead: string; accent: string; intro: string; benefits: Benefit[] }
+> = {
+  client: {
+    lead: 'Understand your carrier',
+    accent: 'the way brokers do',
+    intro: 'Public FMCSA data, turned into a clear picture and what to do about it.',
+    benefits: CLIENT_BENEFITS,
+  },
+  broker: {
+    lead: 'Vet any carrier',
+    accent: 'before you book the load',
+    intro: 'Public FMCSA data on any carrier, with the source named on every value.',
+    benefits: [
+      {
+        icon: ShieldCheck,
+        title: 'Authority and insurance, current',
+        text: 'Active MC, insurance and BOC-3 on file, revocations, straight from FMCSA.',
+      },
+      {
+        icon: Gauge,
+        title: 'Safety at a glance',
+        text: 'Estimated ISS – Safety score, out-of-service rates, crashes and CSA alerts.',
+      },
+      {
+        icon: Network,
+        title: 'Fraud red flags',
+        text: 'Phones, addresses and VINs shared with other carriers; registration gaps.',
+      },
+    ],
+  },
+  staff: {
+    lead: 'Carrier intelligence',
+    accent: 'for the STS team',
+    intro: 'The internal dashboard: every carrier, every signal, every account.',
+    benefits: [
+      {
+        icon: Search,
+        title: 'Search and refresh any carrier',
+        text: 'Load any USDOT or MC from FMCSA and NHTSA, and see what changed.',
+      },
+      {
+        icon: Network,
+        title: 'Review signals with evidence',
+        text: 'Shared contacts and VINs, authority and insurance gaps, each with its source.',
+      },
+      {
+        icon: UserCheck,
+        title: 'Manage accounts',
+        text: 'New client and broker sign-ups, checked against FMCSA; disable or reactivate.',
+      },
+    ],
+  },
+}
+
 /**
  * Frame for the login and sign-up forms: a brand panel (large screens) beside the form, on the
  * same grid-and-glow backdrop as the landing page.
@@ -35,11 +111,14 @@ export function AuthCard({
   subtitle,
   children,
   footer,
+  audience = 'client',
 }: {
   title: string
   subtitle: string
   children: ReactNode
   footer: ReactNode
+  /** Which brand panel to show: clients' own record, or brokers vetting carriers. */
+  audience?: Audience
 }) {
   return (
     <div className="relative overflow-hidden">
@@ -52,7 +131,7 @@ export function AuthCard({
           transition={{ duration: 0.6, ease }}
           className="grid overflow-hidden rounded-3xl border border-slate-200 bg-surface/80 shadow-2xl backdrop-blur lg:grid-cols-[1fr_1.05fr]"
         >
-          <BrandPanel />
+          <BrandPanel audience={audience} />
 
           <section className="p-6 sm:p-10">
             <motion.div
@@ -72,7 +151,8 @@ export function AuthCard({
   )
 }
 
-function BrandPanel() {
+function BrandPanel({ audience }: { audience: Audience }) {
+  const panel = PANEL[audience]
   return (
     <aside className="relative hidden overflow-hidden bg-gradient-to-br from-violet-700/50 via-violet-900/40 to-fuchsia-800/40 p-10 lg:flex lg:flex-col">
       <div
@@ -86,18 +166,16 @@ function BrandPanel() {
 
       <div className="relative">
         <h2 className="text-3xl font-semibold leading-tight tracking-tight text-slate-950">
-          Understand your carrier{' '}
+          {panel.lead}{' '}
           <span className="bg-gradient-to-r from-violet-200 via-fuchsia-200 to-violet-300 bg-clip-text text-transparent">
-            the way brokers do
+            {panel.accent}
           </span>
         </h2>
-        <p className="mt-3 text-sm text-slate-700">
-          Public FMCSA data, turned into a clear picture and what to do about it.
-        </p>
+        <p className="mt-3 text-sm text-slate-700">{panel.intro}</p>
       </div>
 
       <ul className="relative mt-10 space-y-6">
-        {BENEFITS.map(({ icon: Icon, title, text }, i) => (
+        {panel.benefits.map(({ icon: Icon, title, text }, i) => (
           <motion.li
             key={title}
             initial={{ opacity: 0, x: -14 }}
