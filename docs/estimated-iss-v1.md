@@ -1,6 +1,6 @@
 # CarrierIQ Estimated ISS — v1 methodology
 
-**Status:** v1.1 built 2026-10-14 — safety algorithm (v1) plus FMCSA's insufficient-data rules (v1.1). Replaces the earlier "Safety Index" points draft.
+**Status:** v2 built 2026-10-14 — safety algorithm (v1), FMCSA's insufficient-data rules (v1.1) and the Crash Indicator BASIC (v2). Replaces the earlier "Safety Index" points draft.
 **Created:** 2026-10-14
 **Shown to:** STS staff (internal Safety tab) and clients (client portal Safety tab).
 
@@ -30,6 +30,8 @@ Lower is better. 100 means an active out-of-service order.
 | FMCSA, *ISS-CSA Algorithm Description*, Dec 2012 (Appendix A) | ISS groups 1–13, ranking inside each band, Pass group, OOS rule, insufficient-data rules | `research_notes/FMCSA ISS and SMS/` · ai.fmcsa.dot.gov/sms/helpfiles/iss_algorithm.pdf |
 | FMCSA, *SMS Methodology* v3.21, May 2026 | Peer (safety event) groups, data sufficiency, percentile ranking, intervention thresholds | `research_notes/FMCSA ISS and SMS/` · csa.fmcsa.dot.gov/documents/smsmethodology.pdf |
 | FMCSA *SMS AB PassProperty* (data.transportation.gov `4y6x-dmck`), monthly | BASIC measures, inspection counts, inspections with violations, acute/critical flags for every interstate/HM property carrier (~677,000) | public dataset |
+| FMCSA *SMS Input - Crash* (`4wxs-vbns`), monthly | every crash SMS uses (24 months, ~252,000), with FMCSA's own severity and time weight; crashes found not preventable carry no weight | public dataset |
+| FMCSA *SMS Input - Motor Carrier Census* (`kjg3-diqy`) + Company Census (`az4n-8mr2`) | average power units and recent mileage (utilization factor); fleet by vehicle type (combination / straight segment) | public datasets |
 | FMCSA out-of-service orders (`p2mt-9ige`) | ISS 100 override | already ingested by CarrierIQ |
 
 ---
@@ -50,6 +52,15 @@ inspections *with violations* in that BASIC.
 | Driver Fitness | ≥ 5 driver inspections and ≥ 1 with a violation | driver inspections | 5–10 · 11–20 · 21–100 · 101–500 · 501+ | ≥ 5 inspections with violations |
 | Controlled Substances/Alcohol | ≥ 1 inspection with a violation | inspections with violations | 1 · 2 · 3 · 4+ | ≥ 1 |
 | Vehicle Maintenance | ≥ 5 vehicle inspections and ≥ 1 with a violation | vehicle inspections | 5–10 · 11–20 · 21–100 · 101–500 · 501+ | ≥ 5 inspections with violations |
+| Crash Indicator (v2) | ≥ 2 crashes in 24 months | crashes, by segment | combination 2–3 · 4–6 · 7–16 · 17–45 · 46+; straight 2 · 3–4 · 5–8 · 9–26 · 27+ | a crash in the last 12 months |
+
+**Crash Indicator measure** = Σ (severity weight × time weight) ÷ (average power units ×
+utilization factor). Severity: tow-away 1, injury or fatality 2, +1 for an HM release. Time:
+≤ 6 months 3, ≤ 12 months 2, older 1. The utilization factor raises the denominator for fleets
+driving many miles per truck (combination: 1 below 80,000, rising to 1.6 at 160,000–200,000;
+straight: 1 below 20,000, up to 3 at 60,000–200,000; 1 above 200,000 or with no mileage).
+Combination segment = tractors and motorcoaches ≥ 70% of power units. Every carrier with two or
+more crashes is ranked (~32,000), not only those in the SMS property file.
 
 An FMCSA **acute/critical violation** found in an investigation (the `*_ac` flags) sets that
 BASIC's percentile to 100.
@@ -58,7 +69,7 @@ BASIC's percentile to 100.
 
 | BASIC | Threshold |
 |---|---|
-| Unsafe Driving, HOS Compliance (Crash Indicator — see gaps) | 65% |
+| Unsafe Driving, HOS Compliance, Crash Indicator | 65% |
 | Vehicle Maintenance, Driver Fitness, Controlled Substances/Alcohol | 80% |
 
 ### Step 3 — FMCSA ISS group (ISS-CSA Appendix A)
@@ -66,13 +77,13 @@ BASIC's percentile to 100.
 | Group | Carriers | Band |
 |---|---|---|
 | — | Active **out-of-service order** | **100** |
-| 1 | **High-risk:** 4+ BASICs over threshold, or 2+ over threshold with Unsafe Driving / HOS (/ Crash) ≥ 85 | Inspect |
+| 1 | **High-risk:** 4+ BASICs over threshold, or 2+ over threshold with Unsafe Driving / HOS / Crash ≥ 85 | Inspect |
 | 2–4 | 2–3 BASICs over threshold, with 3 / 2 / 1 of them "best addressed roadside" (all except Unsafe Driving and Crash) | Inspect |
 | 5 | HOS Compliance only | Inspect |
 | 6 | Insurance / other serious violation only (from investigations — not in public data) | Optional |
 | 7 · 8 · 9 · 10 | Vehicle Maintenance · HM · Driver Fitness · Controlled Substances only | Optional |
 | 11 | Unsafe Driving and Crash | Optional |
-| 12 | Unsafe Driving only (or Crash only) | Optional |
+| 12 | Unsafe Driving only, or Crash only | Optional |
 | 13 | Enough inspections for at least one measure (≥ 3 driver or ≥ 5 vehicle inspections) but nothing over threshold | Pass |
 | — | Fewer inspections than that | Insufficient data (see 3.5) |
 
@@ -103,31 +114,46 @@ carrier's own inspections. The monthly job also downloads active carriers' fleet
 
 ---
 
-## 4. Validation (2026-10-14, FMCSA data of that date — 23 real ISS values)
+## 4. Validation (2026-10-14, FMCSA data of that date — 22 real ISS values)
 
-**Carriers with enough data (safety algorithm): 15 — all 15 in the right band, 12 within ±5.**
+**Carriers with enough data (safety algorithm): 15 — all 15 in the right band, 12 within ±5
+(v2: 11 of those 12 within ±1).**
 
-| USDOT | Carrier | Real | Estimate | Diff | Estimated group |
-|---|---|---|---|---|---|
-| 2465630 | Sablok Brothers Trucking | 95 | 96 | +1 | 1 high-risk |
-| 3373817 | Jaskirat Truckline | 99 | 97 | −2 | 1 high-risk (Unsafe 94, HOS 94) |
-| 4442941 | Countrywide Cargo | 86 | 87 | +1 | 5 HOS only |
-| 4488053 | AB Aulakh Transport | 78 | 78 | 0 | 5 HOS only |
-| 3104132 | Love United Transport | 60 | 58 | −2 | 12 Unsafe only |
-| 3157171 | Maridka Transport | 59 | 57 | −2 | 12 Unsafe only |
-| 4227743 | Setia Transportation | 56 | 55 | −1 | 12 Unsafe only |
-| 4157195 | MAJHA Corporation | 55 | 54 | −1 | 12 Unsafe only |
-| 4532702 | Veer Freight | 1 | 1 | 0 | 13 Pass |
-| 4390604 | Labbi Transport | 1 | 1 | 0 | 13 Pass |
-| 3533711 | Saachi Transport | 1 | 1 | 0 | 13 Pass |
-| 2753909 | JJ Macias Trucking (intrastate) | 1 | 1 | 0 | 13 Pass |
-| 3042022 | Hira Transport | 90 | 96 | +6 | 1 high-risk — 17 crashes not modelled |
-| 3979326 | RANB | 95 | 87 | −8 | 5 HOS only — 2 crashes on 15 trucks, probably a Crash alert too (group 1) |
-| 4191215 | 1313 Transport (intrastate) | 29 | 21 | −8 | 13 Pass — ranking inside Pass |
+| USDOT | Carrier | Real | v1.1 | v2 | Diff | Estimated group (v2) |
+|---|---|---|---|---|---|---|
+| 2465630 | Sablok Brothers Trucking | 95 | 96 | 96 | +1 | 1 high-risk (Crash 15) |
+| 3373817 | Jaskirat Truckline | 99 | 97 | 98 | −1 | 1 high-risk (Unsafe 94, HOS 94; Crash 64) |
+| 4442941 | Countrywide Cargo | 86 | 87 | 86 | 0 | 5 HOS only (Crash 53) |
+| 4488053 | AB Aulakh Transport | 78 | 78 | 78 | 0 | 5 HOS only |
+| 3104132 | Love United Transport | 60 | 58 | 61 | +1 | 12 Unsafe only |
+| 3157171 | Maridka Transport | 59 | 57 | 59 | 0 | 12 Unsafe only |
+| 4227743 | Setia Transportation | 56 | 55 | 56 | 0 | 12 Unsafe only |
+| 4157195 | MAJHA Corporation | 55 | 54 | 55 | 0 | 12 Unsafe only |
+| 4532702 | Veer Freight | 1 | 1 | 1 | 0 | 13 Pass |
+| 4390604 | Labbi Transport | 1 | 1 | 1 | 0 | 13 Pass |
+| 3533711 | Saachi Transport | 1 | 1 | 1 | 0 | 13 Pass |
+| 2753909 | JJ Macias Trucking (intrastate) | 1 | 1 | 1 | 0 | 13 Pass |
+| 3042022 | Hira Transport | 90 | 96 | 98 | +8 | 1 high-risk (Unsafe 76, HOS 99, Crash 88) |
+| 3979326 | RANB | 95 | 87 | 86 | −9 | 5 HOS only (Vehicle Maintenance 79.5; Crash 25) |
+| 4191215 | 1313 Transport (intrastate) | 29 | 21 | 21 | −8 | 13 Pass — ranking inside Pass |
 
-The three misses are pinned as known gaps in the tests; two point to the missing Crash Indicator.
+Adding crashes moved the Optional and lower Inspect carriers to within 0–1 point: carriers
+with crash alerts now join those bands, as they do in FMCSA's ranking.
 
-**Carriers without enough data (insufficient-data algorithm, v1.1): 8 — all 8 within ±5, 7 exact or ±1.**
+The Crash Indicator did **not** fix the two misses it was expected to fix:
+
+- **Hira** — its Crash Indicator (88th percentile, 17 crashes) is over the threshold, which keeps
+  it high-risk; with HOS at 99 it is high-risk under the 2012 rule either way. Group 1 spans
+  92–99, so the real 90 means FMCSA did not count Hira as high-risk. FMCSA's current high-risk
+  rule (2016 onward) may be stricter than the 2012 one — to check against more carriers.
+- **RANB** — two tow-aways on 15 trucks rank only 25th. The miss is Vehicle Maintenance at
+  79.5 (exact, under every percentile convention), just under the 80 threshold; at 80 RANB
+  would be in group 3 and close to 95. Most likely FMCSA's ISS was computed from a slightly
+  different month.
+
+All three misses are pinned as known gaps in the tests.
+
+**Carriers without enough data (insufficient-data algorithm, v1.1): 7 — all 7 within ±5, 6 exact or ±1.**
 
 | USDOT | Carrier | Real | What FMCSA's data shows | Rule that fits |
 |---|---|---|---|---|
@@ -139,12 +165,15 @@ The three misses are pinned as known gaps in the tests; two point to the missing
 
 Estimates: the three 77s → 77, Kang and Marathon → 63, Sekhon → 74, Mann → 56.
 
-## 5. Known gaps (v1)
+## 5. Known gaps
 
-1. **Crash Indicator** is not in the public SMS file (it needs every carrier's crashes and
-   miles). Carriers whose only problem is crashes will be estimated too low. Possible v2.
+1. **Crash Indicator** (v2): average power units and recent mileage come from FMCSA's SMS input
+   census, and the segment from the current census fleet. Crashes ruled not preventable are
+   excluded because FMCSA gives them no weight. Passenger and HM thresholds (50% / 60%) are not
+   applied.
 2. **Unsafe Driving segment** — assumed "combination" (tractor) for every carrier; straight-truck
-   carriers use different peer groups.
+   carriers use different peer groups. The v2 segment rule could be reused here, but that needs
+   the fleet of every Unsafe Driving carrier, not just the crash carriers.
 3. **HM thresholds** (60% / 75%) and the **HM Compliance BASIC** are not applied.
 4. **"Violation in the last 12 months"** rule — the national file has no violation dates.
 5. **Group 6** (insurance / other serious violations) needs investigation results, which are
@@ -159,11 +188,15 @@ Estimates: the three 77s → 77, Kang and Marathon → 63, Sekhon → 74, Mann �
 1. **Monthly reference job** (worker schedule): download the national SMS file (~677,000 rows,
    about 2 minutes) and store only **lookup tables**, not the whole file:
    - per BASIC and peer group: the measure at which each percentile starts;
-   - per ISS band: how the percentile sums are spread.
-   A few thousand rows per month instead of ~100–150 MB; the month is stored with them.
-2. **Calculator** `app/intelligence/iss_estimate.py`, version `iss-est v1`: a carrier's own SMS
-   row (already ingested) + the lookup tables → percentiles, alerts, group, value, explanation.
-   Out-of-service order → 100. Tests pin the four validated carriers.
+   - per ISS band: how the percentile sums are spread;
+   - (v2) the Crash Indicator of every carrier with two or more crashes (crashes, segment,
+     measure, recent), because the per-carrier crash weights are not ingested elsewhere.
+   Then the SMS Input crash file (~252,000 rows) and, for the ~32,000 carriers with two or
+   more crashes, their SMS census and fleet (a few hundred carriers per request).
+   About 1.2 MB per month instead of ~100–150 MB; the month is stored with them.
+2. **Calculator** `app/intelligence/iss_estimate.py`, version `iss-est v2`: a carrier's own SMS
+   row (already ingested) + its Crash Indicator from the tables → percentiles, alerts, group,
+   value, explanation. Out-of-service order → 100. Tests pin the validated carriers.
 3. **API:** the estimate and its explanation in the carrier's Safety data.
 4. **Safety tab card** for clients and STS:
 
@@ -200,7 +233,7 @@ always be explained.
    census facts are missing. ✅
 2. **Estimated BASIC percentiles:** clients see only over / under FMCSA's threshold (and "not
    enough data"); STS staff also see the estimated percentiles. ✅
-3. **Crashes:** a known gap in v1; Crash Indicator estimate planned for v2. ✅
+3. **Crashes:** a known gap in v1; Crash Indicator added in v2. ✅
 4. **Landing page claim** "0 made-up ratings, only FMCSA evidence" — to be reworded before
    release, e.g. "Estimates follow FMCSA's own published methods". ⏳
 
@@ -209,5 +242,7 @@ always be explained.
 ## 9. Next versions
 
 - **v1.1 — insufficient-data carriers:** done 2026-10-14 (section 3, step 5).
-- **v2 — Crash Indicator:** crashes per truck adjusted for miles, ranked by FMCSA's crash peer
-  groups; expected to fix the Hira and RANB misses.
+- **v2 — Crash Indicator:** done 2026-10-14 (section 3, step 1). Brought the Optional and lower
+  Inspect carriers to within ±1; Hira and RANB still miss (section 4).
+- **Next:** more real ISS values, high-risk and near-threshold carriers especially, to test
+  FMCSA's current high-risk rule (Hira) and month-to-month timing (RANB).

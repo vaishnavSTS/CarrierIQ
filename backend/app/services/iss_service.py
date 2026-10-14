@@ -1,13 +1,17 @@
 """Estimated ISS: the monthly lookup tables and one carrier's estimate (docs/estimated-iss-v1.md).
 
 `build_iss_reference` downloads FMCSA's national SMS property file (~677,000 carriers, a couple
-of minutes), turns it into lookup tables and stores them for the month. `iss_for` reads a
-carrier's own SMS row (already ingested on refresh), the newest tables and any active
-out-of-service order, and returns the estimate for the Safety tab.
+of minutes) and the SMS Input crash file with the census facts of carriers with two or more
+crashes (the Crash Indicator), turns them into lookup tables and stores them for the month.
+`iss_for` reads a carrier's own SMS row (already ingested on refresh), the newest tables and any
+active out-of-service order, and returns the estimate for the Safety tab.
 """
 
 import logging
+from collections import defaultdict
+from collections.abc import Sequence
 from datetime import date, timedelta
+from typing import Any
 
 import httpx
 from sqlalchemy import select
@@ -18,13 +22,17 @@ from app.ingestion.company_census import CompanyCensusAdapter
 from app.ingestion.registration_orders import RegistrationOrdersAdapter
 from app.ingestion.socrata_client import SocrataClient
 from app.intelligence.iss_estimate import (
+    FLEET_COLUMNS,
     VERSION,
     BasicResult,
     CarrierFacts,
     CarrierSms,
     SmsBasic,
     build_reference,
+    crash_basic,
     estimate,
+    is_straight,
+    with_crash,
 )
 from app.models import Carrier, Inspection, IssReference
 from app.repositories.carrier_repository import CarrierRepository
@@ -44,7 +52,10 @@ SMS_COLUMNS = ",".join(
     ]
 )
 CENSUS_COLUMNS = "dot_number,power_units,total_drivers"
+CRASH_COLUMNS = "dot_number,report_number,severity_weight,time_weight"
+SMS_CENSUS_COLUMNS = "dot_number,nbr_power_unit,recent_mileage"
 PAGE_SIZE = 50_000
+DOTS_PER_REQUEST = 400
 VEHICLE_LEVELS = (1, 2, 5, 6)
 DRIVER_LEVELS = (1, 2, 3, 6)
 DOWNLOAD_TIMEOUT_SECONDS = 300.0
@@ -86,6 +97,7 @@ def build_iss_reference(db: Session, today: date, client: SocrataClient | None =
             order="dot_number",
             page_size=PAGE_SIZE,
         )
+        crashes = _crash_basics(client)
     finally:
         if own_client:
             client.close()
@@ -95,7 +107,7 @@ def build_iss_reference(db: Session, today: date, client: SocrataClient | None =
         str(r.get("dot_number")): (_number(r.get("power_units")), _number(r.get("total_drivers")))
         for r in census
     }
-    tables = build_reference(rows, month.isoformat()[:7], sizes)
+    tables = build_reference(rows, month.isoformat()[:7], sizes, crashes)
     existing = db.scalar(select(IssReference).where(IssReference.data_month == month))
     if existing is None:
         db.add(
@@ -112,6 +124,55 @@ def build_iss_reference(db: Session, today: date, client: SocrataClient | None =
     db.commit()
     logger.info("Estimated ISS tables for %s built from %d carriers", month, len(rows))
     return len(rows)
+
+
+def _by_dot(
+    client: SocrataClient, dataset: str, columns: str, dots: Sequence[str]
+) -> dict[str, Any]:
+    """Rows of `dataset` for these carriers, a few hundred USDOT numbers per request."""
+    found: dict[str, Any] = {}
+    for i in range(0, len(dots), DOTS_PER_REQUEST):
+        ids = ",".join(f"'{d}'" for d in dots[i : i + DOTS_PER_REQUEST])
+        params = {"$select": columns, "$where": f"dot_number in ({ids})"}
+        for row in client.get_all_rows(dataset, params, order="dot_number"):
+            found[str(row.get("dot_number"))] = row
+    return found
+
+
+def _crash_basics(client: SocrataClient) -> dict[str, SmsBasic]:
+    """Every carrier's Crash Indicator measure from FMCSA's SMS Input files (crash weights,
+    average power units, recent mileage) and the census fleet (combination or straight)."""
+    settings = get_settings()
+    weights: dict[str, dict[str, tuple[float, int]]] = defaultdict(dict)
+    for row in client.get_all_rows(
+        settings.sms_crash_dataset_id,
+        {"$select": CRASH_COLUMNS},
+        order="dot_number,report_number",
+        page_size=PAGE_SIZE,
+    ):
+        severity, time = row.get("severity_weight"), row.get("time_weight")
+        if severity and time:  # unweighted: found not preventable, excluded by FMCSA
+            weights[str(row.get("dot_number"))][str(row.get("report_number"))] = (
+                _number(severity),
+                int(_number(time)),
+            )
+    dots = sorted(d for d, reports in weights.items() if len(reports) >= 2)
+    census = _by_dot(client, settings.sms_census_dataset_id, SMS_CENSUS_COLUMNS, dots)
+    fleet = _by_dot(
+        client, settings.census_dataset_id, ",".join(["dot_number", *FLEET_COLUMNS]), dots
+    )
+    basics = {}
+    for dot in dots:
+        facts = census.get(dot, {})
+        basic = crash_basic(
+            list(weights[dot].values()),
+            _number(facts.get("nbr_power_unit")),
+            _number(facts.get("recent_mileage")),
+            is_straight(fleet.get(dot, {})),
+        )
+        if basic is not None:
+            basics[dot] = basic
+    return basics
 
 
 def _number(value: object) -> float:
@@ -211,6 +272,8 @@ def iss_for(db: Session, usdot_number: int) -> EstimatedIssOut | None:
             version=VERSION,
             algorithm="NONE",
         )
+    if sms is not None:
+        sms = with_crash(sms, reference.tables, str(usdot_number))
     today = date.today()
     result = estimate(
         sms,

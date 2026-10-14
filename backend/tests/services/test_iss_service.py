@@ -71,7 +71,7 @@ def test_carrier_estimate_from_stored_sms_and_tables(db: Session) -> None:
     result = iss_for(db, 4157195)
 
     assert result is not None
-    assert (result.value, result.band, result.group) == (54, "OPTIONAL", 12)  # real ISS 55
+    assert (result.value, result.band, result.group) == (55, "OPTIONAL", 12)  # real ISS 55
     assert result.data_month == date(2026, 10, 1)
 
 
@@ -84,7 +84,7 @@ def test_clients_see_threshold_flags_but_not_percentiles(db: Session) -> None:
 
     shown = client_safety(safety).estimated_iss
 
-    assert shown is not None and shown.value == 54
+    assert shown is not None and shown.value == 55
     assert all(b.percentile is None for b in shown.basics)
     assert [b.basic for b in shown.basics if b.over_threshold] == ["unsafe_driv"]
     # Clients still see which BASICs FMCSA would assess (HOS: only 2 inspections with violations).

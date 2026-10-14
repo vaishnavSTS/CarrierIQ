@@ -1,7 +1,9 @@
 """Estimated ISS (docs/estimated-iss-v1.md), pinned to real FMCSA ISS values.
 
 The fixtures are FMCSA's SMS data of October 2026: the lookup tables built from the national
-file (~677,000 property carriers) and the SMS rows of carriers whose real ISS is known.
+file (~677,000 property carriers) and the SMS Input crash file (~32,000 carriers with two or
+more crashes; the fixture keeps only the crash entries of the carriers below), and the SMS rows
+of carriers whose real ISS is known.
 """
 
 import json
@@ -16,9 +18,14 @@ from app.intelligence.iss_estimate import (
     OPTIONAL,
     PASS,
     CarrierFacts,
+    CarrierSms,
     build_reference,
+    crash_basic,
     estimate,
+    is_straight,
     row_to_sms,
+    utilization_factor,
+    with_crash,
 )
 
 FIXTURES = Path(__file__).parents[1] / "fixtures" / "iss"
@@ -28,27 +35,32 @@ CARRIERS = {
 }
 
 
+def sms_of(usdot: str) -> CarrierSms:
+    """The carrier's SMS row with its Crash Indicator, as the service builds it."""
+    return with_crash(row_to_sms(CARRIERS[usdot]), REFERENCE, usdot)
+
+
 @pytest.mark.parametrize(
     ("usdot", "real_iss", "expected", "band", "group"),
     [
         ("2465630", 95, 96, INSPECT, 1),  # Sablok Brothers: high-risk (Unsafe, HOS 88, Vehicle)
-        ("4442941", 86, 87, INSPECT, 5),  # Countrywide Cargo: HOS only
-        ("4157195", 55, 54, OPTIONAL, 12),  # MAJHA: Unsafe Driving only
+        ("4442941", 86, 86, INSPECT, 5),  # Countrywide Cargo: HOS only (Crash 53)
+        ("4157195", 55, 55, OPTIONAL, 12),  # MAJHA: Unsafe Driving only
         ("4532702", 1, 1, PASS, 13),  # Veer Freight: enough data, nothing over threshold
-        ("3373817", 99, 97, INSPECT, 1),  # Jaskirat Truckline: Unsafe 94, HOS 94
+        ("3373817", 99, 98, INSPECT, 1),  # Jaskirat Truckline: Unsafe 94, HOS 94 (Crash 64)
         ("4390604", 1, 1, PASS, 13),  # Labbi Transport
-        ("3104132", 60, 58, OPTIONAL, 12),  # Love United Transport: Unsafe only
-        ("3157171", 59, 57, OPTIONAL, 12),  # Maridka Transport: Unsafe only
+        ("3104132", 60, 61, OPTIONAL, 12),  # Love United Transport: Unsafe only
+        ("3157171", 59, 59, OPTIONAL, 12),  # Maridka Transport: Unsafe only
         ("4488053", 78, 78, INSPECT, 5),  # AB Aulakh Transport: HOS only
         ("3533711", 1, 1, PASS, 13),  # Saachi Transport
-        ("4227743", 56, 55, OPTIONAL, 12),  # Setia Transportation: Unsafe only
+        ("4227743", 56, 56, OPTIONAL, 12),  # Setia Transportation: Unsafe only
         ("2753909", 1, 1, PASS, 13),  # JJ Macias Trucking (intrastate file)
     ],
 )
 def test_matches_real_iss_within_five_points(
     usdot: str, real_iss: int, expected: int, band: str, group: int
 ) -> None:
-    result = estimate(row_to_sms(CARRIERS[usdot]), REFERENCE)
+    result = estimate(sms_of(usdot), REFERENCE)
 
     assert (result.value, result.band, result.group) == (expected, band, group)
     assert result.value is not None and abs(result.value - real_iss) <= 5
@@ -114,16 +126,18 @@ def test_build_reference_ranks_within_peer_groups_and_bands() -> None:
 @pytest.mark.parametrize(
     ("usdot", "real_iss", "expected", "band"),
     [
-        # Right band, more than 5 away. Known v1 gap: no Crash Indicator (methodology section 5).
-        ("3042022", 90, 96, INSPECT),  # Hira Transport: 17 crashes in 24 months
-        ("3979326", 95, 87, INSPECT),  # RANB: 2 crashes on 15 trucks — likely a Crash alert too
+        # Right band, more than 5 away (methodology section 5).
+        # Hira: Crash 88 makes it high-risk (group 1, 92-99); the real 90 sits in group 2-3.
+        ("3042022", 90, 98, INSPECT),
+        # RANB: Vehicle Maintenance 79.5, just under 80; at 80 it would be group 3 (~88-91+).
+        ("3979326", 95, 86, INSPECT),
         ("4191215", 29, 21, PASS),  # 1313 Transport (intrastate): Pass-band ranking
     ],
 )
 def test_known_gaps_still_land_in_the_right_band(
     usdot: str, real_iss: int, expected: int, band: str
 ) -> None:
-    result = estimate(row_to_sms(CARRIERS[usdot]), REFERENCE)
+    result = estimate(sms_of(usdot), REFERENCE)
 
     assert (result.value, result.band) == (expected, band)
     # Still a gap; when a fix brings it within 5, move the carrier to the test above.
@@ -186,3 +200,71 @@ def test_one_vehicle_inspection_short_ranks_by_violation_rate() -> None:
     all_bad = estimate(row_to_sms(row), REFERENCE, False, facts(1, 1, True, TODAY, 4, 1), TODAY)
 
     assert (clean.value, all_bad.value) == (70, 74)
+
+
+# --- v2: Crash Indicator (SMS Methodology, Crash Indicator BASIC) -------------------------------
+
+
+def test_hira_crash_indicator_is_over_threshold_and_high_risk() -> None:
+    result = estimate(sms_of("3042022"), REFERENCE)  # 17 crashes, 59 trucks, 8.8M miles
+
+    crash = next(b for b in result.basics if b.basic == "crash")
+    assert crash.over_threshold and crash.percentile == pytest.approx(88, abs=1)
+    assert result.group == 1
+
+
+def test_two_crashes_on_a_small_fleet_stay_under_threshold() -> None:
+    result = estimate(sms_of("3979326"), REFERENCE)  # RANB: 2 tow-aways, 15 trucks
+
+    crash = next(b for b in result.basics if b.basic == "crash")
+    assert crash.percentile is not None and not crash.over_threshold
+
+
+@pytest.mark.parametrize(
+    ("straight", "vmt", "power_units", "factor"),
+    [
+        (False, 8_822_320, 59, pytest.approx(1.521, abs=0.001)),  # 149,531 mi per truck
+        (False, 1_800_000, 10, 1.6),
+        (False, 2_500_000, 10, 1.0),  # over 200,000 per truck
+        (False, 0, 10, 1.0),  # no recent mileage
+        (True, 400_000, 10, 2.0),
+        (True, 1_000_000, 10, 3.0),
+    ],
+)
+def test_utilization_factor(straight: bool, vmt: float, power_units: float, factor: Any) -> None:
+    assert utilization_factor(straight, vmt, power_units) == factor
+
+
+def test_crash_measure_and_recency() -> None:
+    # Two tow-aways a year+ ago (1 x 1) and an injury crash this half-year (2 x 3), 10 trucks.
+    basic = crash_basic([(1, 1), (1, 1), (2, 3)], 10, 0, straight=False)
+
+    assert basic is not None
+    assert (basic.measure, basic.inspections_with_violation, basic.recent) == (0.8, 3, True)
+    assert crash_basic([(2, 3)], 10, 0, straight=False) is None  # one crash: not ranked
+    old = crash_basic([(1, 1), (1, 1)], 10, 0, straight=False)
+    assert old is not None and not old.recent  # none in 12 months: FMCSA drops the percentile
+
+
+def test_old_crashes_get_no_percentile() -> None:
+    reference = {**REFERENCE, "crash_carriers": {"3042022": [17, 0, 0.356477, 0]}}
+
+    result = estimate(with_crash(row_to_sms(CARRIERS["3042022"]), reference, "3042022"), reference)
+
+    assert next(b for b in result.basics if b.basic == "crash").percentile is None
+
+
+def test_segment_from_census_fleet() -> None:
+    assert not is_straight({"owntract": "59", "owntrail": "100"})  # trailers don't count
+    assert is_straight({"owntract": "6", "trmtruck": "4"})  # 60% tractors
+    assert not is_straight({"owntract": "7", "owntruck": "3"})  # 70%: combination
+    assert not is_straight({})  # no fleet on file: combination
+
+
+def test_crash_only_alert_is_group_12() -> None:
+    reference = {**REFERENCE, "crash_carriers": {"4532702": [17, 0, 5.0, 1]}}
+
+    result = estimate(with_crash(row_to_sms(CARRIERS["4532702"]), reference, "4532702"), reference)
+
+    assert (result.band, result.group) == (OPTIONAL, 12)
+    assert result.reason == "Crash Indicator over FMCSA's threshold"

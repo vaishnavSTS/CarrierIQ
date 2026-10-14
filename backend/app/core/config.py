@@ -83,6 +83,8 @@ class Settings(BaseSettings):
     sms_c_property_dataset_id: str = "h9zy-gjn8"  # SMS C PassProperty (intrastate non-hazmat)
     crash_dataset_id: str = "aayw-vxb3"  # Crash File (FMCSA)
     sms_violation_dataset_id: str = "8mt8-2mdr"  # SMS Input - Violation (weights per violation)
+    sms_crash_dataset_id: str = "4wxs-vbns"  # SMS Input - Crash (weights per crash)
+    sms_census_dataset_id: str = "kjg3-diqy"  # SMS Input - Motor Carrier Census (avg PUs, VMT)
     legacy_li_frozen_on: date = date(2026, 5, 14)  # "last refreshed on 05/14/2026"
 
     # Login (client and internal portals). The session is a signed token in an HttpOnly cookie.

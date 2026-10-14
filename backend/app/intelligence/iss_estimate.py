@@ -11,8 +11,11 @@ Two pure parts:
   (SMS Methodology v3.21), BASICs over FMCSA's intervention thresholds, FMCSA's ISS group 1-13
   and the value inside its band (ISS-CSA Algorithm Description, Appendix A).
 
-Known gaps (methodology section 5): no Crash Indicator, Unsafe Driving assumes the combination
-segment, HM thresholds and the 12-month recent-violation rule are not applied.
+v2 adds the Crash Indicator BASIC (not public in SMS results): rebuilt from FMCSA's SMS Input
+crash and census files, which carry each crash's severity and time weight (`crash_basic`).
+
+Known gaps (methodology section 5): Unsafe Driving assumes the combination segment, HM
+thresholds and the 12-month recent-violation rule (other than for crashes) are not applied.
 """
 
 import bisect
@@ -22,7 +25,7 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from typing import Any
 
-VERSION = "iss-est v1.1"
+VERSION = "iss-est v2"
 SAMPLE = 501  # points kept per sorted distribution (0.2-percentile resolution)
 
 HIGH = 10**9
@@ -39,6 +42,8 @@ class BasicSpec:
     groups: Sequence[tuple[int, int]]
     threshold: float  # FMCSA intervention threshold, general carriers
     roadside: bool  # "best addressed roadside" (ISS-CSA Table 1)
+    # Peer groups of the straight-truck segment (Unsafe Driving, Crash); ranked as groups 5-9.
+    straight_groups: Sequence[tuple[int, int]] | None = None
 
 
 # Keys match CarrierIQ's sms_results.basic and FMCSA's SMS file column prefixes.
@@ -54,7 +59,16 @@ BASICS: dict[str, BasicSpec] = {
         [(1, 1), (2, 2), (3, 3), (4, HIGH)], 80, True,
     ),
     "veh_maint": BasicSpec("Vehicle Maintenance", "vehicle", 5, 5, GROUPS_5, 80, True),
+    # Exposure: crashes in 24 months (two needed). Not in FMCSA's SMS results file.
+    "crash": BasicSpec(
+        "Crash Indicator", "violations", 2, 2,
+        [(2, 3), (4, 6), (7, 16), (17, 45), (46, HIGH)], 65, False,
+        [(2, 2), (3, 4), (5, 8), (9, 26), (27, HIGH)],
+    ),
 }  # fmt: skip
+CRASH = "crash"
+SMS_FILE_BASICS = [key for key in BASICS if key != CRASH]
+STRAIGHT_OFFSET = 5
 
 # Pass carriers (group 13) are re-ranked on these measures with lower minimums (Appendix A).
 PASS_BASICS: dict[str, tuple[str, int, Sequence[tuple[int, int]]]] = {
@@ -71,8 +85,10 @@ BANDS = {INSPECT: (75, 99), OPTIONAL: (50, 74), PASS: (1, 49)}
 @dataclass(frozen=True)
 class SmsBasic:
     measure: float
-    inspections_with_violation: int
+    inspections_with_violation: int  # for the Crash Indicator: crashes
     acute_critical: bool = False
+    straight: bool = False  # straight-truck segment (Crash Indicator)
+    recent: bool = True  # an event in the last 12 months (FMCSA drops the percentile otherwise)
 
 
 @dataclass(frozen=True)
@@ -140,9 +156,68 @@ def row_to_sms(row: Mapping[str, Any]) -> CarrierSms:
                 inspections_with_violation=int(_num(row.get(f"{key}_insp_w_viol"))),
                 acute_critical=str(row.get(f"{key}_ac") or "N").upper() == "Y",
             )
-            for key in BASICS
+            for key in SMS_FILE_BASICS
         },
     )
+
+
+# --- Crash Indicator (SMS Methodology section 3, Crash Indicator BASIC) -------------------------
+
+COMBINATION_VEHICLES = ("tract", "coach")
+ALL_VEHICLES = (
+    "truck", "tract", "coach", "school_1_8", "school_9_15", "school_16", "bus_16",
+    "van_1_8", "van_9_15", "limo_1_8", "limo_9_15", "limo_16",
+)  # fmt: skip
+OWNERSHIP = ("own", "trm", "trp")  # owned, term-leased, trip-leased
+FLEET_COLUMNS = [f"{o}{v}" for o in OWNERSHIP for v in ALL_VEHICLES]
+
+
+def is_straight(fleet: Mapping[str, Any]) -> bool:
+    """FMCSA's segment from the census fleet: "combination" when tractors and motorcoaches are
+    70% or more of the power units, otherwise "straight"."""
+    total = sum(_num(fleet.get(c)) for c in FLEET_COLUMNS)
+    combination = sum(_num(fleet.get(f"{o}{v}")) for o in OWNERSHIP for v in COMBINATION_VEHICLES)
+    return total > 0 and combination / total < 0.7
+
+
+def utilization_factor(straight: bool, vmt: float, power_units: float) -> float:
+    """Tables 3-7 and 3-8: miles per power unit raise the denominator for busy fleets."""
+    if vmt <= 0 or power_units <= 0:
+        return 1.0
+    per_unit = vmt / power_units
+    if straight:
+        if per_unit < 20_000 or per_unit > 200_000:
+            return 1.0
+        return per_unit / 20_000 if per_unit < 60_000 else 3.0
+    if per_unit < 80_000 or per_unit > 200_000:
+        return 1.0
+    return 1 + (per_unit - 80_000) / 133_333 if per_unit < 160_000 else 1.6
+
+
+def crash_basic(
+    weights: Sequence[tuple[float, int]], power_units: float, vmt: float, straight: bool
+) -> SmsBasic | None:
+    """The Crash Indicator from a carrier's crashes as (severity weight, time weight), FMCSA's
+    average power units and recent mileage. None below two crashes or without power units."""
+    if len(weights) < 2 or power_units <= 0:
+        return None
+    total = sum(severity * time for severity, time in weights)
+    return SmsBasic(
+        measure=total / (power_units * utilization_factor(straight, vmt, power_units)),
+        inspections_with_violation=len(weights),
+        straight=straight,
+        recent=any(time >= 2 for _, time in weights),  # time weight 2-3: within 12 months
+    )
+
+
+def with_crash(sms: CarrierSms, reference: Mapping[str, Any], usdot: str) -> CarrierSms:
+    """The carrier's SMS data with its Crash Indicator from the reference tables."""
+    entry = (reference.get("crash_carriers") or {}).get(usdot)
+    if entry is None:
+        return sms
+    crashes, straight, measure, recent = entry
+    crash = SmsBasic(measure, int(crashes), straight=bool(straight), recent=bool(recent))
+    return CarrierSms(sms.driver_inspections, sms.vehicle_inspections, {**sms.basics, CRASH: crash})
 
 
 def _group_of(groups: Sequence[tuple[int, int]], n: int) -> int | None:
@@ -168,6 +243,9 @@ def _ranked_group(sms: CarrierSms, key: str) -> int | None:
     exposure = _exposure(sms, spec.exposure, basic)
     if exposure < spec.min_exposure:
         return None
+    if basic.straight and spec.straight_groups:
+        g = _group_of(spec.straight_groups, exposure)
+        return None if g is None else STRAIGHT_OFFSET + g
     return _group_of(spec.groups, exposure)
 
 
@@ -206,25 +284,41 @@ def build_reference(
     rows: Iterable[Mapping[str, Any]],
     data_month: str,
     sizes: Mapping[str, tuple[float, float]] | None = None,
+    crashes: Mapping[str, SmsBasic] | None = None,
 ) -> dict[str, Any]:
     """Lookup tables for `estimate`, from every row of FMCSA's national SMS property file.
     `sizes` (USDOT -> power units, drivers, from FMCSA's census) adds the inspection-rate
-    ranking the insufficient-data algorithm uses for carriers with a few inspections."""
+    ranking the insufficient-data algorithm uses for carriers with a few inspections.
+    `crashes` (USDOT -> `crash_basic`) adds the Crash Indicator."""
     rows = list(rows)
+    crashes = crashes or {}
     carriers = [row_to_sms(r) for r in rows]
 
     pools: dict[str, dict[int, list[float]]] = {k: defaultdict(list) for k in BASICS}
     for sms in carriers:
-        for key in BASICS:
+        for key in SMS_FILE_BASICS:
             g = _ranked_group(sms, key)
             if g is not None:
                 pools[key][g].append(sms.basics[key].measure)
+    # Every carrier with two or more crashes is ranked, whether or not it is in the SMS file.
+    for crash in crashes.values():
+        g = _ranked_group(CarrierSms(0, 0, {CRASH: crash}), CRASH)
+        if g is not None:
+            pools[CRASH][g].append(crash.measure)
     reference: dict[str, Any] = {
         "version": VERSION,
         "data_month": data_month,
         "carriers": len(carriers),
         "basics": {k: {str(g): _dist(v) for g, v in groups.items()} for k, groups in pools.items()},
+        "crash_carriers": {
+            dot: [c.inspections_with_violation, int(c.straight), round(c.measure, 6), int(c.recent)]
+            for dot, c in crashes.items()
+        },
     }
+    carriers = [
+        with_crash(sms, reference, str(row.get("dot_number")))
+        for row, sms in zip(rows, carriers, strict=True)
+    ]
 
     # Every carrier's group and percentile sum, to describe how each band is spread.
     sums: dict[int, list[float]] = defaultdict(list)
@@ -363,7 +457,7 @@ def _basic_results(sms: CarrierSms, reference: Mapping[str, Any]) -> list[BasicR
         percentile = None
         if basic is not None and basic.inspections_with_violation >= spec.min_violations:
             g = _ranked_group(sms, key)
-            if g is not None:
+            if g is not None and basic.recent:
                 percentile = _percentile(reference["basics"][key].get(str(g)), basic.measure)
         if basic is not None and basic.acute_critical:
             percentile = 100.0  # FMCSA: a serious violation found in an investigation
@@ -386,7 +480,7 @@ def _classify(
     results = _basic_results(sms, reference)
     over = [r for r in results if r.over_threshold]
     high_core = any(
-        r.basic in ("unsafe_driv", "hos_driv") and (r.percentile or 0) >= 85 for r in over
+        r.basic in ("unsafe_driv", "hos_driv", CRASH) and (r.percentile or 0) >= 85 for r in over
     )
     roadside = sum(1 for r in over if BASICS[r.basic].roadside)
     if len(over) >= 4 or (len(over) >= 2 and high_core):
@@ -400,6 +494,7 @@ def _classify(
             "driv_fit": 9,
             "contr_subst": 10,
             "unsafe_driv": 12,
+            CRASH: 12,
         }[over[0].basic], results
     if sms.driver_inspections >= 3 or sms.vehicle_inspections >= 5:
         return 13, results
@@ -446,8 +541,8 @@ REASONS = {
     7: "Vehicle Maintenance over FMCSA's threshold",
     9: "Driver Fitness over FMCSA's threshold",
     10: "Controlled Substances/Alcohol over FMCSA's threshold",
-    11: "Unsafe Driving and another non-roadside BASIC over FMCSA's thresholds",
-    12: "Unsafe Driving over FMCSA's threshold",
+    11: "Unsafe Driving and Crash Indicator over FMCSA's thresholds",
+    12: "{} over FMCSA's threshold",  # Unsafe Driving or Crash Indicator
     13: "Enough inspections, and no BASIC over FMCSA's thresholds",
 }
 
@@ -489,4 +584,7 @@ def estimate(
     else:
         total = sum(r.percentile for r in results if r.percentile is not None)
         value = _value_in_band(group, total, reference)
-    return IssEstimate(value, _band_of(group), group, REASONS[group], results)
+    reason = REASONS[group]
+    if group == 12:
+        reason = reason.format(next(r.label for r in results if r.over_threshold))
+    return IssEstimate(value, _band_of(group), group, reason, results)
