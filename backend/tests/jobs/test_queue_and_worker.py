@@ -129,3 +129,61 @@ def test_rebuild_signals_job(db: Session, clock: Clock) -> None:
     job = db.get_one(Job, job_id)
     assert job.status == JobStatus.SUCCEEDED
     assert job.result is not None and job.result["usdot_number"] == 1234567
+
+
+def test_worker_loop_survives_a_dropped_database_connection() -> None:
+    """A dropped connection while checking for jobs must not stop the worker (it once did)."""
+    from sqlalchemy.exc import OperationalError
+
+    def broken_session() -> Session:
+        raise OperationalError("SELECT 1", {}, Exception("server closed the connection"))
+
+    worker = Worker(session_factory=broken_session, name="test")
+
+    assert worker.poll_once() is False  # logged, not raised: the loop sleeps and retries
+
+
+def test_worker_loop_stops_when_asked() -> None:
+    """The API stops its worker thread by setting the event; the loop must exit promptly."""
+    import threading
+
+    from sqlalchemy.exc import OperationalError
+
+    def no_database() -> Session:
+        raise OperationalError("SELECT 1", {}, Exception("not needed"))
+
+    stop = threading.Event()
+    thread = threading.Thread(
+        target=Worker(session_factory=no_database, name="test").run_forever, args=(stop,)
+    )
+    thread.start()
+    stop.set()
+    thread.join(timeout=10)
+
+    assert not thread.is_alive()
+
+
+def test_api_runs_the_worker_only_when_configured(monkeypatch: pytest.MonkeyPatch) -> None:
+    import threading
+
+    from fastapi.testclient import TestClient
+
+    from app.core.config import get_settings
+    from app.main import app
+
+    runs: list[threading.Event] = []
+
+    def fake_run_forever(self: Worker, stop: threading.Event) -> None:
+        runs.append(stop)
+        stop.wait(10)
+
+    monkeypatch.setattr(Worker, "run_forever", fake_run_forever)
+
+    with TestClient(app):  # setting off (tests force it off; the default is off): no worker
+        pass
+    assert runs == []
+
+    monkeypatch.setattr(get_settings(), "run_worker_in_api", True)
+    with TestClient(app):
+        assert len(runs) == 1 and not runs[0].is_set()  # running while the API is up
+    assert runs[0].is_set()  # stopped when the API shut down

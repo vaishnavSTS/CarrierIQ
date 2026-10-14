@@ -34,6 +34,15 @@ def offline_vpic() -> Iterator[None]:
 
 
 @pytest.fixture(autouse=True)
+def no_worker_in_api(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests never start the in-API background worker, even when backend/.env turns it on for
+    local development: it would run real jobs against the configured database."""
+    from app.core.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "run_worker_in_api", False)
+
+
+@pytest.fixture(autouse=True)
 def staff_login() -> Iterator[None]:
     """Internal-portal routes need an STS staff login; tests act as one unless they opt out.
 

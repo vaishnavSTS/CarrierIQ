@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     # Carriers sharing a phone, email, address or officer; more matches than this are cut off.
     contact_link_limit: int = 200
     # Background worker (spec Section 18): a PostgreSQL-backed job queue, no Redis.
+    # Local development: also run the worker inside the API process (app/main.py), so starting
+    # the backend starts both. Leave off when hosted, where the worker is its own service.
+    run_worker_in_api: bool = False
     worker_poll_seconds: float = 5.0  # wait between checks when the queue is empty
     worker_heartbeat_seconds: float = 30.0  # how often a running worker checks in
     job_max_attempts: int = 4
