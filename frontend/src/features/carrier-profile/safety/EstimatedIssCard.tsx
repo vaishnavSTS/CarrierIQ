@@ -58,7 +58,15 @@ export function EstimatedIssCard({ iss }: { iss: EstimatedIss | null | undefined
         {iss.reason}.
       </p>
 
-      {iss.basics.length > 0 && (
+      {iss.algorithm === 'INSUFFICIENT_DATA' && (
+        <p className="mt-2 text-xs text-slate-500">
+          Too few inspections for FMCSA’s safety measures, so this follows FMCSA’s rules for
+          carriers with little inspection history: carriers like this are prioritised for inspection
+          until enough data builds up.
+        </p>
+      )}
+
+      {iss.basics.length > 0 && iss.algorithm !== 'INSUFFICIENT_DATA' && (
         <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
           {iss.basics.map((b) => (
             <li key={b.basic} className="flex items-center gap-2 text-sm">

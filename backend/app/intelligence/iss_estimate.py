@@ -19,9 +19,10 @@ import bisect
 from collections import defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
+from datetime import date, timedelta
 from typing import Any
 
-VERSION = "iss-est v1"
+VERSION = "iss-est v1.1"
 SAMPLE = 501  # points kept per sorted distribution (0.2-percentile resolution)
 
 HIGH = 10**9
@@ -100,6 +101,22 @@ class IssEstimate:
     reason: str
     basics: list[BasicResult] = field(default_factory=list)
     version: str = VERSION
+    algorithm: str = "SAFETY"  # SAFETY | INSUFFICIENT_DATA | OUT_OF_SERVICE | NONE
+
+
+@dataclass(frozen=True)
+class CarrierFacts:
+    """What the insufficient-data algorithm needs beyond the SMS row (FMCSA census and the
+    carrier's own inspections over the last 24 months)."""
+
+    power_units: int | None
+    drivers: int | None
+    interstate: bool | None  # census carrier_operation A
+    registered: date | None  # census add_date
+    # Inspections with at least one violation, among vehicle-level (I, II, V, VI) and
+    # driver-level (I, II, III, VI) inspections: for carriers "one away" from sufficiency.
+    vehicle_inspections_with_violation: int | None = None
+    driver_inspections_with_violation: int | None = None
 
 
 # --- building the reference tables ---------------------------------------------------------------
@@ -185,8 +202,15 @@ def _percentile(dist: Mapping[str, Any] | None, x: float) -> float | None:
     return min(100.0, 100.0 * _count_below(dist, x) / (n - 1))
 
 
-def build_reference(rows: Iterable[Mapping[str, Any]], data_month: str) -> dict[str, Any]:
-    """Lookup tables for `estimate`, from every row of FMCSA's national SMS property file."""
+def build_reference(
+    rows: Iterable[Mapping[str, Any]],
+    data_month: str,
+    sizes: Mapping[str, tuple[float, float]] | None = None,
+) -> dict[str, Any]:
+    """Lookup tables for `estimate`, from every row of FMCSA's national SMS property file.
+    `sizes` (USDOT -> power units, drivers, from FMCSA's census) adds the inspection-rate
+    ranking the insufficient-data algorithm uses for carriers with a few inspections."""
+    rows = list(rows)
     carriers = [row_to_sms(r) for r in rows]
 
     pools: dict[str, dict[int, list[float]]] = {k: defaultdict(list) for k in BASICS}
@@ -226,7 +250,107 @@ def build_reference(rows: Iterable[Mapping[str, Any]], data_month: str) -> dict[
         k: {str(g): _dist(v) for g, v in groups.items()} for k, groups in pass_pools.items()
     }
     reference["groups"]["13"] = _dist([_pass_sum(sms, reference) for sms in pass_carriers])
+
+    rates = []
+    for row, sms in zip(rows, carriers, strict=True):
+        size = (sizes or {}).get(str(row.get("dot_number")))
+        if size is None or _insufficient_case(sms) != 3:
+            continue
+        rate = _inspection_rate(sms, size[0], size[1])
+        if rate is not None:
+            rates.append(rate)
+    reference["inspection_rates"] = _dist(rates)
     return reference
+
+
+# --- insufficient-data algorithm (ISS-CSA Appendix A, and observed ISS2 values) ------------------
+
+# No inspections: value by fleet size (Appendix A, Case 2): (min power units, min drivers, value)
+SIZE_VALUES = [
+    (1001, 1001, 69),
+    (201, 201, 68),
+    (64, 72, 67),
+    (16, 16, 66),
+    (7, 6, 65),
+    (2, 2, 64),
+    (1, 1, 63),
+]
+NO_SIZE_VALUE = 66
+# Observed in real ISS values (ISS2, not in the 2012 document): new interstate carriers with no
+# inspections get 77. "New" is taken as FMCSA's 18-month new-entrant period.
+NEW_INTERSTATE_VALUE = 77
+NEW_ENTRANT_DAYS = 548
+
+
+def _insufficient_case(sms: CarrierSms) -> int | None:
+    """1: one inspection short of sufficiency; 2: no inspections; 3: some inspections;
+    None: enough data for the safety algorithm."""
+    d, v = sms.driver_inspections, sms.vehicle_inspections
+    if d >= 3 or v >= 5:
+        return None
+    if v == 4 or d == 2:
+        return 1
+    if d == 0 and v == 0:
+        return 2
+    return 3
+
+
+def _inspection_rate(sms: CarrierSms, power_units: float, drivers: float) -> float | None:
+    rates = []
+    if power_units > 0:
+        rates.append(sms.vehicle_inspections / power_units)
+    if drivers > 0:
+        rates.append(sms.driver_inspections / drivers)
+    return sum(rates) / len(rates) if rates else None
+
+
+def _size_value(power_units: int | None, drivers: int | None) -> int:
+    values = [
+        value
+        for min_pu, min_drivers, value in SIZE_VALUES
+        if (power_units or 0) >= min_pu or (drivers or 0) >= min_drivers
+    ]
+    return max(values) if values else NO_SIZE_VALUE
+
+
+def _insufficient(
+    sms: CarrierSms, facts: CarrierFacts, reference: Mapping[str, Any], today: date
+) -> tuple[int, str]:
+    case = _insufficient_case(sms)
+    d, v = sms.driver_inspections, sms.vehicle_inspections
+    if case == 1:
+        values = []
+        if v == 4:
+            bad = facts.vehicle_inspections_with_violation
+            values.append(70 + (bad if bad is not None else 2))
+        if d == 2:
+            bad = facts.driver_inspections_with_violation
+            values.append(70 + 2 * (bad if bad is not None else 1))
+        return (
+            min(74, max(values)),
+            "One inspection short of the data FMCSA needs; prioritised by its violation rate",
+        )
+    if case == 2:
+        new = bool(
+            facts.interstate
+            and facts.registered is not None
+            and (today - facts.registered) <= timedelta(days=NEW_ENTRANT_DAYS)
+        )
+        if new:
+            return NEW_INTERSTATE_VALUE, "New interstate carrier with no roadside inspections yet"
+        return (
+            _size_value(facts.power_units, facts.drivers),
+            "No roadside inspections in 24 months; prioritised by fleet size",
+        )
+    rate = _inspection_rate(sms, facts.power_units or 0, facts.drivers or 0)
+    dist = reference.get("inspection_rates")
+    if rate is None or not dist or not dist["n"]:
+        return NO_SIZE_VALUE, "Few roadside inspections in 24 months"
+    share_lower = _count_below(dist, rate) / dist["n"]
+    return (
+        max(50, 69 - int(20 * share_lower)),
+        "Few roadside inspections for its size; fewer inspections rank higher",
+    )
 
 
 # --- estimating one carrier ----------------------------------------------------------------------
@@ -329,13 +453,27 @@ REASONS = {
 
 
 def estimate(
-    sms: CarrierSms | None, reference: Mapping[str, Any] | None, oos_order: bool = False
+    sms: CarrierSms | None,
+    reference: Mapping[str, Any] | None,
+    oos_order: bool = False,
+    facts: CarrierFacts | None = None,
+    today: date | None = None,
 ) -> IssEstimate:
     if oos_order:
-        return IssEstimate(100, INSPECT, 0, "Active FMCSA out-of-service order")
-    if sms is None or reference is None:
-        return IssEstimate(None, None, None, "Not enough FMCSA inspection data for an estimate")
+        return IssEstimate(
+            100, INSPECT, 0, "Active FMCSA out-of-service order", algorithm="OUT_OF_SERVICE"
+        )
+    if reference is None or (sms is None and facts is None):
+        return IssEstimate(
+            None, None, None, "Not enough FMCSA inspection data for an estimate", algorithm="NONE"
+        )
+    if sms is None:  # not in FMCSA's SMS file: no inspections in the 24-month period
+        sms = CarrierSms(driver_inspections=0, vehicle_inspections=0, basics={})
     group, results = _classify(sms, reference)
+    if group is None and facts is not None:
+        value, reason = _insufficient(sms, facts, reference, today or date.today())
+        band = INSPECT if value >= 75 else OPTIONAL
+        return IssEstimate(value, band, None, reason, results, algorithm="INSUFFICIENT_DATA")
     if group is None:
         return IssEstimate(
             None,
@@ -344,6 +482,7 @@ def estimate(
             f"Not enough inspections for an estimate ({sms.driver_inspections} driver, "
             f"{sms.vehicle_inspections} vehicle in 24 months; FMCSA needs 3 driver or 5 vehicle)",
             results,
+            algorithm="NONE",
         )
     if group == 13:
         value = _value_in_band(13, _pass_sum(sms, reference), reference)

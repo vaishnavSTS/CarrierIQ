@@ -145,6 +145,9 @@ class EstimatedIssOut(BaseModel):
     basics: list[EstimatedIssBasicOut]
     data_month: date  # FMCSA SMS month the lookup tables were built from
     version: str
+    # SAFETY (enough data) | INSUFFICIENT_DATA (FMCSA's little-history rules) | OUT_OF_SERVICE
+    # | NONE (no estimate)
+    algorithm: str = "SAFETY"
 
 
 class CarrierSafetyOut(BaseModel):

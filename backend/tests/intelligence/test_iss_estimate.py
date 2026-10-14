@@ -5,6 +5,7 @@ file (~677,000 property carriers) and the SMS rows of carriers whose real ISS is
 """
 
 import json
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +15,7 @@ from app.intelligence.iss_estimate import (
     INSPECT,
     OPTIONAL,
     PASS,
+    CarrierFacts,
     build_reference,
     estimate,
     row_to_sms,
@@ -126,3 +128,61 @@ def test_known_gaps_still_land_in_the_right_band(
     assert (result.value, result.band) == (expected, band)
     # Still a gap; when a fix brings it within 5, move the carrier to the test above.
     assert result.value is not None and abs(result.value - real_iss) > 5
+
+
+# --- v1.1: carriers without enough data (FMCSA's insufficient-data algorithm) -------------------
+
+TODAY = date(2026, 10, 14)
+
+
+def facts(
+    pu: int, drivers: int, interstate: bool, registered: date, veh_bad: int = 0, drv_bad: int = 0
+) -> CarrierFacts:
+    return CarrierFacts(pu, drivers, interstate, registered, veh_bad, drv_bad)
+
+
+@pytest.mark.parametrize(
+    ("usdot", "real_iss", "carrier_facts", "expected"),
+    [
+        # New interstate carriers, no inspections (observed ISS2 rule): 77
+        ("9125866", 77, facts(1, 1, True, date(2026, 7, 2)), 77),  # Fleeto Trans
+        ("7852189", 77, facts(2, 1, True, date(2026, 9, 8)), 77),  # Steel Path Transport
+        ("5101228", 77, facts(1, 1, True, date(2026, 7, 3)), 77),  # JV Global Logistics
+        # A few inspections: ranked nationally by inspections per truck / driver
+        ("3466371", 55, facts(1, 2, True, date(2020, 8, 7)), 56),  # Mann Truck Lines
+        # One driver inspection short: 70 + 2 per inspection with a violation (2 of 2 here;
+        # the real 70 was likely computed before its second inspection was counted)
+        ("4571319", 70, facts(1, 1, True, date(2026, 4, 23), 1, 2), 74),  # Sekhon Roadways
+    ],
+)
+def test_insufficient_data_carriers(
+    usdot: str, real_iss: int, carrier_facts: CarrierFacts, expected: int
+) -> None:
+    result = estimate(row_to_sms(CARRIERS[usdot]), REFERENCE, False, carrier_facts, TODAY)
+
+    assert (result.value, result.algorithm) == (expected, "INSUFFICIENT_DATA")
+    assert result.value is not None and abs(result.value - real_iss) <= 5
+
+
+@pytest.mark.parametrize(
+    ("carrier_facts", "expected"),
+    [
+        (facts(1, 1, True, date(2021, 1, 25)), 63),  # Kang Bros: interstate but not new
+        (facts(1, 1, False, date(2026, 10, 7)), 63),  # Marathon Carrier: new but intrastate
+        (facts(75, 50, True, date(2010, 1, 1)), 67),  # FMCSA example: 75 trucks, 50 drivers
+        (facts(0, 0, False, date(2010, 1, 1)), 66),  # no size information: midpoint
+    ],
+)
+def test_no_inspections_by_fleet_size(carrier_facts: CarrierFacts, expected: int) -> None:
+    result = estimate(None, REFERENCE, False, carrier_facts, TODAY)  # not in FMCSA's SMS file
+
+    assert (result.value, result.band) == (expected, OPTIONAL)
+
+
+def test_one_vehicle_inspection_short_ranks_by_violation_rate() -> None:
+    row = {"dot_number": "1", "driver_insp_total": "1", "vehicle_insp_total": "4"}
+
+    clean = estimate(row_to_sms(row), REFERENCE, False, facts(1, 1, True, TODAY, 0, 0), TODAY)
+    all_bad = estimate(row_to_sms(row), REFERENCE, False, facts(1, 1, True, TODAY, 4, 1), TODAY)
+
+    assert (clean.value, all_bad.value) == (70, 74)

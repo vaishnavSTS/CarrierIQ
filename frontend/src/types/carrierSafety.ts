@@ -150,6 +150,8 @@ export interface EstimatedIss {
   /** FMCSA SMS month the lookup tables were built from (YYYY-MM-DD) */
   data_month: string
   version: string
+  /** SAFETY (enough data) | INSUFFICIENT_DATA (FMCSA's little-history rules) | OUT_OF_SERVICE | NONE */
+  algorithm?: 'SAFETY' | 'INSUFFICIENT_DATA' | 'OUT_OF_SERVICE' | 'NONE'
 }
 
 export interface EstimatedIssBasic {

@@ -1,6 +1,6 @@
 # CarrierIQ Estimated ISS — v1 methodology
 
-**Status:** v1 built 2026-10-14 (tables, calculator, API, Safety tab card). Replaces the earlier "Safety Index" points draft.
+**Status:** v1.1 built 2026-10-14 — safety algorithm (v1) plus FMCSA's insufficient-data rules (v1.1). Replaces the earlier "Safety Index" points draft.
 **Created:** 2026-10-14
 **Shown to:** STS staff (internal Safety tab) and clients (client portal Safety tab).
 
@@ -86,12 +86,20 @@ BASIC's percentile to 100.
   Pass carriers only, by peer group; sum those percentiles; spread over **1–49**.
 - Carriers with the **same sum get the same value** (e.g. every clean Pass carrier → 1).
 
-### Step 5 — not enough data
+### Step 5 — not enough data (v1.1: ISS-CSA Appendix A insufficient-data algorithm)
 
-FMCSA's 2012 document scores these 50–74 (and 63–69 by fleet size for carriers with no
-inspections), but the values FMCSA uses today ("ISS2") differ — real examples show **77** for
-new carriers with no inspections. **Proposed:** show **"Not enough data for an estimate"**, with
-the inspection counts so far, instead of a number we cannot reproduce. (Decision 1, section 8.)
+Carriers with fewer than 3 driver and 5 vehicle inspections in 24 months:
+
+| Case | Rule | Value |
+|---|---|---|
+| One inspection short (4 vehicle or 2 driver inspections) | violation rate of those inspections | 70 (0%) … 74 (100%) |
+| No inspections, **new interstate carrier** (registered ≤ 18 months) | observed in real ISS2 values, not in the 2012 document | **77** |
+| No inspections, otherwise | fleet size: 1 truck 63 · 2–6 64 · 7–15 65 · 16–63 66 · 64–200 67 · 201–1000 68 · 1001+ 69 (drivers likewise; no size 66) | 63–69 |
+| Some inspections | inspections per truck and per driver, ranked against ~88,500 such carriers nationally (fewer → higher) | 50–69 |
+
+Inputs: FMCSA census (trucks, drivers, interstate/intrastate, registration date) and the
+carrier's own inspections. The monthly job also downloads active carriers' fleet sizes
+(~2.24 million) for the national ranking. FMCSA's random 1% at 99 cannot be predicted.
 
 ---
 
@@ -119,17 +127,17 @@ the inspection counts so far, instead of a number we cannot reproduce. (Decision
 
 The three misses are pinned as known gaps in the tests; two point to the missing Crash Indicator.
 
-**Carriers without enough data (insufficient-data algorithm): 8 — shown as "Not enough data" in v1.**
+**Carriers without enough data (insufficient-data algorithm, v1.1): 8 — all 8 within ±5, 7 exact or ±1.**
 
 | USDOT | Carrier | Real | What FMCSA's data shows | Rule that fits |
 |---|---|---|---|---|
 | 9125866 · 7852189 · 5101228 | Fleeto · Steel Path · JV Global | 77 | interstate, registered 2026, 0 inspections | **not in the 2012 document** — new interstate carriers appear to get 77 (ISS2) |
 | 3557017 | Kang Bros Trans (inactive) | 63 | interstate, 2021, 1 truck, 0 inspections | 2012 Case 2: 1 power unit → 63 ✓ |
 | 8191530 | Marathon Carrier | 63 | intrastate, Oct 2026, 1 truck, 0 inspections | 2012 Case 2: 1 power unit → 63 ✓ |
-| 4571319 | Sekhon Roadways | 70 | 2 driver inspections | 2012 Case 1 "one away": 70–74 by violation rate ✓ |
-| 3466371 | Mann Truck Lines | 55 | 1 inspection, 1 truck, 2 drivers | 2012 Case 3: 50–69 by inspection rate (needs national size data) |
+| 4571319 | Sekhon Roadways | 70 | 2 driver inspections, both with violations | 2012 Case 1 "one away" → estimate **74**; the real 70 was likely computed before the second inspection |
+| 3466371 | Mann Truck Lines | 55 | 1 inspection, 1 truck, 2 drivers | 2012 Case 3 national inspection-rate rank → estimate **56** |
 
-These fit the insufficient-data rules well enough to add them in v1.1 (section 9).
+Estimates: the three 77s → 77, Kang and Marathon → 63, Sekhon → 74, Mann → 56.
 
 ## 5. Known gaps (v1)
 
@@ -187,7 +195,9 @@ always be explained.
 
 ## 8. Decisions (agreed 2026-10-14)
 
-1. **Not enough data:** show "Not enough data for an estimate". ✅
+1. **Not enough data:** v1 showed "Not enough data"; v1.1 estimates these carriers with FMCSA's
+   insufficient-data rules (validated, section 4). "Not enough data" remains only when FMCSA's
+   census facts are missing. ✅
 2. **Estimated BASIC percentiles:** clients see only over / under FMCSA's threshold (and "not
    enough data"); STS staff also see the estimated percentiles. ✅
 3. **Crashes:** a known gap in v1; Crash Indicator estimate planned for v2. ✅
@@ -198,8 +208,6 @@ always be explained.
 
 ## 9. Next versions
 
-- **v1.1 — insufficient-data carriers:** out-of-service 100; "one away" 70–74 by violation rate;
-  0 inspections 63–69 by fleet size, and 77 for new interstate carriers (observed, ISS2); some
-  inspections 50–69 by inspections per truck/driver (needs a monthly national census summary).
+- **v1.1 — insufficient-data carriers:** done 2026-10-14 (section 3, step 5).
 - **v2 — Crash Indicator:** crashes per truck adjusted for miles, ranked by FMCSA's crash peer
   groups; expected to fix the Hira and RANB misses.

@@ -7,24 +7,26 @@ out-of-service order, and returns the estimate for the Safety tab.
 """
 
 import logging
-from datetime import date
+from datetime import date, timedelta
 
 import httpx
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
+from app.ingestion.company_census import CompanyCensusAdapter
 from app.ingestion.registration_orders import RegistrationOrdersAdapter
 from app.ingestion.socrata_client import SocrataClient
 from app.intelligence.iss_estimate import (
     VERSION,
     BasicResult,
+    CarrierFacts,
     CarrierSms,
     SmsBasic,
     build_reference,
     estimate,
 )
-from app.models import IssReference
+from app.models import Carrier, Inspection, IssReference
 from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.raw_record_repository import RawRecordRepository
 from app.repositories.safety_record_repository import SafetyRecordRepository
@@ -41,7 +43,10 @@ SMS_COLUMNS = ",".join(
         for part in ("measure", "insp_w_viol", "ac")
     ]
 )
+CENSUS_COLUMNS = "dot_number,power_units,total_drivers"
 PAGE_SIZE = 50_000
+VEHICLE_LEVELS = (1, 2, 5, 6)
+DRIVER_LEVELS = (1, 2, 3, 6)
 DOWNLOAD_TIMEOUT_SECONDS = 300.0
 
 
@@ -74,12 +79,23 @@ def build_iss_reference(db: Session, today: date, client: SocrataClient | None =
         rows = client.get_all_rows(
             dataset, {"$select": SMS_COLUMNS}, order="dot_number", page_size=PAGE_SIZE
         )
+        # Fleet sizes of active carriers, for the insufficient-data inspection-rate ranking.
+        census = client.get_all_rows(
+            settings.census_dataset_id,
+            {"$select": CENSUS_COLUMNS, "$where": "status_code='A'"},
+            order="dot_number",
+            page_size=PAGE_SIZE,
+        )
     finally:
         if own_client:
             client.close()
 
     month = month_start(today)
-    tables = build_reference(rows, month.isoformat()[:7])
+    sizes = {
+        str(r.get("dot_number")): (_number(r.get("power_units")), _number(r.get("total_drivers")))
+        for r in census
+    }
+    tables = build_reference(rows, month.isoformat()[:7], sizes)
     existing = db.scalar(select(IssReference).where(IssReference.data_month == month))
     if existing is None:
         db.add(
@@ -96,6 +112,43 @@ def build_iss_reference(db: Session, today: date, client: SocrataClient | None =
     db.commit()
     logger.info("Estimated ISS tables for %s built from %d carriers", month, len(rows))
     return len(rows)
+
+
+def _number(value: object) -> float:
+    try:
+        return float(value or 0)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _carrier_facts(db: Session, carrier: Carrier, today: date) -> CarrierFacts:
+    """Census facts and the carrier's own inspections in the last 24 months."""
+    census = RawRecordRepository(db).latest(
+        CompanyCensusAdapter.source, get_settings().census_dataset_id, str(carrier.usdot_number)
+    )
+    operation = str((census.payload if census else {}).get("carrier_operation") or "")
+    since = today - timedelta(days=730)
+    recent = [
+        i
+        for i in db.scalars(select(Inspection).where(Inspection.carrier_id == carrier.id))
+        if i.inspection_date >= since
+    ]
+
+    def with_violation(levels: tuple[int, ...]) -> int:
+        return sum(
+            1
+            for i in recent
+            if i.inspection_level in levels and (i.violation_data or {}).get("viol_total", 0) > 0
+        )
+
+    return CarrierFacts(
+        power_units=carrier.fleet_size,
+        drivers=carrier.driver_count,
+        interstate=operation.upper() == "A" if operation else None,
+        registered=carrier.first_registered_date,
+        vehicle_inspections_with_violation=with_violation(VEHICLE_LEVELS),
+        driver_inspections_with_violation=with_violation(DRIVER_LEVELS),
+    )
 
 
 def _carrier_sms(db: Session, carrier_id: int) -> tuple[CarrierSms | None, bool]:
@@ -156,8 +209,16 @@ def iss_for(db: Session, usdot_number: int) -> EstimatedIssOut | None:
             basics=[],
             data_month=reference.data_month,
             version=VERSION,
+            algorithm="NONE",
         )
-    result = estimate(sms, reference.tables, _active_oos_order(db, usdot_number))
+    today = date.today()
+    result = estimate(
+        sms,
+        reference.tables,
+        _active_oos_order(db, usdot_number),
+        _carrier_facts(db, carrier, today),
+        today,
+    )
     return EstimatedIssOut(
         value=result.value,
         band=result.band,
@@ -166,4 +227,5 @@ def iss_for(db: Session, usdot_number: int) -> EstimatedIssOut | None:
         basics=[_basic_out(r) for r in result.basics],
         data_month=reference.data_month,
         version=result.version,
+        algorithm=result.algorithm,
     )
