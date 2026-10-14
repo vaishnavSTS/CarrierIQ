@@ -2,14 +2,8 @@ import { AlertTriangle, CircleCheck, Minus } from 'lucide-react'
 
 import { StatusBadge } from '../../../components/StatusBadge'
 import type { EstimatedIss } from '../../../types/carrierSafety'
-import type { Tone } from '../../../utils/status'
 import { Empty } from '../Section'
-
-const BAND: Record<NonNullable<EstimatedIss['band']>, { label: string; tone: Tone }> = {
-  PASS: { label: 'Pass', tone: 'ok' },
-  OPTIONAL: { label: 'Optional', tone: 'warn' },
-  INSPECT: { label: 'Inspect', tone: 'down' },
-}
+import { ISS_BAND } from './issBand'
 
 function monthLabel(isoDate: string): string {
   return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString('en-US', {
@@ -28,7 +22,7 @@ export function EstimatedIssCard({ iss }: { iss: EstimatedIss | null | undefined
   if (!iss) {
     return <Empty>The Estimated ISS is not available yet for this carrier.</Empty>
   }
-  const band = iss.band ? BAND[iss.band] : null
+  const band = iss.band ? ISS_BAND[iss.band] : null
   const showPercentiles = iss.basics.some((b) => b.percentile !== null)
 
   return (
@@ -39,14 +33,15 @@ export function EstimatedIssCard({ iss }: { iss: EstimatedIss | null | undefined
             Estimated ISS · inspection priority
           </div>
           <p className="mt-1 text-xs text-slate-500">
-            CarrierIQ estimate from public FMCSA data — not FMCSA’s official ISS. 1–49 Pass · 50–74
-            Optional · 75–100 Inspect. Lower is better.
+            CarrierIQ estimate from public FMCSA data — not FMCSA’s official ISS. 1–49 Pass
+            (satisfactory) · 50–74 Optional (at risk) · 75–100 Inspect (needs inspection). Lower is
+            better.
           </p>
         </div>
         {iss.value !== null && band ? (
           <div className="flex items-center gap-2">
             <span className="text-3xl font-semibold tabular-nums text-slate-950">{iss.value}</span>
-            <StatusBadge label={band.label} tone={band.tone} />
+            <StatusBadge label={`${band.label} · ${band.status}`} tone={band.tone} />
           </div>
         ) : (
           <StatusBadge label="Not enough data" tone="neutral" />

@@ -7,6 +7,7 @@ import { CrashList } from './safety/CrashList'
 import { CsaBasics } from './safety/CsaBasics'
 import { EstimatedIssCard } from './safety/EstimatedIssCard'
 import { ImprovementGuide } from './safety/ImprovementGuide'
+import { ISS_BAND } from './safety/issBand'
 import { InspectionHistory } from './safety/InspectionHistory'
 import { SafetyTrends } from './safety/SafetyTrends'
 import { ViolationBreakdown } from './safety/ViolationBreakdown'
@@ -32,6 +33,8 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
   // FMCSA's method: a Level III (driver-only) inspection does not count toward the vehicle rate.
   const recent = safety.recent
   const crashes = detail.data?.crashes ?? null
+  const iss = detail.data?.estimated_iss ?? null
+  const issBand = iss?.band ? ISS_BAND[iss.band] : null
 
   return (
     <Section
@@ -39,7 +42,7 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
       title="Safety"
       source="FMCSA inspections, SMS, Crash File and Company Census"
     >
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Stat
           label="Inspections"
           value={safety.inspection_count}
@@ -96,6 +99,25 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
             safety.safety_rating_date ? `Since ${formatDate(safety.safety_rating_date)}` : undefined
           }
           source="FMCSA Company Census (compliance review)"
+        />
+        <Stat
+          label="Estimated ISS"
+          value={
+            iss?.value != null && issBand ? (
+              <span className="flex flex-wrap items-center gap-2">
+                {iss.value}
+                <StatusBadge label={issBand.status} tone={issBand.tone} />
+              </span>
+            ) : (
+              <span className="text-sm font-normal text-slate-500">
+                {detail.data ? 'Not enough data' : 'Loading…'}
+              </span>
+            )
+          }
+          note={
+            issBand ? `${issBand.label} band · 1–100, lower is better` : 'FMCSA inspection priority'
+          }
+          source="CarrierIQ estimate (FMCSA methods), not FMCSA’s rating"
         />
       </div>
 
