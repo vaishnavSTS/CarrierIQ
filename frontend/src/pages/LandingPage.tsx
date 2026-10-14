@@ -255,20 +255,22 @@ export function LandingPage() {
           <SectionHeading eyebrow="How it works" title="From sign-up to a packet in minutes" />
           <ol className="mt-10 grid gap-6 md:grid-cols-3">
             {STEPS.map(({ icon: Icon, title, text }, i) => (
-              <motion.li key={title} {...reveal(i * 0.1)} className="relative">
-                {i < STEPS.length - 1 && (
-                  <div
-                    aria-hidden
-                    className="absolute left-14 right-0 top-6 hidden h-px bg-gradient-to-r from-accent/60 to-transparent md:block"
-                  />
-                )}
+              <motion.li key={title} {...reveal(i * 0.1)}>
                 <div className="flex items-center gap-3">
-                  <span className="relative grid size-12 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-[0_0_24px_rgba(139,92,246,0.4)]">
+                  <span className="relative grid size-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-[0_0_24px_rgba(139,92,246,0.4)]">
                     <Icon className="size-5" aria-hidden />
                   </span>
-                  <span className="text-xs font-medium uppercase tracking-wider text-accent-strong">
+                  <span className="shrink-0 text-xs font-medium uppercase tracking-wider text-accent-strong">
                     Step {i + 1}
                   </span>
+                  {/* Connector: starts after the label and runs across the gap (-mr-6 = the
+                      grid's gap-6) to the next step's icon. */}
+                  {i < STEPS.length - 1 && (
+                    <span
+                      aria-hidden
+                      className="-mr-6 ml-1 hidden h-0.5 flex-1 rounded-full bg-gradient-to-r from-violet-500/80 via-fuchsia-500/60 to-violet-500/80 md:block"
+                    />
+                  )}
                 </div>
                 <h3 className="mt-4 text-base font-semibold text-slate-900">{title}</h3>
                 <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{text}</p>
