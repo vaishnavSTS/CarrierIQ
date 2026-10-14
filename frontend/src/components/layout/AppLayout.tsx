@@ -1,6 +1,7 @@
 import { LayoutDashboard, Search, UserCheck, type LucideIcon } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 
+import { NewSignupBanner } from '../../features/accounts/NewSignupBanner'
 import { useMe } from '../../hooks/useAuth'
 import { useNewAccountCount } from '../../hooks/useAccounts'
 import { BackgroundSpotlight } from './BackgroundSpotlight'
@@ -68,6 +69,7 @@ export function AppLayout() {
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-6">
+        {me?.role === 'STS_ADMIN' && <NewSignupBanner />}
         <Outlet />
       </main>
     </div>

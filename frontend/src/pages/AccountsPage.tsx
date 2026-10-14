@@ -95,7 +95,7 @@ function ContactCheck({ check }: { check: CarrierContactCheck }) {
 }
 
 /**
- * Pop-up listing client sign-ups STS hasn't seen yet. Sign-ups no longer wait for approval:
+ * Pop-up listing client and broker sign-ups STS hasn't seen yet. Sign-ups no longer wait for approval:
  * this is the heads-up, with the FMCSA checks to spot someone claiming a carrier that isn't
  * theirs (then Disable them in the table). "Got it" marks them all as seen.
  */
@@ -127,7 +127,8 @@ function NewSignupsDialog({ accounts }: { accounts: AdminUser[] }) {
         <ul className="mt-5 space-y-3">
           {accounts.map((a) => (
             <li key={a.id} className="rounded-xl border border-slate-200 bg-canvas p-4 text-sm">
-              <div className="font-medium text-slate-900">
+              <div className="flex flex-wrap items-center gap-2 font-medium text-slate-900">
+                <AccountKind portal={a.portal} />
                 {a.full_name} · {a.organization_name}
               </div>
               <div className="mt-0.5 text-slate-600">
@@ -355,6 +356,20 @@ function BrokerIdentity({ broker }: { broker: Brokerage }) {
       <span className="ml-1 text-emerald-700">
         ✓ broker authority ({broker.authority_source === 'MOTUS' ? 'Motus' : 'L&I'})
       </span>
+    </span>
+  )
+}
+
+/** Broker or client, coloured like the header label of their portal. */
+function AccountKind({ portal }: { portal: AdminUser['portal'] }) {
+  const broker = portal === 'broker'
+  return (
+    <span
+      className={`rounded-md px-2 py-0.5 text-xs font-medium ${
+        broker ? 'bg-sky-50 text-sky-700' : 'bg-violet-50 text-violet-700'
+      }`}
+    >
+      {broker ? 'Broker' : 'Client'}
     </span>
   )
 }

@@ -22,7 +22,7 @@ export function useAccounts() {
   })
 }
 
-/** Client sign-ups STS hasn't seen yet (the Accounts pop-up and the nav badge). */
+/** Client and broker sign-ups STS hasn't seen yet (the Accounts pop-up and the nav badge). */
 export function useNewAccountCount(): number {
   const { data } = useAccounts()
   return data?.filter((a) => a.is_new).length ?? 0
