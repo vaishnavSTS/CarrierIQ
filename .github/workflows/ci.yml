@@ -1,11 +1,9 @@
-# Checks every push to main and every pull request: the same commands run locally before a
-# commit (README). Nothing is deployed; secrets are not needed.
+# The same checks run locally before a commit (README). Runs only when started by hand
+# (GitHub > Actions > CI > Run workflow), never on push. Nothing is deployed; no secrets.
 name: CI
 
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}

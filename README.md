@@ -70,8 +70,9 @@ npm run lint
 npm run build
 ```
 
-GitHub Actions (`.github/workflows/ci.yml`) runs the same checks on every push to `main` and
-every pull request, plus `alembic upgrade head` on an empty PostgreSQL and the database tests.
+GitHub Actions (`.github/workflows/ci.yml`) can run the same checks, plus `alembic upgrade head`
+on an empty PostgreSQL and the database tests. It runs only when started by hand (Actions → CI →
+Run workflow), never on push.
 
 ### Database tests
 
