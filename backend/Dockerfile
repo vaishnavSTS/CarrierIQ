@@ -14,5 +14,5 @@ COPY alembic ./alembic
 
 EXPOSE 8000
 
-# Apply migrations, then start the API.
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+# Apply migrations, then start the API. Hosts such as Render set PORT; local Docker uses 8000.
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

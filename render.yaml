@@ -1,0 +1,35 @@
+# Render Blueprint for the CarrierIQ API (demo setup: free plan, no background worker).
+# The frontend is on Vercel and reaches this service through the /api rewrite in
+# frontend/vercel.json, so the session cookie stays on the frontend's domain.
+services:
+  - type: web
+    name: carrieriq-api
+    runtime: docker
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/v1/health
+    autoDeploy: false # deploy from the Render dashboard when you choose
+    envVars:
+      - key: ENVIRONMENT
+        value: production # HTTPS-only cookies; refuses to start with the development key
+      - key: RUN_WORKER_IN_API
+        value: "false" # no background worker in the demo
+      # Serve stored carrier data as it is (about 100 years before data counts as old).
+      # Carriers not yet in the database still load live from FMCSA when searched.
+      # Remove this, or set 24, to refresh carriers older than a day when they are opened.
+      - key: CARRIER_REFRESH_HOURS
+        value: "876000"
+      - key: AUTH_SECRET_KEY
+        generateValue: true
+      # Set these in the Render dashboard; they are never stored in the repo.
+      - key: DATABASE_URL
+        sync: false # Supabase session-pooler URL, as in backend/.env
+      - key: SOCRATA_APP_TOKEN
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false # https://<your-vercel-domain>/api/v1/auth/google/callback
