@@ -55,7 +55,7 @@ export function PortalHero({
       <HeroBoard signals={undefined} />
 
       <motion.div
-        className="relative grid gap-8 p-6 md:p-8 lg:grid-cols-[1.25fr_1fr] lg:items-center"
+        className={`relative grid gap-8 p-6 md:p-8 ${carriers?.length === 0 ? 'lg:grid-cols-[1.25fr_1fr] lg:items-center' : ''}`}
         variants={container}
         initial="hidden"
         animate="show"
@@ -114,9 +114,11 @@ export function PortalHero({
           </motion.ul>
         </div>
 
-        <motion.div variants={item} className="hidden md:block">
-          <ExampleCheck title="What a broker’s check might show" />
-        </motion.div>
+        {carriers?.length === 0 && (
+          <motion.div variants={item} className="hidden md:block">
+            <ExampleCheck title="What a broker’s check might show" />
+          </motion.div>
+        )}
       </motion.div>
     </section>
   )
