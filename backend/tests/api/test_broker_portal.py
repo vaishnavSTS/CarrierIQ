@@ -160,7 +160,13 @@ def test_portals_are_kept_apart(api: TestClient, db: Session) -> None:
     make_user(db, "analyst@sts.test", UserRole.STS_ANALYST, UserStatus.ACTIVE)
 
     log_in(api, "broker@test.com")
-    for path in ("/portal/overview", f"/portal/carriers/{USDOT}", f"/carriers/{USDOT}", "/jobs"):
+    for path in (
+        "/portal/overview",
+        "/portal/search?q=1",
+        f"/portal/carriers/{USDOT}",
+        f"/carriers/{USDOT}",
+        "/jobs",
+    ):
         assert api.get(f"/api/v1{path}").status_code == 403, path
     api.post("/api/v1/auth/logout")
 

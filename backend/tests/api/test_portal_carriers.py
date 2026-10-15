@@ -63,17 +63,21 @@ def test_client_opens_own_carrier_without_internal_fields(portal: TestClient, db
         assert portal.get(f"/api/v1/portal/carriers/{USDOT}/{tab}").status_code == 200, tab
 
 
-@pytest.mark.parametrize("verified", [True, False])
-def test_client_opens_only_carriers_linked_to_them(
-    portal: TestClient, db: Session, verified: bool
-) -> None:
-    client_with_carrier(db, verified=verified)  # sign-ups no longer wait for STS to confirm
+def test_client_searches_and_opens_other_carriers(portal: TestClient, db: Session) -> None:
+    """Not only their own: a client can look up any carrier, in the same client view."""
+    make_user(db, "owner@client.test", UserRole.CLIENT_ADMIN, UserStatus.ACTIVE)  # no carriers
     log_in(portal, "owner@client.test")
 
-    other = portal.get("/api/v1/portal/carriers/1234567")
-    assert other.status_code == 404
-    assert other.json()["error"]["code"] == "carrier_not_found"
-    assert portal.get(f"/api/v1/portal/carriers/{USDOT}/safety").status_code == 200
+    search = portal.get("/api/v1/portal/search", params={"q": str(USDOT)})
+    assert search.status_code == 200, search.text
+    result = search.json()["results"][0]
+    assert result["usdot_number"] == USDOT
+    assert (result["review_status"], result["open_signal_count"]) == (None, 0)
+
+    profile = portal.get(f"/api/v1/portal/carriers/{USDOT}")
+    assert profile.status_code == 200, profile.text
+    assert profile.json()["review_status"] is None
+    assert portal.get(f"/api/v1/portal/carriers/{USDOT}/network").status_code == 200
 
 
 def test_each_side_is_kept_to_its_own_carrier_routes(portal: TestClient, db: Session) -> None:
@@ -87,6 +91,7 @@ def test_each_side_is_kept_to_its_own_carrier_routes(portal: TestClient, db: Ses
 
     log_in(portal, "analyst@sts.test")
     assert portal.get(f"/api/v1/portal/carriers/{USDOT}").status_code == 403
+    assert portal.get("/api/v1/portal/search", params={"q": "1"}).status_code == 403
 
 
 def test_client_network_drops_team_notes_and_signal_links() -> None:

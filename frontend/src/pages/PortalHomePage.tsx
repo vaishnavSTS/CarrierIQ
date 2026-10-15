@@ -1,6 +1,7 @@
 import { ChevronRight, Clock, Truck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
+import { CarrierSearchBox } from '../features/carrier-search/CarrierSearchBox'
 import { CarrierSnapshot } from '../features/portal/CarrierSnapshot'
 import { ClientGuide } from '../features/portal/ClientGuide'
 import { PortalHero } from '../features/portal/PortalHero'
@@ -78,6 +79,16 @@ export function PortalHomePage() {
           )}
         </section>
       )}
+
+      <section className="space-y-3 rounded-2xl border border-slate-200 bg-surface p-5">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-900">Look up another carrier</h2>
+          <p className="mt-0.5 text-sm text-slate-600">
+            Any USDOT, MC number or name: a partner, a carrier you lease from, or a competitor.
+          </p>
+        </div>
+        <CarrierSearchBox />
+      </section>
 
       <ClientGuide />
     </div>

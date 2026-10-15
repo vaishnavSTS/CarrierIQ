@@ -1,7 +1,7 @@
 """Client and broker portals. Carrier routes mirror /carriers/{usdot}/... without STS-internal
-data (services/client_view.py): clients only for their own verified carriers (require_own_carrier),
-brokers for any carrier (they vet carriers before giving them loads). Staff-only carrier routes
-(signals, refresh, team notes) have no portal version."""
+data (services/client_view.py), for any carrier: clients see their own carriers first and can look
+up others (e.g. a carrier they work with), brokers vet carriers before giving them loads. Staff-only
+carrier routes (signals, refresh, team notes) have no portal version."""
 
 from collections.abc import Callable
 from typing import Annotated
@@ -9,7 +9,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Path, Query
 from sqlalchemy.orm import Session
 
-from app.api.auth import require_broker, require_client, require_own_carrier
+from app.api.auth import require_broker, require_client
 from app.api.v1.routes.carriers import (
     get_carrier_authority_service,
     get_carrier_equipment_service,
@@ -50,6 +50,14 @@ def any_carrier(
     _: Annotated[User, Depends(require_broker)],
 ) -> int:
     """Brokers may open any USDOT number."""
+    return usdot_number
+
+
+def client_any_carrier(
+    usdot_number: Annotated[int, Path(gt=0, lt=100_000_000)],
+    _: Annotated[User, Depends(require_client)],
+) -> int:
+    """Clients may open any USDOT number too; their own carriers are listed on their home page."""
     return usdot_number
 
 
@@ -115,7 +123,17 @@ def overview(
     return service.portal_overview(user)
 
 
-_add_carrier_routes(router, require_own_carrier)
+@router.get("/search", response_model=CarrierSearchResponse)
+def client_carrier_search(
+    q: Annotated[str, Query(min_length=1, max_length=100, description="USDOT, MC/MX/FF or name")],
+    _: Annotated[User, Depends(require_client)],
+    service: Annotated[CarrierSearchService, Depends(get_carrier_search_service)],
+) -> CarrierSearchResponse:
+    """Carrier search, without STS review status or signal counts."""
+    return client_search(service.search(q))
+
+
+_add_carrier_routes(router, client_any_carrier)
 
 
 # --- Broker portal -------------------------------------------------------------------------------

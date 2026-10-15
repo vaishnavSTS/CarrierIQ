@@ -12,6 +12,7 @@ import { ProfileHeader } from '../features/carrier-profile/ProfileHeader'
 import { SafetySection } from '../features/carrier-profile/SafetySection'
 import { TimelineSection } from '../features/carrier-profile/TimelineSection'
 import { useCarrierProfile } from '../hooks/useCarrierProfile'
+import { useIsOwnCarrier } from '../hooks/useIsOwnCarrier'
 import { useIsClientPortal, usePortalMode, useSearchPath } from '../hooks/usePortalMode'
 
 const TABS = [
@@ -27,8 +28,7 @@ const TABS = [
 
 type TabId = (typeof TABS)[number][0]
 
-/** Tabs a client sees for their own carrier (docs/client-internal-portal-plan.md, 4a), and a
- * broker for any carrier. */
+/** Tabs clients and brokers see for any carrier (docs/client-internal-portal-plan.md, 4a). */
 const CLIENT_TABS: readonly TabId[] = [
   'identity',
   'authority',
@@ -51,7 +51,7 @@ export function CarrierProfilePage() {
   const { usdot = '' } = useParams()
   const usdotNumber = Number(usdot)
   const client = useIsClientPortal()
-  const ownCarriersOnly = usePortalMode() === 'client'
+  const ownCarrier = useIsOwnCarrier(usdotNumber)
   const { data: profile, error, isPending } = useCarrierProfile(usdotNumber)
   const navigate = useNavigate()
   // The open tab lives in the URL (?tab=safety) so a refresh or shared link keeps it.
@@ -60,7 +60,7 @@ export function CarrierProfilePage() {
   const tab: TabId = isTab(requested, client) ? requested : DEFAULT_TAB
   const tabs = client
     ? TABS.filter(([id]) => CLIENT_TABS.includes(id)).map(
-        ([id, label]) => [id, (ownCarriersOnly && CLIENT_LABELS[id]) || label] as const,
+        ([id, label]) => [id, (ownCarrier && CLIENT_LABELS[id]) || label] as const,
       )
     : TABS
 
@@ -76,9 +76,7 @@ export function CarrierProfilePage() {
     return (
       <Notice>
         {error instanceof ApiError && error.status === 404
-          ? ownCarriersOnly
-            ? `USDOT ${usdotNumber} isn’t one of your carriers. Contact STS if it should be.`
-            : `No carrier with USDOT ${usdotNumber} was found in CarrierIQ or FMCSA data.`
+          ? `No carrier with USDOT ${usdotNumber} was found in CarrierIQ or FMCSA data.`
           : `Could not load USDOT ${usdotNumber}: ${error.message}`}
       </Notice>
     )

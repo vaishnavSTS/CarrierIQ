@@ -175,3 +175,4 @@ Also hidden from clients: Refresh now / jobs, search of other carriers, review a
 | 2026-10-14 | Google sign-in: new Google users must give mobile + USDOT before the request reaches STS; approval unchanged | User decision |
 | 2026-10-14 | No approval step: clients get their portal as soon as they sign up; admins see a "new sign-up" pop-up on Accounts and can disable an account. Replaces the approval decision of 2026-10-13 | User decision; client data is public FMCSA data |
 | 2026-10-13 | Internal pages keep their URLs (`/dashboard`, `/search`, `/carriers/*`) | Fewer link changes than moving everything under `/app` |
+| 2026-10-15 | Clients can search and open any carrier (`/portal/search`, "Search carriers" in the header and on their home), in the same client view brokers get; their own carriers stay their home page, and "How brokers see you" wording applies only to their own. Replaces "own verified carriers only" | User decision |

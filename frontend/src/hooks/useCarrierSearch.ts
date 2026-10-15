@@ -1,12 +1,18 @@
 import { useQuery } from '@tanstack/react-query'
 
 import { ApiError } from '../api/client'
-import { searchCarriers } from '../api/carriers'
-import { useIsBrokerPortal } from './usePortalMode'
+import { searchCarriers, type CarrierSearchPath } from '../api/carriers'
+import { usePortalMode } from './usePortalMode'
+
+const SEARCH_API: Record<ReturnType<typeof usePortalMode>, CarrierSearchPath> = {
+  internal: '/carriers/search',
+  client: '/portal/search',
+  broker: '/broker/search',
+}
 
 export function useCarrierSearch(query: string) {
   const trimmed = query.trim()
-  const path = useIsBrokerPortal() ? '/broker/search' : '/carriers/search'
+  const path = SEARCH_API[usePortalMode()]
   return useQuery({
     queryKey: ['carrier-search', path, trimmed],
     queryFn: () => searchCarriers(trimmed, path),

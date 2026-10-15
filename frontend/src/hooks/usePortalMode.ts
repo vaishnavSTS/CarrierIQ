@@ -48,7 +48,13 @@ export function useCarrierPath(): (usdotNumber: number) => string {
   return (usdot) => `${base}/${usdot}`
 }
 
-/** Where carrier search lives (and its results) in the portals that have one. */
+const SEARCH_PAGE: Record<Portal, string> = {
+  internal: '/search',
+  client: '/portal/search',
+  broker: '/broker',
+}
+
+/** Where carrier search lives (and its results) in each portal. */
 export function useSearchPath(): string {
-  return usePortalMode() === 'broker' ? '/broker' : '/search'
+  return SEARCH_PAGE[usePortalMode()]
 }

@@ -92,8 +92,8 @@ export function useCompleteBrokerGoogleSignup() {
   })
 }
 
-export function usePortalOverview() {
-  return useQuery({ queryKey: ['portal', 'overview'], queryFn: fetchPortalOverview })
+export function usePortalOverview(enabled = true) {
+  return useQuery({ queryKey: ['portal', 'overview'], queryFn: fetchPortalOverview, enabled })
 }
 
 /** The first page each portal opens on. */

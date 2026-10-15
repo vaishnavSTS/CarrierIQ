@@ -6,11 +6,11 @@ in app/api/v1/router.py), so hiding a page in the frontend is never the only pro
 
 from typing import Annotated
 
-from fastapi import Depends, Path, Request
+from fastapi import Depends, Request
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.core.exceptions import CarrierNotFoundError, ForbiddenError, UnauthorizedError
+from app.core.exceptions import ForbiddenError, UnauthorizedError
 from app.core.security import read_session_token
 from app.db.session import get_db
 from app.models import User
@@ -59,16 +59,3 @@ def require_broker(user: CurrentUser) -> User:
 
 
 ClientUser = Annotated[User, Depends(require_client)]
-
-
-def require_own_carrier(
-    usdot_number: Annotated[int, Path(gt=0, lt=100_000_000)],
-    user: ClientUser,
-    db: Annotated[Session, Depends(get_db)],
-) -> int:
-    """A client may open only the USDOT numbers linked to their organization. Any other number
-    answers 404, so the portal never confirms whether a carrier exists."""
-    links = UserRepository(db).organization_carriers(user.organization_id)
-    if usdot_number not in {link.usdot_number for link in links}:
-        raise CarrierNotFoundError(f"USDOT {usdot_number} is not one of your carriers")
-    return usdot_number

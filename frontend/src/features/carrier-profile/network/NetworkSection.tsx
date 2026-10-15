@@ -8,7 +8,8 @@ import { Disclosure } from '../../../components/Disclosure'
 import { SourceTag } from '../../../components/SourceTag'
 import { StatusBadge } from '../../../components/StatusBadge'
 import { useCarrierNetwork } from '../../../hooks/useNetwork'
-import { useIsClientPortal, usePortalMode } from '../../../hooks/usePortalMode'
+import { useIsOwnCarrier } from '../../../hooks/useIsOwnCarrier'
+import { useIsClientPortal } from '../../../hooks/usePortalMode'
 import type { CarrierProfile } from '../../../types/carrierProfile'
 import type { CheckStatus, LinkedCarrier } from '../../../types/network'
 import { formatDate, formatDateTime, formatPhone, humanize } from '../../../utils/format'
@@ -135,9 +136,10 @@ function LinkedTable({ carriers }: { carriers: LinkedCarrier[] }) {
 export function NetworkSection({ profile }: { profile: CarrierProfile }) {
   const { data, error, isPending } = useCarrierNetwork(profile.usdot_number)
   const [showBuilding, setShowBuilding] = useState(false)
-  // Clients read it about their own company; brokers and staff about the carrier they vet.
-  const title =
-    usePortalMode() === 'client' ? 'How brokers’ checks may see you' : 'Network & Identity'
+  // Clients read it about their own company; otherwise it is about the carrier being looked up.
+  const title = useIsOwnCarrier(profile.usdot_number)
+    ? 'How brokers’ checks may see you'
+    : 'Network & Identity'
 
   return (
     <Section id="network" title={title}>

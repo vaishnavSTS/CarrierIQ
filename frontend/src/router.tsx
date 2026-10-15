@@ -15,6 +15,7 @@ import { GoogleSignupPage } from './pages/GoogleSignupPage'
 import { LandingPage } from './pages/LandingPage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { ClientSearchPage } from './pages/ClientSearchPage'
 import { PortalHomePage } from './pages/PortalHomePage'
 import { RegisterPage } from './pages/RegisterPage'
 import { SearchPage } from './pages/SearchPage'
@@ -22,7 +23,8 @@ import { SearchPage } from './pages/SearchPage'
 /**
  * Public: landing, login, sign-up (clients at /register, brokers at /broker/register).
  * Internal portal (STS staff): dashboard, search, carrier profiles, accounts (STS admins).
- * Client portal (STS clients): /portal, /portal/carriers/:usdot (own verified carriers only).
+ * Client portal (STS clients): /portal (their own carriers), /portal/search and
+ *   /portal/carriers/:usdot (any carrier).
  * Broker portal (freight brokers): /broker (search), /broker/carriers/:usdot (any carrier).
  */
 export const router = createBrowserRouter([
@@ -61,6 +63,7 @@ export const router = createBrowserRouter([
         element: <PortalLayout />,
         children: [
           { index: true, element: <PortalHomePage /> },
+          { path: 'search', element: <ClientSearchPage /> },
           { path: 'carriers/:usdot', element: <CarrierProfilePage /> },
         ],
       },

@@ -8,9 +8,12 @@ import type { CarrierApiBase } from '../hooks/usePortalMode'
 import { apiGet, apiRequest } from './client'
 
 /** `path` is /broker/search in the broker portal (no STS review status in the answer). */
+/** Search endpoint per portal: staff, clients (/portal/search) and brokers. */
+export type CarrierSearchPath = '/carriers/search' | '/portal/search' | '/broker/search'
+
 export function searchCarriers(
   query: string,
-  path: '/carriers/search' | '/broker/search' = '/carriers/search',
+  path: CarrierSearchPath = '/carriers/search',
 ): Promise<CarrierSearchResponse> {
   return apiGet<CarrierSearchResponse>(`${path}?q=${encodeURIComponent(query)}`)
 }
