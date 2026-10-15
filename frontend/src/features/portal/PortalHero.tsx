@@ -13,6 +13,7 @@ import { Link } from 'react-router-dom'
 
 import type { PortalCarrier } from '../../types/auth'
 import { HeroBoard } from '../dashboard/HeroBoard'
+import { ExampleCheck } from './ExampleCheck'
 
 const container = {
   hidden: {},
@@ -54,62 +55,68 @@ export function PortalHero({
       <HeroBoard signals={undefined} />
 
       <motion.div
-        className="relative grid gap-6 p-6 md:p-8"
+        className="relative grid gap-8 p-6 md:p-8 lg:grid-cols-[1.25fr_1fr] lg:items-center"
         variants={container}
         initial="hidden"
         animate="show"
       >
-        <motion.div
-          variants={item}
-          className="flex items-center gap-2 text-xs font-medium text-slate-600"
-        >
-          <span className="relative flex size-2">
-            <span className="live-ping absolute inline-flex size-full rounded-full bg-emerald-600" />
-            <span className="relative inline-flex size-2 rounded-full bg-emerald-600" />
-          </span>
-          Live · FMCSA and NHTSA public records
-        </motion.div>
-
-        <motion.div variants={item} className="max-w-2xl">
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
-            Welcome{firstName ? `, ${firstName}` : ''}.{' '}
-            <span className="bg-gradient-to-r from-violet-300 via-fuchsia-300 to-indigo-300 bg-clip-text text-transparent">
-              See your carrier the way brokers do
+        <div className="grid min-w-0 gap-6">
+          <motion.div
+            variants={item}
+            className="flex items-center gap-2 text-xs font-medium text-slate-600"
+          >
+            <span className="relative flex size-2">
+              <span className="live-ping absolute inline-flex size-full rounded-full bg-emerald-600" />
+              <span className="relative inline-flex size-2 rounded-full bg-emerald-600" />
             </span>
-          </h1>
-          <p className="mt-2 text-sm text-slate-600">
-            {organizationName && <span className="text-slate-800">{organizationName} · </span>}
-            Every value comes from FMCSA’s own records and names its source.
-          </p>
-        </motion.div>
-
-        {only && (
-          <motion.div variants={item}>
-            <Link
-              to={`/portal/carriers/${only.usdot_number}`}
-              className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-5 py-3 text-sm font-medium text-white shadow-[0_8px_30px_rgba(139,92,246,0.35)] transition-all hover:shadow-[0_10px_40px_rgba(139,92,246,0.5)] hover:brightness-110"
-            >
-              Open {only.legal_name ?? `USDOT ${only.usdot_number}`}
-              <ArrowRight
-                className="size-4 transition-transform group-hover:translate-x-0.5"
-                aria-hidden
-              />
-            </Link>
+            Live · FMCSA and NHTSA public records
           </motion.div>
-        )}
 
-        <motion.ul variants={container} className="flex max-w-3xl flex-wrap gap-2">
-          {VIEWS.map(({ icon: Icon, label }) => (
-            <motion.li
-              key={label}
-              variants={item}
-              className="flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-canvas/60 px-3 py-1.5 text-xs text-slate-700 backdrop-blur"
-            >
-              <Icon className="size-3.5 text-accent-strong" aria-hidden />
-              {label}
-            </motion.li>
-          ))}
-        </motion.ul>
+          <motion.div variants={item} className="max-w-2xl">
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
+              Welcome{firstName ? `, ${firstName}` : ''}.{' '}
+              <span className="bg-gradient-to-r from-violet-300 via-fuchsia-300 to-indigo-300 bg-clip-text text-transparent">
+                See your carrier the way brokers do
+              </span>
+            </h1>
+            <p className="mt-2 text-sm text-slate-600">
+              {organizationName && <span className="text-slate-800">{organizationName} · </span>}
+              Every value comes from FMCSA’s own records and names its source.
+            </p>
+          </motion.div>
+
+          {only && (
+            <motion.div variants={item}>
+              <Link
+                to={`/portal/carriers/${only.usdot_number}`}
+                className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-5 py-3 text-sm font-medium text-white shadow-[0_8px_30px_rgba(139,92,246,0.35)] transition-all hover:shadow-[0_10px_40px_rgba(139,92,246,0.5)] hover:brightness-110"
+              >
+                Open {only.legal_name ?? `USDOT ${only.usdot_number}`}
+                <ArrowRight
+                  className="size-4 transition-transform group-hover:translate-x-0.5"
+                  aria-hidden
+                />
+              </Link>
+            </motion.div>
+          )}
+
+          <motion.ul variants={container} className="flex max-w-3xl flex-wrap gap-2">
+            {VIEWS.map(({ icon: Icon, label }) => (
+              <motion.li
+                key={label}
+                variants={item}
+                className="flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-canvas/60 px-3 py-1.5 text-xs text-slate-700 backdrop-blur"
+              >
+                <Icon className="size-3.5 text-accent-strong" aria-hidden />
+                {label}
+              </motion.li>
+            ))}
+          </motion.ul>
+        </div>
+
+        <motion.div variants={item} className="hidden md:block">
+          <ExampleCheck title="What a broker’s check might show" />
+        </motion.div>
       </motion.div>
     </section>
   )

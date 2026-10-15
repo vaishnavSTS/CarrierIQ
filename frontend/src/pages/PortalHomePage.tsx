@@ -1,6 +1,7 @@
 import { ChevronRight, Clock, Truck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
+import { ClientGuide } from '../features/portal/ClientGuide'
 import { PortalHero } from '../features/portal/PortalHero'
 import { usePortalOverview, useMe } from '../hooks/useAuth'
 import { formatDateTime } from '../utils/format'
@@ -11,7 +12,7 @@ export function PortalHomePage() {
   const { data, isPending, isError } = usePortalOverview()
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PortalHero
         firstName={user?.full_name.split(' ')[0]}
         organizationName={data?.organization_name}
@@ -67,11 +68,7 @@ export function PortalHomePage() {
         )}
       </section>
 
-      <section className="rounded-2xl border border-dashed border-slate-300 p-5 text-sm text-slate-500">
-        Open a carrier to see its FMCSA record, what brokers’ checks may flag, what to improve in
-        each CSA BASIC, and a packet you can send to brokers. Coming next: alerts when your FMCSA
-        records change.
-      </section>
+      <ClientGuide />
     </div>
   )
 }
