@@ -43,6 +43,7 @@ class JobQueue(Protocol):
 
     def fail(self, job_id: int, error: str) -> JobStatus:
         """Record a failure; returns QUEUED (will retry) or FAILED (gave up)."""
+        ...
 
 
 class PostgresJobQueue:

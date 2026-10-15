@@ -19,6 +19,7 @@ Rules:
 import re
 from collections.abc import Callable
 from datetime import UTC, datetime
+from typing import TypedDict
 
 from sqlalchemy.orm import Session
 
@@ -365,7 +366,23 @@ class AuthService:
         )
 
 
-def _user_fields(user: User, organization: Organization | None) -> dict[str, object]:
+class _UserFields(TypedDict):
+    """The fields UserOut and AdminUserOut share, typed so `**` unpacking type-checks."""
+
+    id: int
+    email: str
+    full_name: str
+    phone: str | None
+    role: str
+    status: str
+    portal: str
+    organization_id: int
+    organization_name: str
+    created_at: datetime
+    last_login_at: datetime | None
+
+
+def _user_fields(user: User, organization: Organization | None) -> _UserFields:
     return {
         "id": user.id,
         "email": user.email,

@@ -3,7 +3,8 @@ data (services/client_view.py): clients only for their own verified carriers (re
 brokers for any carrier (they vet carriers before giving them loads). Staff-only carrier routes
 (signals, refresh, team notes) have no portal version."""
 
-from typing import Annotated, Any
+from collections.abc import Callable
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Path, Query
 from sqlalchemy.orm import Session
@@ -52,26 +53,26 @@ def any_carrier(
     return usdot_number
 
 
-def _add_carrier_routes(router: APIRouter, carrier: Any) -> None:
-    """The client view of a carrier's tabs; `carrier` resolves (and authorizes) the USDOT."""
+def _add_carrier_routes(router: APIRouter, resolve: Callable[..., int]) -> None:
+    """The client view of a carrier's tabs; `resolve` checks the USDOT (and who may open it)."""
 
     @router.get("/carriers/{usdot_number}", response_model=CarrierProfile)
     def carrier_profile(
-        usdot_number: carrier,
+        usdot_number: Annotated[int, Depends(resolve)],
         service: Annotated[CarrierProfileService, Depends(get_carrier_profile_service)],
     ) -> CarrierProfile:
         return client_profile(service.get(usdot_number))
 
     @router.get("/carriers/{usdot_number}/safety", response_model=CarrierSafetyOut)
     def carrier_safety(
-        usdot_number: carrier,
+        usdot_number: Annotated[int, Depends(resolve)],
         service: Annotated[CarrierSafetyService, Depends(get_carrier_safety_service)],
     ) -> CarrierSafetyOut:
         return client_safety(service.safety(usdot_number))
 
     @router.get("/carriers/{usdot_number}/inspections", response_model=InspectionPageOut)
     def carrier_inspections(
-        usdot_number: carrier,
+        usdot_number: Annotated[int, Depends(resolve)],
         service: Annotated[CarrierSafetyService, Depends(get_carrier_safety_service)],
         page: Annotated[int, Query(ge=1)] = 1,
         page_size: Annotated[int, Query(ge=1, le=100)] = 25,
@@ -81,21 +82,21 @@ def _add_carrier_routes(router: APIRouter, carrier: Any) -> None:
 
     @router.get("/carriers/{usdot_number}/authority", response_model=CarrierAuthorityOut)
     def carrier_authority(
-        usdot_number: carrier,
+        usdot_number: Annotated[int, Depends(resolve)],
         service: Annotated[CarrierAuthorityService, Depends(get_carrier_authority_service)],
     ) -> CarrierAuthorityOut:
         return service.get(usdot_number)
 
     @router.get("/carriers/{usdot_number}/equipment", response_model=CarrierEquipmentOut)
     def carrier_equipment(
-        usdot_number: carrier,
+        usdot_number: Annotated[int, Depends(resolve)],
         service: Annotated[CarrierEquipmentService, Depends(get_carrier_equipment_service)],
     ) -> CarrierEquipmentOut:
         return service.get(usdot_number)
 
     @router.get("/carriers/{usdot_number}/network", response_model=NetworkOut)
     def carrier_network(
-        usdot_number: carrier,
+        usdot_number: Annotated[int, Depends(resolve)],
         service: Annotated[NetworkService, Depends(get_network_service)],
     ) -> NetworkOut:
         """Registration checks and linked carriers; no STS team notes or ownership attestations."""
@@ -114,7 +115,7 @@ def overview(
     return service.portal_overview(user)
 
 
-_add_carrier_routes(router, Annotated[int, Depends(require_own_carrier)])
+_add_carrier_routes(router, require_own_carrier)
 
 
 # --- Broker portal -------------------------------------------------------------------------------
@@ -139,4 +140,4 @@ def broker_search(
     return client_search(service.search(q))
 
 
-_add_carrier_routes(broker_router, Annotated[int, Depends(any_carrier)])
+_add_carrier_routes(broker_router, any_carrier)
