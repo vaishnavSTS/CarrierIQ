@@ -25,6 +25,18 @@ export function PortalHomePage() {
         carriers={data?.carriers}
       />
 
+      {searchEnabled && (
+        <section className="space-y-3 rounded-2xl border border-slate-200 bg-surface p-5">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900">Look up another carrier</h2>
+            <p className="mt-0.5 text-sm text-slate-600">
+              Any USDOT, MC number or name: a partner, a carrier you lease from, or a competitor.
+            </p>
+          </div>
+          <CarrierSearchBox />
+        </section>
+      )}
+
       {data?.carriers.map((c) => (
         <CarrierSnapshot key={c.usdot_number} usdotNumber={c.usdot_number} />
       ))}
@@ -78,18 +90,6 @@ export function PortalHomePage() {
               ))}
             </ul>
           )}
-        </section>
-      )}
-
-      {searchEnabled && (
-        <section className="space-y-3 rounded-2xl border border-slate-200 bg-surface p-5">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-900">Look up another carrier</h2>
-            <p className="mt-0.5 text-sm text-slate-600">
-              Any USDOT, MC number or name: a partner, a carrier you lease from, or a competitor.
-            </p>
-          </div>
-          <CarrierSearchBox />
         </section>
       )}
 
