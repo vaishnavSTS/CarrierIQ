@@ -53,20 +53,20 @@ function FleetNote({ fleet }: { fleet: Fleet }) {
   const recent = fleet.recent_power_units
   let text: string
   if (recent < registered) {
-    text = `Inspections in the last ${fleet.recent_months} months show ${recent} of the ${registered} registered power units. Only some vehicles are ever inspected, so this reflects inspection coverage. It does not show that vehicles are missing or out of use.`
+    text = `Inspections in the last ${fleet.recent_months} months saw ${recent} of the ${registered} registered power units. Not every truck gets inspected, so this does not mean trucks are missing.`
   } else if (recent > registered) {
-    text = `More power units were inspected in the last ${fleet.recent_months} months (${recent}) than are registered (${registered}). The fleet may have grown since the last MCS-150 update, or vehicles may be leased or replaced.`
+    text = `Inspections in the last ${fleet.recent_months} months saw ${recent} power units, more than the ${registered} registered. The fleet may have grown since the last MCS-150, or trucks may be leased or replaced.`
   } else {
-    text = `Inspections in the last ${fleet.recent_months} months show as many power units as are registered (${registered}).`
+    text = `Inspections in the last ${fleet.recent_months} months saw all ${registered} registered power units.`
   }
   return (
     <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
       <p>{text}</p>
       <p className="mt-1 text-xs text-slate-500">
-        Vehicles seen {formatDate(fleet.first_observed)} – {formatDate(fleet.last_observed)}. Power
-        units and trailers are told apart from the NHTSA VIN decode
+        Vehicles seen {formatDate(fleet.first_observed)} – {formatDate(fleet.last_observed)}. Truck
+        or trailer comes from the NHTSA VIN decode
         {fleet.observed_unknown_type > 0 &&
-          `; ${fleet.observed_unknown_type} vehicle(s) have no decoded type yet`}
+          `; ${fleet.observed_unknown_type} vehicle(s) not decoded yet`}
         .
       </p>
     </div>
@@ -77,9 +77,8 @@ function OtherCarriers({ carriers }: { carriers: VinCarrier[] }) {
   return (
     <div className="space-y-2">
       <p className="text-xs text-slate-500">
-        The same VIN was recorded on inspections of these carriers. Equipment often moves between
-        carriers legitimately (leases, sales, owner-operators), so this is a relationship to be
-        aware of, not a finding.
+        These carriers had the same VIN on their inspections. Trucks often change hands for normal
+        reasons (leases, sales, owner-operators), so this is worth knowing, not a problem by itself.
       </p>
       <table className="text-xs">
         <tbody>
@@ -185,8 +184,8 @@ export function EquipmentSection({ usdotNumber }: { usdotNumber: number }) {
     <Section id="equipment" title="Equipment" source={SOURCES.vins}>
       {isPending && (
         <p className="text-sm text-slate-500">
-          Loading equipment… new VINs are decoded with NHTSA the first time, which can take a few
-          seconds for a large fleet.
+          Loading equipment… the first load decodes new VINs with NHTSA, which can take a few
+          seconds.
         </p>
       )}
       {error && <p className="text-sm text-red-700">Could not load equipment: {error.message}</p>}
@@ -208,7 +207,7 @@ export function EquipmentSection({ usdotNumber }: { usdotNumber: number }) {
             <Stat
               label="Trailers observed"
               value={data.fleet.observed_trailers}
-              note="Distinct VINs on inspections"
+              note="Different VINs seen on inspections"
               source="FMCSA inspections (VINs), NHTSA vPIC"
             />
             <Stat

@@ -17,7 +17,7 @@ function improvementSummary(
 ): string | null {
   if (drivers === null) return null
   if (drivers.length === 0) {
-    return 'FMCSA counts no violations against this carrier in the current 24-month period. Keeping inspections free of violations keeps the CSA measures low; the safety rating itself changes only after an FMCSA review.'
+    return 'No violations count against this carrier in the last 24 months. Clean inspections keep the CSA measures low.'
   }
   const picks = drivers
     .flatMap((b) => b.groups.slice(0, 2).map((g) => ({ basic: b.basic, group: g })))
@@ -33,11 +33,11 @@ function improvementSummary(
     recent &&
     recent.vehicle_oos_rate !== null &&
     recent.vehicle_oos_rate > recent.national_vehicle_oos_rate
-      ? `, and bring the vehicle out-of-service rate (${formatPercent(recent.vehicle_oos_rate)}) closer to FMCSA’s national average (${formatPercent(recent.national_vehicle_oos_rate)})`
+      ? `, and bring the vehicle out-of-service rate (${formatPercent(recent.vehicle_oos_rate)}) closer to the national average (${formatPercent(recent.national_vehicle_oos_rate)})`
       : ''
   return (
-    `According to FMCSA’s records, the most weight in this carrier’s CSA measures comes from ${named.join(' and ')} violations. ` +
-    `Fewer of these, and more inspections with no violations, would lower those measures the most${oos}; the safety rating itself changes only after an FMCSA review.`
+    `Most of the weight in the CSA measures comes from ${named.join(' and ')} violations. ` +
+    `Fewer of these, and more clean inspections, would lower the measures the most${oos}.`
   )
 }
 
@@ -45,9 +45,8 @@ function RatingNote({ rating, date }: { rating: string | null; date: string | nu
   if (!rating) {
     return (
       <>
-        FMCSA has not rated this carrier. A safety rating comes only from an FMCSA investigation (a
-        compliance review); “Not rated” is not a low rating. The day-to-day picture brokers see
-        comes from the CSA measures and out-of-service rates below.
+        Not rated. FMCSA gives a rating only after a compliance review, so “Not rated” is not a bad
+        rating. Brokers mostly look at the CSA measures and out-of-service rates below.
       </>
     )
   }
@@ -55,16 +54,15 @@ function RatingNote({ rating, date }: { rating: string | null; date: string | nu
   if (rating === 'SATISFACTORY') {
     return (
       <>
-        FMCSA rated the carrier Satisfactory{since}. The rating changes only after a new FMCSA
-        investigation; the CSA measures below change every month.
+        Rated Satisfactory by FMCSA{since}. It changes only after a new FMCSA review; the CSA
+        measures below update every month.
       </>
     )
   }
   return (
     <>
-      FMCSA rated the carrier {rating.toLowerCase()}
-      {since}. A carrier can ask FMCSA to upgrade the rating after correcting the problems found (49
-      CFR 385.17), or ask for an administrative review if it believes the rating is wrong (385.15).
+      Rated {rating.toLowerCase()} by FMCSA{since}. After fixing the problems found, the carrier can
+      ask FMCSA to upgrade it (49 CFR 385.17), or ask for a review if the rating is wrong (385.15).
     </>
   )
 }
@@ -110,13 +108,9 @@ export function ImprovementGuide({
       <div>
         <h4 className="font-semibold text-slate-900">What drives the CSA measures</h4>
         {drivers === null ? (
-          <p className="mt-1 text-slate-500">
-            FMCSA’s violation data has not been fetched yet; use Refresh now.
-          </p>
+          <p className="mt-1 text-slate-500">Not loaded yet. Use Refresh now.</p>
         ) : drivers.length === 0 ? (
-          <p className="mt-1">
-            FMCSA counts no violations against this carrier in the current 24-month period.
-          </p>
+          <p className="mt-1">No violations count against this carrier in the last 24 months.</p>
         ) : (
           <ul className="mt-2 space-y-3">
             {drivers.slice(0, TOP_BASICS).map((b) => (
@@ -169,11 +163,11 @@ export function ImprovementGuide({
             {oos
               .map(
                 ([unit, rate, national]) =>
-                  `The ${unit} out-of-service rate is ${formatPercent(rate)} over the last ${recent.months} months, against FMCSA’s national average of ${formatPercent(national)}.`,
+                  `${unit === 'vehicle' ? 'Vehicle' : 'Driver'} out-of-service rate: ${formatPercent(rate)} over the last ${recent.months} months (national average ${formatPercent(national)}).`,
               )
               .join(' ')}{' '}
-            Out-of-service violations also carry extra weight in the CSA measures, so the violation
-            groups above with out-of-service counts are usually the first to address.
+            Out-of-service violations weigh extra in the CSA measures, so start with the groups
+            above that have out-of-service counts.
           </p>
         </div>
       )}
@@ -189,13 +183,10 @@ export function ImprovementGuide({
             Newer violations weigh more: ×3 in the last 6 months, ×2 for 6–12 months, ×1 for 12–24
             months. After 24 months a violation no longer counts.
           </li>
+          <li>Clean inspections (no violations) count too, and lower the measures.</li>
           <li>
-            Inspections with no violations also count, and lower the measures: clean inspections
-            help as much as fewer violations.
-          </li>
-          <li>
-            An inspection or violation that is wrong can be challenged through FMCSA’s DataQs system
-            ({DATAQS_URL}); FMCSA corrects or removes it if the challenge succeeds.
+            A wrong inspection or violation can be challenged in FMCSA’s DataQs ({DATAQS_URL}); if
+            the challenge succeeds, FMCSA corrects or removes it.
           </li>
         </ul>
       </div>

@@ -54,9 +54,9 @@ export function EstimatedIssCard({ iss }: { iss: EstimatedIss | null | undefined
 
       {iss.algorithm === 'INSUFFICIENT_DATA' && (
         <p className="mt-2 text-xs text-slate-500">
-          Too few inspections for FMCSA’s safety measures, so this follows FMCSA’s rules for
-          carriers with little inspection history: carriers like this are prioritised for inspection
-          until enough data builds up.
+          Too few inspections to score the safety categories, so FMCSA’s rules for carriers with
+          little inspection history apply. These carriers rank higher for inspection until more
+          inspections build up.
         </p>
       )}
 

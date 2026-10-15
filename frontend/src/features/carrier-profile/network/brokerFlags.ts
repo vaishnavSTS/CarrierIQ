@@ -63,8 +63,8 @@ export function brokerFlags(network: CarrierNetwork, profile: CarrierProfile): B
     flags.push({
       key: 'shared-contact',
       level: strong.some((c) => c.status === 'INACTIVE') ? 'alert' : 'attention',
-      title: `FMCSA's census lists the same ${listed} for ${strong.length} other carrier${strong.length === 1 ? '' : 's'}`,
-      why: 'Some vetting tools link carriers that share contact details or people and ask about the relationship. Ordinary reasons include a family business, a shared office, or a dispatch or compliance service listing its own phone or email.',
+      title: `Same ${listed} as ${strong.length} other carrier${strong.length === 1 ? '' : 's'}`,
+      why: 'Some vetting tools flag carriers that share contact details or people. Common, harmless reasons: a family business, a shared office, or a dispatch service listing its own phone or email.',
       fix: 'Explaining each relationship (family business, previous company, dispatcher) and keeping the carrier’s own phone and email on its MCS-150.',
     })
   }
@@ -76,8 +76,8 @@ export function brokerFlags(network: CarrierNetwork, profile: CarrierProfile): B
     flags.push({
       key: 'shared-building',
       level: 'info',
-      title: `FMCSA's census lists ${building.length} other carrier${building.length === 1 ? '' : 's'} at the same street address (different units)`,
-      why: 'Some vetting tools match on the street address alone and ask about carriers registered at the same building.',
+      title: `${building.length} other carrier${building.length === 1 ? '' : 's'} at the same street address (different units)`,
+      why: 'Some vetting tools match on the street address alone and ask about other carriers in the same building.',
       fix: 'Keeping the unit or suite number on the MCS-150.',
     })
   }
@@ -87,8 +87,8 @@ export function brokerFlags(network: CarrierNetwork, profile: CarrierProfile): B
     flags.push({
       key: 'transfer',
       level: 'attention',
-      title: 'FMCSA’s authority history records a transfer',
-      why: 'FMCSA’s authority history lists a transfer of this operating authority. Brokers often ask about authorities that changed hands.',
+      title: 'Operating authority was transferred',
+      why: 'FMCSA’s authority history shows this authority changed hands. Brokers often ask about that.',
       fix: 'The documents for the transfer, showing it was part of a change of the same business.',
     })
   }
@@ -100,8 +100,8 @@ export function brokerFlags(network: CarrierNetwork, profile: CarrierProfile): B
     flags.push({
       key: 'identity',
       level: 'info',
-      title: 'FMCSA’s census shows a recent change of name or contact details',
-      why: 'New names, emails or phones on an existing authority are a common check in broker vetting.',
+      title: 'Recent change of name or contact details',
+      why: 'Brokers often check new names, emails or phones on an existing authority.',
       fix: 'Making sure brokers have the current details, with proof of the change.',
     })
   }

@@ -541,17 +541,17 @@ def _value_in_band(group: int, total: float, reference: Mapping[str, Any]) -> in
 
 
 REASONS = {
-    1: "High-risk: several BASICs over FMCSA's intervention thresholds",
-    2: "Three or more BASICs over FMCSA's thresholds",
-    3: "Two or more BASICs over FMCSA's thresholds",
-    4: "Two or more BASICs over FMCSA's thresholds",
+    1: "Several safety categories well over FMCSA's thresholds (FMCSA's high-risk rule)",
+    2: "Three or more safety categories over FMCSA's thresholds",
+    3: "Two or more safety categories over FMCSA's thresholds",
+    4: "Two or more safety categories over FMCSA's thresholds",
     5: "Hours-of-Service Compliance over FMCSA's threshold",
     7: "Vehicle Maintenance over FMCSA's threshold",
     9: "Driver Fitness over FMCSA's threshold",
     10: "Controlled Substances/Alcohol over FMCSA's threshold",
     11: "Unsafe Driving and Crash Indicator over FMCSA's thresholds",
     12: "{} over FMCSA's threshold",  # Unsafe Driving or Crash Indicator
-    13: "Enough inspections, and no BASIC over FMCSA's thresholds",
+    13: "No safety category over FMCSA's thresholds",
 }
 
 

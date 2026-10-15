@@ -99,25 +99,26 @@ def renewals(filings: Sequence[Insurance], today: date) -> list[Renewal]:
 def describe(r: Renewal) -> str:
     """One plain sentence, attributed to FMCSA's filing history, for the UI."""
     month_day = f"{r.current_effective:%B} {r.current_effective.day}"
+    expected = f"{r.expected:%B} {r.expected.day}, {r.expected.year}"
     basis = (
-        f"FMCSA filings for {r.docket} have started around {month_day} each year since "
+        f"Filings for {r.docket} have started around {month_day} each year since "
         f"{r.since.year} ({r.filings} filings). FMCSA records only start dates, so this is an "
-        "estimate from that pattern."
+        "estimate."
     )
     if r.state == "unconfirmed":
-        stopped = r.data_as_of.isoformat() if r.data_as_of else "unknown"
+        stopped = (
+            f"{r.data_as_of:%B} {r.data_as_of.day}, {r.data_as_of.year}"
+            if r.data_as_of
+            else "an unknown date"
+        )
         return (
-            f"{basis} The next renewal was expected around {r.expected.isoformat()}, after the "
-            f"source data stopped updating ({stopped}), so whether it was filed cannot be "
-            "confirmed from public data. A current "
-            "certificate of insurance from the carrier or its insurer would show it."
+            f"{basis} The next renewal was due around {expected}, after FMCSA's public data "
+            f"stopped updating ({stopped}), so it cannot be confirmed from public data. Ask for "
+            "a current certificate of insurance."
         )
     if r.state == "passed":
         return (
-            f"{basis} The expected renewal around {r.expected.isoformat()} has passed and the "
-            "filing is still on file; insurers that renew with the same carrier often keep the "
-            "same filing."
+            f"{basis} The renewal due around {expected} has passed and the filing is still on "
+            "file: insurers that renew often keep the same filing."
         )
-    if r.state == "upcoming":
-        return f"{basis} The next renewal is expected around {r.expected.isoformat()}."
-    return f"{basis} Next expected around {r.expected.isoformat()}."
+    return f"{basis} Next renewal expected around {expected}."

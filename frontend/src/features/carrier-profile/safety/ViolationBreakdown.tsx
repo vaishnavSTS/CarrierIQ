@@ -23,8 +23,8 @@ export function ViolationBreakdown({ summary }: { summary: ViolationSummary }) {
         vehicle or driver out of service.
         {summary.header_total !== summary.total && (
           <span className="block text-xs text-slate-500">
-            The inspection reports count {summary.header_total.toLocaleString()}; FMCSA’s violation
-            file has details for {summary.total.toLocaleString()} of them.
+            Inspection reports count {summary.header_total.toLocaleString()}; FMCSA has details for{' '}
+            {summary.total.toLocaleString()} of them.
           </span>
         )}
       </p>

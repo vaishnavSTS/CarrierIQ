@@ -195,7 +195,7 @@ function NetworkBody({
   return (
     <>
       <SubHeading
-        note="Built from public FMCSA records. These are prompts for review, not findings."
+        note="From public FMCSA records. Things to check, not findings."
         source={SOURCES.checks}
       >
         What a broker’s check may flag
@@ -203,7 +203,7 @@ function NetworkBody({
       {flags.length === 0 ? (
         <p className="flex items-center gap-2 text-sm text-slate-700">
           <CircleCheck className="size-4 text-emerald-700" aria-hidden />
-          Nothing in the public records that broker vetting typically reacts to.
+          Nothing in FMCSA’s records that brokers usually flag.
         </p>
       ) : (
         <ul className="space-y-2">
@@ -230,7 +230,7 @@ function NetworkBody({
       )}
 
       <SubHeading
-        note="Live checks against FMCSA's records, refreshed with the carrier."
+        note="Checked against FMCSA’s records each time the carrier is refreshed."
         source={SOURCES.registration}
       >
         Registration health
@@ -289,7 +289,7 @@ function NetworkBody({
       )}
 
       <SubHeading
-        note="Changes CarrierIQ has seen in FMCSA records since it first loaded this carrier, plus authority transfers."
+        note="Changes CarrierIQ has seen since it first loaded this carrier, and authority transfers."
         source={SOURCES.identityHistory}
       >
         Identity and ownership history

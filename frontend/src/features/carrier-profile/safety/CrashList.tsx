@@ -6,7 +6,7 @@ import { cellClass, headClass, tableClass } from '../styles'
 /** Crashes FMCSA's Crash File lists for the carrier, newest first. */
 export function CrashList({ crashes }: { crashes: CrashSummary | null }) {
   if (crashes === null) {
-    return <Empty>FMCSA’s crash reports have not been fetched yet; use Refresh now.</Empty>
+    return <Empty>Not loaded yet. Use Refresh now.</Empty>
   }
   if (crashes.total === 0) {
     return <Empty>FMCSA’s Crash File lists no crashes in the last {crashes.years} years.</Empty>
@@ -16,8 +16,7 @@ export function CrashList({ crashes }: { crashes: CrashSummary | null }) {
       <p className="mb-2 text-xs text-slate-500">
         FMCSA Crash File · last {crashes.years} years: {crashes.total} crash
         {crashes.total === 1 ? '' : 'es'}, {crashes.fatal} with a fatality, {crashes.injury} with an
-        injury. Reported crashes are not a finding of fault; FMCSA’s file does not say who caused
-        them.
+        injury. A reported crash does not mean the carrier was at fault.
       </p>
       <div className="overflow-x-auto">
         <table className={tableClass}>

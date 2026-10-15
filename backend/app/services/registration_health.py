@@ -45,6 +45,11 @@ class AddressPeer:
     undeliverable: bool  # physical or mailing address marked by FMCSA
 
 
+def _order_date(value: object) -> str:
+    day = _yyyymmdd(value)
+    return _d(day) if day else str(value or "an unknown date")
+
+
 def address_peer(usdot_number: int, census_row: dict[str, Any]) -> AddressPeer:
     return AddressPeer(
         usdot_number=usdot_number,
@@ -56,6 +61,11 @@ def address_peer(usdot_number: int, census_row: dict[str, Any]) -> AddressPeer:
 
 
 MAX_PEERS = 3
+
+
+def _d(day: date) -> str:
+    """May 14, 2026"""
+    return f"{day:%B} {day.day}, {day.year}"
 
 
 def _yyyymmdd(value: object) -> date | None:
@@ -103,9 +113,8 @@ def _motus(authorities: Sequence[Authority], carrier: Carrier, frozen: date) -> 
             "motus",
             label,
             "info",
-            "FMCSA's census lists no MC/MX/FF docket for this carrier, so there is no operating "
-            "authority record to look up. Under FMCSA rules, carriers that only haul their own "
-            "goods (private carriers) do not need one.",
+            "No MC, MX or FF number on file, so there is no operating authority to check. "
+            "Carriers that haul only their own goods (private carriers) do not need one.",
             "FMCSA census",
         )
     sources = {a.status_source for a in authorities}
@@ -114,8 +123,7 @@ def _motus(authorities: Sequence[Authority], carrier: Carrier, frozen: date) -> 
             "motus",
             label,
             "ok",
-            "FMCSA's public Motus data (its current registration system) lists this carrier's "
-            "authority and insurance.",
+            "Authority and insurance are listed in Motus, FMCSA's current system.",
             "FMCSA Motus",
             max((a.status_as_of for a in authorities if a.status_as_of), default=None),
         )
@@ -124,13 +132,11 @@ def _motus(authorities: Sequence[Authority], carrier: Carrier, frozen: date) -> 
             "motus",
             label,
             "attention",
-            "In FMCSA's public data, this carrier's authority and insurance appear only in the "
-            f"old L&I system, which FMCSA stopped updating on {frozen.isoformat()}, and not in "
-            "Motus, its current system. One possible reason is that the USDOT number has not "
-            "been claimed in Motus yet (done in the FMCSA Portal with a Login.gov identity "
-            "check); the public files can also lag. CarrierIQ cannot confirm the status; the "
-            "FMCSA Portal shows it. Broker tools that read current FMCSA data may show the "
-            "authority or insurance as missing or out of date.",
+            "Authority and insurance appear only in FMCSA's old L&I system, which stopped "
+            f"updating on {_d(frozen)}, and not in Motus, its current system. Brokers' tools "
+            "may show them as missing. A common cause: the USDOT number has not been claimed in "
+            "Motus yet (FMCSA Portal, Login.gov check). CarrierIQ cannot confirm the status; "
+            "the FMCSA Portal shows it.",
             "FMCSA L&I (frozen) / Motus",
             frozen,
         )
@@ -138,8 +144,8 @@ def _motus(authorities: Sequence[Authority], carrier: Carrier, frozen: date) -> 
         "motus",
         label,
         "unknown",
-        f"FMCSA's census lists a docket for USDOT {carrier.usdot_number}, but no authority "
-        "record was found for it in FMCSA's public Motus or old L&I data.",
+        f"USDOT {carrier.usdot_number} has a docket on file, but FMCSA's Motus and L&I data "
+        "have no authority record for it.",
         "FMCSA census",
     )
 
@@ -157,13 +163,12 @@ def _boc3(
     if not authorities:
         return None
     label = "Process agent (BOC-3)"
-    no_dates = "FMCSA's BOC-3 data has no filing dates."
     if agents is None:
         return Check(
             "boc3",
             label,
             "unknown",
-            "FMCSA's BOC-3 data has not been fetched for this carrier yet.",
+            "BOC-3 data not loaded yet. Use Refresh now.",
             "FMCSA BOC-3",
         )
     # Missing BOC-3 matters while the authority is active; otherwise it is context.
@@ -179,8 +184,7 @@ def _boc3(
             "boc3",
             label,
             "ok",
-            f"FMCSA's current system (Motus) lists {_agent_names(motus)} as process agent on "
-            f"this carrier's BOC-3 filing. {no_dates}",
+            f"FMCSA's current system (Motus) lists {_agent_names(motus)} as process agent.",
             "FMCSA Motus BOC-3",
         )
     if legacy:
@@ -188,10 +192,9 @@ def _boc3(
             "boc3",
             label,
             level,
-            f"FMCSA's old L&I system lists {_agent_names(legacy)} as process agent on this "
-            "carrier's BOC-3 filing, but FMCSA's current system (Motus) lists none. The old "
-            f"system stopped updating on {frozen.isoformat()}. Broker tools that read current "
-            f"FMCSA data may show the BOC-3 as missing. {no_dates}",
+            f"FMCSA's old L&I system lists {_agent_names(legacy)} as process agent, but "
+            "FMCSA's current system (Motus) lists none. Brokers' tools may show the BOC-3 as "
+            "missing.",
             "FMCSA BOC-3 (L&I frozen / Motus)",
             frozen,
         )
@@ -199,9 +202,8 @@ def _boc3(
         "boc3",
         label,
         level,
-        "FMCSA's public BOC-3 data (Motus and the old L&I system) lists no process agent for "
-        "this carrier. Under FMCSA rules, a for-hire carrier needs a BOC-3 on file to hold "
-        "operating authority, and FMCSA reinstates a revoked authority only with one on file.",
+        "FMCSA lists no process agent for this carrier. A for-hire carrier needs a BOC-3 on "
+        "file to keep its authority, and to get a revoked authority back.",
         "FMCSA BOC-3",
     )
 
@@ -210,19 +212,15 @@ def _mcs150(carrier: Carrier, today: date) -> Check:
     label = "MCS-150 update"
     filed = carrier.last_mcs150_date
     if filed is None:
-        return Check(
-            "mcs150", label, "unknown", "FMCSA's census lists no MCS-150 date.", "FMCSA census"
-        )
+        return Check("mcs150", label, "unknown", "No MCS-150 date on file.", "FMCSA census")
     due = filed + timedelta(days=round(MCS150_MONTHS * 365.25 / 12))
     if today > due:
         return Check(
             "mcs150",
             label,
             "attention",
-            f"FMCSA's census lists the last MCS-150 update as {filed.isoformat()}, more than "
-            f"{MCS150_MONTHS} months ago. FMCSA requires an update every two years and can "
-            "deactivate a USDOT number when it is overdue; brokers may also treat the record "
-            "as out of date.",
+            f"Last updated {_d(filed)}, more than two years ago. FMCSA requires an update "
+            "every two years and can deactivate the USDOT number when it is overdue.",
             "FMCSA census",
             filed,
         )
@@ -230,8 +228,7 @@ def _mcs150(carrier: Carrier, today: date) -> Check:
         "mcs150",
         label,
         "ok",
-        f"FMCSA's census lists the last MCS-150 update as {filed.isoformat()}; under FMCSA's "
-        f"two-year rule the next is due by {due.isoformat()}.",
+        f"Last updated {_d(filed)}. Next update due by {_d(due)}.",
         "FMCSA census",
         filed,
     )
@@ -244,7 +241,7 @@ def _prior_revoke(carrier: Carrier, census: dict[str, Any]) -> Check:
             "prior_revoke",
             label,
             "ok",
-            "FMCSA's census does not list a prior revoked USDOT number for this carrier.",
+            "No link to a previously revoked USDOT number.",
             "FMCSA census",
         )
     other = str(census.get("prior_revoke_dot_number") or "")
@@ -253,16 +250,15 @@ def _prior_revoke(carrier: Carrier, census: dict[str, Any]) -> Check:
             "prior_revoke",
             label,
             "alert",
-            f"FMCSA's census lists USDOT {other} in its prior-revocation field for this "
-            "carrier. The census does not say how the two are connected. A relationship to "
-            "review, not a finding.",
+            f"FMCSA links this carrier to revoked USDOT {other}. The record does not say how "
+            "the two are connected, so the relationship is worth asking about.",
             "FMCSA census",
         )
     return Check(
         "prior_revoke",
         label,
         "info",
-        "FMCSA's census records a past revocation for this USDOT number itself.",
+        "This USDOT number itself had a revocation in the past.",
         "FMCSA census",
     )
 
@@ -276,10 +272,9 @@ def _oos(orders: Sequence[dict[str, Any]]) -> Check:
             "oos",
             label,
             "alert",
-            "FMCSA lists an active out-of-service order since "
-            f"{newest.get('oos_date', 'an unknown date')}: "
-            f"{newest.get('oos_reason', 'reason not given')}. Under FMCSA rules, a carrier with "
-            "an active out-of-service order may not operate until it is rescinded.",
+            f"Active out-of-service order since {_order_date(newest.get('oos_date'))}: "
+            f"{newest.get('oos_reason', 'reason not given')}. The carrier may not operate until "
+            "FMCSA lifts it.",
             "FMCSA Out of Service Orders",
             _yyyymmdd(newest.get("oos_date")),
         )
@@ -288,14 +283,14 @@ def _oos(orders: Sequence[dict[str, Any]]) -> Check:
             "oos",
             label,
             "info",
-            f"FMCSA lists {len(orders)} earlier out-of-service order(s), none active now.",
+            f"{len(orders)} past out-of-service order(s), none active now.",
             "FMCSA Out of Service Orders",
         )
     return Check(
         "oos",
         label,
         "ok",
-        "FMCSA lists no out-of-service orders for this carrier.",
+        "No out-of-service orders.",
         "FMCSA Out of Service Orders",
     )
 
@@ -307,7 +302,7 @@ def _revocations(orders: Sequence[dict[str, Any]], today: date) -> Check:
             "revocations",
             label,
             "ok",
-            "FMCSA's current system (Motus) lists no revocation or suspension orders.",
+            "No revocation or suspension orders.",
             "FMCSA Motus RevokeSuspend",
         )
     dated = sorted(orders, key=lambda o: str(o.get("order1_serve_date", "")), reverse=True)
@@ -320,9 +315,8 @@ def _revocations(orders: Sequence[dict[str, Any]], today: date) -> Check:
         "revocations",
         label,
         "attention" if recent else "info",
-        f"FMCSA's current system lists {len(orders)} revocation or suspension order(s); "
-        f"most recent: {what} on {docket}, served "
-        f"{served.isoformat() if served else 'on an unknown date'}.",
+        f"{len(orders)} revocation or suspension order(s). Latest: {what} on {docket}, served "
+        f"{_d(served) if served else 'on an unknown date'}.",
         "FMCSA Motus RevokeSuspend",
         served,
     )
@@ -348,7 +342,7 @@ def _peer_note(census: dict[str, Any], peers: Sequence[AddressPeer]) -> str:
     more = f" (and {len(peers) - MAX_PEERS} more)" if len(peers) > MAX_PEERS else ""
     text = f" FMCSA's census also lists {'; '.join(notes)}{more}."
     if any(not p.undeliverable for p in peers):
-        text += " The census does not say why one record is marked and another is not."
+        text += " It does not say why one record is marked and another is not."
     return text
 
 
@@ -361,15 +355,15 @@ def _addresses(
     which = " and ".join(bad)
     plural = "addresses" if len(bad) > 1 else "address"
     marked = _yyyymmdd(census.get("carrier_mailing_und_date"))
-    since = f" (mailing address marked on {marked.isoformat()})" if marked else ""
+    since = f" (mailing address marked {_d(marked)})" if marked else ""
     return Check(
         "address",
         "Address marked undeliverable by FMCSA",
         "attention",
         f"FMCSA's census marks the {which} {plural} as undeliverable{since}: FMCSA mail sent "
-        f"there was returned. The census does not say why.{_peer_note(census, peers)} FMCSA "
-        "mail, such as audit or MCS-150 notices, may not reach the carrier until the address "
-        "is corrected or confirmed on an MCS-150.",
+        f"there came back. The census does not say why.{_peer_note(census, peers)} Until the "
+        "address is corrected on an MCS-150, FMCSA notices (audits, MCS-150 reminders) may "
+        "not reach the carrier.",
         "FMCSA census",
         marked,
     )

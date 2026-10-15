@@ -83,7 +83,7 @@ export function SafetyTrends({ quarters }: { quarters: Quarter[] }) {
       />
       <ChartCard
         title="Out-of-service rate per quarter"
-        subtitle="FMCSA’s method: only inspections that examined the vehicle (or driver) count"
+        subtitle="Share of vehicle (or driver) inspections that ended out of service"
         note={`${note} The current quarter is shown as a separate dot, not joined to the trend.`}
         chart={
           <LineChart

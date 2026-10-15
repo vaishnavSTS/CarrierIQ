@@ -15,28 +15,28 @@ function YesNo({ value, yes }: { value: boolean | null; yes: string }) {
  */
 export function CsaBasics({ sms }: { sms: Sms | null }) {
   if (sms === null) {
-    return <Empty>FMCSA’s SMS results have not been fetched yet; use Refresh now.</Empty>
+    return <Empty>Not loaded yet. Use Refresh now.</Empty>
   }
   if (sms.dataset === null) {
     return (
       <Empty>
-        This carrier is not in FMCSA’s SMS results. FMCSA lists active carriers only, and only those
-        with inspections or crashes in the 24-month measurement period.
+        Not in FMCSA’s SMS results. FMCSA lists only active carriers with an inspection or crash in
+        the last 24 months.
       </Empty>
     )
   }
   return (
     <div>
       <p className="mb-2 text-xs text-slate-500">
-        FMCSA {sms.dataset} · 24-month measurement period · {sms.inspections} inspections (
+        FMCSA {sms.dataset} · last 24 months · {sms.inspections} inspections (
         {sms.driver_inspections} driver, {sms.vehicle_inspections} vehicle). A higher measure means
-        more, or more severe, violations relative to the carrier’s exposure.
+        more or more serious violations for the carrier’s size.
       </p>
       <div className="overflow-x-auto">
         <table className={tableClass}>
           <thead className={headClass}>
             <tr>
-              <th className={cellClass}>BASIC</th>
+              <th className={cellClass}>Category</th>
               <th className={`${cellClass} text-right`}>Inspections with a violation</th>
               <th className={`${cellClass} text-right`}>Measure</th>
               <th className={`${cellClass} text-right`}>Percentile</th>
@@ -72,9 +72,10 @@ export function CsaBasics({ sms }: { sms: Sms | null }) {
       </div>
       <p className="mt-2 text-xs text-slate-500">
         {sms.passenger
-          ? 'Percentiles rank the carrier against similar carriers (higher is worse); an alert means FMCSA’s percentile is over its intervention threshold or a serious violation was found in the last 12 months.'
-          : 'FMCSA does not publish percentiles or alerts for property carriers (FAST Act, 2015), only the measures. Acute / critical: an acute or critical violation found in an FMCSA investigation in the last 12 months.'}{' '}
-        Crash Indicator and Hazardous Materials BASICs are not in FMCSA’s public files.
+          ? 'Percentile: rank against similar carriers (higher is worse). Alert: over FMCSA’s threshold, or a serious violation in the last 12 months.'
+          : 'For property carriers FMCSA publishes only the measures, not percentiles or alerts (FAST Act, 2015). Acute / critical: a serious violation found in an FMCSA investigation in the last 12 months.'}{' '}
+        FMCSA does not publish the Crash Indicator or Hazardous Materials measures; the Estimated
+        ISS above calculates the Crash Indicator itself.
       </p>
     </div>
   )

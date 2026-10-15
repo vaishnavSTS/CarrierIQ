@@ -17,7 +17,7 @@ function Violations({ inspection }: { inspection: InspectionDetail }) {
     return (
       <p className="text-sm text-slate-500">
         {inspection.violation_count > 0
-          ? `The report counts ${inspection.violation_count} violation(s), but FMCSA’s violation file has no details for them.`
+          ? `${inspection.violation_count} violation(s) on the report; FMCSA has no details for them.`
           : 'No violations on this inspection.'}
       </p>
     )

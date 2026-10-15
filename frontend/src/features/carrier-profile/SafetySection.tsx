@@ -43,7 +43,7 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
           note={
             safety.first_inspection_date
               ? `${formatDate(safety.first_inspection_date)} – ${formatDate(safety.last_inspection_date)}`
-              : 'None in FMCSA’s current window'
+              : 'None in about the last 3 years'
           }
           source="FMCSA Vehicle Inspection File"
         />
@@ -52,7 +52,7 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
           value={formatPercent(recent?.vehicle_oos_rate ?? null)}
           note={
             recent
-              ? `${recent.vehicle_oos} of ${recent.vehicle_inspections} inspections that examined the vehicle · national average ${formatPercent(recent.national_vehicle_oos_rate)}`
+              ? `${recent.vehicle_oos} of ${recent.vehicle_inspections} vehicle inspections · national average ${formatPercent(recent.national_vehicle_oos_rate)}`
               : undefined
           }
           source="FMCSA inspections; national average from FMCSA SAFER"
@@ -62,7 +62,7 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
           value={formatPercent(recent?.driver_oos_rate ?? null)}
           note={
             recent
-              ? `${recent.driver_oos} of ${recent.driver_inspections} inspections that examined the driver · national average ${formatPercent(recent.national_driver_oos_rate)}`
+              ? `${recent.driver_oos} of ${recent.driver_inspections} driver inspections · national average ${formatPercent(recent.national_driver_oos_rate)}`
               : undefined
           }
           source="FMCSA inspections; national average from FMCSA SAFER"
@@ -111,11 +111,11 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
                 : 'FMCSA Safety Measurement System'
             }
           >
-            CSA BASICs
+            CSA safety categories (BASICs)
           </SubHeading>
           <CsaBasics sms={detail.data.sms} />
           <SubHeading source="FMCSA SMS Input – Violation (FMCSA's weights); FMCSA rules (49 CFR)">
-            Why the figures look this way · how to improve
+            What drives these numbers · how to improve
           </SubHeading>
           <ImprovementGuide
             drivers={detail.data.drivers}
@@ -130,9 +130,7 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
 
       {safety.inspection_count === 0 ? (
         <div className="mt-4">
-          <Empty>
-            No inspections in FMCSA’s current inspection file (roughly the last three years).
-          </Empty>
+          <Empty>No roadside inspections in about the last three years.</Empty>
         </div>
       ) : (
         <>

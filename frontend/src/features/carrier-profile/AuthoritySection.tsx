@@ -80,8 +80,8 @@ function ProcessAgentLine({ agents }: { agents: ProcessAgent[] | null }) {
           )}
           <div className="mt-0.5 text-slate-500">
             {motus.length > 0
-              ? 'From FMCSA Motus (current system); no filing date in the data'
-              : 'Only in FMCSA’s old L&I system (frozen May 14, 2026), not in Motus; no filing date in the data'}
+              ? 'Listed in Motus, FMCSA’s current system'
+              : 'Listed only in FMCSA’s old L&I system (frozen May 14, 2026), not in Motus'}
           </div>
         </>
       )}
@@ -270,12 +270,9 @@ function NotForHire({ classification }: { classification: string | null }) {
   return (
     <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
       <p>
-        FMCSA classifies this carrier as <strong>{labels.join(', ')}</strong>. Only carriers
-        authorized for hire need operating authority (an MC, MX or FF number), so FMCSA holds no
-        authority or insurance filings for this one.
-      </p>
-      <p className="mt-1 text-xs text-slate-500">
-        Its insurance is not filed with FMCSA, so it can’t be checked here.
+        FMCSA lists this carrier as <strong>{labels.join(', ')}</strong>. Only for-hire carriers
+        need operating authority (an MC, MX or FF number), so there are no authority or insurance
+        filings to show.
       </p>
     </div>
   )
