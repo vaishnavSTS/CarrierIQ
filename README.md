@@ -1,5 +1,18 @@
 # CarrierIQ — Carrier Intelligence Platform
 
+## Live app
+
+**Open CarrierIQ: https://carrier-iq.vercel.app** (STS team, clients and brokers all log in here)
+
+[![Frontend (Vercel)](https://img.shields.io/github/deployments/vaishnavSTS/CarrierIQ/Production?label=frontend%20%28Vercel%29&logo=vercel)](https://github.com/vaishnavSTS/CarrierIQ/deployments/Production)
+[![Backend (Render)](https://img.shields.io/github/deployments/vaishnavSTS/CarrierIQ/main%20-%20carrieriq-api?label=backend%20%28Render%29&logo=render)](https://github.com/vaishnavSTS/CarrierIQ/deployments)
+
+Each badge shows the result of that service's latest deploy: **success** means it is live,
+**pending** or **in progress** means it is building, **failure** or **error** means the last deploy
+failed and the previous version is still running. A push redeploys only what it changed:
+`frontend/` on Vercel, `backend/` on Render. The free backend sleeps when idle, so the first
+page after a quiet spell can take about a minute.
+
 Explainable carrier intelligence for freight brokers. The product specification is in
 `../PROJECT_SPECIFICATION.md` and is the source of truth for scope and design.
 
