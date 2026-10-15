@@ -5,7 +5,7 @@ import { CarrierSearchBox } from '../features/carrier-search/CarrierSearchBox'
 import { CarrierSnapshot } from '../features/portal/CarrierSnapshot'
 import { ClientGuide } from '../features/portal/ClientGuide'
 import { PortalHero } from '../features/portal/PortalHero'
-import { usePortalOverview, useMe } from '../hooks/useAuth'
+import { useClientSearchEnabled, usePortalOverview, useMe } from '../hooks/useAuth'
 import { formatDateTime } from '../utils/format'
 
 /**
@@ -15,6 +15,7 @@ import { formatDateTime } from '../utils/format'
 export function PortalHomePage() {
   const { data: user } = useMe()
   const { data, isPending, isError } = usePortalOverview()
+  const searchEnabled = useClientSearchEnabled()
 
   return (
     <div className="space-y-8">
@@ -80,15 +81,17 @@ export function PortalHomePage() {
         </section>
       )}
 
-      <section className="space-y-3 rounded-2xl border border-slate-200 bg-surface p-5">
-        <div>
-          <h2 className="text-sm font-semibold text-slate-900">Look up another carrier</h2>
-          <p className="mt-0.5 text-sm text-slate-600">
-            Any USDOT, MC number or name: a partner, a carrier you lease from, or a competitor.
-          </p>
-        </div>
-        <CarrierSearchBox />
-      </section>
+      {searchEnabled && (
+        <section className="space-y-3 rounded-2xl border border-slate-200 bg-surface p-5">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900">Look up another carrier</h2>
+            <p className="mt-0.5 text-sm text-slate-600">
+              Any USDOT, MC number or name: a partner, a carrier you lease from, or a competitor.
+            </p>
+          </div>
+          <CarrierSearchBox />
+        </section>
+      )}
 
       <ClientGuide />
     </div>

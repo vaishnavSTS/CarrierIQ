@@ -1,7 +1,8 @@
 """Client and broker portals. Carrier routes mirror /carriers/{usdot}/... without STS-internal
-data (services/client_view.py), for any carrier: clients see their own carriers first and can look
-up others (e.g. a carrier they work with), brokers vet carriers before giving them loads. Staff-only
-carrier routes (signals, refresh, team notes) have no portal version."""
+data (services/client_view.py): clients for their own carriers (require_own_carrier; any carrier,
+with search, while CLIENT_SEARCH_ENABLED is on for team testing), brokers for any carrier (they vet
+carriers before giving them loads). Staff-only carrier routes (signals, refresh, team notes) have
+no portal version."""
 
 from collections.abc import Callable
 from typing import Annotated
@@ -9,7 +10,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Path, Query
 from sqlalchemy.orm import Session
 
-from app.api.auth import require_broker, require_client
+from app.api.auth import require_broker, require_client, require_own_carrier
 from app.api.v1.routes.carriers import (
     get_carrier_authority_service,
     get_carrier_equipment_service,
@@ -18,6 +19,8 @@ from app.api.v1.routes.carriers import (
     get_carrier_search_service,
     get_network_service,
 )
+from app.core.config import get_settings
+from app.core.exceptions import NotFoundError
 from app.db.session import get_db
 from app.models import User
 from app.repositories.user_repository import UserRepository
@@ -50,14 +53,6 @@ def any_carrier(
     _: Annotated[User, Depends(require_broker)],
 ) -> int:
     """Brokers may open any USDOT number."""
-    return usdot_number
-
-
-def client_any_carrier(
-    usdot_number: Annotated[int, Path(gt=0, lt=100_000_000)],
-    _: Annotated[User, Depends(require_client)],
-) -> int:
-    """Clients may open any USDOT number too; their own carriers are listed on their home page."""
     return usdot_number
 
 
@@ -129,11 +124,14 @@ def client_carrier_search(
     _: Annotated[User, Depends(require_client)],
     service: Annotated[CarrierSearchService, Depends(get_carrier_search_service)],
 ) -> CarrierSearchResponse:
-    """Carrier search, without STS review status or signal counts."""
+    """Carrier search, without STS review status or signal counts (only while
+    CLIENT_SEARCH_ENABLED is on)."""
+    if not get_settings().client_search_enabled:
+        raise NotFoundError("Carrier search is not available in the client portal")
     return client_search(service.search(q))
 
 
-_add_carrier_routes(router, client_any_carrier)
+_add_carrier_routes(router, require_own_carrier)
 
 
 # --- Broker portal -------------------------------------------------------------------------------

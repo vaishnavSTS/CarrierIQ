@@ -71,6 +71,8 @@ export interface CarrierContactCheck {
 export interface AuthOptions {
   /** Show "Continue with Google" */
   google: boolean
+  /** Clients may search and open any carrier (temporary, for team testing) */
+  client_search: boolean
 }
 
 export interface GoogleSignupPending {

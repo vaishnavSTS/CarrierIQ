@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.api.v1.routes.carriers import get_socrata_client
+from app.core.config import get_settings
 from app.db.session import get_db
 from app.main import app
 from app.models import OrganizationCarrier
@@ -78,6 +79,22 @@ def test_client_searches_and_opens_other_carriers(portal: TestClient, db: Sessio
     assert profile.status_code == 200, profile.text
     assert profile.json()["review_status"] is None
     assert portal.get(f"/api/v1/portal/carriers/{USDOT}/network").status_code == 200
+
+
+def test_with_client_search_off_clients_see_only_their_own_carriers(
+    portal: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The setting for after team testing: back to own carriers only, and no search."""
+    monkeypatch.setattr(get_settings(), "client_search_enabled", False)
+    client_with_carrier(db, verified=True)
+    log_in(portal, "owner@client.test")
+
+    other = portal.get("/api/v1/portal/carriers/1234567")
+    assert other.status_code == 404
+    assert other.json()["error"]["code"] == "carrier_not_found"
+    assert portal.get(f"/api/v1/portal/carriers/{USDOT}/safety").status_code == 200
+    assert portal.get("/api/v1/portal/search", params={"q": str(USDOT)}).status_code == 404
+    assert portal.get("/api/v1/auth/options").json()["client_search"] is False
 
 
 def test_each_side_is_kept_to_its_own_carrier_routes(portal: TestClient, db: Session) -> None:

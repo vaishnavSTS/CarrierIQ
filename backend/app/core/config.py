@@ -97,6 +97,10 @@ class Settings(BaseSettings):
     # "Continue with Google" (OAuth 2.0 / OpenID Connect). Off unless both are set. The redirect
     # URI must match the one registered in Google Cloud Console exactly; in development it goes
     # through the Vite proxy so the session cookie lands on the frontend's origin.
+    # Temporary, while the STS team tests: clients may search and open any carrier. Set
+    # CLIENT_SEARCH_ENABLED=false to return clients to their own carriers only.
+    client_search_enabled: bool = True
+
     google_client_id: str | None = None
     google_client_secret: str | None = None
     google_redirect_uri: str = "http://localhost:5173/api/v1/auth/google/callback"

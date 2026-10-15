@@ -105,6 +105,11 @@ export function useAuthOptions() {
   return useQuery({ queryKey: ['auth', 'options'], queryFn: fetchAuthOptions, staleTime: Infinity })
 }
 
+/** While on (team testing), clients can search and open any carrier, not only their own. */
+export function useClientSearchEnabled(): boolean {
+  return useAuthOptions().data?.client_search ?? false
+}
+
 export function useGoogleSignup() {
   return useQuery({ queryKey: ['auth', 'google-signup'], queryFn: fetchGoogleSignup })
 }

@@ -1,13 +1,18 @@
 import { Search } from 'lucide-react'
-import { useSearchParams } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
 
 import { CarrierSearchBox } from '../features/carrier-search/CarrierSearchBox'
 import { SearchResultsPanel } from '../features/carrier-search/SearchResultsPanel'
+import { useAuthOptions } from '../hooks/useAuth'
 
-/** Client portal: look up any carrier (?q=…), e.g. one they partner with or lease from. */
+/** Client portal: look up any carrier (?q=…), while client search is switched on for team
+ * testing (CLIENT_SEARCH_ENABLED). */
 export function ClientSearchPage() {
   const [params] = useSearchParams()
   const query = params.get('q') ?? ''
+  const options = useAuthOptions()
+  // Search is switched off (after team testing): clients see only their own carriers.
+  if (options.data && !options.data.client_search) return <Navigate to="/portal" replace />
 
   return (
     <div className="space-y-6">

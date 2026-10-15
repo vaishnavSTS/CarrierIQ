@@ -2,6 +2,7 @@ import { Search } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { PortalModeContext } from '../../hooks/usePortalMode'
+import { useClientSearchEnabled } from '../../hooks/useAuth'
 import { BackgroundSpotlight } from './BackgroundSpotlight'
 import { Brand } from './Brand'
 import { UserMenu } from './UserMenu'
@@ -14,6 +15,7 @@ function navClass({ isActive }: { isActive: boolean }): string {
 
 /** Client portal frame: their own carriers, and search for any other. */
 export function PortalLayout() {
+  const searchEnabled = useClientSearchEnabled()
   return (
     <div className="relative isolate min-h-screen">
       <BackgroundSpotlight />
@@ -23,15 +25,17 @@ export function PortalLayout() {
           <span className="rounded-md bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700">
             Client portal
           </span>
-          <nav className="ml-4 flex items-center gap-1 text-sm">
-            <NavLink to="/portal" end className={navClass}>
-              My carriers
-            </NavLink>
-            <NavLink to="/portal/search" className={navClass}>
-              <Search className="size-4" aria-hidden />
-              Search carriers
-            </NavLink>
-          </nav>
+          {searchEnabled && (
+            <nav className="ml-4 flex items-center gap-1 text-sm">
+              <NavLink to="/portal" end className={navClass}>
+                My carriers
+              </NavLink>
+              <NavLink to="/portal/search" className={navClass}>
+                <Search className="size-4" aria-hidden />
+                Search carriers
+              </NavLink>
+            </nav>
+          )}
           <UserMenu />
         </div>
       </header>

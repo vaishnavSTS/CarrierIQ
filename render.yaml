@@ -20,6 +20,10 @@ services:
       # Remove this, or set 24, to refresh carriers older than a day when they are opened.
       - key: CARRIER_REFRESH_HOURS
         value: "876000"
+      # Temporary, for STS team testing: clients can search and open any carrier.
+      # Set to "false" after testing: clients then see only their own carriers again.
+      - key: CLIENT_SEARCH_ENABLED
+        value: "true"
       - key: AUTH_SECRET_KEY
         generateValue: true
       # Set these in the Render dashboard; they are never stored in the repo.

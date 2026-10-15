@@ -110,7 +110,7 @@ def test_options_and_start_are_off_without_google_settings(
     real_auth: None, client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(get_settings(), "google_client_id", None)
-    assert client.get("/api/v1/auth/options").json() == {"google": False}
+    assert client.get("/api/v1/auth/options").json()["google"] is False
     assert client.get("/api/v1/auth/google/start", follow_redirects=False).status_code == 404
 
 
@@ -120,7 +120,7 @@ def test_options_and_start_are_off_without_google_settings(
 def test_new_google_user_finishes_sign_up_and_is_logged_in(api: TestClient, db: Session) -> None:
     db.add(Carrier(usdot_number=297569, legal_name="VANEK BROTHERS TRUCKING COMPANY"))
     db.flush()
-    assert api.get("/api/v1/auth/options").json() == {"google": True}
+    assert api.get("/api/v1/auth/options").json()["google"] is True
 
     assert round_trip(api) == "/register/google"
     assert api.get("/api/v1/auth/me").status_code == 401  # not logged in yet

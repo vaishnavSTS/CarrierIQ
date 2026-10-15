@@ -11,6 +11,7 @@ import { PacketSection } from '../features/carrier-profile/packet/PacketSection'
 import { ProfileHeader } from '../features/carrier-profile/ProfileHeader'
 import { SafetySection } from '../features/carrier-profile/SafetySection'
 import { TimelineSection } from '../features/carrier-profile/TimelineSection'
+import { useClientSearchEnabled } from '../hooks/useAuth'
 import { useCarrierProfile } from '../hooks/useCarrierProfile'
 import { useIsOwnCarrier } from '../hooks/useIsOwnCarrier'
 import { useIsClientPortal, usePortalMode, useSearchPath } from '../hooks/usePortalMode'
@@ -52,6 +53,9 @@ export function CarrierProfilePage() {
   const usdotNumber = Number(usdot)
   const client = useIsClientPortal()
   const ownCarrier = useIsOwnCarrier(usdotNumber)
+  // Clients see only their own carriers unless client search is on (team testing).
+  const clientSearch = useClientSearchEnabled()
+  const ownCarriersOnly = usePortalMode() === 'client' && !clientSearch
   const { data: profile, error, isPending } = useCarrierProfile(usdotNumber)
   const navigate = useNavigate()
   // The open tab lives in the URL (?tab=safety) so a refresh or shared link keeps it.
@@ -76,7 +80,9 @@ export function CarrierProfilePage() {
     return (
       <Notice>
         {error instanceof ApiError && error.status === 404
-          ? `No carrier with USDOT ${usdotNumber} was found in CarrierIQ or FMCSA data.`
+          ? ownCarriersOnly
+            ? `USDOT ${usdotNumber} isn’t one of your carriers. Contact STS if it should be.`
+            : `No carrier with USDOT ${usdotNumber} was found in CarrierIQ or FMCSA data.`
           : `Could not load USDOT ${usdotNumber}: ${error.message}`}
       </Notice>
     )

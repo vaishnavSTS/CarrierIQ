@@ -96,8 +96,12 @@ def _start_session(response: Response, user: User) -> None:
 
 @router.get("/options", response_model=AuthOptionsOut)
 def options() -> AuthOptionsOut:
-    """Which sign-in methods the login and sign-up pages should offer."""
-    return AuthOptionsOut(google=get_settings().google_enabled)
+    """Which sign-in methods the login and sign-up pages should offer, and whether clients may
+    search any carrier."""
+    settings = get_settings()
+    return AuthOptionsOut(
+        google=settings.google_enabled, client_search=settings.client_search_enabled
+    )
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)

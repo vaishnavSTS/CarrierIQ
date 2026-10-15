@@ -129,6 +129,7 @@ class GoogleSignupPendingOut(BaseModel):
 
 class AuthOptionsOut(BaseModel):
     google: bool  # show "Continue with Google"
+    client_search: bool  # clients may search any carrier (CLIENT_SEARCH_ENABLED, team testing)
 
 
 class UserOut(BaseModel):
