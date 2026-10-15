@@ -4,6 +4,7 @@ import { type ReactNode, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { CarrierLink } from '../../../components/CarrierLink'
+import { Disclosure } from '../../../components/Disclosure'
 import { SourceTag } from '../../../components/SourceTag'
 import { StatusBadge } from '../../../components/StatusBadge'
 import { useCarrierNetwork } from '../../../hooks/useNetwork'
@@ -210,19 +211,24 @@ function NetworkBody({
           {flags.map((f) => {
             const { icon: Icon, tone, label, ring } = LEVEL[f.level]
             return (
-              <li key={f.key} className={`rounded-md border ${ring} px-3 py-2.5`}>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Icon className="size-4 text-slate-700" aria-hidden />
-                  <StatusBadge label={label} tone={tone} />
-                  <span className="font-medium text-slate-900">{f.title}</span>
-                </div>
-                <p className="mt-1 text-sm text-slate-700">{f.why}</p>
-                {f.fix && (
-                  <p className="mt-1 text-sm text-slate-600">
-                    <span className="font-medium text-slate-900">Usually resolved by: </span>
-                    {f.fix}
-                  </p>
-                )}
+              <li key={f.key} className={`rounded-md border ${ring} px-3 py-2`}>
+                <Disclosure
+                  summary={
+                    <>
+                      <Icon className="size-4 text-slate-700" aria-hidden />
+                      <StatusBadge label={label} tone={tone} />
+                      <span className="font-medium text-slate-900">{f.title}</span>
+                    </>
+                  }
+                >
+                  <p className="text-sm text-slate-700">{f.why}</p>
+                  {f.fix && (
+                    <p className="mt-1 text-sm text-slate-600">
+                      <span className="font-medium text-slate-900">Usually resolved by: </span>
+                      {f.fix}
+                    </p>
+                  )}
+                </Disclosure>
               </li>
             )
           })}
@@ -237,18 +243,23 @@ function NetworkBody({
       </SubHeading>
       <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
         {data.registration_checks.map((c) => (
-          <li key={c.key} className="flex flex-wrap items-start gap-3 px-3 py-2.5 text-sm">
-            <span className="w-24 shrink-0">
-              <StatusBadge label={c.status} tone={CHECK_TONE[c.status]} />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="font-medium text-slate-900">{c.label}</span>
-              <span className="mt-0.5 block text-slate-700">{c.detail}</span>
+          <li key={c.key} className="px-3 py-2 text-sm">
+            <Disclosure
+              summary={
+                <>
+                  <span className="w-24 shrink-0">
+                    <StatusBadge label={c.status} tone={CHECK_TONE[c.status]} />
+                  </span>
+                  <span className="font-medium text-slate-900">{c.label}</span>
+                </>
+              }
+            >
+              <p className="text-slate-700">{c.detail}</p>
               <SourceTag className="mt-0.5 block">
                 {c.source}
                 {c.as_of && ` · ${formatDate(c.as_of)}`}
               </SourceTag>
-            </span>
+            </Disclosure>
           </li>
         ))}
       </ul>

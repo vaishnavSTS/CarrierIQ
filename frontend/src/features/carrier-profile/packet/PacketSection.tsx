@@ -439,6 +439,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
         source="FMCSA SMS Input – Violation (FMCSA's weights); FMCSA rules (49 CFR)"
       >
         <ImprovementGuide
+          expanded
           drivers={safetyDetail.data?.drivers ?? null}
           recent={recent}
           rating={profile.safety.safety_rating}

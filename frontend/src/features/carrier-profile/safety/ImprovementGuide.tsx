@@ -1,5 +1,6 @@
 import type { OosWindow } from '../../../types/carrierProfile'
 import type { BasicDriver } from '../../../types/carrierSafety'
+import { Disclosure } from '../../../components/Disclosure'
 import { formatDate, formatPercent } from '../../../utils/format'
 import { BASIC_TIPS, DATAQS_URL, groupTip } from './improvementTips'
 
@@ -77,11 +78,14 @@ export function ImprovementGuide({
   recent,
   rating,
   ratingDate,
+  expanded = false,
 }: {
   drivers: BasicDriver[] | null
   recent: OosWindow | null
   rating: string | null
   ratingDate: string | null
+  /** Everything open, for the printable packet; the Safety tab opens rows on click. */
+  expanded?: boolean
 }) {
   const summary = improvementSummary(drivers, recent)
   const oos = recent
@@ -118,38 +122,46 @@ export function ImprovementGuide({
                 key={b.basic}
                 className="break-inside-avoid rounded-md border border-slate-200 px-3 py-2"
               >
-                <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="font-medium text-slate-900">{b.basic}</span>
-                  <span className="text-xs text-slate-500">
-                    {b.violations} violation{b.violations === 1 ? '' : 's'}
-                    {b.out_of_service > 0 && ` · ${b.out_of_service} out of service`} ·{' '}
-                    {b.recent_violations} in the last 6 months · FMCSA weight {b.weight}
-                  </span>
-                </div>
-                <ul className="mt-1.5 space-y-1">
-                  {b.groups.slice(0, TOP_GROUPS).map((g) => {
-                    const tip = groupTip(g.group)
-                    return (
-                      <li key={g.group}>
-                        <span className="font-medium text-slate-900">{g.group}</span>:{' '}
-                        {g.violations} violation{g.violations === 1 ? '' : 's'},{' '}
-                        {formatPercent(g.share)} of the {b.basic} weight
-                        {g.examples[0] && (
-                          <span className="text-slate-500"> (e.g. {g.examples[0]})</span>
-                        )}
-                        {tip && (
-                          <span className="block text-xs text-slate-500">Usually helps: {tip}</span>
-                        )}
-                      </li>
-                    )
-                  })}
-                </ul>
-                {BASIC_TIPS[b.basic] && (
-                  <p className="mt-1.5 text-xs text-slate-600">
-                    <span className="font-medium">For {b.basic} overall:</span>{' '}
-                    {BASIC_TIPS[b.basic]}
-                  </p>
-                )}
+                <Disclosure
+                  defaultOpen={expanded}
+                  summary={
+                    <>
+                      <span className="font-medium text-slate-900">{b.basic}</span>
+                      <span className="text-xs text-slate-500">
+                        {b.violations} violation{b.violations === 1 ? '' : 's'}
+                        {b.out_of_service > 0 && ` · ${b.out_of_service} out of service`} ·{' '}
+                        {b.recent_violations} in the last 6 months · FMCSA weight {b.weight}
+                      </span>
+                    </>
+                  }
+                >
+                  <ul className="space-y-1">
+                    {b.groups.slice(0, TOP_GROUPS).map((g) => {
+                      const tip = groupTip(g.group)
+                      return (
+                        <li key={g.group}>
+                          <span className="font-medium text-slate-900">{g.group}</span>:{' '}
+                          {g.violations} violation{g.violations === 1 ? '' : 's'},{' '}
+                          {formatPercent(g.share)} of the {b.basic} weight
+                          {g.examples[0] && (
+                            <span className="text-slate-500"> (e.g. {g.examples[0]})</span>
+                          )}
+                          {tip && (
+                            <span className="block text-xs text-slate-500">
+                              Usually helps: {tip}
+                            </span>
+                          )}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                  {BASIC_TIPS[b.basic] && (
+                    <p className="mt-1.5 text-xs text-slate-600">
+                      <span className="font-medium">For {b.basic} overall:</span>{' '}
+                      {BASIC_TIPS[b.basic]}
+                    </p>
+                  )}
+                </Disclosure>
               </li>
             ))}
           </ul>
@@ -172,9 +184,11 @@ export function ImprovementGuide({
         </div>
       )}
 
-      <div>
-        <h4 className="font-semibold text-slate-900">How FMCSA counts it</h4>
-        <ul className="mt-1 list-disc space-y-1 pl-5">
+      <Disclosure
+        defaultOpen={expanded}
+        summary={<span className="font-semibold text-slate-900">How FMCSA counts it</span>}
+      >
+        <ul className="list-disc space-y-1 pl-5">
           <li>
             Each violation has a severity weight from 1 to 10, plus 2 when it put a vehicle or
             driver out of service.
@@ -189,7 +203,7 @@ export function ImprovementGuide({
             the challenge succeeds, FMCSA corrects or removes it.
           </li>
         </ul>
-      </div>
+      </Disclosure>
     </div>
   )
 }

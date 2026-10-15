@@ -3,8 +3,10 @@ import { signalSource, SOURCES } from '../../../utils/sources'
 import { useCallback, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
+import { Disclosure } from '../../../components/Disclosure'
 import { StatusBadge } from '../../../components/StatusBadge'
 import { useCarrierSignals } from '../../../hooks/useCarrierSignals'
+import { useCarrierNetwork } from '../../../hooks/useNetwork'
 import type { ReviewStatus, Severity, Signal } from '../../../types/carrierSignals'
 import { formatLocalDate } from '../../../utils/format'
 import { severityTone } from '../../../utils/status'
@@ -30,39 +32,67 @@ function chipClass(selected: boolean): string {
   }`
 }
 
-function SignalCard({ signal, onOpen }: { signal: Signal; onOpen: () => void }) {
+/** The other carrier a shared-contact or shared-VIN signal is about (its key ends in its USDOT). */
+function otherUsdot(signal: Signal): number | null {
+  if (signal.signal_type !== 'SHARED_CONTACT' && signal.signal_type !== 'SHARED_VIN') return null
+  const usdot = Number(signal.signal_key?.split(':').pop())
+  return Number.isInteger(usdot) && usdot > 0 ? usdot : null
+}
+
+function SignalCard({
+  signal,
+  otherStatus,
+  onOpen,
+}: {
+  signal: Signal
+  /** ACTIVE | INACTIVE for the other carrier, when the signal links to one */
+  otherStatus: string | null
+  onOpen: () => void
+}) {
   return (
-    <li className="rounded-md border border-slate-200 p-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
+    <li className="rounded-md border border-slate-200 px-3 py-2">
+      <Disclosure
+        summary={
+          <>
             <StatusBadge
               label={signal.severity.toLowerCase()}
               tone={severityTone(signal.severity)}
             />
             <span className="font-medium text-slate-900">{signal.title}</span>
-          </div>
-          <p className="mt-1 line-clamp-2 text-sm text-slate-600">{signal.description}</p>
-          {signal.status !== 'OPEN' && (
-            <p className="mt-1 text-xs text-slate-600">
-              <StatusBadge label={signal.status.toLowerCase()} tone="pending" />{' '}
-              {formatLocalDate(signal.reviewed_at)}
-              {signal.review_note && ` · “${signal.review_note}”`}
-            </p>
-          )}
+            {otherStatus && (
+              <StatusBadge
+                label={otherStatus === 'ACTIVE' ? 'active' : 'not active'}
+                tone={otherStatus === 'ACTIVE' ? 'ok' : 'neutral'}
+              />
+            )}
+            {signal.status !== 'OPEN' && (
+              <StatusBadge label={signal.status.toLowerCase()} tone="pending" />
+            )}
+          </>
+        }
+      >
+        <p className="text-sm text-slate-600">{signal.description}</p>
+        {signal.status !== 'OPEN' && (
+          <p className="mt-1 text-xs text-slate-600">
+            {signal.status === 'REVIEWED' ? 'Reviewed' : 'Dismissed'}{' '}
+            {formatLocalDate(signal.reviewed_at)}
+            {signal.review_note && ` · “${signal.review_note}”`}
+          </p>
+        )}
+        <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+          <span>
+            {signal.confidence.toLowerCase()} confidence · detected{' '}
+            {formatLocalDate(signal.first_detected_at)}
+          </span>
+          <button
+            type="button"
+            onClick={onOpen}
+            className="rounded-md px-2.5 py-1 text-xs text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
+          >
+            Evidence ({signal.evidence.length})
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={onOpen}
-          className="shrink-0 rounded-md px-2.5 py-1 text-xs text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
-        >
-          Evidence ({signal.evidence.length})
-        </button>
-      </div>
-      <div className="mt-2 text-xs text-slate-500">
-        {signal.confidence.toLowerCase()} confidence · detected{' '}
-        {formatLocalDate(signal.first_detected_at)}
-      </div>
+      </Disclosure>
     </li>
   )
 }
@@ -70,10 +100,13 @@ function SignalCard({ signal, onOpen }: { signal: Signal; onOpen: () => void }) 
 function SignalGroup({
   type,
   signals,
+  statusOf,
   onOpen,
 }: {
   type: string
   signals: Signal[]
+  /** Census status of another carrier, by USDOT */
+  statusOf: (usdot: number) => string | null
   onOpen: (signal: Signal) => void
 }) {
   const [showAll, setShowAll] = useState(false)
@@ -95,7 +128,15 @@ function SignalGroup({
       </h3>
       <ul className="space-y-2">
         {shown.map((s) => (
-          <SignalCard key={s.id} signal={s} onOpen={() => onOpen(s)} />
+          <SignalCard
+            key={s.id}
+            signal={s}
+            otherStatus={(() => {
+              const usdot = otherUsdot(s)
+              return usdot === null ? null : statusOf(usdot)
+            })()}
+            onOpen={() => onOpen(s)}
+          />
         ))}
       </ul>
       {!showAll && signals.length > PREVIEW_CARDS && (
@@ -113,6 +154,13 @@ function SignalGroup({
 
 export function IntelligenceSection({ usdotNumber }: { usdotNumber: number }) {
   const { data, error, isPending } = useCarrierSignals(usdotNumber)
+  // Linked carriers' census status, for the active / not active label on shared-contact signals.
+  const network = useCarrierNetwork(usdotNumber)
+  const statusOf = useCallback(
+    (usdot: number) =>
+      network.data?.linked_carriers.find((c) => c.usdot_number === usdot)?.status ?? null,
+    [network.data],
+  )
   const [includeInfo, setIncludeInfo] = useState(false)
   const [type, setType] = useState<string | null>(null)
   const [status, setStatus] = useState<ReviewStatus | 'ALL'>('OPEN')
@@ -237,6 +285,7 @@ export function IntelligenceSection({ usdotNumber }: { usdotNumber: number }) {
                       key={`${t}-${type}-${includeInfo}-${status}`}
                       type={t}
                       signals={list}
+                      statusOf={statusOf}
                       onOpen={(s) => setOpenId(s.id)}
                     />
                   ))

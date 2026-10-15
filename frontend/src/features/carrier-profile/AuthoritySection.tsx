@@ -1,6 +1,7 @@
 import { SOURCES } from '../../utils/sources'
 import { useState, type ReactNode } from 'react'
 
+import { Disclosure } from '../../components/Disclosure'
 import { SourceTag } from '../../components/SourceTag'
 import { StatusBadge } from '../../components/StatusBadge'
 import { useCarrierAuthority } from '../../hooks/useCarrierAuthority'
@@ -223,20 +224,25 @@ function Renewals({ renewals }: { renewals: Renewal[] }) {
         return (
           <div
             key={`${r.docket}-${r.insurance_type}`}
-            className="rounded-md border border-slate-200 p-3 text-sm"
+            className="rounded-md border border-slate-200 px-3 py-2 text-sm"
           >
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="font-medium">
-                Usual renewal: {TYPE_LABEL[r.insurance_type] ?? r.insurance_type}{' '}
-                <span className="font-mono text-xs text-slate-500">{r.docket}</span>
-              </span>
-              <div className="flex items-center gap-2 text-xs text-slate-500">
-                Next expected around {formatDate(r.expected)}
-                <StatusBadge label={badge.label} tone={badge.tone} />
-              </div>
-            </div>
-            <p className="mt-1 text-xs text-slate-600">{r.summary}</p>
-            <SourceTag className="mt-1 block">{SOURCES.renewal}</SourceTag>
+            <Disclosure
+              summary={
+                <>
+                  <span className="font-medium">
+                    Usual renewal: {TYPE_LABEL[r.insurance_type] ?? r.insurance_type}{' '}
+                    <span className="font-mono text-xs text-slate-500">{r.docket}</span>
+                  </span>
+                  <span className="ml-auto flex items-center gap-2 text-xs text-slate-500">
+                    around {formatDate(r.expected)}
+                    <StatusBadge label={badge.label} tone={badge.tone} />
+                  </span>
+                </>
+              }
+            >
+              <p className="text-xs text-slate-600">{r.summary}</p>
+              <SourceTag className="mt-1 block">{SOURCES.renewal}</SourceTag>
+            </Disclosure>
           </div>
         )
       })}
