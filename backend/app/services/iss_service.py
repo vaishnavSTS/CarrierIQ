@@ -4,7 +4,8 @@
 of minutes) and the SMS Input crash file with the census facts of carriers with two or more
 crashes (the Crash Indicator), turns them into lookup tables and stores them for the month.
 `iss_for` reads a carrier's own SMS row (already ingested on refresh), the newest tables and any
-active out-of-service order, and returns the estimate for the Safety tab.
+active out-of-service order, and returns the estimate for the Safety tab. Each result that differs
+from the carrier's previous one is saved as an `IssSnapshot`: `iss_history` reads them back.
 """
 
 import logging
@@ -34,11 +35,11 @@ from app.intelligence.iss_estimate import (
     is_straight,
     with_crash,
 )
-from app.models import Carrier, Inspection, IssReference
+from app.models import Carrier, Inspection, IssReference, IssSnapshot
 from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.raw_record_repository import RawRecordRepository
 from app.repositories.safety_record_repository import SafetyRecordRepository
-from app.schemas.carrier_safety import EstimatedIssBasicOut, EstimatedIssOut
+from app.schemas.carrier_safety import EstimatedIssBasicOut, EstimatedIssOut, IssHistoryOut
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,7 @@ DOTS_PER_REQUEST = 400
 VEHICLE_LEVELS = (1, 2, 5, 6)
 DRIVER_LEVELS = (1, 2, 3, 6)
 DOWNLOAD_TIMEOUT_SECONDS = 300.0
+HISTORY_LIMIT = 24  # saved results shown on the Safety tab
 
 
 def month_start(day: date) -> date:
@@ -266,11 +268,93 @@ def _basic_out(r: BasicResult) -> EstimatedIssBasicOut:
 
 
 def iss_for(db: Session, usdot_number: int) -> EstimatedIssOut | None:
-    """The carrier's Estimated ISS; None when the carrier or the monthly tables aren't loaded."""
+    """The carrier's Estimated ISS; None when the carrier or the monthly tables aren't loaded.
+    A result that differs from the carrier's last saved one is saved too."""
     carrier = CarrierRepository(db).get_by_usdot(usdot_number)
     reference = latest_reference(db)
     if carrier is None or reference is None:
         return None
+    result = _estimate_out(db, carrier, reference)
+    _record(db, carrier.id, result)
+    return result
+
+
+def iss_history(db: Session, usdot_number: int, limit: int = HISTORY_LIMIT) -> list[IssHistoryOut]:
+    """The carrier's saved Estimated ISS results, newest first."""
+    carrier = CarrierRepository(db).get_by_usdot(usdot_number)
+    if carrier is None:
+        return []
+    rows = db.scalars(
+        select(IssSnapshot)
+        .where(IssSnapshot.carrier_id == carrier.id)
+        .order_by(IssSnapshot.created_at.desc(), IssSnapshot.id.desc())
+        .limit(limit)
+    )
+    return [
+        IssHistoryOut(
+            value=s.value,
+            band=s.band,
+            reason=s.reason,
+            data_month=s.data_month,
+            version=s.version,
+            recorded_at=s.created_at,
+        )
+        for s in rows
+    ]
+
+
+def snapshot_all(db: Session) -> int:
+    """Recalculate every stored carrier against the newest tables, saving what changed (after a
+    monthly rebuild, so history has a point for each month). Returns the carriers recalculated."""
+    usdots = list(db.scalars(select(Carrier.usdot_number)))
+    for usdot in usdots:
+        iss_for(db, usdot)
+    return len(usdots)
+
+
+def _record(db: Session, carrier_id: int, result: EstimatedIssOut) -> None:
+    """Save the result unless the carrier's last snapshot already says the same."""
+    last = db.scalars(
+        select(IssSnapshot)
+        .where(IssSnapshot.carrier_id == carrier_id)
+        .order_by(IssSnapshot.created_at.desc(), IssSnapshot.id.desc())
+        .limit(1)
+    ).first()
+    key = (
+        result.value,
+        result.band,
+        result.group,
+        result.algorithm,
+        result.data_month,
+        result.version,
+    )
+    if last is not None and key == (
+        last.value,
+        last.band,
+        last.group,
+        last.algorithm,
+        last.data_month,
+        last.version,
+    ):
+        return
+    db.add(
+        IssSnapshot(
+            carrier_id=carrier_id,
+            value=result.value,
+            band=result.band,
+            group=result.group,
+            algorithm=result.algorithm,
+            reason=result.reason,
+            data_month=result.data_month,
+            version=result.version,
+            basics=[b.model_dump() for b in result.basics],
+        )
+    )
+    db.commit()
+
+
+def _estimate_out(db: Session, carrier: Carrier, reference: IssReference) -> EstimatedIssOut:
+    usdot_number = carrier.usdot_number
     sms, passenger = _carrier_sms(db, carrier.id, _straight(db, usdot_number))
     if passenger:
         return EstimatedIssOut(

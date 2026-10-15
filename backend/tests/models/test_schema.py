@@ -43,6 +43,7 @@ TABLES = {
     "organization_carriers",
     # Estimated ISS lookup tables
     "iss_references",
+    "iss_snapshots",
 }
 
 # Rows in these tables always come from a source record (Engineering Principle 5).

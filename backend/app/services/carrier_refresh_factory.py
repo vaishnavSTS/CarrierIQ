@@ -18,6 +18,7 @@ from app.services.census_ingestion_service import build_census_ingestion_service
 from app.services.contact_link_service import build_contact_link_service
 from app.services.inspection_ingestion_service import build_inspection_ingestion_service
 from app.services.insurance_ingestion_service import build_insurance_ingestion_service
+from app.services.iss_service import iss_for
 from app.services.registration_orders_service import build_registration_orders_service
 from app.services.shared_vin_service import build_shared_vin_service
 from app.services.signal_service import build_signal_service
@@ -56,5 +57,7 @@ def build_refresh_service(
             build_timeline_service(db).rebuild,
             # Last: rules read everything loaded above.
             build_signal_service(db).rebuild,
+            # The new Estimated ISS, saved to the carrier's score history if it changed.
+            lambda carrier: iss_for(db, carrier.usdot_number),
         ],
     )

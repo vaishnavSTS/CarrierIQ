@@ -218,8 +218,14 @@ What would lower it: fewer Unsafe Driving violations → see How to improve
 Based on FMCSA data for October 2026 · How this is estimated →
 ```
 
-Every estimate is stored with its version (`iss-est v1`) and data month, so a past value can
-always be explained.
+5. **Score history** (`iss_snapshots`, migration 0022, 2026-10-15): the estimate is recalculated
+   from stored inputs each time it is shown, and saved whenever the result (value, band, group,
+   algorithm, data month or version) differs from the carrier's last saved one. Saving happens
+   when a carrier is loaded or refreshed, when it is opened, and for every stored carrier after
+   the monthly tables are rebuilt. The Safety tab card lists the saved scores ("Score history").
+
+Every saved estimate keeps its version (e.g. `iss-est v2.1`), data month, reason and per-BASIC
+results, so a past value can always be explained.
 
 ---
 

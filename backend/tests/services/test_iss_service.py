@@ -13,10 +13,10 @@ from app.intelligence.iss_estimate import VERSION
 from app.jobs.handlers import BUILD_ISS_REFERENCE
 from app.jobs.queue import PostgresJobQueue
 from app.jobs.scheduler import schedule_iss_reference
-from app.models import IssReference, SmsResult
+from app.models import IssReference, IssSnapshot, SmsResult
 from app.schemas.carrier_safety import CarrierSafetyOut
 from app.services.client_view import client_safety
-from app.services.iss_service import build_iss_reference, iss_for
+from app.services.iss_service import build_iss_reference, iss_for, iss_history, snapshot_all
 from tests.factories import make_carrier, make_raw_record
 
 FIXTURES = Path(__file__).parents[1] / "fixtures" / "iss"
@@ -89,6 +89,38 @@ def test_clients_see_threshold_flags_but_not_percentiles(db: Session) -> None:
     assert [b.basic for b in shown.basics if b.over_threshold] == ["unsafe_driv"]
     # Clients still see which BASICs FMCSA would assess (HOS: only 2 inspections with violations).
     assert [b.basic for b in shown.basics if b.assessed] == ["unsafe_driv"]
+
+
+def test_each_new_result_is_saved_once_to_the_score_history(db: Session) -> None:
+    load_majha(db)
+    store_tables(db)
+
+    iss_for(db, 4157195)
+    iss_for(db, 4157195)  # same result: not saved again
+    assert db.query(IssSnapshot).count() == 1
+
+    store_tables(db, date(2026, 11, 1))  # next month's tables: a new point in the history
+    iss_for(db, 4157195)
+
+    history = iss_history(db, 4157195)
+    assert [(h.value, h.band, h.data_month) for h in history] == [
+        (55, "OPTIONAL", date(2026, 11, 1)),
+        (55, "OPTIONAL", date(2026, 10, 1)),
+    ]
+    saved = db.query(IssSnapshot).order_by(IssSnapshot.id).first()
+    assert saved is not None and saved.group == 12 and saved.version == VERSION
+    assert {b["basic"] for b in saved.basics} >= {"unsafe_driv", "veh_maint"}
+
+
+def test_snapshot_all_saves_every_stored_carrier(db: Session) -> None:
+    load_majha(db)
+    make_carrier(db, 1234567, "NO SMS YET LLC")
+    store_tables(db)
+
+    assert snapshot_all(db) == 2
+    assert snapshot_all(db) == 2  # nothing changed: nothing more saved
+    assert db.query(IssSnapshot).count() == 2
+    assert iss_history(db, 7654321) == []  # not loaded
 
 
 class FakeClient:

@@ -60,13 +60,15 @@ def rebuild_signals(db: Session, payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def build_iss_tables(db: Session, payload: dict[str, Any]) -> dict[str, Any]:
-    """Download FMCSA's national SMS file and store this month's Estimated ISS lookup tables."""
+    """Download FMCSA's national SMS file, store this month's Estimated ISS lookup tables and
+    save every stored carrier's new estimate."""
     from datetime import UTC, datetime
 
-    from app.services.iss_service import build_iss_reference
+    from app.services.iss_service import build_iss_reference, snapshot_all
 
     carriers = build_iss_reference(db, datetime.now(UTC).date())
-    return {"carriers": carriers}
+    # Each stored carrier's estimate against the new month, saved to its score history.
+    return {"carriers": carriers, "snapshots": snapshot_all(db)}
 
 
 HANDLERS: dict[str, Handler] = {

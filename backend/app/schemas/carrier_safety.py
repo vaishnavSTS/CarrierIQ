@@ -1,6 +1,6 @@
 """Safety detail and inspection history (spec Phase 5: inspection history, OOS, counts, trends)."""
 
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel
 
@@ -150,6 +150,17 @@ class EstimatedIssOut(BaseModel):
     algorithm: str = "SAFETY"
 
 
+class IssHistoryOut(BaseModel):
+    """One saved Estimated ISS: the score as it was when recorded."""
+
+    value: int | None
+    band: str | None
+    reason: str
+    data_month: date
+    version: str
+    recorded_at: datetime
+
+
 class CarrierSafetyOut(BaseModel):
     usdot_number: int
     inspection_count: int
@@ -161,6 +172,7 @@ class CarrierSafetyOut(BaseModel):
     crashes: CrashSummaryOut | None = None  # None: not fetched yet
     drivers: list[BasicDriverOut] | None = None  # None: not fetched yet; heaviest BASIC first
     estimated_iss: EstimatedIssOut | None = None  # None: tables or carrier SMS not loaded yet
+    iss_history: list[IssHistoryOut] = []  # saved Estimated ISS results, newest first
 
 
 class ViolationOut(BaseModel):

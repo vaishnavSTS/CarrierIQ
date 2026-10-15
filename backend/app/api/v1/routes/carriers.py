@@ -39,7 +39,7 @@ from app.services.carrier_safety_service import CarrierSafetyService
 from app.services.carrier_search_service import CarrierSearchService
 from app.services.carrier_signals_service import CarrierSignalsService
 from app.services.contact_link_service import build_contact_link_service
-from app.services.iss_service import iss_for
+from app.services.iss_service import iss_for, iss_history
 from app.services.job_status_service import JobStatusService
 from app.services.network_service import NetworkService
 from app.services.registration_orders_service import build_registration_orders_service
@@ -140,6 +140,7 @@ def get_carrier_safety_service(
         crashes=lambda usdot, today: crashes_for(db, usdot, today),
         drivers=lambda usdot, today: drivers_for(db, usdot, today),
         iss=lambda usdot: iss_for(db, usdot),
+        iss_history=lambda usdot: iss_history(db, usdot),
     )
 
 

@@ -103,7 +103,10 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
           <SubHeading source="CarrierIQ estimate · FMCSA ISS-CSA and SMS methods · FMCSA SMS national file (monthly)">
             Estimated ISS – Safety score
           </SubHeading>
-          <EstimatedIssCard iss={detail.data.estimated_iss} />
+          <EstimatedIssCard
+            iss={detail.data.estimated_iss}
+            history={detail.data.iss_history ?? []}
+          />
           <SubHeading
             source={
               detail.data.sms?.dataset

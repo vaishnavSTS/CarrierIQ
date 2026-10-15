@@ -1,7 +1,8 @@
 import { AlertTriangle, CircleAlert, CircleCheck, Minus } from 'lucide-react'
 
 import { StatusBadge } from '../../../components/StatusBadge'
-import type { EstimatedIss } from '../../../types/carrierSafety'
+import type { EstimatedIss, IssHistoryEntry } from '../../../types/carrierSafety'
+import { formatLocalDate } from '../../../utils/format'
 import { Empty } from '../Section'
 import { ISS_BAND, NEAR_THRESHOLD_POINTS } from './issBand'
 
@@ -18,7 +19,14 @@ function monthLabel(isoDate: string): string {
  * the band, why, and each BASIC against FMCSA's threshold. Estimated percentiles show for STS
  * staff only; the client portal receives them blank.
  */
-export function EstimatedIssCard({ iss }: { iss: EstimatedIss | null | undefined }) {
+export function EstimatedIssCard({
+  iss,
+  history = [],
+}: {
+  iss: EstimatedIss | null | undefined
+  /** Saved results, newest first */
+  history?: IssHistoryEntry[]
+}) {
   if (!iss) {
     return <Empty>The Estimated ISS is not available yet for this carrier.</Empty>
   }
@@ -78,6 +86,8 @@ export function EstimatedIssCard({ iss }: { iss: EstimatedIss | null | undefined
         </ul>
       )}
 
+      <ScoreHistory history={history} />
+
       <p className="mt-3 text-xs text-slate-500">
         Follows FMCSA’s published ISS and SMS methods. Based on FMCSA data for{' '}
         {monthLabel(iss.data_month)} · {iss.version}
@@ -101,5 +111,39 @@ function BasicIcon({ basic: b }: { basic: Basic }) {
   }
   return (
     <CircleCheck className="size-4 shrink-0 text-emerald-600" aria-label="Well under threshold" />
+  )
+}
+
+/** The saved scores, newest first, so a change (and when it happened) is visible. */
+function ScoreHistory({ history }: { history: IssHistoryEntry[] }) {
+  if (history.length === 0) return null
+  return (
+    <div className="mt-3 border-t border-slate-200 pt-3">
+      <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
+        Score history
+      </div>
+      {history.length === 1 ? (
+        <p className="mt-1 text-xs text-slate-500">
+          Saved since {formatLocalDate(history[0].recorded_at)}. Each change is added here.
+        </p>
+      ) : (
+        <ol className="mt-2 flex flex-wrap gap-2">
+          {history.map((h, i) => {
+            const band = h.band ? ISS_BAND[h.band] : null
+            return (
+              <li
+                key={`${h.recorded_at}-${i}`}
+                className="rounded-md border border-slate-200 px-2.5 py-1 text-xs"
+                title={`${h.reason} · FMCSA data for ${monthLabel(h.data_month)} · ${h.version}`}
+              >
+                <span className="font-semibold tabular-nums text-slate-900">{h.value ?? '—'}</span>
+                {band && <span className="text-slate-600"> {band.status}</span>}
+                <span className="block text-slate-500">{formatLocalDate(h.recorded_at)}</span>
+              </li>
+            )
+          })}
+        </ol>
+      )}
+    </div>
   )
 }

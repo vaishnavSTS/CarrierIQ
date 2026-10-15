@@ -136,6 +136,8 @@ export interface CarrierSafety {
   drivers: BasicDriver[] | null
   /** CarrierIQ's estimate of FMCSA's ISS; null: monthly tables or carrier SMS not loaded */
   estimated_iss?: EstimatedIss | null
+  /** Saved Estimated ISS results, newest first */
+  iss_history?: IssHistoryEntry[]
 }
 
 /** docs/estimated-iss-v1.md — mirrors EstimatedIssOut */
@@ -152,6 +154,17 @@ export interface EstimatedIss {
   version: string
   /** SAFETY (enough data) | INSUFFICIENT_DATA (FMCSA's little-history rules) | OUT_OF_SERVICE | NONE */
   algorithm?: 'SAFETY' | 'INSUFFICIENT_DATA' | 'OUT_OF_SERVICE' | 'NONE'
+}
+
+/** One saved Estimated ISS: the score as it was when recorded. */
+export interface IssHistoryEntry {
+  value: number | null
+  band: EstimatedIss['band']
+  reason: string
+  /** FMCSA SMS month of the lookup tables (YYYY-MM-DD) */
+  data_month: string
+  version: string
+  recorded_at: string
 }
 
 export interface EstimatedIssBasic {
