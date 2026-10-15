@@ -126,6 +126,11 @@ GitHub Actions (`.github/workflows/ci.yml`) can run the same checks, plus `alemb
 on an empty PostgreSQL and the database tests. It runs only when started by hand (Actions → CI →
 Run workflow), never on push.
 
+The **Deploy check** workflow (`.github/workflows/deploy-check.yml`) is the one that runs on its
+own: only when Vercel or Render reports a finished deploy. Each run appears in the Actions tab as
+"Frontend (Vercel) deploy success: <commit>" or "Backend (Render) …" and checks that the live app
+and backend answer. Run workflow on it checks both by hand.
+
 ### Database tests
 
 Model tests run against a real PostgreSQL inside a throwaway `pytest_models` schema and roll

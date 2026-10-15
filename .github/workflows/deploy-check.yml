@@ -1,0 +1,83 @@
+# Shows each deploy in the Actions tab and checks the live app answers.
+# Vercel (frontend) and Render (backend) deploy on their own servers and report each deploy to
+# GitHub; this runs only when one of them reports, never on a plain push. The CI checks
+# (ci.yml) stay manual. "Run workflow" also checks both services by hand.
+name: Deploy check
+
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch' && 'Live check (manual)'
+  || format('{0} deploy {1}: {2}',
+       github.event.deployment.environment == 'Production' && 'Frontend (Vercel)' || 'Backend (Render)',
+       github.event.deployment_status.state,
+       github.event.deployment.sha) }}
+
+on:
+  deployment_status:
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  APP_URL: https://carrier-iq.vercel.app
+  API_URL: https://carrieriq-api.onrender.com
+
+jobs:
+  check:
+    # Vercel and Render also report "pending" and "in progress"; only finished deploys are checked.
+    if: >-
+      github.event_name == 'workflow_dispatch'
+      || contains(fromJSON('["success", "failure", "error"]'), github.event.deployment_status.state)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Deploy failed
+        if: github.event_name == 'deployment_status' && github.event.deployment_status.state != 'success'
+        env:
+          WHERE: ${{ github.event.deployment.environment }}
+          WHY: ${{ github.event.deployment_status.description }}
+          LOGS: ${{ github.event.deployment_status.target_url }}
+        run: |
+          {
+            echo "### ❌ Deploy failed: $WHERE"
+            echo "$WHY"
+            echo "The previous version is still live. Logs: $LOGS"
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      - name: Backend answers (Render)
+        if: >-
+          github.event_name == 'workflow_dispatch'
+          || (github.event.deployment_status.state == 'success'
+              && github.event.deployment.environment != 'Production')
+        run: |
+          # The free instance sleeps when idle and takes about a minute to wake.
+          for attempt in $(seq 1 12); do
+            if body=$(curl -fsS --max-time 60 "$API_URL/api/v1/health"); then
+              echo "$body"
+              echo "### ✅ Backend is live: $API_URL ($body)" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "Attempt $attempt: not answering yet, waiting 15 s"
+            sleep 15
+          done
+          echo "### ❌ Backend did not answer: $API_URL/api/v1/health" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      - name: App answers (Vercel)
+        if: >-
+          github.event_name == 'workflow_dispatch'
+          || github.event.deployment_status.state == 'success'
+        run: |
+          curl -fsS --max-time 30 "$APP_URL/" | grep -q "<title>CarrierIQ</title>"
+          # Through the /api rewrite: proves the site reaches the backend and the database.
+          for attempt in $(seq 1 12); do
+            if body=$(curl -fsS --max-time 60 "$APP_URL/api/v1/health"); then
+              echo "$body"
+              echo "### ✅ CarrierIQ is ready: $APP_URL" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "Attempt $attempt: backend waking up, waiting 15 s"
+            sleep 15
+          done
+          echo "### ❌ $APP_URL loads, but its /api requests do not reach the backend" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
