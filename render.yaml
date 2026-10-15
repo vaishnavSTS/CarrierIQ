@@ -9,7 +9,7 @@ services:
     rootDir: backend
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/v1/health
-    autoDeploy: false # deploy from the Render dashboard when you choose
+    autoDeploy: true # redeploy on every push to main (the frontend on Vercel does the same)
     envVars:
       - key: ENVIRONMENT
         value: production # HTTPS-only cookies; refuses to start with the development key
