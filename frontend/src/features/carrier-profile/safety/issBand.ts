@@ -1,12 +1,15 @@
 import type { EstimatedIss } from '../../../types/carrierSafety'
 import type { Tone } from '../../../utils/status'
 
-/** FMCSA's band and CarrierIQ's plain-language status for it. */
+/** CarrierIQ's plain-language status for each of FMCSA's ISS bands, and the values it covers. */
 export const ISS_BAND: Record<
   NonNullable<EstimatedIss['band']>,
-  { label: string; status: string; tone: Tone }
+  { status: string; range: string; tone: Tone }
 > = {
-  PASS: { label: 'Pass', status: 'Satisfactory', tone: 'ok' },
-  OPTIONAL: { label: 'Optional', status: 'At risk', tone: 'warn' },
-  INSPECT: { label: 'Inspect', status: 'Needs inspection', tone: 'down' },
+  PASS: { status: 'Satisfactory', range: '1–49', tone: 'ok' },
+  OPTIONAL: { status: 'At risk', range: '50–74', tone: 'warn' },
+  INSPECT: { status: 'High risk', range: '75–100', tone: 'down' },
 }
+
+/** A BASIC this many percentile points or fewer under its threshold is flagged as close to it. */
+export const NEAR_THRESHOLD_POINTS = 15

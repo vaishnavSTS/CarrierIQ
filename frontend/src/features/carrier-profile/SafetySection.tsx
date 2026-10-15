@@ -92,7 +92,7 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
             )
           }
           note={
-            issBand ? `${issBand.label} band · 1–100, lower is better` : 'FMCSA inspection priority'
+            issBand ? `${issBand.range} of 1–100 · lower is better` : 'FMCSA inspection priority'
           }
           source="CarrierIQ estimate (FMCSA methods), not FMCSA’s rating"
         />

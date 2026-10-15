@@ -15,9 +15,9 @@ carriers' BASIC percentiles, so CarrierIQ recomputes both.
 
 | Value | FMCSA recommendation | CarrierIQ wording |
 |---|---|---|
-| 1–49 | Pass — inspection not warranted | **Pass** · Satisfactory |
-| 50–74 | Optional — next-level priority | **Optional** · At risk |
-| 75–100 | Inspect — top priority | **Inspect** · Needs inspection |
+| 1–49 | Pass — inspection not warranted | Satisfactory |
+| 50–74 | Optional — next-level priority | At risk |
+| 75–100 | Inspect — top priority | High risk |
 
 Lower is better. 100 means an active out-of-service order.
 

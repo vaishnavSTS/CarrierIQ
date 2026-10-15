@@ -1,9 +1,9 @@
-import { AlertTriangle, CircleCheck, Minus } from 'lucide-react'
+import { AlertTriangle, CircleAlert, CircleCheck, Minus } from 'lucide-react'
 
 import { StatusBadge } from '../../../components/StatusBadge'
 import type { EstimatedIss } from '../../../types/carrierSafety'
 import { Empty } from '../Section'
-import { ISS_BAND } from './issBand'
+import { ISS_BAND, NEAR_THRESHOLD_POINTS } from './issBand'
 
 function monthLabel(isoDate: string): string {
   return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString('en-US', {
@@ -33,15 +33,14 @@ export function EstimatedIssCard({ iss }: { iss: EstimatedIss | null | undefined
             Estimated ISS – Safety score · inspection priority
           </div>
           <p className="mt-1 text-xs text-slate-500">
-            CarrierIQ estimate from public FMCSA data — not FMCSA’s official ISS. 1–49 Pass
-            (satisfactory) · 50–74 Optional (at risk) · 75–100 Inspect (needs inspection). Lower is
-            better.
+            CarrierIQ estimate from public FMCSA data — not FMCSA’s official ISS. 1–49 Satisfactory
+            · 50–74 At risk · 75–100 High risk. Lower is better.
           </p>
         </div>
         {iss.value !== null && band ? (
           <div className="flex items-center gap-2">
             <span className="text-3xl font-semibold tabular-nums text-slate-950">{iss.value}</span>
-            <StatusBadge label={`${band.label} · ${band.status}`} tone={band.tone} />
+            <StatusBadge label={band.status} tone={band.tone} />
           </div>
         ) : (
           <StatusBadge label="Not enough data" tone="neutral" />
@@ -65,13 +64,7 @@ export function EstimatedIssCard({ iss }: { iss: EstimatedIss | null | undefined
         <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
           {iss.basics.map((b) => (
             <li key={b.basic} className="flex items-center gap-2 text-sm">
-              {b.over_threshold ? (
-                <AlertTriangle className="size-4 shrink-0 text-amber-600" aria-hidden />
-              ) : b.assessed ? (
-                <CircleCheck className="size-4 shrink-0 text-emerald-600" aria-hidden />
-              ) : (
-                <Minus className="size-4 shrink-0 text-slate-400" aria-hidden />
-              )}
+              <BasicIcon basic={b} />
               <span className="text-slate-800">{b.label}</span>
               <span className="ml-auto text-xs text-slate-500">
                 {!b.assessed
@@ -86,9 +79,27 @@ export function EstimatedIssCard({ iss }: { iss: EstimatedIss | null | undefined
       )}
 
       <p className="mt-3 text-xs text-slate-500">
-        Follows FMCSA’s published ISS and SMS methods. Crash history is not included yet. Based on
-        FMCSA data for {monthLabel(iss.data_month)} · {iss.version}
+        Follows FMCSA’s published ISS and SMS methods. Based on FMCSA data for{' '}
+        {monthLabel(iss.data_month)} · {iss.version}
       </p>
     </div>
+  )
+}
+
+type Basic = EstimatedIss['basics'][number]
+
+/** Over the threshold: warning. Within 15 points under it: close to it. Further under: a tick. */
+function BasicIcon({ basic: b }: { basic: Basic }) {
+  if (b.over_threshold) {
+    return <AlertTriangle className="size-4 shrink-0 text-amber-600" aria-label="Over threshold" />
+  }
+  if (!b.assessed) return <Minus className="size-4 shrink-0 text-slate-400" aria-hidden />
+  if (b.percentile !== null && b.percentile >= b.threshold - NEAR_THRESHOLD_POINTS) {
+    return (
+      <CircleAlert className="size-4 shrink-0 text-yellow-500" aria-label="Close to threshold" />
+    )
+  }
+  return (
+    <CircleCheck className="size-4 shrink-0 text-emerald-600" aria-label="Well under threshold" />
   )
 }
