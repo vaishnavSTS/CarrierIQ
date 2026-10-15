@@ -7,7 +7,7 @@ import { CarrierSearchResults } from '../features/carrier-search/CarrierSearchRe
 import { useBrokerOverview, useMe } from '../hooks/useAuth'
 import { useCarrierSearch } from '../hooks/useCarrierSearch'
 import type { SearchKind } from '../types/carrier'
-import { formatDate } from '../utils/format'
+import { formatLocalDate } from '../utils/format'
 
 const KIND_LABEL: Record<SearchKind, string> = {
   usdot: 'USDOT number',
@@ -50,7 +50,7 @@ export function BrokerHomePage() {
             )}
             {brokerage.authority_checked_at && (
               <span className="text-slate-500">
-                · checked {formatDate(brokerage.authority_checked_at)}
+                · checked {formatLocalDate(brokerage.authority_checked_at)}
               </span>
             )}
           </p>
