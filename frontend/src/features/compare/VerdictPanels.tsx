@@ -169,6 +169,7 @@ export function HowWeDecide() {
       items: [
         'Conditional FMCSA safety rating (the Supreme Court’s 2026 Montgomery case turned on one)',
         'Over threshold in Unsafe Driving, HOS Compliance or Crash Indicator',
+        'Vehicle or driver out-of-service rate twice the national average or more (3+ inspections)',
         'Estimated ISS 75 or higher (High risk)',
         'Contact details shared with a revoked carrier, or other red broker flags',
         'Authority under 12 months with 10 or more power units (a common fraud sign)',
@@ -189,7 +190,7 @@ export function HowWeDecide() {
         `Fewer than ${THIN_RECORD} inspections in 24 months: a thin record isn’t a clean one`,
         'Estimated ISS 50–74 (At risk)',
         'Over threshold in another safety category (e.g. Vehicle Maintenance)',
-        'Vehicle or driver out-of-service rate above the national average',
+        'Vehicle or driver out-of-service rate above the national average (under twice)',
         'An injury crash in the last 24 months',
         'Registration items to fix (MCS-150, BOC-3, FMCSA registration system), counted once',
       ],

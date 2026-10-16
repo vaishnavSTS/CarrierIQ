@@ -1,5 +1,5 @@
 import type { Tone } from '../../utils/status'
-import { formatMoney } from '../../utils/format'
+import { formatMoney, formatPercent } from '../../utils/format'
 import { brokerFlags } from '../carrier-profile/network/brokerFlags'
 import type { CarrierFacts } from './useComparison'
 
@@ -42,6 +42,8 @@ export const PREFERRED_LIABILITY = 1_000_000
 export const FEDERAL_MIN_LIABILITY = 750_000
 /** Fewer inspections than this in 24 months is too little to judge a carrier on. */
 export const THIN_RECORD = 3
+/** An out-of-service rate this many times the national average is a major caution item. */
+export const OOS_MAJOR_TIMES = 2
 /** The CSA categories behind crash risk (FMCSA threshold 65%; the Montgomery fact pattern). */
 const CRASH_BASICS = new Set(['unsafe_driv', 'hos_driv', 'crash'])
 
@@ -208,27 +210,22 @@ export function vetCarrier(f: CarrierFacts): Vetting | null {
   }
   if (recent) {
     // A rate counts only on enough inspections of its kind: 1 OOS in 1 vehicle check is "100%".
-    const high: string[] = []
-    if (
-      recent.vehicle_inspections >= THIN_RECORD &&
-      recent.vehicle_oos_rate !== null &&
-      recent.vehicle_oos_rate > recent.national_vehicle_oos_rate
-    )
-      high.push('vehicle')
-    if (
-      recent.driver_inspections >= THIN_RECORD &&
-      recent.driver_oos_rate !== null &&
-      recent.driver_oos_rate > recent.national_driver_oos_rate
-    )
-      high.push('driver')
-    if (high.length) {
-      minor.push({
-        key: 'oos-rate',
-        text: `${high.join(' and ')} out-of-service rate above national average`.replace(
-          /^./,
-          (c) => c.toUpperCase(),
-        ),
-      })
+    // Twice the national average or more is major (e.g. every truck inspected was put out of
+    // service); above it, minor.
+    for (const [kind, label] of [
+      ['vehicle', 'Vehicle'],
+      ['driver', 'Driver'],
+    ] as const) {
+      const checked = kind === 'vehicle' ? recent.vehicle_inspections : recent.driver_inspections
+      const failed = kind === 'vehicle' ? recent.vehicle_oos : recent.driver_oos
+      const rate = kind === 'vehicle' ? recent.vehicle_oos_rate : recent.driver_oos_rate
+      const national =
+        kind === 'vehicle' ? recent.national_vehicle_oos_rate : recent.national_driver_oos_rate
+      if (checked < THIN_RECORD || rate === null || rate <= national) continue
+      const times = rate / national
+      const text = `${label} out-of-service rate ${formatPercent(rate)} (${failed} of ${checked} inspections), ${times.toFixed(1)}× the national average`
+      if (times >= OOS_MAJOR_TIMES) major.push({ key: `oos-${kind}`, text })
+      else minor.push({ key: `oos-${kind}`, text })
     }
   }
   const injury = safety.crashes?.recent_injury ?? 0
