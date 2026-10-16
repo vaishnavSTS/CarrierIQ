@@ -1,17 +1,14 @@
-import { Ban, Columns3, Plus, Trophy, X } from 'lucide-react'
+import { Columns3, Plus, Trophy, X } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
 import { ApiError } from '../api/client'
-import {
-  bestOnRow,
-  bestPick,
-  COMPARE_ROWS,
-  type CarrierPick,
-} from '../features/compare/compareRows'
+import { bestOnRow, COMPARE_ROWS } from '../features/compare/compareRows'
 import { MAX_COMPARE, parseUsdots, useCompareList } from '../features/compare/compareContext'
 import { useComparison, type CarrierFacts } from '../features/compare/useComparison'
+import { HowWeDecide, VerdictCard, VerdictSummary } from '../features/compare/VerdictPanels'
+import { rankCarriers, type Ranked } from '../features/compare/vetting'
 import { useCarrierPath, useSearchPath } from '../hooks/usePortalMode'
 
 /**
@@ -42,7 +39,7 @@ export function ComparePage() {
   }
 
   const best = COMPARE_ROWS.map((row) => bestOnRow(row, facts))
-  const picks = bestPick(facts)
+  const ranked = rankCarriers(facts)
 
   return (
     <div className="space-y-6">
@@ -54,7 +51,7 @@ export function ComparePage() {
           </h1>
           <p className="mt-1 text-sm text-slate-600">
             Up to {MAX_COMPARE} carriers side by side, from the same FMCSA records as each profile.
-            The best value on each line is highlighted.
+            Each gets a booking verdict; the best value on each line is highlighted.
           </p>
         </div>
         {usdots.length < MAX_COMPARE && (
@@ -75,7 +72,7 @@ export function ComparePage() {
         </div>
       ) : (
         <>
-          <Summary facts={facts} picks={picks} />
+          <Summary facts={facts} ranked={ranked} />
 
           <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-surface">
             <table className="w-full min-w-[640px] table-fixed text-sm">
@@ -100,7 +97,7 @@ export function ComparePage() {
                     >
                       <CarrierHeading
                         facts={f}
-                        pick={picks?.[i] ?? null}
+                        ranked={ranked?.[i] ?? null}
                         onRemove={() => setList(usdots.filter((u) => u !== f.usdot))}
                       />
                     </motion.th>
@@ -142,6 +139,7 @@ export function ComparePage() {
           </p>
         </>
       )}
+      <HowWeDecide />
     </div>
   )
 }
@@ -161,11 +159,11 @@ function Cell({ facts, value }: { facts: CarrierFacts; value: ReactNode | undefi
 
 function CarrierHeading({
   facts,
-  pick,
+  ranked,
   onRemove,
 }: {
   facts: CarrierFacts
-  pick: CarrierPick | null
+  ranked: Ranked | null
   onRemove: () => void
 }) {
   const carrierPath = useCarrierPath()
@@ -199,53 +197,21 @@ function CarrierHeading({
           <X className="size-4" aria-hidden />
         </button>
       </div>
-      {pick && <PickBadge pick={pick} />}
+      {ranked && <VerdictCard ranked={ranked} />}
     </div>
   )
 }
 
-/** Under each carrier's name: best pick, its place, or the must-pass check it fails. */
-function PickBadge({ pick }: { pick: CarrierPick }) {
-  if (pick.blocked) {
-    return (
-      <div className="rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs">
-        <span className="flex items-center gap-1 font-semibold text-red-700">
-          <Ban className="size-3.5" aria-hidden />
-          Not recommended
-        </span>
-        <span className="block text-red-800">{pick.blocked}</span>
-      </div>
-    )
-  }
-  if (pick.rank === 1) {
-    return (
-      <div className="rounded-md border border-emerald-600/60 bg-emerald-50 px-2 py-1 text-xs">
-        <span className="flex items-center gap-1 font-semibold text-emerald-700">
-          <Trophy className="size-3.5" aria-hidden />
-          Best pick
-        </span>
-        <span className="block text-slate-700">{pick.reason}</span>
-      </div>
-    )
-  }
-  return (
-    <div className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs">
-      <span className="font-semibold text-slate-800">#{pick.rank} choice</span>
-      <span className="block text-slate-600">{pick.reason}</span>
-    </div>
-  )
-}
-
-/** The best pick in one line, why, and what rules the others out; the rule is spelled out below. */
-function Summary({ facts, picks }: { facts: CarrierFacts[]; picks: CarrierPick[] | null }) {
+/** Top of the page: a prompt, a loading note, or the verdict summary. */
+function Summary({ facts, ranked }: { facts: CarrierFacts[]; ranked: Ranked[] | null }) {
   if (facts.length < 2) {
     return (
       <p className="rounded-xl border border-slate-200 bg-surface px-4 py-3 text-sm text-slate-600">
-        Add at least one more carrier to see how they compare.
+        Add at least one more carrier to see which one to give the load to.
       </p>
     )
   }
-  if (!picks) {
+  if (!ranked) {
     return (
       <p
         className="rounded-xl border border-slate-200 bg-surface px-4 py-3 text-sm text-slate-600"
@@ -256,64 +222,7 @@ function Summary({ facts, picks }: { facts: CarrierFacts[]; picks: CarrierPick[]
       </p>
     )
   }
-  const name = (f: CarrierFacts) => f.profile?.legal_name ?? `USDOT ${f.usdot}`
-  const winners = facts.filter((_, i) => picks[i].rank === 1)
-  const blocked = facts.flatMap((f, i) =>
-    picks[i].blocked ? [[f, picks[i].blocked] as const] : [],
-  )
-
-  return (
-    <div className="space-y-2 rounded-xl border border-accent-soft bg-accent-soft/40 px-4 py-3 text-sm text-slate-800">
-      <p className="flex items-start gap-2">
-        <Trophy className="mt-0.5 size-4 shrink-0 text-emerald-700" aria-hidden />
-        {winners.length === 0 ? (
-          <span>
-            <span className="font-semibold">No carrier here passes every must-pass check.</span> Add
-            another carrier, or look into the items below.
-          </span>
-        ) : winners.length === 1 ? (
-          <span>
-            Best pick: <span className="font-semibold">{name(winners[0])}</span>.{' '}
-            {picks[facts.indexOf(winners[0])].reason}
-            {facts.length - blocked.length > 1 ? ', the best of the carriers that pass.' : '.'}
-          </span>
-        ) : (
-          <span>
-            Tied for best pick:{' '}
-            <span className="font-semibold">{winners.map(name).join(' and ')}</span>. They are level
-            on every ranking check; compare the lines below.
-          </span>
-        )}
-      </p>
-      {blocked.map(([f, reason]) => (
-        <p key={f.usdot} className="text-amber-700">
-          {name(f)}: {reason.charAt(0).toLowerCase() + reason.slice(1)}. Check it before booking a
-          load.
-        </p>
-      ))}
-      <details className="text-xs text-slate-600">
-        <summary className="cursor-pointer select-none text-slate-500 hover:text-slate-800">
-          How the best pick is chosen
-        </summary>
-        <ol className="mt-2 list-decimal space-y-1 pl-5">
-          <li>
-            <span className="font-medium text-slate-800">Must pass all:</span> operating authority
-            active, liability insurance on file, no active FMCSA out-of-service order, safety rating
-            not Unsatisfactory.
-          </li>
-          <li>
-            <span className="font-medium text-slate-800">Then ranked by</span> the lowest Estimated
-            ISS; ties go to fewer safety categories over threshold, then fewer broker flags, then
-            the lower vehicle out-of-service rate.
-          </li>
-        </ol>
-        <p className="mt-2">
-          Based on public FMCSA records only. It doesn’t replace your own vetting: rates, lanes,
-          equipment and your history with the carrier still count.
-        </p>
-      </details>
-    </div>
-  )
+  return <VerdictSummary facts={facts} ranked={ranked} />
 }
 
 function AddCarrier({ onAdd, existing }: { onAdd: (usdot: number) => void; existing: number[] }) {

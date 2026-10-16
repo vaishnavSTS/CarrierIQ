@@ -6,6 +6,7 @@ import { INSURANCE_LABEL, insuranceTone, statusTone } from '../../utils/status'
 import { brokerFlags, type BrokerFlag } from '../carrier-profile/network/brokerFlags'
 import { ISS_BAND } from '../carrier-profile/safety/issBand'
 import type { CarrierFacts } from './useComparison'
+import { authorityAge, NEW_AUTHORITY_MONTHS } from './vetting'
 
 /**
  * One line of the comparison. `value` is what the cell shows (undefined while loading);
@@ -24,13 +25,6 @@ export interface CompareRow {
 const muted = (text: string) => <span className="text-slate-400">{text}</span>
 
 const RATING_RANK: Record<string, number> = { SATISFACTORY: 0, CONDITIONAL: 2, UNSATISFACTORY: 3 }
-
-function yearsSince(isoDate: string): string {
-  const months = Math.floor((Date.now() - new Date(`${isoDate}T00:00:00Z`).getTime()) / 2.63e9)
-  if (months < 12) return `${months} month${months === 1 ? '' : 's'}`
-  const years = Math.floor(months / 12)
-  return `${years} year${years === 1 ? '' : 's'}`
-}
 
 /**
  * The broker-check items, led by inactive authority: the profile shows that in its header, not
@@ -290,26 +284,32 @@ export const COMPARE_ROWS: CompareRow[] = [
   },
   {
     key: 'age',
-    label: 'Registered with FMCSA',
-    hint: 'Longer track record is usually safer',
+    label: 'Operating authority age',
+    hint: 'Since FMCSA last granted it · under 6 months is new',
     value: (f) => {
-      if (!f.profile) return undefined
-      const since = f.profile.first_registered_date
-      if (!since) return muted('Unknown')
+      if (!f.authority) return undefined
+      const months = authorityAge(f)
+      const since = f.profile?.first_registered_date
+      if (months === null) {
+        return since ? (
+          <>
+            {muted('No grant on record')}
+            <span className="block text-xs text-slate-500">USDOT since {formatDate(since)}</span>
+          </>
+        ) : (
+          muted('Unknown')
+        )
+      }
       return (
-        <>
-          {yearsSince(since)}
-          <span className="block text-xs text-slate-500">since {formatDate(since)}</span>
-        </>
+        <span className={months < NEW_AUTHORITY_MONTHS ? 'text-amber-700' : ''}>
+          {months < 12 ? `${months} months` : `${Math.floor(months / 12)} years`}
+          {since && (
+            <span className="block text-xs text-slate-500">USDOT since {formatDate(since)}</span>
+          )}
+        </span>
       )
     },
-    score: (f) =>
-      f.profile
-        ? f.profile.first_registered_date
-          ? -new Date(f.profile.first_registered_date).getTime()
-          : null
-        : undefined,
-    // Older date = larger negative timestamp = longer history.
+    score: (f) => (f.authority ? authorityAge(f) : undefined),
     better: 'high',
   },
   {
@@ -350,82 +350,4 @@ export function bestOnRow(row: CompareRow, facts: CarrierFacts[]): number[] {
   const best = row.better === 'high' ? Math.max(...ranked) : Math.min(...ranked)
   if (ranked.every((s) => s === best)) return []
   return scores.flatMap((s, i) => (s === best ? [i] : []))
-}
-
-/** Where one carrier lands in the best-pick rule (see bestPick). */
-export interface CarrierPick {
-  /** 1 = best pick; null when it fails a must-pass check or can't be ranked yet */
-  rank: number | null
-  /** The must-pass check it fails, e.g. "No active operating authority" */
-  blocked: string | null
-  /** Shown under the name: why it ranks where it does */
-  reason: string
-}
-
-function blockedBy(f: CarrierFacts): string | null {
-  const p = f.profile!
-  if (p.authority.status !== 'ACTIVE') {
-    return p.authority.status
-      ? `Operating authority ${p.authority.status.toLowerCase()}`
-      : 'No operating authority'
-  }
-  if (p.insurance.status !== 'ON_FILE') return 'No liability insurance on file'
-  if (flagsOf(f)?.some((flag) => flag.key === 'check-oos' && flag.level === 'alert')) {
-    return 'Active out-of-service order'
-  }
-  if (p.safety.safety_rating === 'UNSATISFACTORY') return 'Unsatisfactory safety rating'
-  return null
-}
-
-/** Lower is better, compared in order: ISS, categories over threshold, broker flags, vehicle OOS. */
-function sortKey(f: CarrierFacts): number[] {
-  const iss = f.safety?.estimated_iss
-  return [
-    iss?.value ?? 101, // no estimate ranks after any estimate
-    iss ? iss.basics.filter((b) => b.over_threshold).length : 99,
-    COMPARE_ROWS.find((r) => r.key === 'flags')!.score!(f) ?? 99,
-    f.profile?.safety.recent?.vehicle_oos_rate ?? 1,
-  ]
-}
-
-function compareKeys(a: number[], b: number[]): number {
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] - b[i]
-  return 0
-}
-
-/**
- * The carrier CarrierIQ's checks favour, by a fixed rule: first every must-pass check (active
- * authority, insurance on file, no active out-of-service order, not rated Unsatisfactory), then,
- * among those that pass, the lowest Estimated ISS; ties go to fewer safety categories over
- * threshold, then fewer broker flags, then the lower vehicle out-of-service rate.
- * Null until every carrier's data has loaded.
- */
-export function bestPick(facts: CarrierFacts[]): CarrierPick[] | null {
-  if (facts.length < 2) return null
-  if (facts.some((f) => !f.profileError && (!f.profile || !f.safety || !f.network))) return null
-  const eligible = facts
-    .map((f, i) => ({ f, i, key: sortKey(f) }))
-    .filter(({ f }) => f.profile && blockedBy(f) === null)
-    .sort((a, b) => compareKeys(a.key, b.key))
-  const picks: CarrierPick[] = facts.map((f) => ({
-    rank: null,
-    blocked: f.profile ? blockedBy(f) : 'Couldn’t load this carrier',
-    reason: '',
-  }))
-  eligible.forEach(({ f, i, key }, n) => {
-    // Carriers equal on every key share a rank.
-    const rank =
-      n > 0 && compareKeys(eligible[n - 1].key, key) === 0 ? picks[eligible[n - 1].i].rank! : n + 1
-    const iss = f.safety?.estimated_iss
-    const band = iss?.band ? ISS_BAND[iss.band].status : null
-    picks[i] = {
-      rank,
-      blocked: null,
-      reason:
-        iss?.value != null
-          ? `Passes every must-pass check · Estimated ISS ${iss.value}${band ? ` (${band})` : ''}`
-          : 'Passes every must-pass check · not enough data for an Estimated ISS',
-    }
-  })
-  return picks
 }
