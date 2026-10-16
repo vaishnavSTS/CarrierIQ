@@ -4,6 +4,8 @@ import { StatusBadge } from '../../components/StatusBadge'
 import { useCarrierPath, useIsClientPortal } from '../../hooks/usePortalMode'
 import type { CarrierSearchResult } from '../../types/carrier'
 import { formatDateTime } from '../../utils/format'
+import { CompareButton } from '../compare/CompareButton'
+import { useCompareList } from '../compare/compareContext'
 import { reviewLabel } from '../../utils/review'
 import { INSURANCE_LABEL, insuranceTone, severityTone, statusTone } from '../../utils/status'
 
@@ -29,6 +31,8 @@ export function CarrierSearchResults({ results }: { results: CarrierSearchResult
   const carrierPath = useCarrierPath()
   // STS review status is internal; the broker portal's search answers without it.
   const showReview = !useIsClientPortal()
+  // Broker portal only: pick carriers for the Compare page.
+  const showCompare = useCompareList() !== null
 
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200 bg-surface">
@@ -45,6 +49,7 @@ export function CarrierSearchResults({ results }: { results: CarrierSearchResult
             <th className="px-3 py-2">Location</th>
             {showReview && <th className="px-3 py-2">Review status</th>}
             <th className="px-3 py-2">Last updated</th>
+            {showCompare && <th className="px-3 py-2">Compare</th>}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -132,6 +137,11 @@ export function CarrierSearchResults({ results }: { results: CarrierSearchResult
                   </span>
                 )}
               </td>
+              {showCompare && (
+                <td className="px-3 py-2">
+                  <CompareButton usdotNumber={r.usdot_number} size="sm" />
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

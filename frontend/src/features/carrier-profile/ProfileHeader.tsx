@@ -9,6 +9,7 @@ import { reviewLabel } from '../../utils/review'
 import { HeaderCard } from './HeaderCard'
 import { LinkedHeadsUp } from './network/LinkedHeadsUp'
 import { RefreshButton } from './RefreshButton'
+import { CompareButton } from '../compare/CompareButton'
 import { INSURANCE_LABEL, insuranceTone, severityTone, statusTone } from '../../utils/status'
 
 export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
@@ -30,6 +31,9 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
           </p>
         </div>
         <div className="text-right text-xs text-slate-500">
+          <div className="mb-2 flex justify-end empty:hidden">
+            <CompareButton usdotNumber={profile.usdot_number} />
+          </div>
           Data refreshed {formatDateTime(profile.last_refreshed_at)}
           {!client && <RefreshButton usdotNumber={profile.usdot_number} />}
           {profile.stale && (
