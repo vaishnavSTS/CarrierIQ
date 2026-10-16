@@ -1,10 +1,15 @@
-import { Columns3, Plus, Trophy, X } from 'lucide-react'
+import { Ban, Columns3, Plus, Trophy, X } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
 import { ApiError } from '../api/client'
-import { bestOnRow, COMPARE_ROWS } from '../features/compare/compareRows'
+import {
+  bestOnRow,
+  bestPick,
+  COMPARE_ROWS,
+  type CarrierPick,
+} from '../features/compare/compareRows'
 import { MAX_COMPARE, parseUsdots, useCompareList } from '../features/compare/compareContext'
 import { useComparison, type CarrierFacts } from '../features/compare/useComparison'
 
@@ -34,7 +39,7 @@ export function ComparePage() {
   }
 
   const best = COMPARE_ROWS.map((row) => bestOnRow(row, facts))
-  const ranked = best.filter((b) => b.length > 0).length
+  const picks = bestPick(facts)
 
   return (
     <div className="space-y-6">
@@ -67,7 +72,7 @@ export function ComparePage() {
         </div>
       ) : (
         <>
-          <Summary facts={facts} best={best} ranked={ranked} />
+          <Summary facts={facts} picks={picks} />
 
           <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-surface">
             <table className="w-full min-w-[640px] table-fixed text-sm">
@@ -92,6 +97,7 @@ export function ComparePage() {
                     >
                       <CarrierHeading
                         facts={f}
+                        pick={picks?.[i] ?? null}
                         onRemove={() => setList(usdots.filter((u) => u !== f.usdot))}
                       />
                     </motion.th>
@@ -150,49 +156,84 @@ function Cell({ facts, value }: { facts: CarrierFacts; value: ReactNode | undefi
   return <div>{value}</div>
 }
 
-function CarrierHeading({ facts, onRemove }: { facts: CarrierFacts; onRemove: () => void }) {
+function CarrierHeading({
+  facts,
+  pick,
+  onRemove,
+}: {
+  facts: CarrierFacts
+  pick: CarrierPick | null
+  onRemove: () => void
+}) {
   const notFound = facts.profileError instanceof ApiError && facts.profileError.status === 404
   return (
-    <div className="flex items-start justify-between gap-2">
-      <div className="min-w-0">
-        {facts.profile ? (
-          <Link
-            to={`/broker/carriers/${facts.usdot}`}
-            className="font-semibold text-slate-900 hover:underline"
-          >
-            {facts.profile.legal_name}
-          </Link>
-        ) : facts.profileError ? (
-          <span className="text-red-700">
-            {notFound ? 'Not found in FMCSA data' : 'Couldn’t load this carrier'}
-          </span>
-        ) : (
-          <span className="text-slate-500">Loading from FMCSA…</span>
-        )}
-        <span className="block font-mono text-xs text-slate-500">USDOT {facts.usdot}</span>
+    <div className="space-y-2">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          {facts.profile ? (
+            <Link
+              to={`/broker/carriers/${facts.usdot}`}
+              className="font-semibold text-slate-900 hover:underline"
+            >
+              {facts.profile.legal_name}
+            </Link>
+          ) : facts.profileError ? (
+            <span className="text-red-700">
+              {notFound ? 'Not found in FMCSA data' : 'Couldn’t load this carrier'}
+            </span>
+          ) : (
+            <span className="text-slate-500">Loading from FMCSA…</span>
+          )}
+          <span className="block font-mono text-xs text-slate-500">USDOT {facts.usdot}</span>
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          aria-label={`Remove USDOT ${facts.usdot} from the comparison`}
+        >
+          <X className="size-4" aria-hidden />
+        </button>
       </div>
-      <button
-        type="button"
-        onClick={onRemove}
-        className="rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-        aria-label={`Remove USDOT ${facts.usdot} from the comparison`}
-      >
-        <X className="size-4" aria-hidden />
-      </button>
+      {pick && <PickBadge pick={pick} />}
     </div>
   )
 }
 
-/** Which carrier comes out ahead on the most ranked lines, in plain words; facts, no verdict. */
-function Summary({
-  facts,
-  best,
-  ranked,
-}: {
-  facts: CarrierFacts[]
-  best: number[][]
-  ranked: number
-}) {
+/** Under each carrier's name: best pick, its place, or the must-pass check it fails. */
+function PickBadge({ pick }: { pick: CarrierPick }) {
+  if (pick.blocked) {
+    return (
+      <div className="rounded-md border border-red-200 bg-red-50 px-2 py-1 text-xs">
+        <span className="flex items-center gap-1 font-semibold text-red-700">
+          <Ban className="size-3.5" aria-hidden />
+          Not recommended
+        </span>
+        <span className="block text-red-800">{pick.blocked}</span>
+      </div>
+    )
+  }
+  if (pick.rank === 1) {
+    return (
+      <div className="rounded-md border border-emerald-600/60 bg-emerald-50 px-2 py-1 text-xs">
+        <span className="flex items-center gap-1 font-semibold text-emerald-700">
+          <Trophy className="size-3.5" aria-hidden />
+          Best pick
+        </span>
+        <span className="block text-slate-700">{pick.reason}</span>
+      </div>
+    )
+  }
+  return (
+    <div className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs">
+      <span className="font-semibold text-slate-800">#{pick.rank} choice</span>
+      <span className="block text-slate-600">{pick.reason}</span>
+    </div>
+  )
+}
+
+/** The best pick in one line, why, and what rules the others out; the rule is spelled out below. */
+function Summary({ facts, picks }: { facts: CarrierFacts[]; picks: CarrierPick[] | null }) {
   if (facts.length < 2) {
     return (
       <p className="rounded-xl border border-slate-200 bg-surface px-4 py-3 text-sm text-slate-600">
@@ -200,8 +241,7 @@ function Summary({
       </p>
     )
   }
-  const loading = facts.some((f) => !f.profileError && (!f.profile || !f.safety || !f.network))
-  if (loading) {
+  if (!picks) {
     return (
       <p
         className="rounded-xl border border-slate-200 bg-surface px-4 py-3 text-sm text-slate-600"
@@ -212,36 +252,62 @@ function Summary({
       </p>
     )
   }
-  const wins = facts.map((_, i) => best.filter((b) => b.includes(i) && b.length === 1).length)
-  const top = Math.max(...wins)
-  const leaders = facts.filter((_, i) => wins[i] === top)
   const name = (f: CarrierFacts) => f.profile?.legal_name ?? `USDOT ${f.usdot}`
-  const warnings = facts.filter((f) => f.profile && f.profile.authority.status !== 'ACTIVE')
+  const winners = facts.filter((_, i) => picks[i].rank === 1)
+  const blocked = facts.flatMap((f, i) =>
+    picks[i].blocked ? [[f, picks[i].blocked] as const] : [],
+  )
 
   return (
     <div className="space-y-2 rounded-xl border border-accent-soft bg-accent-soft/40 px-4 py-3 text-sm text-slate-800">
-      <p>
-        {top === 0 ? (
-          'The carriers are level on every ranked line.'
-        ) : leaders.length === 1 ? (
-          <>
-            <span className="font-semibold">{name(leaders[0])}</span> comes out ahead on {top} of{' '}
-            {ranked} ranked lines.
-          </>
+      <p className="flex items-start gap-2">
+        <Trophy className="mt-0.5 size-4 shrink-0 text-emerald-700" aria-hidden />
+        {winners.length === 0 ? (
+          <span>
+            <span className="font-semibold">No carrier here passes every must-pass check.</span> Add
+            another carrier, or look into the items below.
+          </span>
+        ) : winners.length === 1 ? (
+          <span>
+            Best pick: <span className="font-semibold">{name(winners[0])}</span>.{' '}
+            {picks[facts.indexOf(winners[0])].reason}
+            {facts.length - blocked.length > 1 ? ', the best of the carriers that pass.' : '.'}
+          </span>
         ) : (
-          <>
-            Close: {leaders.map(name).join(' and ')} each come out ahead on {top} of {ranked} ranked
-            lines.
-          </>
+          <span>
+            Tied for best pick:{' '}
+            <span className="font-semibold">{winners.map(name).join(' and ')}</span>. They are level
+            on every ranking check; compare the lines below.
+          </span>
         )}
       </p>
-      {warnings.map((f) => (
+      {blocked.map(([f, reason]) => (
         <p key={f.usdot} className="text-amber-700">
-          {name(f)}’s operating authority is{' '}
-          {f.profile?.authority.status?.toLowerCase() ?? 'not on file'}: check it before booking a
+          {name(f)}: {reason.charAt(0).toLowerCase() + reason.slice(1)}. Check it before booking a
           load.
         </p>
       ))}
+      <details className="text-xs text-slate-600">
+        <summary className="cursor-pointer select-none text-slate-500 hover:text-slate-800">
+          How the best pick is chosen
+        </summary>
+        <ol className="mt-2 list-decimal space-y-1 pl-5">
+          <li>
+            <span className="font-medium text-slate-800">Must pass all:</span> operating authority
+            active, liability insurance on file, no active FMCSA out-of-service order, safety rating
+            not Unsatisfactory.
+          </li>
+          <li>
+            <span className="font-medium text-slate-800">Then ranked by</span> the lowest Estimated
+            ISS; ties go to fewer safety categories over threshold, then fewer broker flags, then
+            the lower vehicle out-of-service rate.
+          </li>
+        </ol>
+        <p className="mt-2">
+          Based on public FMCSA records only. It doesn’t replace your own vetting: rates, lanes,
+          equipment and your history with the carrier still count.
+        </p>
+      </details>
     </div>
   )
 }
