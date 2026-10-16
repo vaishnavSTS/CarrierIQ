@@ -12,9 +12,11 @@ import {
 } from '../features/compare/compareRows'
 import { MAX_COMPARE, parseUsdots, useCompareList } from '../features/compare/compareContext'
 import { useComparison, type CarrierFacts } from '../features/compare/useComparison'
+import { useCarrierPath, useSearchPath } from '../hooks/usePortalMode'
 
 /**
- * Broker portal: up to three carriers side by side (/broker/compare?usdot=1,2,3). The URL holds
+ * Broker and STS portals: up to three carriers side by side (/broker/compare or /compare,
+ * ?usdot=1,2,3). The URL holds
  * the carriers so a comparison can be shared; the best value on each ranked line is highlighted.
  */
 export function ComparePage() {
@@ -24,6 +26,7 @@ export function ComparePage() {
   const usdots = fromUrl.length ? fromUrl : (compare?.usdots ?? [])
   const facts = useComparison(usdots)
   const reduce = useReducedMotion()
+  const searchPath = useSearchPath()
 
   // Keep the selection (bottom bar, Compare buttons) and the URL showing the same carriers.
   const key = usdots.join(',')
@@ -64,7 +67,7 @@ export function ComparePage() {
           <p className="font-medium text-slate-900">No carriers to compare yet</p>
           <p className="mt-1">
             Add a USDOT number above, or{' '}
-            <Link to="/broker" className="font-medium text-accent-strong hover:underline">
+            <Link to={searchPath} className="font-medium text-accent-strong hover:underline">
               search for carriers
             </Link>{' '}
             and press <span className="font-medium">Compare</span> on each one.
@@ -165,6 +168,7 @@ function CarrierHeading({
   pick: CarrierPick | null
   onRemove: () => void
 }) {
+  const carrierPath = useCarrierPath()
   const notFound = facts.profileError instanceof ApiError && facts.profileError.status === 404
   return (
     <div className="space-y-2">
@@ -172,7 +176,7 @@ function CarrierHeading({
         <div className="min-w-0">
           {facts.profile ? (
             <Link
-              to={`/broker/carriers/${facts.usdot}`}
+              to={carrierPath(facts.usdot)}
               className="font-semibold text-slate-900 hover:underline"
             >
               {facts.profile.legal_name}

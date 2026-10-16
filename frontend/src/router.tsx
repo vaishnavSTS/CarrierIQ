@@ -23,7 +23,7 @@ import { SearchPage } from './pages/SearchPage'
 
 /**
  * Public: landing, login, sign-up (clients at /register, brokers at /broker/register).
- * Internal portal (STS staff): dashboard, search, carrier profiles, accounts (STS admins).
+ * Internal portal (STS staff): dashboard, search, compare, carrier profiles, accounts (STS admins).
  * Client portal (STS clients): /portal (their own carriers), /portal/search and
  *   /portal/carriers/:usdot (any carrier).
  * Broker portal (freight brokers): /broker (search), /broker/compare (up to 3 side by side),
@@ -51,6 +51,7 @@ export const router = createBrowserRouter([
         children: [
           { path: 'dashboard', element: <DashboardPage /> },
           { path: 'search', element: <SearchPage /> },
+          { path: 'compare', element: <ComparePage /> },
           { path: 'carriers/:usdot', element: <CarrierProfilePage /> },
           { path: 'accounts', element: <AccountsPage /> },
         ],

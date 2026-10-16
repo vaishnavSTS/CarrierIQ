@@ -1,7 +1,10 @@
-import { LayoutDashboard, Search, UserCheck, type LucideIcon } from 'lucide-react'
+import { Columns3, LayoutDashboard, Search, UserCheck, type LucideIcon } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { NewSignupBanner } from '../../features/accounts/NewSignupBanner'
+import { useCompareList } from '../../features/compare/compareContext'
+import { CompareProvider } from '../../features/compare/CompareProvider'
+import { CompareTray } from '../../features/compare/CompareTray'
 import { useMe } from '../../hooks/useAuth'
 import { useNewAccountCount } from '../../hooks/useAccounts'
 import { BackgroundSpotlight } from './BackgroundSpotlight'
@@ -45,8 +48,21 @@ function NavItem({
   )
 }
 
+function CompareNavItem() {
+  const count = useCompareList()?.usdots.length ?? 0
+  return <NavItem to="/compare" icon={Columns3} label="Compare" badge={count} />
+}
+
 /** Internal portal frame (STS staff). */
 export function AppLayout() {
+  return (
+    <CompareProvider page="/compare">
+      <AppFrame />
+    </CompareProvider>
+  )
+}
+
+function AppFrame() {
   const { data: me } = useMe()
   const newAccounts = useNewAccountCount()
 
@@ -61,6 +77,7 @@ export function AppLayout() {
           <nav className="flex gap-1 text-sm">
             <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
             <NavItem to="/search" icon={Search} label="Search" />
+            <CompareNavItem />
             {me?.role === 'STS_ADMIN' && (
               <NavItem to="/accounts" icon={UserCheck} label="Accounts" badge={newAccounts} />
             )}
@@ -68,10 +85,11 @@ export function AppLayout() {
           <UserMenu />
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-6">
+      <main className="mx-auto max-w-7xl px-4 py-6 pb-24">
         {me?.role === 'STS_ADMIN' && <NewSignupBanner />}
         <Outlet />
       </main>
+      <CompareTray />
     </div>
   )
 }

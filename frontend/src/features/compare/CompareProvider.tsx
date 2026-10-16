@@ -2,27 +2,31 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 
 import { CompareContext, MAX_COMPARE, parseUsdots, type CompareList } from './compareContext'
 
-const STORAGE_KEY = 'carrieriq.compare'
+// One list per portal, so a staff member who also tests the broker portal keeps them apart.
+const storageKey = (page: string) => `carrieriq.compare:${page}`
 
-function load(): number[] {
+function load(page: string): number[] {
   try {
-    return parseUsdots(window.sessionStorage.getItem(STORAGE_KEY))
+    return parseUsdots(window.sessionStorage.getItem(storageKey(page)))
   } catch {
     return []
   }
 }
 
-/** Holds the broker's compare selection for the session (kept across page reloads). */
-export function CompareProvider({ children }: { children: ReactNode }) {
-  const [usdots, setUsdots] = useState<number[]>(load)
+/**
+ * Holds the compare selection for the session (kept across page reloads). `page` is where the
+ * Compare page lives in this portal.
+ */
+export function CompareProvider({ page, children }: { page: string; children: ReactNode }) {
+  const [usdots, setUsdots] = useState<number[]>(() => load(page))
 
   useEffect(() => {
     try {
-      window.sessionStorage.setItem(STORAGE_KEY, usdots.join(','))
+      window.sessionStorage.setItem(storageKey(page), usdots.join(','))
     } catch {
       // Storage blocked (private window): the selection just isn't kept across reloads.
     }
-  }, [usdots])
+  }, [page, usdots])
 
   const toggle = useCallback(
     (usdot: number) =>
@@ -44,6 +48,7 @@ export function CompareProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<CompareList>(
     () => ({
+      page,
       usdots,
       has: (usdot) => usdots.includes(usdot),
       full: usdots.length >= MAX_COMPARE,
@@ -52,7 +57,7 @@ export function CompareProvider({ children }: { children: ReactNode }) {
       replace,
       clear,
     }),
-    [usdots, toggle, remove, replace, clear],
+    [page, usdots, toggle, remove, replace, clear],
   )
   return <CompareContext.Provider value={value}>{children}</CompareContext.Provider>
 }

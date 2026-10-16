@@ -2,7 +2,7 @@ import { Check, Plus } from 'lucide-react'
 
 import { MAX_COMPARE, useCompareList } from './compareContext'
 
-/** "Compare" toggle for one carrier; renders nothing outside the broker portal. */
+/** "Compare" toggle for one carrier; renders nothing in the client portal. */
 export function CompareButton({
   usdotNumber,
   size = 'md',

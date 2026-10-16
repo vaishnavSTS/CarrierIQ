@@ -33,7 +33,7 @@ function CompareNavLink() {
 /** Broker portal frame: search and compare carriers. */
 export function BrokerLayout() {
   return (
-    <CompareProvider>
+    <CompareProvider page="/broker/compare">
       <div className="relative isolate min-h-screen">
         <BackgroundSpotlight />
         <header className="sticky top-0 z-30 border-b border-gray-200 bg-white shadow-sm">

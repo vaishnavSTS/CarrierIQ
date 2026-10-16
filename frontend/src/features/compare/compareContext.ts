@@ -4,6 +4,8 @@ import { createContext, useContext } from 'react'
 export const MAX_COMPARE = 3
 
 export interface CompareList {
+  /** The Compare page in this portal: /compare (STS staff) or /broker/compare */
+  page: string
   usdots: number[]
   has: (usdot: number) => boolean
   full: boolean
@@ -13,7 +15,7 @@ export interface CompareList {
   clear: () => void
 }
 
-/** The broker's compare selection; null outside the broker portal (no compare there). */
+/** The compare selection; null in the client portal (no compare there). */
 export const CompareContext = createContext<CompareList | null>(null)
 
 export function useCompareList(): CompareList | null {
@@ -29,6 +31,6 @@ export function parseUsdots(value: string | null): number[] {
   return [...new Set(numbers)].slice(0, MAX_COMPARE)
 }
 
-export function comparePath(usdots: number[]): string {
-  return usdots.length ? `/broker/compare?usdot=${usdots.join(',')}` : '/broker/compare'
+export function comparePath(page: string, usdots: number[]): string {
+  return usdots.length ? `${page}?usdot=${usdots.join(',')}` : page
 }

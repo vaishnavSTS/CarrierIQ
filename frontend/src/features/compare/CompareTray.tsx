@@ -9,7 +9,7 @@ export function CompareTray() {
   const compare = useCompareList()
   const { pathname } = useLocation()
   const reduce = useReducedMotion()
-  const show = compare !== null && compare.usdots.length > 0 && pathname !== '/broker/compare'
+  const show = compare !== null && compare.usdots.length > 0 && pathname !== compare.page
 
   return (
     <AnimatePresence>
@@ -38,7 +38,7 @@ export function CompareTray() {
               Clear
             </button>
             <Link
-              to={comparePath(compare.usdots)}
+              to={comparePath(compare.page, compare.usdots)}
               className="inline-flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-strong"
             >
               Compare
