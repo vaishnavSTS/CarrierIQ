@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { StatusBadge } from '../../components/StatusBadge'
 import { formatDate, formatMoney, formatPercent } from '../../utils/format'
 import { INSURANCE_LABEL, insuranceTone, statusTone } from '../../utils/status'
-import { brokerFlags } from '../carrier-profile/network/brokerFlags'
+import { brokerFlags, type BrokerFlag } from '../carrier-profile/network/brokerFlags'
 import { ISS_BAND } from '../carrier-profile/safety/issBand'
 import type { CarrierFacts } from './useComparison'
 
@@ -32,10 +32,20 @@ function yearsSince(isoDate: string): string {
   return `${years} year${years === 1 ? '' : 's'}`
 }
 
-function flagsOf(f: CarrierFacts) {
-  return f.network && f.profile
-    ? brokerFlags(f.network, f.profile).filter((flag) => flag.level !== 'info')
-    : undefined
+/**
+ * The broker-check items, led by inactive authority: the profile shows that in its header, not
+ * in the checklist, but side by side it must count, or an inactive carrier can look cleanest.
+ */
+function flagsOf(f: CarrierFacts): Pick<BrokerFlag, 'key' | 'level' | 'title'>[] | undefined {
+  if (!f.network || !f.profile) return undefined
+  const flags = brokerFlags(f.network, f.profile).filter((flag) => flag.level !== 'info')
+  const status = f.profile.authority.status
+  return status && status !== 'ACTIVE'
+    ? [
+        { key: 'authority', level: 'alert', title: `Operating authority ${status.toLowerCase()}` },
+        ...flags,
+      ]
+    : flags
 }
 
 function oosRow(kind: 'vehicle' | 'driver'): CompareRow {

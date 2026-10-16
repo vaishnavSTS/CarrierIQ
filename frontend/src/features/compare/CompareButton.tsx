@@ -30,8 +30,8 @@ export function CompareButton({
         size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-2.5 py-1 text-sm'
       } ${
         selected
-          ? 'border-sky-300 bg-sky-50 text-sky-800'
-          : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:text-slate-900'
+          ? 'border-accent bg-accent-soft text-slate-950'
+          : 'border-slate-300 bg-surface text-slate-700 hover:border-slate-400 hover:text-slate-900'
       }`}
     >
       <Icon className={size === 'sm' ? 'size-3.5' : 'size-4'} aria-hidden />

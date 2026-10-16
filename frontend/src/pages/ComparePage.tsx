@@ -41,7 +41,7 @@ export function ComparePage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-slate-900">
-            <Columns3 className="size-5 text-sky-600" aria-hidden />
+            <Columns3 className="size-5 text-accent-strong" aria-hidden />
             Compare carriers
           </h1>
           <p className="mt-1 text-sm text-slate-600">
@@ -219,7 +219,7 @@ function Summary({
   const warnings = facts.filter((f) => f.profile && f.profile.authority.status !== 'ACTIVE')
 
   return (
-    <div className="space-y-2 rounded-xl border border-sky-200 bg-sky-50/60 px-4 py-3 text-sm text-slate-800">
+    <div className="space-y-2 rounded-xl border border-accent-soft bg-accent-soft/40 px-4 py-3 text-sm text-slate-800">
       <p>
         {top === 0 ? (
           'The carriers are level on every ranked line.'
@@ -236,7 +236,7 @@ function Summary({
         )}
       </p>
       {warnings.map((f) => (
-        <p key={f.usdot} className="text-amber-800">
+        <p key={f.usdot} className="text-amber-700">
           {name(f)}’s operating authority is{' '}
           {f.profile?.authority.status?.toLowerCase() ?? 'not on file'}: check it before booking a
           load.
@@ -275,11 +275,11 @@ function AddCarrier({ onAdd, existing }: { onAdd: (usdot: number) => void; exist
           inputMode="numeric"
           placeholder="USDOT number"
           aria-label="USDOT number to add"
-          className="w-40 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
+          className="w-40 rounded-md border border-slate-300 bg-surface px-3 py-1.5 text-sm placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
         />
         <button
           type="submit"
-          className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700"
+          className="inline-flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-strong"
         >
           <Plus className="size-4" aria-hidden />
           Add
