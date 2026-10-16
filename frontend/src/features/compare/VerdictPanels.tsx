@@ -48,13 +48,19 @@ function Items({
 export function VerdictCard({ ranked }: { ranked: Ranked }) {
   const v = ranked.vetting
   if (!v) return null
-  const best = ranked.rank === 1
+  const first = ranked.rank === 1
+  // Green and a trophy only for a carrier that can be booked; a high-risk carrier that merely
+  // beats the others is "least risky", in amber.
+  const best = first && v.verdict !== 'high_risk'
+  const leastRisky = first && v.verdict === 'high_risk'
   const border =
     v.verdict === 'do_not_book'
       ? 'border-red-200 bg-red-50'
       : best
         ? 'border-emerald-600/60 bg-emerald-50'
-        : 'border-slate-200 bg-slate-50'
+        : leastRisky
+          ? 'border-amber-700/60 bg-amber-50'
+          : 'border-slate-200 bg-slate-50'
   return (
     <div className={`space-y-1.5 rounded-md border px-2 py-1.5 text-xs ${border}`}>
       <div className="flex flex-wrap items-center gap-1.5">
@@ -62,10 +68,11 @@ export function VerdictCard({ ranked }: { ranked: Ranked }) {
         {best && (
           <span className="inline-flex items-center gap-1 font-semibold text-emerald-700">
             <Trophy className="size-3.5" aria-hidden />
-            {v.verdict === 'high_risk' ? 'Least risky' : 'Best pick'}
+            Best pick
           </span>
         )}
-        {ranked.rank !== null && !best && (
+        {leastRisky && <span className="font-semibold text-amber-700">Least risky of these</span>}
+        {ranked.rank !== null && !first && (
           <span className="font-semibold text-slate-700">#{ranked.rank} choice</span>
         )}
       </div>
@@ -89,7 +96,11 @@ export function VerdictSummary({ facts, ranked }: { facts: CarrierFacts[]; ranke
   return (
     <div className="space-y-2 rounded-xl border border-accent-soft bg-accent-soft/40 px-4 py-3 text-sm text-slate-800">
       <p className="flex items-start gap-2">
-        <Trophy className="mt-0.5 size-4 shrink-0 text-emerald-700" aria-hidden />
+        {top && top.verdict !== 'high_risk' ? (
+          <Trophy className="mt-0.5 size-4 shrink-0 text-emerald-700" aria-hidden />
+        ) : (
+          <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-700" aria-hidden />
+        )}
         {!top ? (
           <span>
             <span className="font-semibold">None of these carriers should get the load:</span> each
