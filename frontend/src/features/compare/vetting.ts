@@ -307,7 +307,7 @@ function compareKeys(a: number[], b: number[]): number {
 
 export interface Ranked {
   vetting: Vetting | null
-  /** 1 = best pick among bookable carriers; null for "do not book" or not loaded */
+  /** 1 = best pick; only bookable carriers (ready / review) are ranked, others are null */
   rank: number | null
 }
 
@@ -321,7 +321,8 @@ export function rankCarriers(facts: CarrierFacts[]): Ranked[] | null {
     .map((f, i) => ({ i, v: vettings[i], key: vettings[i] ? rankKey(f, vettings[i]!) : [] }))
     .filter(
       (x): x is { i: number; v: Vetting; key: number[] } =>
-        x.v !== null && x.v.verdict !== 'do_not_book',
+        // High-risk and do-not-book carriers get no place: ranking them would suggest a choice.
+        x.v !== null && (x.v.verdict === 'ready' || x.v.verdict === 'review'),
     )
     .sort((a, b) => compareKeys(a.key, b.key))
   const ranks: (number | null)[] = facts.map(() => null)

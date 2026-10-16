@@ -48,19 +48,13 @@ function Items({
 export function VerdictCard({ ranked }: { ranked: Ranked }) {
   const v = ranked.vetting
   if (!v) return null
-  const first = ranked.rank === 1
-  // Green and a trophy only for a carrier that can be booked; a high-risk carrier that merely
-  // beats the others is "least risky", in amber.
-  const best = first && v.verdict !== 'high_risk'
-  const leastRisky = first && v.verdict === 'high_risk'
+  const best = ranked.rank === 1
   const border =
     v.verdict === 'do_not_book'
       ? 'border-red-200 bg-red-50'
       : best
         ? 'border-emerald-600/60 bg-emerald-50'
-        : leastRisky
-          ? 'border-amber-700/60 bg-amber-50'
-          : 'border-slate-200 bg-slate-50'
+        : 'border-slate-200 bg-slate-50'
   return (
     <div className={`space-y-1.5 rounded-md border px-2 py-1.5 text-xs ${border}`}>
       <div className="flex flex-wrap items-center gap-1.5">
@@ -71,8 +65,7 @@ export function VerdictCard({ ranked }: { ranked: Ranked }) {
             Best pick
           </span>
         )}
-        {leastRisky && <span className="font-semibold text-amber-700">Least risky of these</span>}
-        {ranked.rank !== null && !first && (
+        {ranked.rank !== null && !best && (
           <span className="font-semibold text-slate-700">#{ranked.rank} choice</span>
         )}
       </div>
@@ -96,15 +89,15 @@ export function VerdictSummary({ facts, ranked }: { facts: CarrierFacts[]; ranke
   return (
     <div className="space-y-2 rounded-xl border border-accent-soft bg-accent-soft/40 px-4 py-3 text-sm text-slate-800">
       <p className="flex items-start gap-2">
-        {top && top.verdict !== 'high_risk' ? (
+        {top ? (
           <Trophy className="mt-0.5 size-4 shrink-0 text-emerald-700" aria-hidden />
         ) : (
           <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-700" aria-hidden />
         )}
         {!top ? (
           <span>
-            <span className="font-semibold">None of these carriers should get the load:</span> each
-            fails a hard stop.
+            <span className="font-semibold">No carrier here is ready to book.</span> Each is high
+            risk or fails a hard stop; the items are listed under each name.
           </span>
         ) : best.length > 1 ? (
           <span>
@@ -114,21 +107,13 @@ export function VerdictSummary({ facts, ranked }: { facts: CarrierFacts[]; ranke
           </span>
         ) : (
           <span>
-            {top.verdict === 'high_risk' ? (
-              <>
-                <span className="font-semibold">No carrier here is ready to book.</span> Least
-                risky: <span className="font-semibold">{name(best[0])}</span> (high risk, {cautions}{' '}
-                caution items, listed under its name).
-              </>
-            ) : (
-              <>
-                Best pick: <span className="font-semibold">{name(best[0])}</span>:{' '}
-                {VERDICT[top.verdict].label.toLowerCase()}
-                {cautions
-                  ? `, ${cautions} caution item${cautions === 1 ? '' : 's'} to note (listed under its name).`
-                  : ', no caution items in the public records.'}
-              </>
-            )}
+            <>
+              Best pick: <span className="font-semibold">{name(best[0])}</span>:{' '}
+              {VERDICT[top.verdict].label.toLowerCase()}
+              {cautions
+                ? `, ${cautions} caution item${cautions === 1 ? '' : 's'} to note (listed under its name).`
+                : ', no caution items in the public records.'}
+            </>
           </span>
         )}
       </p>
@@ -233,7 +218,8 @@ export function HowWeDecide() {
         </h2>
         <p className="mt-1 text-sm text-slate-600">
           The same checks brokers run before giving a load, applied in order to FMCSA’s public
-          records. Each carrier gets a verdict; the best verdict is the best pick.
+          records. Each carrier gets a verdict. Only carriers rated Ready to book or Book with
+          review are ranked; the best of them is the best pick.
         </p>
       </div>
 
@@ -260,8 +246,8 @@ export function HowWeDecide() {
       <div className="rounded-xl border border-slate-200 p-4 text-xs text-slate-700">
         <p className="font-semibold text-slate-900">Tie-breakers, in order</p>
         <p className="mt-1">
-          Best verdict → fewer major items → fewer minor items → more strengths → lower Estimated
-          ISS → older authority.
+          Ready to book before Book with review → fewer major items → fewer minor items → more
+          strengths → lower Estimated ISS → older authority.
         </p>
       </div>
 
