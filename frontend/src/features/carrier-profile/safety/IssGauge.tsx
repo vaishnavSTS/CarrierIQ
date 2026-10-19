@@ -8,9 +8,9 @@ const R = 46
 
 /** FMCSA's ISS bands along the dial, left (1) to right (100); the edges sit between values. */
 const SEGMENTS = [
-  { band: 'PASS', from: 0, to: 49.5, stroke: 'stroke-emerald-600' },
-  { band: 'OPTIONAL', from: 49.5, to: 74.5, stroke: 'stroke-amber-600' },
-  { band: 'INSPECT', from: 74.5, to: 100, stroke: 'stroke-red-600' },
+  { band: 'PASS', from: 0, to: 49.5, stroke: 'stroke-emerald-600', fill: 'fill-emerald-600' },
+  { band: 'OPTIONAL', from: 49.5, to: 74.5, stroke: 'stroke-amber-600', fill: 'fill-amber-600' },
+  { band: 'INSPECT', from: 74.5, to: 100, stroke: 'stroke-red-600', fill: 'fill-red-600' },
 ] as const
 
 /** A point on the half circle: 0 at the left end, 100 at the right. */
@@ -27,8 +27,8 @@ function arc(from: number, to: number): string {
 
 /**
  * The Estimated ISS (1–100, lower is better) on a half-circle dial coloured by FMCSA's bands:
- * the carrier's band is drawn solid, the needle points at the value. With too little data the
- * dial is grey with no needle, so no score is implied.
+ * the carrier's band is drawn solid, the needle (in the band's colour) points at the value. With
+ * too little data the dial is grey with no needle, so no score is implied.
  */
 export function IssGauge({
   iss,
@@ -41,6 +41,7 @@ export function IssGauge({
   const value = iss?.value ?? null
   const band = iss?.band ? ISS_BAND[iss.band] : null
   const scored = value !== null && band !== null
+  const active = SEGMENTS.find((s) => s.band === iss?.band)
   const [nx, ny] = scored ? point(Math.min(Math.max(value, 1), 100), R - 12) : [CX, CY]
 
   return (
@@ -74,7 +75,7 @@ export function IssGauge({
         <text x={CX + R} y={CY + 10} textAnchor="middle" className="fill-slate-500 text-[7px]">
           100
         </text>
-        {scored && (
+        {scored && active && (
           <>
             <line
               x1={CX}
@@ -83,9 +84,9 @@ export function IssGauge({
               y2={ny}
               strokeWidth={2.5}
               strokeLinecap="round"
-              className="stroke-slate-900"
+              className={active.stroke}
             />
-            <circle cx={CX} cy={CY} r={3.5} className="fill-slate-900" />
+            <circle cx={CX} cy={CY} r={3.5} className={active.fill} />
           </>
         )}
         <text
