@@ -186,11 +186,11 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
             )}
           </div>
           {iss && (
-            <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-slate-50 px-5 pt-3 pb-4 break-inside-avoid">
-              <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-strong">
+            <div className="flex flex-col items-center break-inside-avoid">
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-strong">
                 Estimated ISS – Safety score
               </div>
-              <IssGauge iss={iss} className="w-56" />
+              <IssGauge iss={iss} className="w-40" />
             </div>
           )}
         </div>

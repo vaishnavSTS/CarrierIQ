@@ -55,7 +55,7 @@ export function EstimatedIssCard({
             </p>
           )}
         </div>
-        <IssGauge iss={iss} className="w-48" />
+        <IssGauge iss={iss} className="w-40" />
       </div>
 
       {iss.basics.length > 0 && iss.algorithm !== 'INSUFFICIENT_DATA' && (
