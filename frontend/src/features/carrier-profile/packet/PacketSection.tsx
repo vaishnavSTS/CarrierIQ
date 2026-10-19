@@ -18,6 +18,7 @@ import {
   sourceLabel,
 } from '../../../utils/format'
 import { ImprovementGuide } from '../safety/ImprovementGuide'
+import { IssGauge } from '../safety/IssGauge'
 import { brokerFlags } from '../network/brokerFlags'
 import { packetItems } from './packetItems'
 
@@ -83,8 +84,8 @@ function yearsSince(value: string | null): number | null {
 
 /**
  * The carrier intelligence packet: one printable page with the overall view of a carrier, built
- * only from what the other tabs already load. It reports what FMCSA's records show and gives no
- * score or verdict of its own.
+ * only from what the other tabs already load. It reports what FMCSA's records show; its one score
+ * is the Estimated ISS from the Safety tab, and it gives no verdict.
  */
 export function PacketSection({ profile }: { profile: CarrierProfile }) {
   const authority = useCarrierAuthority(profile.usdot_number)
@@ -109,6 +110,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
   const recent = profile.safety.recent
   const sms = safetyDetail.data?.sms ?? null
   const crashes = safetyDetail.data?.crashes ?? null
+  const iss = safetyDetail.data?.estimated_iss ?? null
   const { watch, good } = packetItems(profile, auth, net, brokerFlags(net, profile), sms, crashes)
   const physical = profile.addresses.find((a) => a.address_type === 'PHYSICAL')
   const address = physical
@@ -167,18 +169,37 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
       </header>
 
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-          {profile.legal_name}
-        </h1>
-        {profile.dba_name && <p className="text-sm text-slate-600">DBA {profile.dba_name}</p>}
-        <p className="mt-1 text-sm text-slate-500">
-          {[`USDOT ${profile.usdot_number}`, ...dockets, address].filter(Boolean).join(' · ')}
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+              {profile.legal_name}
+            </h1>
+            {profile.dba_name && <p className="text-sm text-slate-600">DBA {profile.dba_name}</p>}
+            <p className="mt-1 text-sm text-slate-500">
+              {[`USDOT ${profile.usdot_number}`, ...dockets, address].filter(Boolean).join(' · ')}
+            </p>
+            {iss && (
+              <p className="mt-3 text-sm text-slate-700">
+                <span className="text-slate-500">Why this score: </span>
+                {iss.reason}.
+              </p>
+            )}
+          </div>
+          {iss && (
+            <div className="flex flex-col items-center rounded-2xl border border-slate-200 bg-slate-50 px-5 pt-3 pb-4 break-inside-avoid">
+              <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-strong">
+                Estimated ISS – Safety score
+              </div>
+              <IssGauge iss={iss} className="w-56" />
+            </div>
+          )}
+        </div>
         <p className="mt-3 border-y border-slate-200 py-2 text-xs text-slate-500">
           Generated {formatLocalDate(generated.toISOString())} from public FMCSA and NHTSA records
           (FMCSA data refreshed {formatLocalDate(profile.last_refreshed_at)}). This packet reports
           what the records show; it is not an FMCSA safety rating and not a recommendation to use or
-          avoid any carrier. CarrierIQ gives no score or verdict of its own.
+          avoid any carrier. The Estimated ISS is CarrierIQ’s estimate from public FMCSA data using
+          FMCSA’s published methods, not FMCSA’s official ISS.
         </p>
       </div>
 

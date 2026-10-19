@@ -193,7 +193,15 @@ body {
     --color-slate-800: #1e293b;
     --color-slate-900: #0f172a;
     --color-slate-950: #020617;
+    --color-emerald-50: #ecfdf5;
+    --color-emerald-600: #059669;
+    --color-emerald-700: #047857;
+    --color-amber-50: #fffbeb;
+    --color-amber-600: #d97706;
     --color-amber-700: #b45309;
+    --color-red-50: #fef2f2;
+    --color-red-200: #fecaca;
+    --color-red-600: #dc2626;
     --color-red-700: #b91c1c;
   }
   @page {
@@ -210,6 +218,9 @@ body {
     visibility: visible;
   }
   #carrier-packet {
+    /* Keep the safety-score dial and badges in colour: browsers drop colours when printing. */
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
     position: absolute;
     inset: 0 0 auto 0;
     border: none;
