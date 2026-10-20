@@ -19,6 +19,7 @@ from app.services.contact_link_service import build_contact_link_service
 from app.services.inspection_ingestion_service import build_inspection_ingestion_service
 from app.services.insurance_ingestion_service import build_insurance_ingestion_service
 from app.services.iss_service import iss_for
+from app.services.qcmobile_service import build_qcmobile_service
 from app.services.registration_orders_service import build_registration_orders_service
 from app.services.shared_vin_service import build_shared_vin_service
 from app.services.signal_service import build_signal_service
@@ -49,6 +50,8 @@ def build_refresh_service(
             build_authority_ingestion_service(db, client),
             # After authority: uses its dockets to look up legacy insurance filings.
             build_insurance_ingestion_service(db, client),
+            # FMCSA QCMobile snapshot (EIN), only with a WebKey; its failures never mark stale.
+            *([build_qcmobile_service(db)] if get_settings().qcmobile_web_key else []),
         ],
         max_age=timedelta(hours=get_settings().carrier_refresh_hours),
         after_refresh=[

@@ -1,7 +1,7 @@
 /** Chameleon check (GET /carriers/{usdot}/chameleon, and the broker equivalent). */
 
 export interface ChameleonShare {
-  /** phone | email | address | building | officer | duns | mailing_address */
+  /** ein | phone | email | address | building | officer | duns | mailing_address */
   kind: string
   value: string | null
   /** A value this carrier used before, not its current one */
@@ -48,6 +48,10 @@ export interface ChameleonCheck {
     sharing_two_or_more: number
     added_within_year_after_shutdown: number
   }
+  /** Whether FMCSA QCMobile gave this carrier's EIN to compare (the number is never sent) */
+  ein_known?: boolean
+  /** Linked carriers whose EIN was known and compared */
+  eins_compared?: number
   links_checked_at: string | null
   orders_checked: boolean
   truncated: boolean

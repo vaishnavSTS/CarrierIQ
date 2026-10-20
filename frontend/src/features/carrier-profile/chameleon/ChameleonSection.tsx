@@ -10,6 +10,7 @@ import { Empty, Field, Section } from '../Section'
 import { cellClass, headClass, tableClass } from '../styles'
 
 const SHARE_LABEL: Record<string, string> = {
+  ein: 'Same EIN',
   duns: 'DUNS number',
   phone: 'Phone',
   email: 'Email',
@@ -25,7 +26,8 @@ function plural(n: number, word: string, many = `${word}s`): string {
 
 function shownValue(share: ChameleonShare): string {
   if (!share.value) return '—'
-  return share.kind === 'phone' ? formatPhone(share.value) : share.value
+  if (share.kind === 'phone') return formatPhone(share.value)
+  return share.value
 }
 
 function year(value: string): string {
@@ -128,11 +130,17 @@ function LinkedTable({ carriers }: { carriers: ChameleonLinked[] }) {
                       <li
                         key={`${s.kind}-${s.past}`}
                         className="rounded-md bg-slate-100 px-1.5 py-0.5 text-xs text-slate-800"
-                        title={shownValue(s)}
+                        title={
+                          s.kind === 'ein' ? 'Same EIN (tax ID) on FMCSA QCMobile' : shownValue(s)
+                        }
                       >
                         {SHARE_LABEL[s.kind] ?? s.kind}
-                        {s.past && <span className="text-slate-500"> (past)</span>}:{' '}
-                        <span className="text-slate-600">{shownValue(s)}</span>
+                        {s.past && <span className="text-slate-500"> (past)</span>}
+                        {s.kind !== 'ein' && (
+                          <>
+                            : <span className="text-slate-600">{shownValue(s)}</span>
+                          </>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -211,7 +219,7 @@ function Check({ check }: { check: ChameleonCheck }) {
       </p>
       {check.note && <p className="mt-2 text-xs text-amber-700">{check.note}</p>}
 
-      <dl className="mt-5 grid gap-4 sm:grid-cols-3">
+      <dl className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="FMCSA prior-revocation link">
           {prior.usdot_number ? (
             <>
@@ -240,6 +248,14 @@ function Check({ check }: { check: ChameleonCheck }) {
             {fleet.over_threshold
               ? `At or above the ${fleet.threshold_percent}% level some vetting tools flag.`
               : `Some vetting tools flag ${fleet.threshold_percent}% or more.`}
+          </span>
+        </Field>
+        <Field label="EIN (tax ID) check">
+          {check.ein_known
+            ? `Compared with ${plural(check.eins_compared ?? 0, 'linked carrier')}`
+            : 'Not available from FMCSA'}
+          <span className="block text-xs text-slate-500">
+            FMCSA QCMobile · the number itself is not shown
           </span>
         </Field>
         <Field label="This USDOT number added">
@@ -296,9 +312,11 @@ function Check({ check }: { check: ChameleonCheck }) {
           USDOT number. Carriers linked by trucks alone are listed from two shared VINs.
         </li>
         <li>
-          Not included: tax ID (EIN), because FMCSA does not publish it, and links FMCSA’s public
-          data does not show.
+          EIN (tax ID): from FMCSA’s QCMobile API. FMCSA offers no search by EIN, so it is compared
+          only with the linked USDOT numbers above (up to 25, strongest first); a match is shown as
+          “Same EIN”.
         </li>
+        <li>Not included: links FMCSA’s public data does not show.</li>
       </ul>
       <div className="mt-3">
         <SourceTag>CarrierSafetyScan checks of public FMCSA records</SourceTag>

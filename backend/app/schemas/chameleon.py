@@ -9,9 +9,11 @@ from pydantic import BaseModel
 
 
 class ChameleonShareOut(BaseModel):
-    # phone | email | address | building | officer | duns | mailing_address
+    # ein | phone | email | address | building | officer | duns | mailing_address
     kind: str
-    value: str | None  # the shared value as FMCSA has it on the other carrier's record
+    # the shared value as FMCSA has it on the other carrier's record; None for an EIN, which
+    # is compared but never returned
+    value: str | None
     past: bool  # the value is one this carrier used before, not its current one
 
 
@@ -62,6 +64,10 @@ class ChameleonOut(BaseModel):
     fleet_overlap: FleetOverlapOut
     linked: list[ChameleonLinkedOut]  # strongest first
     summary: ChameleonSummaryOut
+    # Whether FMCSA QCMobile gave this carrier's EIN, to compare with the linked carriers'
+    # EINs. The number itself is never returned.
+    ein_known: bool = False
+    eins_compared: int = 0  # linked carriers whose EIN was known and compared
     links_checked_at: datetime | None
     orders_checked: bool  # False: FMCSA's order datasets could not be reached this time
     truncated: bool  # more linked carriers than were looked up

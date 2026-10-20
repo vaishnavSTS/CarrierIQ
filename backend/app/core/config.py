@@ -58,6 +58,13 @@ class Settings(BaseSettings):
     vpic_parallel_requests: int = 4
     vpic_timeout_seconds: float = 60.0
 
+    # FMCSA QCMobile API: one carrier's snapshot, including its EIN. Needs a free WebKey from
+    # FMCSA (a secret: set QCMOBILE_WEB_KEY in the environment, never in code). Off when unset.
+    qcmobile_base_url: str = "https://mobile.fmcsa.dot.gov/qc/services"
+    qcmobile_web_key: str | None = None
+    qcmobile_timeout_seconds: float = 20.0
+    qcmobile_parallel_requests: int = 4
+
     # data.transportation.gov dataset IDs (spec Section 19.1: IDs live in configuration).
     census_dataset_id: str = "az4n-8mr2"  # Company Census File
     inspection_dataset_id: str = "fx4q-ay7w"  # Vehicle Inspection File

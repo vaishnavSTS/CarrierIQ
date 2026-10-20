@@ -45,6 +45,7 @@ from app.services.contact_link_service import build_contact_link_service
 from app.services.iss_service import iss_for, iss_history
 from app.services.job_status_service import JobStatusService
 from app.services.network_service import NetworkService
+from app.services.qcmobile_service import build_qcmobile_service
 from app.services.registration_orders_service import build_registration_orders_service
 from app.services.signal_service import build_signal_service
 from app.services.sms_service import crashes_for, drivers_for, sms_for
@@ -219,6 +220,7 @@ def get_chameleon_service(
         build_contact_link_service(db, client),
         RegistrationOrdersAdapter(client),
         EquipmentReader(CarrierRepository(db), VehicleRepository(db), RelationshipRepository(db)),
+        qcmobile=build_qcmobile_service(db) if get_settings().qcmobile_web_key else None,
     )
 
 

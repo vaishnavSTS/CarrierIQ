@@ -12,7 +12,9 @@ address, business record or trucks. This puts those pieces side by side:
   number was added;
 - fleet overlap: of the power units seen on this carrier's inspections in the last 24 months,
   how many VINs were also inspected under another USDOT number (CarrierOK flags 60% or more);
-- FMCSA's own prior-revocation flag from the census.
+- FMCSA's own prior-revocation flag from the census;
+- the EIN: FMCSA QCMobile gives each carrier's EIN (with QCMOBILE_WEB_KEY set). There is no
+  search by EIN, so it confirms links found above rather than finding new ones.
 
 It reports what the records show and never a verdict: fleets under common ownership, family
 businesses, shared registered agents or office suites and dispatch services legitimately share
@@ -64,6 +66,7 @@ from app.services.carrier_equipment_service import RECENT_MONTHS, EquipmentReade
 from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.contact_link_service import CHAMELEON_LINK_TYPES, LINK_TYPE, ContactLinkService
 from app.services.contact_link_service import contact_keys as build_contact_keys
+from app.services.qcmobile_service import QcMobileService, stored_ein, stored_eins
 from app.services.vehicle_observation_service import USDOT
 
 logger = logging.getLogger(__name__)
@@ -73,6 +76,8 @@ MIN_SHARED_VINS = 2  # carriers linked by trucks alone are listed from this many
 FLEET_THRESHOLD_PERCENT = 60  # CarrierOK's flag level for shared power units
 LINK_MAX_AGE = timedelta(hours=24)  # re-check shared details when the last check is older
 WITHIN_DAYS = 365  # "added within a year after a shutdown"
+MAX_EIN_LINKED = 25  # linked carriers whose EIN is compared, strongest first
+MAX_EIN_FETCH = 10  # QCMobile look-ups per request; the rest come from stored snapshots
 
 # Link type -> (kind shown, a former value of this carrier).
 KIND_OF: dict[str, tuple[str, bool]] = {
@@ -92,7 +97,7 @@ MATCH_KIND = {
     for k in (PHONE, EMAIL, ADDRESS, BUILDING, OFFICER, DUNS, MAILING, PAST_PHONE, PAST_ADDRESS)
 }
 # Strongest first: one business record, then contact details, then people, then the building.
-STRENGTH = ["duns", "phone", "email", "address", "mailing_address", "officer", "building"]
+STRENGTH = ["ein", "duns", "phone", "email", "address", "mailing_address", "officer", "building"]
 
 
 @dataclass
@@ -151,6 +156,22 @@ def orders_for(oos_rows: Sequence[dict[str, Any]], revoke_rows: Sequence[dict[st
         oos_orders=sorted({d for r in oos_rows if (d := yyyymmdd(r, "oos_date")) is not None}),
         active_oos_order=any(str(r.get("status", "")).upper() == "ACTIVE" for r in oos_rows),
     )
+
+
+def apply_ein_matches(
+    own_ein: str | None, linked: Sequence[Linked], eins: dict[int, str | None]
+) -> int:
+    """Add a "same EIN" share to each linked carrier with this carrier's EIN; returns how many."""
+    if not own_ein:
+        return 0
+    matched = 0
+    for other in linked:
+        if eins.get(other.usdot_number) == own_ein and not any(
+            s.kind == "ein" for s in other.shares
+        ):
+            other.shares.append(ChameleonShareOut(kind="ein", value=None, past=False))
+            matched += 1
+    return matched
 
 
 def days_after(registered: date | None, shutdown: date | None) -> int | None:
@@ -213,6 +234,7 @@ class ChameleonService:
         equipment: EquipmentReader,
         today: Callable[[], date] = lambda: datetime.now(UTC).date(),
         now: Callable[[], datetime] = lambda: datetime.now(UTC),
+        qcmobile: QcMobileService | None = None,
     ) -> None:
         self.db = db
         self.refresh = refresh
@@ -221,6 +243,7 @@ class ChameleonService:
         self.equipment = equipment
         self.today = today
         self.now = now
+        self.qcmobile = qcmobile
         self.observed = ObservedValueRepository(db)
         self.relationships = RelationshipRepository(db)
         self.raw_records = RawRecordRepository(db)
@@ -285,6 +308,7 @@ class ChameleonService:
                 "FMCSA's revocation and out-of-service order data could not be reached just now, "
                 "so shutdown dates are missing. Try again later."
             )
+        own_ein, compared = self._compare_eins(usdot_number, candidates, notes)
         names = self.carriers.legal_names(o.usdot_number for o in candidates if not o.payload)
         registered = carrier.first_registered_date
 
@@ -297,6 +321,8 @@ class ChameleonService:
             fleet_overlap=fleet_overlap(equipment.vehicles, self.today()),
             linked=rows,
             summary=summarize(rows),
+            ein_known=own_ein is not None,
+            eins_compared=compared,
             links_checked_at=checked_at,
             orders_checked=orders_checked,
             truncated=truncated,
@@ -319,6 +345,30 @@ class ChameleonService:
                     "last check."
                 )
         return checked
+
+    def _compare_eins(
+        self, usdot_number: int, candidates: Sequence[Linked], notes: list[str]
+    ) -> tuple[str | None, int]:
+        """Add a "same EIN" share to linked carriers whose EIN equals this carrier's; returns this
+        carrier's EIN and how many linked EINs were compared."""
+        own = stored_ein(self.db, usdot_number)[0]
+        if own is None and self.qcmobile is not None and self.qcmobile.enabled:
+            own = self.qcmobile.ingest(usdot_number)
+        if own is None:
+            return None, 0
+        targets = [o.usdot_number for o in candidates[:MAX_EIN_LINKED]]
+        eins = stored_eins(self.db, targets)
+        missing = [n for n in targets if n not in eins]
+        if missing and self.qcmobile is not None and self.qcmobile.enabled:
+            fetched, failed = self.qcmobile.fetch_many(missing[:MAX_EIN_FETCH])
+            eins.update(fetched)
+            if failed:
+                notes.append(
+                    f"EINs of {len(failed)} linked carrier(s) could not be fetched from FMCSA just "
+                    "now."
+                )
+        apply_ein_matches(own, candidates, eins)
+        return own, sum(1 for n in targets if eins.get(n))
 
     def _orders(self, usdot_numbers: list[int]) -> tuple[dict[int, Orders], bool]:
         if not usdot_numbers:

@@ -31,6 +31,8 @@ services:
         sync: false # Supabase session-pooler URL, as in backend/.env
       - key: SOCRATA_APP_TOKEN
         sync: false
+      - key: QCMOBILE_WEB_KEY
+        sync: false # FMCSA QCMobile WebKey: carriers' EIN (Identity, Chameleon check)
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET
