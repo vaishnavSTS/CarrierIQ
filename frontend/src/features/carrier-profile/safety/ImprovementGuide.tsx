@@ -2,45 +2,10 @@ import type { OosWindow } from '../../../types/carrierProfile'
 import type { BasicDriver } from '../../../types/carrierSafety'
 import { Disclosure } from '../../../components/Disclosure'
 import { formatDate, formatPercent } from '../../../utils/format'
-import { BASIC_TIPS, DATAQS_URL, groupTip } from './improvementTips'
+import { BASIC_TIPS, DATAQS_URL, groupTip, improvementSummary } from './improvementTips'
 
 const TOP_BASICS = 3
 const TOP_GROUPS = 3
-
-/**
- * Two sentences: which violations weigh most in the CSA measures (FMCSA's own weights), and what
- * reducing them would change. It says the measures, not the rating: a rating changes only after
- * an FMCSA review.
- */
-function improvementSummary(
-  drivers: BasicDriver[] | null,
-  recent: OosWindow | null,
-): string | null {
-  if (drivers === null) return null
-  if (drivers.length === 0) {
-    return 'No violations count against this carrier in the last 24 months. Clean inspections keep the CSA measures low.'
-  }
-  const picks = drivers
-    .flatMap((b) => b.groups.slice(0, 2).map((g) => ({ basic: b.basic, group: g })))
-    .sort((a, b) => b.group.weight - a.group.weight)
-  // The heaviest group of the heaviest BASIC, then the heaviest from another BASIC if any.
-  const first = { basic: drivers[0].basic, group: drivers[0].groups[0] }
-  const second =
-    picks.find((p) => p.basic !== first.basic) ?? picks.find((p) => p.group !== first.group)
-  const named = [first, second]
-    .filter((p): p is NonNullable<typeof p> => Boolean(p?.group))
-    .map((p) => `${p.group.group.toLowerCase()} (${formatPercent(p.group.share)} of ${p.basic})`)
-  const oos =
-    recent &&
-    recent.vehicle_oos_rate !== null &&
-    recent.vehicle_oos_rate > recent.national_vehicle_oos_rate
-      ? `, and bring the vehicle out-of-service rate (${formatPercent(recent.vehicle_oos_rate)}) closer to the national average (${formatPercent(recent.national_vehicle_oos_rate)})`
-      : ''
-  return (
-    `Most of the weight in the CSA measures comes from ${named.join(' and ')} violations. ` +
-    `Fewer of these, and more clean inspections, would lower the measures the most${oos}.`
-  )
-}
 
 function RatingNote({ rating, date }: { rating: string | null; date: string | null }) {
   if (!rating) {

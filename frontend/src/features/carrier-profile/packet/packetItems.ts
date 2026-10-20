@@ -1,14 +1,28 @@
 import type { CarrierAuthority } from '../../../types/carrierAuthority'
-import type { CrashSummary, Sms } from '../../../types/carrierSafety'
+import type { CrashSummary, EstimatedIss, Sms } from '../../../types/carrierSafety'
 import type { CarrierProfile } from '../../../types/carrierProfile'
 import type { CarrierNetwork } from '../../../types/network'
 import { formatDate, formatMoney, formatPercent, humanize } from '../../../utils/format'
 import type { BrokerFlag } from '../network/brokerFlags'
+import { BASIC_TIPS } from '../safety/improvementTips'
+import { NEAR_THRESHOLD_POINTS } from '../safety/issBand'
+import { basicKey, ordinal } from './basicTiles'
 
 export interface PacketItem {
   key: string
   title: string
   detail: string | null
+  /** What usually resolves it: a suggestion, never a promised result */
+  fix?: string | null
+}
+
+export interface PacketLists {
+  /** Red: what raises the Estimated ISS or what a broker's check is likely to stop on */
+  hurting: PacketItem[]
+  /** Amber: worth watching before it becomes a problem */
+  watch: PacketItem[]
+  /** Green: what FMCSA's records show in order */
+  good: PacketItem[]
 }
 
 /** The first sentence of a check's explanation; the full text is on the Network tab. */
@@ -17,9 +31,26 @@ export function firstSentence(text: string): string {
   return end === -1 ? text : text.slice(0, end + 1)
 }
 
+/** Fewer inspections than this and an out-of-service rate is shown as a watch item only. */
+const FEW_INSPECTIONS = 5
+
+const OOS_FIX = {
+  vehicle:
+    'Pre-trip and post-trip inspections with written reports, and fixing brakes, tires and lights before a truck is dispatched (49 CFR 396.11, 396.13).',
+  driver:
+    'Checking logs, medical certificates and licences before dispatch, so a driver is never stopped for hours, fitness or paperwork (Parts 391, 395).',
+}
+
+/** The improvement tip for a BASIC, whatever name the FMCSA file gives it. */
+function basicTip(name: string): string | null {
+  const key = basicKey(name)
+  const label = Object.keys(BASIC_TIPS).find((l) => basicKey(l) === key)
+  return label ? BASIC_TIPS[label] : null
+}
+
 /**
- * The packet's two lists, from the same checks as the other tabs: what a broker's check may
- * flag, and what FMCSA's records show in order. Every item names its record; none is a verdict.
+ * The packet's three lists, from the same checks as the other tabs. Every item names its record;
+ * none is a verdict on the carrier.
  */
 export function packetItems(
   profile: CarrierProfile,
@@ -28,12 +59,45 @@ export function packetItems(
   flags: BrokerFlag[],
   sms: Sms | null = null,
   crashes: CrashSummary | null = null,
-): { watch: PacketItem[]; good: PacketItem[] } {
-  const watch: PacketItem[] = flags
-    .filter((f) => f.level === 'alert' || f.level === 'attention')
-    .map((f) => ({ key: f.key, title: f.title, detail: firstSentence(f.why) }))
+  iss: EstimatedIss | null = null,
+): PacketLists {
+  const hurting: PacketItem[] = []
+  const watch: PacketItem[] = []
   const good: PacketItem[] = []
-  let safetyAt = 0
+
+  // Safety first: it is what a broker looks at first.
+  const flagged = new Set<string>()
+  for (const b of iss?.basics ?? []) {
+    const tip = basicTip(b.label)
+    if (b.over_threshold) {
+      flagged.add(b.basic)
+      hurting.push({
+        key: `basic-${b.basic}`,
+        title: `${b.label} over FMCSA’s intervention threshold`,
+        detail: `${b.percentile !== null ? `Estimated ${ordinal(b.percentile)} percentile; ` : ''}FMCSA’s threshold is ${b.threshold}. This BASIC raises the Estimated ISS the most.`,
+        fix: tip,
+      })
+    } else if (b.percentile !== null && b.percentile >= b.threshold - NEAR_THRESHOLD_POINTS) {
+      flagged.add(b.basic)
+      watch.push({
+        key: `basic-${b.basic}`,
+        title: `${b.label} close to FMCSA’s threshold`,
+        detail: `Estimated ${ordinal(b.percentile)} percentile; FMCSA’s threshold is ${b.threshold}.`,
+        fix: tip,
+      })
+    }
+  }
+  for (const b of sms?.basics ?? []) {
+    if (flagged.has(b.key) || !(b.alert || b.acute_critical)) continue
+    hurting.push({
+      key: `basic-${b.key}`,
+      title: `${b.label}: ${b.alert ? 'FMCSA alert' : 'acute / critical violation'}`,
+      detail: b.alert
+        ? `FMCSA’s SMS shows an alert for this BASIC${b.percentile !== null ? ` (${ordinal(b.percentile)} percentile)` : ''}.`
+        : 'FMCSA’s SMS records an acute or critical violation found in an investigation in the last 12 months.',
+      fix: basicTip(b.label),
+    })
+  }
 
   const recent = profile.safety.recent
   if (recent) {
@@ -55,37 +119,45 @@ export function packetItems(
     ] as const) {
       if (rate === null) continue
       const figures = `${oos} of ${base} inspections that examined the ${unit} (${formatPercent(rate)}) in the last ${recent.months} months; FMCSA’s national average is ${formatPercent(national)}.`
-      const item = {
-        key: `${unit}-oos`,
-        title:
-          rate > national
-            ? `${humanize(unit)} out-of-service rate above the national average`
-            : `${humanize(unit)} out-of-service rate at or below the national average`,
-        detail: base < 5 ? `${figures} Based on few inspections.` : figures,
+      if (rate > national) {
+        const item = {
+          key: `${unit}-oos`,
+          title: `${humanize(unit)} out-of-service rate above the national average`,
+          detail: base < FEW_INSPECTIONS ? `${figures} Based on few inspections.` : figures,
+          fix: OOS_FIX[unit],
+        }
+        if (base < FEW_INSPECTIONS) watch.push(item)
+        else hurting.push(item)
+      } else {
+        good.push({
+          key: `${unit}-oos`,
+          title: `${humanize(unit)} out-of-service rate at or below the national average`,
+          detail: figures,
+        })
       }
-      // Safety first in the attention list: it is what a broker looks at first.
-      if (rate > national) watch.splice(safetyAt++, 0, item)
-      else good.push(item)
     }
   }
 
-  for (const b of sms?.basics ?? []) {
-    if (b.alert || b.acute_critical) {
-      watch.splice(safetyAt++, 0, {
-        key: `basic-${b.key}`,
-        title: `${b.label}: ${b.alert ? 'FMCSA alert' : 'acute / critical violation'}`,
-        detail: b.alert
-          ? `FMCSA's SMS shows an alert for this BASIC${b.percentile !== null ? ` (${b.percentile}th percentile)` : ''}.`
-          : 'FMCSA’s SMS records an acute or critical violation found in an investigation in the last 12 months.',
-      })
-    }
-  }
   if (crashes && crashes.recent_fatal > 0) {
-    watch.splice(safetyAt++, 0, {
+    hurting.push({
       key: 'fatal-crash',
       title: 'Fatal crash in the last 24 months',
       detail: `FMCSA’s Crash File lists ${crashes.recent_fatal} crash${crashes.recent_fatal === 1 ? '' : 'es'} with a fatality in the last ${crashes.recent_months} months; the file does not say who was at fault.`,
+      fix: 'If the crash was not preventable, FMCSA’s Crash Preventability program (through DataQs) can mark it so it no longer counts against the carrier.',
     })
+  } else if (crashes && crashes.recent_total === 0) {
+    good.push({
+      key: 'no-crashes',
+      title: 'No crashes in the last 24 months',
+      detail: 'FMCSA’s Crash File lists none.',
+    })
+  }
+
+  for (const f of flags) {
+    if (f.level === 'info') continue
+    const item = { key: f.key, title: f.title, detail: firstSentence(f.why), fix: f.fix || null }
+    if (f.level === 'alert') hurting.push(item)
+    else watch.push(item)
   }
 
   for (const d of authority.dockets) {
@@ -139,5 +211,5 @@ export function packetItems(
       })
     }
   }
-  return { watch, good }
+  return { hurting, watch, good }
 }

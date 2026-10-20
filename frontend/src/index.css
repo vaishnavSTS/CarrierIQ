@@ -254,6 +254,13 @@ body {
   @page {
     margin: 12mm;
   }
+  /* A slightly smaller type scale so each packet sheet fits one US Letter / A4 page. */
+  html {
+    font-size: 12px;
+  }
+  #carrier-packet .packet-sheet + .packet-sheet {
+    break-before: page;
+  }
   body {
     background: #ffffff;
   }
