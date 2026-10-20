@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import CarrierIQError
+from app.core.exceptions import CarrierSafetyScanError
 from app.intelligence.base_rule import Rule, RuleContext
 from app.intelligence.rules.authority_change import AuthorityChangeRule
 from app.intelligence.rules.fleet_consistency import FleetConsistencyRule
@@ -27,7 +27,7 @@ from app.repositories.timeline_repository import TimelineRepository
 logger = logging.getLogger(__name__)
 
 
-class MissingEvidenceError(CarrierIQError):
+class MissingEvidenceError(CarrierSafetyScanError):
     code = "signal_without_evidence"
 
 

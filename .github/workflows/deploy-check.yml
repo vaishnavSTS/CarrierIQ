@@ -68,12 +68,12 @@ jobs:
           github.event_name == 'workflow_dispatch'
           || github.event.deployment_status.state == 'success'
         run: |
-          curl -fsS --max-time 30 "$APP_URL/" | grep -q "<title>CarrierIQ</title>"
+          curl -fsS --max-time 30 "$APP_URL/" | grep -q "<title>CarrierSafetyScan</title>"
           # Through the /api rewrite: proves the site reaches the backend and the database.
           for attempt in $(seq 1 12); do
             if body=$(curl -fsS --max-time 60 "$APP_URL/api/v1/health"); then
               echo "$body"
-              echo "### ✅ CarrierIQ is ready: $APP_URL" >> "$GITHUB_STEP_SUMMARY"
+              echo "### ✅ CarrierSafetyScan is ready: $APP_URL" >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
             echo "Attempt $attempt: backend waking up, waiting 15 s"

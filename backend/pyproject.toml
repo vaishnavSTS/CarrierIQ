@@ -1,5 +1,5 @@
 [project]
-name = "carrieriq-backend"
+name = "carriersafetyscan-backend"
 version = "0.1.0"
 description = "Carrier Intelligence Platform API"
 requires-python = ">=3.12"

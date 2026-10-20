@@ -13,7 +13,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useState, type ReactNode } from 'react'
 
 /**
- * Landing-page illustration: sample cards of what CarrierIQ shows, as a stack of papers. Every
+ * Landing-page illustration: sample cards of what CarrierSafetyScan shows, as a stack of papers. Every
  * 3 seconds the front card slides up and away and the next one comes forward. Every
  * card is a made-up carrier and labelled SAMPLE; the national OOS averages are FMCSA's published
  * figures. Pauses on hover; holds still for people who prefer reduced motion.
@@ -160,7 +160,7 @@ export function SampleShowcase() {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       aria-roledescription="carousel"
-      aria-label="What CarrierIQ shows, sample cards"
+      aria-label="What CarrierSafetyScan shows, sample cards"
     >
       <div
         aria-hidden

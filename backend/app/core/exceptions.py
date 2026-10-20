@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 logger = logging.getLogger(__name__)
 
 
-class CarrierIQError(Exception):
+class CarrierSafetyScanError(Exception):
     """Base class for all application errors."""
 
     status_code = 500
@@ -19,7 +19,7 @@ class CarrierIQError(Exception):
         self.message = message
 
 
-class NotFoundError(CarrierIQError):
+class NotFoundError(CarrierSafetyScanError):
     status_code = 404
     code = "not_found"
 
@@ -28,19 +28,19 @@ class CarrierNotFoundError(NotFoundError):
     code = "carrier_not_found"
 
 
-class ValidationError(CarrierIQError):
+class ValidationError(CarrierSafetyScanError):
     status_code = 422
     code = "validation_error"
 
 
-class UnauthorizedError(CarrierIQError):
+class UnauthorizedError(CarrierSafetyScanError):
     """Not logged in, or the session has expired."""
 
     status_code = 401
     code = "not_authenticated"
 
 
-class ForbiddenError(CarrierIQError):
+class ForbiddenError(CarrierSafetyScanError):
     """Logged in, but this user may not do this (wrong portal, pending or disabled account)."""
 
     status_code = 403
@@ -55,33 +55,35 @@ class AccountDisabledError(ForbiddenError):
     code = "account_disabled"
 
 
-class ConflictError(CarrierIQError):
+class ConflictError(CarrierSafetyScanError):
     status_code = 409
     code = "conflict"
 
 
-class SourceFetchError(CarrierIQError):
+class SourceFetchError(CarrierSafetyScanError):
     """An external data source (data.transportation.gov, NHTSA, ...) failed or returned bad data."""
 
     status_code = 502
     code = "source_fetch_error"
 
 
-class SourceDataError(CarrierIQError):
+class SourceDataError(CarrierSafetyScanError):
     """A source record was fetched but cannot be normalized (e.g. a required field is missing)."""
 
     status_code = 502
     code = "source_data_error"
 
 
-class DatabaseUnavailableError(CarrierIQError):
+class DatabaseUnavailableError(CarrierSafetyScanError):
     status_code = 503
     code = "database_unavailable"
 
 
 def register_exception_handlers(app: FastAPI) -> None:
-    @app.exception_handler(CarrierIQError)
-    async def handle_carrieriq_error(_: Request, exc: CarrierIQError) -> JSONResponse:
+    @app.exception_handler(CarrierSafetyScanError)
+    async def handle_carrier_safety_scan_error(
+        _: Request, exc: CarrierSafetyScanError
+    ) -> JSONResponse:
         log = logger.error if exc.status_code >= 500 else logger.info
         log("%s: %s", exc.code, exc.message)
         return JSONResponse(

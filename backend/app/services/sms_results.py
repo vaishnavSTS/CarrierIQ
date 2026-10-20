@@ -1,7 +1,7 @@
 """Read FMCSA SMS (CSA) results and crash reports for one carrier. Pure functions.
 
 Every value is FMCSA's own: measures, percentiles (passenger carriers only, as FMCSA publishes
-them), alerts and the acute/critical indicator. CarrierIQ computes no score of its own.
+them), alerts and the acute/critical indicator. CarrierSafetyScan computes no score of its own.
 """
 
 import re

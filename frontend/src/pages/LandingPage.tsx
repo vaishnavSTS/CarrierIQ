@@ -108,8 +108,9 @@ export function LandingPage() {
               {...rise(0.1)}
               className="mx-auto mt-5 max-w-xl text-base text-slate-600 md:text-lg lg:mx-0"
             >
-              CarrierIQ turns public FMCSA data into a clear picture of a carrier’s authority,
-              insurance, safety and registration health, and explains what to do about it.
+              CarrierSafetyScan turns public FMCSA data into a clear picture of a carrier’s
+              authority, insurance, safety and registration health, and explains what to do about
+              it.
             </motion.p>
 
             <motion.div

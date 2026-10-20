@@ -99,7 +99,7 @@ export function DashboardHero({
             icon={Building2}
             label="Carriers"
             value={totals?.carriers}
-            note="FMCSA Company Census, loaded in CarrierIQ"
+            note="FMCSA Company Census, loaded in CarrierSafetyScan"
           />
           <StatTile
             icon={ClipboardCheck}
@@ -117,7 +117,7 @@ export function DashboardHero({
             icon={ShieldAlert}
             label="Open signals"
             value={totals?.open_signals}
-            note="CarrierIQ rules over FMCSA records"
+            note="CarrierSafetyScan rules over FMCSA records"
           />
         </motion.div>
       </motion.div>

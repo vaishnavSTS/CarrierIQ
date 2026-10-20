@@ -1,4 +1,4 @@
-# CarrierIQ Estimated ISS — v1 methodology
+# CarrierSafetyScan Estimated ISS — v1 methodology
 
 **Status:** v2.1 built 2026-10-14 — safety algorithm (v1), FMCSA's insufficient-data rules (v1.1), the Crash Indicator BASIC (v2) and segment-based Unsafe Driving groups (v2.1). Replaces the earlier "Safety Index" points draft.
 **Created:** 2026-10-14
@@ -7,13 +7,13 @@
 The Estimated ISS reproduces FMCSA's **Inspection Selection System (ISS)** value — the 1–100
 inspection priority roadside inspectors see — from public FMCSA data, following FMCSA's own
 published algorithm. It is an **estimate**: FMCSA does not publish ISS values or property
-carriers' BASIC percentiles, so CarrierIQ recomputes both.
+carriers' BASIC percentiles, so CarrierSafetyScan recomputes both.
 
 ---
 
 ## 1. Scale (same direction as FMCSA's ISS)
 
-| Value | FMCSA recommendation | CarrierIQ wording |
+| Value | FMCSA recommendation | CarrierSafetyScan wording |
 |---|---|---|
 | 1–49 | Pass — inspection not warranted | Satisfactory |
 | 50–74 | Optional — next-level priority | At risk |
@@ -32,7 +32,7 @@ Lower is better. 100 means an active out-of-service order.
 | FMCSA *SMS AB PassProperty* (data.transportation.gov `4y6x-dmck`), monthly | BASIC measures, inspection counts, inspections with violations, acute/critical flags for every interstate/HM property carrier (~677,000) | public dataset |
 | FMCSA *SMS Input - Crash* (`4wxs-vbns`), monthly | every crash SMS uses (24 months, ~252,000), with FMCSA's own severity and time weight; crashes found not preventable carry no weight | public dataset |
 | FMCSA *SMS Input - Motor Carrier Census* (`kjg3-diqy`) + Company Census (`az4n-8mr2`) | average power units and recent mileage (utilization factor); fleet by vehicle type (combination / straight segment) | public datasets |
-| FMCSA out-of-service orders (`p2mt-9ige`) | ISS 100 override | already ingested by CarrierIQ |
+| FMCSA out-of-service orders (`p2mt-9ige`) | ISS 100 override | already ingested by CarrierSafetyScan |
 
 ---
 
@@ -209,7 +209,7 @@ Estimates: the three 77s → 77, Kang and Marathon → 63, Sekhon → 74, Mann �
 
 ```
 Estimated ISS (inspection priority)                 54 · Optional
-CarrierIQ estimate from public FMCSA data — not FMCSA's official ISS.
+CarrierSafetyScan estimate from public FMCSA data — not FMCSA's official ISS.
 1–49 Pass · 50–74 Optional · 75–100 Inspect
 
 Why: Unsafe Driving is over FMCSA's intervention threshold
@@ -231,7 +231,7 @@ results, so a past value can always be explained.
 
 ## 7. Wording rules
 
-- Always "**Estimated ISS**" and "CarrierIQ estimate from public FMCSA data — not FMCSA's
+- Always "**Estimated ISS**" and "CarrierSafetyScan estimate from public FMCSA data — not FMCSA's
   official ISS".
 - "Safety score" only together with the name: "Estimated ISS – Safety score" (Safety tab,
   agreed 2026-10-14). Never "rating"; FMCSA's own safety rating (Satisfactory / Conditional /

@@ -95,7 +95,7 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
           )}
         </HeaderCard>
         {!client && (
-          <HeaderCard label="Review status" source="CarrierIQ checks of FMCSA records">
+          <HeaderCard label="Review status" source="CarrierSafetyScan checks of FMCSA records">
             {profile.review_status === 'OPEN_SIGNALS' ? (
               <Link
                 to="?tab=intelligence"

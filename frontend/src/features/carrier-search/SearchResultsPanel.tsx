@@ -16,8 +16,8 @@ export function SearchResultsPanel({ query }: { query: string }) {
     <section className="space-y-4 rounded-2xl border border-slate-200 bg-surface p-5">
       {isFetching && (
         <p className="text-sm text-slate-600" role="status">
-          Searching… a carrier not yet in CarrierIQ is loaded from FMCSA first, which can take a few
-          seconds.
+          Searching… a carrier not yet in CarrierSafetyScan is loaded from FMCSA first, which can
+          take a few seconds.
         </p>
       )}
       {error && !isFetching && (

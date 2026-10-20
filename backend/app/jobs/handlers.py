@@ -7,7 +7,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import CarrierIQError, CarrierNotFoundError
+from app.core.exceptions import CarrierNotFoundError, CarrierSafetyScanError
 from app.ingestion.socrata_client import SocrataClient
 from app.ingestion.vpic import VpicClient
 from app.repositories.carrier_repository import CarrierRepository
@@ -21,7 +21,7 @@ BUILD_ISS_REFERENCE = "build_iss_reference"
 Handler = Callable[[Session, dict[str, Any]], dict[str, Any]]
 
 
-class RefreshIncompleteError(CarrierIQError):
+class RefreshIncompleteError(CarrierSafetyScanError):
     """A source failed, so stored data was kept; the job should be retried."""
 
     code = "refresh_incomplete"

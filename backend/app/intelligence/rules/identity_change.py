@@ -1,10 +1,10 @@
 """Identity change (spec Section 12.4): legal name, DBA, email, addresses, phones, officers and
 web domains that changed in the last two years, with before and after values.
 
-Sources are the census history kept by CarrierIQ: `carrier_attribute_history` for single values,
-and the observed-period tables (addresses, phones, officers, domains) for the rest. The census
-file has no change dates, so the date is the day CarrierIQ first saw the new value. A carrier's
-first load is not a change: only a value that replaced an earlier one is.
+Sources are the census history kept by CarrierSafetyScan: `carrier_attribute_history` for single
+values, and the observed-period tables (addresses, phones, officers, domains) for the rest. The
+census file has no change dates, so the date is the day CarrierSafetyScan first saw the new value.
+A carrier's first load is not a change: only a value that replaced an earlier one is.
 
 Confidence (spec 13.1): HIGH — the census records show both values. Severity: legal name
 MEDIUM; DBA, email, physical address, phone and officers LOW; mailing address and web domain
@@ -112,7 +112,7 @@ class IdentityChangeRule(Rule):
                         title=f"{label} changed",
                         description=(
                             f"{label} changed from {_value(before.value)} to "
-                            f"{_value(after.value)}, first seen by CarrierIQ on "
+                            f"{_value(after.value)}, first seen by CarrierSafetyScan on "
                             f"{day.isoformat()} (the census file does not record when the change "
                             "was made). Based on FMCSA census records."
                         ),
@@ -189,8 +189,9 @@ class IdentityChangeRule(Rule):
                     title=f"{group.label} changed",
                     description=(
                         f"{group.label} changed from {'; '.join(before)} to {'; '.join(after)}, "
-                        f"first seen by CarrierIQ on {changed_on.isoformat()} (the census file "
-                        "does not record when the change was made). Based on FMCSA census records."
+                        f"first seen by CarrierSafetyScan on {changed_on.isoformat()} (the census "
+                        "file does not record when the change was made). Based on FMCSA census "
+                        "records."
                     ),
                     evidence=tuple(
                         [_observed_evidence(r, group, "Before") for r in replaced]

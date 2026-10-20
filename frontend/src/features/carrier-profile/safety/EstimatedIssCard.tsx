@@ -15,7 +15,7 @@ function monthLabel(isoDate: string): string {
 }
 
 /**
- * CarrierIQ's estimate of FMCSA's Inspection Selection System value (docs/estimated-iss-v1.md):
+ * CarrierSafetyScan's estimate of FMCSA's Inspection Selection System value (docs/estimated-iss-v1.md):
  * the band, why, and each BASIC against FMCSA's threshold. Estimated percentiles show for STS
  * staff only; the client portal receives them blank.
  */
@@ -40,8 +40,8 @@ export function EstimatedIssCard({
             Estimated ISS – Safety score · inspection priority
           </div>
           <p className="mt-1 text-xs text-slate-500">
-            CarrierIQ estimate from public FMCSA data — not FMCSA’s official ISS. 1–49 Satisfactory
-            · 50–74 At risk · 75–100 High risk. Lower is better.
+            CarrierSafetyScan estimate from public FMCSA data — not FMCSA’s official ISS. 1–49
+            Satisfactory · 50–74 At risk · 75–100 High risk. Lower is better.
           </p>
           <p className="mt-3 text-sm text-slate-800">
             <span className="text-slate-500">Why: </span>

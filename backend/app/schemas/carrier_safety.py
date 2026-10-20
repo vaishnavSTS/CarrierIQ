@@ -136,7 +136,7 @@ class EstimatedIssBasicOut(BaseModel):
 
 
 class EstimatedIssOut(BaseModel):
-    """CarrierIQ's estimate of FMCSA's ISS value (docs/estimated-iss-v1.md)."""
+    """CarrierSafetyScan's estimate of FMCSA's ISS value (docs/estimated-iss-v1.md)."""
 
     value: int | None  # 1-100, lower is better; None: not enough data
     band: str | None  # INSPECT (75-100) | OPTIONAL (50-74) | PASS (1-49)

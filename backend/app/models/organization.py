@@ -1,5 +1,5 @@
-"""A company that uses CarrierIQ: STS itself (internal portal), an STS client (client portal) or a
-freight brokerage (broker portal).
+"""A company that uses CarrierSafetyScan: STS itself (internal portal), an STS client (client
+portal) or a freight brokerage (broker portal).
 
 Every user belongs to one organization; the organization's kind decides which portal its users
 can reach, and each user's role decides what they can do there.

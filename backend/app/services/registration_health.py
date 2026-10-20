@@ -1,6 +1,6 @@
 """Registration health checks for one carrier (Network & Identity tab, Phase 11).
 
-Each check reports what FMCSA's records show and names the record; CarrierIQ is not the
+Each check reports what FMCSA's records show and names the record; CarrierSafetyScan is not the
 regulator and never states a conclusion of its own (spec Section 14). Where a status depends
 on a rule, the rule is attributed to FMCSA. Statuses:
 - ok: nothing for a broker's check to react to
@@ -135,8 +135,8 @@ def _motus(authorities: Sequence[Authority], carrier: Carrier, frozen: date) -> 
             "Authority and insurance appear only in FMCSA's old L&I system, which stopped "
             f"updating on {_d(frozen)}, and not in Motus, its current system. Brokers' tools "
             "may show them as missing. A common cause: the USDOT number has not been claimed in "
-            "Motus yet (FMCSA Portal, Login.gov check). CarrierIQ cannot confirm the status; "
-            "the FMCSA Portal shows it.",
+            "Motus yet (FMCSA Portal, Login.gov check). CarrierSafetyScan cannot confirm the "
+            "status; the FMCSA Portal shows it.",
             "FMCSA L&I (frozen) / Motus",
             frozen,
         )

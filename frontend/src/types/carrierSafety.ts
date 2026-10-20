@@ -134,7 +134,7 @@ export interface CarrierSafety {
   crashes: CrashSummary | null
   /** null: not fetched yet; heaviest BASIC first */
   drivers: BasicDriver[] | null
-  /** CarrierIQ's estimate of FMCSA's ISS; null: monthly tables or carrier SMS not loaded */
+  /** CarrierSafetyScan's estimate of FMCSA's ISS; null: monthly tables or carrier SMS not loaded */
   estimated_iss?: EstimatedIss | null
   /** Saved Estimated ISS results, newest first */
   iss_history?: IssHistoryEntry[]

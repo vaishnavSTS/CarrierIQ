@@ -108,7 +108,7 @@ export function RelationshipView({
                           USDOT {r.usdot}
                         </Link>
                         <div className="text-xs text-slate-500">
-                          {r.name ?? 'Not loaded in CarrierIQ yet'}
+                          {r.name ?? 'Not loaded in CarrierSafetyScan yet'}
                         </div>
                       </td>
                       <td className={`${cellClass} text-right`}>

@@ -302,7 +302,7 @@ function NetworkBody({
       )}
 
       <SubHeading
-        note="Changes CarrierIQ has seen since it first loaded this carrier, and authority transfers."
+        note="Changes CarrierSafetyScan has seen since it first loaded this carrier, and authority transfers."
         source={SOURCES.identityHistory}
       >
         Identity and ownership history

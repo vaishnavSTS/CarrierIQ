@@ -64,7 +64,7 @@ def test_legacy_only_registration_is_explained_not_alarming() -> None:
     assert motus.status == "attention"
     assert "stopped updating on May 14, 2026" in motus.detail
     assert "has not been claimed in Motus yet" in motus.detail
-    assert "CarrierIQ cannot confirm the status" in motus.detail  # not our verdict
+    assert "CarrierSafetyScan cannot confirm the status" in motus.detail  # not our verdict
     assert checks(authorities=[authority("MOTUS")])["motus"].status == "ok"
 
 

@@ -12,7 +12,7 @@ DEV_AUTH_SECRET_KEY = "local-development-only-key-never-use-in-production"
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    app_name: str = "CarrierIQ API"
+    app_name: str = "CarrierSafetyScan API"
     environment: str = "local"
     log_level: str = "INFO"
 

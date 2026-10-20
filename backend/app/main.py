@@ -27,7 +27,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         return
     stop = threading.Event()
     thread = threading.Thread(
-        target=Worker().run_forever, args=(stop,), name="carrieriq-worker", daemon=True
+        target=Worker().run_forever, args=(stop,), name="carriersafetyscan-worker", daemon=True
     )
     thread.start()
     logger.info("Background worker started inside the API (RUN_WORKER_IN_API=true)")

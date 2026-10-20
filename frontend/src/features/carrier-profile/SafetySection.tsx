@@ -94,13 +94,13 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
           note={
             issBand ? `${issBand.range} of 1–100 · lower is better` : 'FMCSA inspection priority'
           }
-          source="CarrierIQ estimate (FMCSA methods), not FMCSA’s rating"
+          source="CarrierSafetyScan estimate (FMCSA methods), not FMCSA’s rating"
         />
       </div>
 
       {detail.data && (
         <>
-          <SubHeading source="CarrierIQ estimate · FMCSA ISS-CSA and SMS methods · FMCSA SMS national file (monthly)">
+          <SubHeading source="CarrierSafetyScan estimate · FMCSA ISS-CSA and SMS methods · FMCSA SMS national file (monthly)">
             Estimated ISS – Safety score
           </SubHeading>
           <EstimatedIssCard

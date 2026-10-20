@@ -12,19 +12,19 @@ export const SOURCES = {
   renewal: 'Estimated from FMCSA insurance filing start dates',
   inspections: 'FMCSA Vehicle Inspection File',
   vins: 'FMCSA Inspections Per Unit (VINs); NHTSA vPIC decoding',
-  team: 'Your team (entered in CarrierIQ)',
-  checks: 'CarrierIQ checks of FMCSA records',
+  team: 'Your team (entered in CarrierSafetyScan)',
+  checks: 'CarrierSafetyScan checks of FMCSA records',
   registration:
     'FMCSA Company Census, Motus, Out of Service Orders, RevokeSuspend, BOC-3 and insurance filings',
   linked: 'FMCSA Company Census (searched across all carriers)',
   identityHistory: 'FMCSA Company Census changes; FMCSA authority history',
-  signals: 'CarrierIQ rules over FMCSA and NHTSA records',
+  signals: 'CarrierSafetyScan rules over FMCSA and NHTSA records',
 } as const
 
 const SIGNAL_SOURCE: Record<string, string> = {
   AUTHORITY_CHANGE: SOURCES.authorityHistory,
   INSURANCE_CHANGE: SOURCES.insuranceHistory,
-  IDENTITY_CHANGE: 'FMCSA Company Census (changes CarrierIQ has seen)',
+  IDENTITY_CHANGE: 'FMCSA Company Census (changes CarrierSafetyScan has seen)',
   SAFETY_TREND: SOURCES.inspections,
   FLEET_CONSISTENCY: 'FMCSA Company Census (MCS-150) and inspections',
   SHARED_VIN: 'FMCSA Inspections Per Unit (VINs)',

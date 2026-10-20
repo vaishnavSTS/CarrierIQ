@@ -49,7 +49,7 @@ class BasicSpec:
     straight_groups: Sequence[tuple[int, int]] | None = None
 
 
-# Keys match CarrierIQ's sms_results.basic and FMCSA's SMS file column prefixes.
+# Keys match CarrierSafetyScan's sms_results.basic and FMCSA's SMS file column prefixes.
 BASICS: dict[str, BasicSpec] = {
     "unsafe_driv": BasicSpec(
         "Unsafe Driving", "violations", 3, 3,

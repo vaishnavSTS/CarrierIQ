@@ -6,7 +6,7 @@ const KINDS: { kind: BrokerIdKind; label: string }[] = [
 ]
 
 /**
- * The brokerage's MC number (usual) or USDOT number. CarrierIQ checks FMCSA for active broker
+ * The brokerage's MC number (usual) or USDOT number. CarrierSafetyScan checks FMCSA for active broker
  * authority on submit.
  */
 export function BrokerIdField({

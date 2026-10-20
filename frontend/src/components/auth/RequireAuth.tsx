@@ -23,7 +23,7 @@ export function RequireAuth({ portal }: { portal: Portal }) {
   if (isError) {
     return (
       <div className="grid min-h-screen place-items-center text-sm text-slate-500">
-        Can’t reach the CarrierIQ API. Try again in a moment.
+        Can’t reach the CarrierSafetyScan API. Try again in a moment.
       </div>
     )
   }

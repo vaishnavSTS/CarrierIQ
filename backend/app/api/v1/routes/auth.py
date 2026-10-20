@@ -11,7 +11,7 @@ from app.core.config import get_settings
 from app.core.exceptions import (
     AccountDisabledError,
     AccountPendingError,
-    CarrierIQError,
+    CarrierSafetyScanError,
     NotFoundError,
     UnauthorizedError,
 )
@@ -180,7 +180,7 @@ def google_callback(
         return _to_login("pending")
     except AccountDisabledError:
         return _to_login("disabled")
-    except CarrierIQError:
+    except CarrierSafetyScanError:
         return _to_login("failed")
 
     if user is None:

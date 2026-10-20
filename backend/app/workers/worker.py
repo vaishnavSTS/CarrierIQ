@@ -140,7 +140,9 @@ class Worker:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=(__doc__ or "CarrierIQ worker").splitlines()[0])
+    parser = argparse.ArgumentParser(
+        description=(__doc__ or "CarrierSafetyScan worker").splitlines()[0]
+    )
     parser.add_argument("--once", action="store_true", help="run due jobs, then exit")
     parser.add_argument(
         "--schedule", action="store_true", help="queue refreshes of stale carriers, then exit"

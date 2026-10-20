@@ -25,8 +25,8 @@ export function SearchPage() {
 
       {isFetching && (
         <p className="text-sm text-slate-600" role="status">
-          Searching… a carrier not yet in CarrierIQ is loaded from FMCSA first, which can take a few
-          seconds.
+          Searching… a carrier not yet in CarrierSafetyScan is loaded from FMCSA first, which can
+          take a few seconds.
         </p>
       )}
 

@@ -29,7 +29,7 @@ function fromChange(c: Change): Row {
     title: `${humanize(c.attribute)} changed`,
     description: `${c.old_value ?? '(empty)'} → ${c.new_value ?? '(empty)'}`,
     signalId: null,
-    source: 'FMCSA Company Census (changes CarrierIQ has seen)',
+    source: 'FMCSA Company Census (changes CarrierSafetyScan has seen)',
   }
 }
 
@@ -67,8 +67,8 @@ export function TimelineSection({
     >
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs text-slate-500">
-          Authority and insurance events from FMCSA records, plus changes CarrierIQ has recorded
-          since it first loaded this carrier. Newest first.
+          Authority and insurance events from FMCSA records, plus changes CarrierSafetyScan has
+          recorded since it first loaded this carrier. Newest first.
         </p>
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input

@@ -38,7 +38,7 @@ function safeNext(next: string | null, portal: Portal): string {
  * to open. */
 const COPY: Record<Audience, { title: string; subtitle: string }> = {
   client: {
-    title: 'Log in to CarrierIQ',
+    title: 'Log in to CarrierSafetyScan',
     subtitle: 'For STS clients: your carrier’s FMCSA record and what to improve.',
   },
   broker: {
@@ -80,7 +80,7 @@ export function LoginPage({ audience = 'client' }: { audience?: Audience }) {
     login.error instanceof ApiError
       ? login.error.message
       : login.error
-        ? 'Could not reach CarrierIQ. Try again in a moment.'
+        ? 'Could not reach CarrierSafetyScan. Try again in a moment.'
         : (googleNotice ?? null)
 
   return (

@@ -68,8 +68,8 @@ export function BrokerHero({
               </span>
             </h1>
             <p className="mt-2 text-sm text-slate-600">
-              Enter a USDOT number, MC number or carrier name. CarrierIQ pulls the carrier’s FMCSA
-              record and shows what needs a closer look.
+              Enter a USDOT number, MC number or carrier name. CarrierSafetyScan pulls the carrier’s
+              FMCSA record and shows what needs a closer look.
             </p>
           </motion.div>
 

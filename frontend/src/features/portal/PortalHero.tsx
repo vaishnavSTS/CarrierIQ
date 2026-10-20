@@ -36,7 +36,7 @@ const VIEWS: { icon: LucideIcon; label: string }[] = [
 
 /**
  * Client portal opener on the same moving board as the staff dashboard. The board is given no
- * signals, so it shows only its generic "what CarrierIQ checks" cards: STS signals and other
+ * signals, so it shows only its generic "what CarrierSafetyScan checks" cards: STS signals and other
  * carriers never reach a client.
  */
 export function PortalHero({

@@ -76,7 +76,7 @@ export function BrokerGoogleSignupPage() {
     (complete.error instanceof ApiError
       ? complete.error.message
       : complete.error
-        ? 'Could not reach CarrierIQ. Try again in a moment.'
+        ? 'Could not reach CarrierSafetyScan. Try again in a moment.'
         : null)
 
   return (

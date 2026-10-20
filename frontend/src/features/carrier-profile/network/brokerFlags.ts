@@ -5,7 +5,7 @@ export type FlagLevel = 'alert' | 'attention' | 'info'
 
 /**
  * One item a broker's vetting may react to. Every title and explanation says which record it
- * comes from; CarrierIQ reports what the records show and never gives its own verdict.
+ * comes from; CarrierSafetyScan reports what the records show and never gives its own verdict.
  */
 export interface BrokerFlag {
   key: string

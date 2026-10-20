@@ -215,7 +215,7 @@ export function HowWeDecide() {
       <div>
         <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
           <Scale className="size-5 text-accent-strong" aria-hidden />
-          How CarrierIQ decides which carrier to prioritize
+          How CarrierSafetyScan decides which carrier to prioritize
         </h2>
         <p className="mt-1 text-sm text-slate-600">
           The same checks brokers run before giving a load, applied in order to FMCSA’s public

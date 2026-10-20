@@ -1,7 +1,7 @@
 import type { EstimatedIss } from '../../../types/carrierSafety'
 import type { Tone } from '../../../utils/status'
 
-/** CarrierIQ's plain-language status for each of FMCSA's ISS bands, and the values it covers. */
+/** CarrierSafetyScan's plain-language status for each of FMCSA's ISS bands, and the values it covers. */
 export const ISS_BAND: Record<
   NonNullable<EstimatedIss['band']>,
   { status: string; range: string; tone: Tone }

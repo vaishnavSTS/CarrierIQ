@@ -1,6 +1,6 @@
-# CarrierIQ — Client and Internal Portal Plan
+# CarrierSafetyScan — Client and Internal Portal Plan
 
-Working document for turning CarrierIQ into two portals: one for STS internal staff and one for
+Working document for turning CarrierSafetyScan into two portals: one for STS internal staff and one for
 STS clients. Edit freely as decisions are made; record each decision in the log at the bottom.
 
 **Status:** Phase A built (2026-10-13): landing page, login, client sign-up with STS approval, client portal home
@@ -28,7 +28,7 @@ How to improve, Packet) but are written for an internal reader.
 Not two separate apps.
 
 ```
-                    ┌─────────── CarrierIQ (one backend, one DB) ───────────┐
+                    ┌─────────── CarrierSafetyScan (one backend, one DB) ───────────┐
                     │                                                        │
    STS staff ──► Internal portal                     Client portal ◄── Clients
                  • search any carrier                • their own carrier(s)
@@ -105,7 +105,7 @@ Also hidden from clients: Refresh now / jobs, search of other carriers, review a
    Every endpoint needs tests proving client A cannot read client B's data.
 5. **Refresh limits** — "Refresh now" calls FMCSA; restrict or rate-limit for clients.
 6. **Client wording** — "brokers' checks commonly flag", never "you were rejected because";
-   no verdicts or scores (consistent with the rest of CarrierIQ).
+   no verdicts or scores (consistent with the rest of CarrierSafetyScan).
 7. **Hosting** — clients need a real URL: CI/CD pipeline, production frontend build
    (current frontend image runs the Vite dev server), hosting provider.
 

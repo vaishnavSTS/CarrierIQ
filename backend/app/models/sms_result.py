@@ -2,7 +2,7 @@
 
 Values exactly as FMCSA publishes them. Percentile and alerts exist only in the passenger
 files; property carriers have measures and the acute/critical indicator only. A row per month
-builds the carrier's SMS history as CarrierIQ fetches it.
+builds the carrier's SMS history as CarrierSafetyScan fetches it.
 """
 
 from datetime import date

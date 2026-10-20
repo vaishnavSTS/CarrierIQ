@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { CompareContext, MAX_COMPARE, parseUsdots, type CompareList } from './compareContext'
 
 // One list per portal, so a staff member who also tests the broker portal keeps them apart.
-const storageKey = (page: string) => `carrieriq.compare:${page}`
+const storageKey = (page: string) => `carriersafetyscan.compare:${page}`
 
 function load(page: string): number[] {
   try {

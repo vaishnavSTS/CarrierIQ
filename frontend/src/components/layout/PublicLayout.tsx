@@ -45,7 +45,7 @@ export function PublicLayout() {
         <Outlet />
       </main>
       <footer className="border-t border-slate-200 py-6 text-center text-xs text-slate-500">
-        CarrierIQ by STS · Built on public FMCSA and NHTSA data
+        CarrierSafetyScan by STS · Built on public FMCSA and NHTSA data
       </footer>
     </div>
   )

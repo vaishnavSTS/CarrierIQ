@@ -53,7 +53,7 @@ def test_one_shared_vin_signal_per_other_carrier(db: Session, api: FakeDotApi) -
         "1.2",
     )
     assert (isuzu.severity, isuzu.confidence) == (Severity.LOW, Confidence.HIGH)  # 2 inspections
-    assert "not loaded in CarrierIQ" in (isuzu.description or "")
+    assert "not loaded in CarrierSafetyScan" in (isuzu.description or "")
     rows = evidence(db, isuzu)
     assert len(rows) == 2  # where it was seen with USDOT 888, and with this carrier
     assert (

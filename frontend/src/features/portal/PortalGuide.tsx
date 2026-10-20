@@ -18,7 +18,7 @@ export interface GuideItem {
 }
 
 /**
- * Portal home, below the main content: what CarrierIQ shows (cards), how to use it (numbered
+ * Portal home, below the main content: what CarrierSafetyScan shows (cards), how to use it (numbered
  * steps) and a closing note. The broker and client portals fill it with their own wording.
  */
 export function PortalGuide({

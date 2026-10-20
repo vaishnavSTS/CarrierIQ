@@ -48,7 +48,7 @@ const STEPS: GuideItem[] = [
   {
     icon: Search,
     title: 'Search',
-    text: 'USDOT, MC or name. A carrier not yet in CarrierIQ is loaded from FMCSA in a few seconds.',
+    text: 'USDOT, MC or name. A carrier not yet in CarrierSafetyScan is loaded from FMCSA in a few seconds.',
   },
   {
     icon: SearchCheck,
@@ -70,7 +70,7 @@ export function BrokerGuide() {
       featuresIntro="Public FMCSA and NHTSA records, with the source named on every value."
       features={FEATURES}
       steps={STEPS}
-      note="CarrierIQ shows what FMCSA’s public records say and flags what usually needs a closer look. It does not approve or reject carriers: the booking decision stays with you. The Estimated ISS is CarrierIQ’s estimate, not FMCSA’s official score."
+      note="CarrierSafetyScan shows what FMCSA’s public records say and flags what usually needs a closer look. It does not approve or reject carriers: the booking decision stays with you. The Estimated ISS is CarrierSafetyScan’s estimate, not FMCSA’s official score."
     />
   )
 }

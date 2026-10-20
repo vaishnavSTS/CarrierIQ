@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CarrierIQ Architecture</title>
+<title>CarrierSafetyScan Architecture</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -139,9 +139,9 @@
 
 <div class="page">
   <header>
-    <div class="eyebrow">How CarrierIQ works</div>
+    <div class="eyebrow">How CarrierSafetyScan works</div>
     <h1>From public FMCSA records to a reviewable carrier profile</h1>
-    <p class="muted">CarrierIQ pulls a motor carrier’s federal records, keeps every version it sees, and turns changes and patterns into review signals. Each signal shows the exact records behind it. This page shows how the pieces fit together.</p>
+    <p class="muted">CarrierSafetyScan pulls a motor carrier’s federal records, keeps every version it sees, and turns changes and patterns into review signals. Each signal shows the exact records behind it. This page shows how the pieces fit together.</p>
   </header>
 
   <div class="flow-wrap">
@@ -239,8 +239,8 @@
     <div class="eyebrow">Walkthrough</div>
     <h2>What happens when someone looks up a carrier</h2>
     <ol class="steps">
-      <li><div><strong>Search</strong><span>Type a USDOT number, an MC/MX/FF docket or a company name. Carriers not yet in CarrierIQ are looked up live in the FMCSA census.</span></div></li>
-      <li><div><strong>Fetch if needed</strong><span>If the carrier is new, or its data is more than 24 hours old, CarrierIQ fetches its census record, inspections, authority and insurance from FMCSA. If FMCSA is down, it shows the stored data and marks it as stale.</span></div></li>
+      <li><div><strong>Search</strong><span>Type a USDOT number, an MC/MX/FF docket or a company name. Carriers not yet in CarrierSafetyScan are looked up live in the FMCSA census.</span></div></li>
+      <li><div><strong>Fetch if needed</strong><span>If the carrier is new, or its data is more than 24 hours old, CarrierSafetyScan fetches its census record, inspections, authority and insurance from FMCSA. If FMCSA is down, it shows the stored data and marks it as stale.</span></div></li>
       <li><div><strong>Keep the original</strong><span>Every row received is saved untouched before it is cleaned up, and any value that changed is added to the history.</span></div></li>
       <li><div><strong>Decode vehicles</strong><span>New VINs from the inspections are sent to NHTSA once, and their year, make and model are kept.</span></div></li>
       <li><div><strong>Rebuild timeline and signals</strong><span>Authority and insurance events go on the timeline, and the six rules re-run. A signal reviewed earlier keeps its review.</span></div></li>
@@ -278,7 +278,7 @@
     <p class="note">Technology: React, TypeScript and Tailwind in the browser; Python, FastAPI and SQLAlchemy on the server; PostgreSQL on Supabase for storage; Docker for running it all together.</p>
   </section>
 
-  <footer>CarrierIQ · architecture as built through Phase 10 (October 2026).</footer>
+  <footer>CarrierSafetyScan · architecture as built through Phase 10 (October 2026).</footer>
 </div>
 </body>
 </html>

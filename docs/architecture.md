@@ -1,6 +1,6 @@
-# CarrierIQ architecture
+# CarrierSafetyScan architecture
 
-CarrierIQ pulls a motor carrier's public federal records, keeps every version it sees, and turns
+CarrierSafetyScan pulls a motor carrier's public federal records, keeps every version it sees, and turns
 changes and patterns into review signals. Each signal shows the exact records behind it.
 
 The diagrams below are Mermaid flowcharts. They render on GitHub and in VS Code, with the
@@ -79,7 +79,7 @@ What happens when someone searches for a carrier and opens its profile.
 
 ```mermaid
 flowchart TD
-    START(["User searches:<br/>USDOT, MC/MX/FF docket or name"]) --> KNOWN{"Carrier already<br/>in CarrierIQ?"}
+    START(["User searches:<br/>USDOT, MC/MX/FF docket or name"]) --> KNOWN{"Carrier already<br/>in CarrierSafetyScan?"}
     KNOWN -- No --> LIVE["Look it up live in the<br/>FMCSA census"]
     LIVE --> OPEN
     KNOWN -- Yes --> OPEN["User opens the carrier"]

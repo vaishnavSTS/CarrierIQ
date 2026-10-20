@@ -10,7 +10,7 @@ import { formatDateTime } from '../utils/format'
 
 /**
  * Client portal home: each of the organization's carriers as it stands right now (safety score,
- * what a broker's check would flag, registration checks), then what CarrierIQ does for them.
+ * what a broker's check would flag, registration checks), then what CarrierSafetyScan does for them.
  */
 export function PortalHomePage() {
   const { data: user } = useMe()

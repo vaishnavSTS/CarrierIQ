@@ -71,7 +71,7 @@ function ContactCheck({ check }: { check: CarrierContactCheck }) {
   if (check.legal_name === null) {
     return (
       <div className="mt-2 text-xs text-slate-500">
-        USDOT {check.usdot_number} isn’t loaded in CarrierIQ yet.{' '}
+        USDOT {check.usdot_number} isn’t loaded in CarrierSafetyScan yet.{' '}
         <Link to={`/carriers/${check.usdot_number}`} className="text-accent-strong underline">
           Open it
         </Link>{' '}

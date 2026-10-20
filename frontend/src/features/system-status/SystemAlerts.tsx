@@ -20,7 +20,7 @@ export function SystemAlerts() {
       key: 'api',
       tone: 'down',
       icon: CircleAlert,
-      body: 'Can’t reach the CarrierIQ API. Data on this page may be out of date.',
+      body: 'Can’t reach the CarrierSafetyScan API. Data on this page may be out of date.',
     })
   } else if (health.data && health.data.database !== 'ok') {
     alerts.push({

@@ -1,4 +1,4 @@
-# Render Blueprint for the CarrierIQ API (demo setup: free plan, no background worker).
+# Render Blueprint for the CarrierSafetyScan API (demo setup: free plan, no background worker).
 # The frontend is on Vercel and reaches this service through the /api rewrite in
 # frontend/vercel.json, so the session cookie stays on the frontend's domain.
 services:

@@ -141,7 +141,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
   function saveAsPdf() {
     // The browser names the PDF after the page title.
     const title = document.title
-    document.title = `CarrierIQ packet - ${profile.legal_name} - USDOT ${profile.usdot_number}`
+    document.title = `CarrierSafetyScan packet - ${profile.legal_name} - USDOT ${profile.usdot_number}`
     window.print()
     document.title = title
   }
@@ -153,7 +153,9 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
     >
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="text-sm font-semibold tracking-[0.3em] text-slate-900">CARRIERIQ</div>
+          <div className="text-sm font-semibold tracking-[0.3em] text-slate-900">
+            CARRIERSAFETYSCAN
+          </div>
           <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
             Carrier intelligence packet
           </div>
@@ -198,8 +200,8 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
           Generated {formatLocalDate(generated.toISOString())} from public FMCSA and NHTSA records
           (FMCSA data refreshed {formatLocalDate(profile.last_refreshed_at)}). This packet reports
           what the records show; it is not an FMCSA safety rating and not a recommendation to use or
-          avoid any carrier. The Estimated ISS is CarrierIQ’s estimate from public FMCSA data using
-          FMCSA’s published methods, not FMCSA’s official ISS.
+          avoid any carrier. The Estimated ISS is CarrierSafetyScan’s estimate from public FMCSA
+          data using FMCSA’s published methods, not FMCSA’s official ISS.
         </p>
       </div>
 
@@ -210,7 +212,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
         >
           {watch.length === 0 ? (
             <p className="text-sm text-slate-500">
-              Nothing in the checks CarrierIQ runs on FMCSA’s records.
+              Nothing in the checks CarrierSafetyScan runs on FMCSA’s records.
             </p>
           ) : (
             <ul className="list-disc space-y-2 pl-5 text-sm text-slate-700">

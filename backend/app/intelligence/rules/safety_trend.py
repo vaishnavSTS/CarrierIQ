@@ -2,7 +2,7 @@
 months compared with the 12 months before, and inspections stopping.
 
 No outside benchmark is used: the spec allows one only when validated benchmark data is
-available, and CarrierIQ has none yet. A carrier is compared only with itself.
+available, and CarrierSafetyScan has none yet. A carrier is compared only with itself.
 
 - OOS rate rose: both periods have 5+ inspections, and the vehicle (or driver) OOS rate rose by
   10+ percentage points to at least 1.5x the earlier rate. Severity LOW, MEDIUM for 20+ points.
