@@ -33,6 +33,16 @@ class ObservedValueRepository:
             )
         )
 
+    def past(self, model: type[ObservedModel], carrier_id: int) -> list[ObservedModel]:
+        """Values the carrier no longer lists (kept, never deleted: spec Section 20)."""
+        return list(
+            self.db.scalars(
+                select(model)
+                .where(model.carrier_id == carrier_id, model.is_current.is_(False))
+                .order_by(model.id)
+            )
+        )
+
     def sync(
         self,
         model: type[ObservedModel],

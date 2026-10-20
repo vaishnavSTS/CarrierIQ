@@ -17,6 +17,7 @@ from app.api.v1.routes.carriers import (
     get_carrier_profile_service,
     get_carrier_safety_service,
     get_carrier_search_service,
+    get_chameleon_service,
     get_network_service,
 )
 from app.core.config import get_settings
@@ -30,6 +31,7 @@ from app.schemas.carrier_equipment import CarrierEquipmentOut
 from app.schemas.carrier_profile import CarrierProfile
 from app.schemas.carrier_safety import CarrierSafetyOut, InspectionPageOut
 from app.schemas.carrier_search import CarrierSearchResponse
+from app.schemas.chameleon import ChameleonOut
 from app.schemas.network import NetworkOut
 from app.services.auth_service import AuthService
 from app.services.carrier_authority_service import CarrierAuthorityService
@@ -37,6 +39,7 @@ from app.services.carrier_equipment_service import CarrierEquipmentService
 from app.services.carrier_profile_service import CarrierProfileService
 from app.services.carrier_safety_service import CarrierSafetyService
 from app.services.carrier_search_service import CarrierSearchService
+from app.services.chameleon_service import ChameleonService
 from app.services.client_view import client_network, client_profile, client_safety, client_search
 from app.services.network_service import NetworkService
 
@@ -157,3 +160,12 @@ def broker_search(
 
 
 _add_carrier_routes(broker_router, any_carrier)
+
+
+@broker_router.get("/carriers/{usdot_number}/chameleon", response_model=ChameleonOut)
+def broker_chameleon(
+    usdot_number: Annotated[int, Depends(any_carrier)],
+    service: Annotated[ChameleonService, Depends(get_chameleon_service)],
+) -> ChameleonOut:
+    """Chameleon check, for brokers only (clients see their own carrier's Network tab)."""
+    return service.get(usdot_number)

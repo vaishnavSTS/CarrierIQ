@@ -8,6 +8,7 @@ from app.api.v1.routes.jobs import get_job_status_service
 from app.core.config import get_settings
 from app.db.session import get_db
 from app.ingestion.company_census import CompanyCensusAdapter
+from app.ingestion.registration_orders import RegistrationOrdersAdapter
 from app.ingestion.socrata_client import SocrataClient
 from app.ingestion.vpic import VpicClient
 from app.repositories.authority_history_repository import AuthorityHistoryRepository
@@ -27,6 +28,7 @@ from app.schemas.carrier_profile import CarrierProfile
 from app.schemas.carrier_safety import CarrierSafetyOut, InspectionPageOut
 from app.schemas.carrier_search import CarrierSearchResponse
 from app.schemas.carrier_signals import CarrierSignalsOut
+from app.schemas.chameleon import ChameleonOut
 from app.schemas.jobs import RefreshQueuedOut
 from app.schemas.network import IdentityEventIn, IdentityEventOut, NetworkOut
 from app.services.boc3_service import process_agents
@@ -38,6 +40,7 @@ from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.carrier_safety_service import CarrierSafetyService
 from app.services.carrier_search_service import CarrierSearchService
 from app.services.carrier_signals_service import CarrierSignalsService
+from app.services.chameleon_service import ChameleonService
 from app.services.contact_link_service import build_contact_link_service
 from app.services.iss_service import iss_for, iss_history
 from app.services.job_status_service import JobStatusService
@@ -202,6 +205,30 @@ def get_carrier_equipment(
     usdot_number: UsdotPath,
     service: Annotated[CarrierEquipmentService, Depends(get_carrier_equipment_service)],
 ) -> CarrierEquipmentOut:
+    return service.get(usdot_number)
+
+
+def get_chameleon_service(
+    db: Annotated[Session, Depends(get_db)],
+    refresh: Refresh,
+    client: Annotated[SocrataClient, Depends(get_socrata_client)],
+) -> ChameleonService:
+    return ChameleonService(
+        db,
+        refresh,
+        build_contact_link_service(db, client),
+        RegistrationOrdersAdapter(client),
+        EquipmentReader(CarrierRepository(db), VehicleRepository(db), RelationshipRepository(db)),
+    )
+
+
+@router.get("/{usdot_number}/chameleon", response_model=ChameleonOut)
+def get_carrier_chameleon(
+    usdot_number: UsdotPath,
+    service: Annotated[ChameleonService, Depends(get_chameleon_service)],
+) -> ChameleonOut:
+    """Other USDOT numbers sharing this carrier's identity details, what happened to them,
+    and how much of its fleet was also inspected under other USDOT numbers."""
     return service.get(usdot_number)
 
 

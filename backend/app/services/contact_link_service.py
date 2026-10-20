@@ -6,6 +6,11 @@ one of them becomes a relationship from this carrier: SHARES_PHONE, SHARES_EMAIL
 (same street address and unit), SHARES_BUILDING (same street address, another unit) or
 SHARES_OFFICER, each traced to the other carrier's census row as received.
 
+For the Chameleon check the same query also finds carriers sharing the DUNS number, a
+mailing address, or a phone / address this carrier used before. Those become SHARES_DUNS,
+SHARES_MAILING_ADDRESS, SHARED_PAST_PHONE and SHARED_PAST_ADDRESS links, kept apart from the
+contact links above (CONTACT_LINK_TYPES) so the Network tab, packet and signals are unchanged.
+
 A link records a fact, not a judgement: family businesses, shared offices and dispatch or
 compliance services legitimately share details. The shared_contact rule decides what is worth
 a review signal.
@@ -15,6 +20,7 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -24,8 +30,12 @@ from app.ingestion.company_census import CompanyCensusAdapter
 from app.ingestion.contact_match import (
     ADDRESS,
     BUILDING,
+    DUNS,
     EMAIL,
+    MAILING,
     OFFICER,
+    PAST_ADDRESS,
+    PAST_PHONE,
     PHONE,
     ContactKeys,
     Match,
@@ -52,8 +62,17 @@ LINK_TYPE = {
     ADDRESS: "SHARES_ADDRESS",
     BUILDING: "SHARES_BUILDING",
     OFFICER: "SHARES_OFFICER",
+    DUNS: "SHARES_DUNS",
+    MAILING: "SHARES_MAILING_ADDRESS",
+    PAST_PHONE: "SHARED_PAST_PHONE",
+    PAST_ADDRESS: "SHARED_PAST_ADDRESS",
 }
-CONTACT_LINK_TYPES = tuple(LINK_TYPE.values())
+# The Network tab's contact links (strongest first).
+CONTACT_LINK_TYPES = tuple(LINK_TYPE[k] for k in (PHONE, EMAIL, ADDRESS, BUILDING, OFFICER))
+# Everything the Chameleon check reads: the contact links plus DUNS, mailing and past values.
+CHAMELEON_LINK_TYPES = CONTACT_LINK_TYPES + tuple(
+    LINK_TYPE[k] for k in (DUNS, MAILING, PAST_PHONE, PAST_ADDRESS)
+)
 # How directly a shared value ties two records together (spec 13.1).
 LINK_CONFIDENCE = {
     PHONE: Confidence.HIGH,
@@ -61,6 +80,10 @@ LINK_CONFIDENCE = {
     ADDRESS: Confidence.HIGH,
     BUILDING: Confidence.LOW,
     OFFICER: Confidence.MEDIUM,  # the same name can belong to different people
+    DUNS: Confidence.HIGH,  # one business record
+    MAILING: Confidence.HIGH,
+    PAST_PHONE: Confidence.MEDIUM,  # numbers are reassigned over time
+    PAST_ADDRESS: Confidence.MEDIUM,
 }
 
 
@@ -81,22 +104,26 @@ class ContactLinkResult:
     truncated: bool  # the source returned the maximum number of rows
 
 
-def contact_keys(carrier: Carrier, observed: ObservedValueRepository) -> ContactKeys:
-    """The carrier's current phones, email, physical address and officers, ready to match."""
-    physical = next(
-        (
-            a
-            for a in observed.current(Address, carrier.id)
-            if a.address_type == AddressType.PHYSICAL
-        ),
-        None,
-    )
+def contact_keys(
+    carrier: Carrier, observed: ObservedValueRepository, census: dict[str, Any] | None = None
+) -> ContactKeys:
+    """The carrier's current phones, email, physical address and officers, ready to match;
+    plus, for the Chameleon check, its mailing address, past phones and addresses and (from its
+    census record, when given) its DUNS number."""
+    addresses = observed.current(Address, carrier.id)
+    physical = next((a for a in addresses if a.address_type == AddressType.PHYSICAL), None)
+    mailing = next((a for a in addresses if a.address_type == AddressType.MAILING), None)
+    duns = (census or {}).get("dun_bradstreet_no")
     return keys_for(
         [p.number_normalized for p in observed.current(Phone, carrier.id)],
         carrier.email,
         physical.street if physical else None,
         physical.zip if physical else None,
         [o.name for o in observed.current(Officer, carrier.id)],
+        duns=duns if isinstance(duns, str) else None,
+        mailing=(mailing.street, mailing.zip) if mailing else None,
+        past_phones=[p.number_normalized for p in observed.past(Phone, carrier.id)],
+        past_addresses=[(a.street, a.zip) for a in observed.past(Address, carrier.id)],
     )
 
 
@@ -137,7 +164,10 @@ class ContactLinkService:
             raise CarrierNotFoundError(
                 f"USDOT {usdot_number} is not loaded yet; ingest its census record first"
             )
-        keys = contact_keys(carrier, self.observed)
+        census = self.raw_records.latest(
+            self.adapter.source, self.adapter.dataset_id, str(usdot_number)
+        )
+        keys = contact_keys(carrier, self.observed, census.payload if census else None)
         where = build_where(keys)
 
         a = self.adapter
@@ -168,7 +198,7 @@ class ContactLinkService:
         source = (USDOT, usdot_number)
         existing = {
             (link.relationship_type, link.target_entity_id): link
-            for link in self.relationships.from_source(source, CONTACT_LINK_TYPES)
+            for link in self.relationships.from_source(source, CHAMELEON_LINK_TYPES)
         }
         links = []
         for dot, (_, match) in matches.items():

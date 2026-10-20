@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { ApiError } from '../api/client'
 import { AuthoritySection } from '../features/carrier-profile/AuthoritySection'
+import { ChameleonSection } from '../features/carrier-profile/chameleon/ChameleonSection'
 import { EquipmentSection } from '../features/carrier-profile/EquipmentSection'
 import { IdentitySection } from '../features/carrier-profile/IdentitySection'
 import { IntelligenceSection } from '../features/carrier-profile/intelligence/IntelligenceSection'
@@ -14,7 +15,7 @@ import { TimelineSection } from '../features/carrier-profile/TimelineSection'
 import { useClientSearchEnabled } from '../hooks/useAuth'
 import { useCarrierProfile } from '../hooks/useCarrierProfile'
 import { useIsOwnCarrier } from '../hooks/useIsOwnCarrier'
-import { useIsClientPortal, usePortalMode, useSearchPath } from '../hooks/usePortalMode'
+import { usePortalMode, useSearchPath } from '../hooks/usePortalMode'
 
 const TABS = [
   ['identity', 'Identity'],
@@ -22,6 +23,7 @@ const TABS = [
   ['safety', 'Safety'],
   ['equipment', 'Equipment'],
   ['network', 'Network'],
+  ['chameleon', 'Chameleon check'],
   ['packet', 'Packet'],
   ['intelligence', 'Intelligence'],
   ['timeline', 'Timeline'],
@@ -29,7 +31,7 @@ const TABS = [
 
 type TabId = (typeof TABS)[number][0]
 
-/** Tabs clients and brokers see for any carrier (docs/client-internal-portal-plan.md, 4a). */
+/** Tabs clients see for any carrier (docs/client-internal-portal-plan.md, 4a). */
 const CLIENT_TABS: readonly TabId[] = [
   'identity',
   'authority',
@@ -38,32 +40,36 @@ const CLIENT_TABS: readonly TabId[] = [
   'network',
   'packet',
 ]
+/** Brokers also get the Chameleon check (they vet carriers before giving them loads). */
+const BROKER_TABS: readonly TabId[] = [...CLIENT_TABS, 'chameleon']
 const CLIENT_LABELS: Partial<Record<TabId, string>> = {
   network: 'How brokers see you',
 }
 
 const DEFAULT_TAB: TabId = 'identity'
 
-function isTab(value: string | null, client: boolean): value is TabId {
-  return TABS.some(([id]) => id === value && (!client || CLIENT_TABS.includes(id)))
+function isTab(value: string | null, allowed: readonly TabId[] | null): value is TabId {
+  return TABS.some(([id]) => id === value && (!allowed || allowed.includes(id)))
 }
 
 export function CarrierProfilePage() {
   const { usdot = '' } = useParams()
   const usdotNumber = Number(usdot)
-  const client = useIsClientPortal()
+  const portal = usePortalMode()
+  // null: every tab (STS staff)
+  const allowed = portal === 'broker' ? BROKER_TABS : portal === 'client' ? CLIENT_TABS : null
   const ownCarrier = useIsOwnCarrier(usdotNumber)
   // Clients see only their own carriers unless client search is on (team testing).
   const clientSearch = useClientSearchEnabled()
-  const ownCarriersOnly = usePortalMode() === 'client' && !clientSearch
+  const ownCarriersOnly = portal === 'client' && !clientSearch
   const { data: profile, error, isPending } = useCarrierProfile(usdotNumber)
   const navigate = useNavigate()
   // The open tab lives in the URL (?tab=safety) so a refresh or shared link keeps it.
   const [params, setParams] = useSearchParams()
   const requested = params.get('tab')
-  const tab: TabId = isTab(requested, client) ? requested : DEFAULT_TAB
-  const tabs = client
-    ? TABS.filter(([id]) => CLIENT_TABS.includes(id)).map(
+  const tab: TabId = isTab(requested, allowed) ? requested : DEFAULT_TAB
+  const tabs = allowed
+    ? TABS.filter(([id]) => allowed.includes(id)).map(
         ([id, label]) => [id, (ownCarrier && CLIENT_LABELS[id]) || label] as const,
       )
     : TABS
@@ -146,6 +152,7 @@ export function CarrierProfilePage() {
         )}
         {tab === 'equipment' && <EquipmentSection usdotNumber={profile.usdot_number} />}
         {tab === 'network' && <NetworkSection profile={profile} />}
+        {tab === 'chameleon' && <ChameleonSection usdotNumber={profile.usdot_number} />}
         {tab === 'intelligence' && <IntelligenceSection usdotNumber={profile.usdot_number} />}
         {tab === 'timeline' && (
           <TimelineSection events={profile.timeline} changes={profile.recent_changes} />
