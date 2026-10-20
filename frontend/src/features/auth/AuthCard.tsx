@@ -183,7 +183,7 @@ function BrandPanel({ audience }: { audience: Audience }) {
             transition={{ duration: 0.5, delay: 0.25 + i * 0.1, ease }}
             className="flex gap-4"
           >
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-white/15 bg-white/10 text-violet-100 backdrop-blur">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-white/15 bg-white/10 text-slate-800 backdrop-blur">
               <Icon className="size-5" aria-hidden />
             </span>
             <span>
@@ -240,7 +240,7 @@ export function SubmitButton({ busy, children }: { busy: boolean; children: Reac
     <button
       type="submit"
       disabled={busy}
-      className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-3 text-sm font-medium text-white shadow-[0_8px_30px_rgba(139,92,246,0.35)] transition-all hover:shadow-[0_10px_40px_rgba(139,92,246,0.5)] hover:brightness-110 disabled:opacity-60"
+      className="w-full rounded-xl bg-cta px-4 py-3 text-sm font-medium text-cta-ink shadow-lg shadow-brand-glow/30 transition-all hover:bg-cta-hover hover:shadow-xl hover:shadow-brand-glow/40 active:bg-cta-active disabled:opacity-60"
     >
       {busy ? 'Please wait…' : children}
     </button>

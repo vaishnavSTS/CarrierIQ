@@ -38,7 +38,7 @@ export function AuroraBackdrop({ className = 'inset-0' }: { className?: string }
       />
 
       {/* A thin light along the top edge, like a soft horizon. */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-300/40 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-glow/40 to-transparent" />
 
       <div className="bg-grain absolute inset-0 opacity-[0.07] mix-blend-overlay" />
       <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-b from-transparent to-canvas" />

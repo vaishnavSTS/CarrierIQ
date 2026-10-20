@@ -129,9 +129,9 @@ const SLIDES: Slide[] = [
             </div>
           ))}
         </div>
-        <div className="mt-4 flex items-center justify-between rounded-lg border border-accent/40 bg-accent-soft/60 px-3 py-2.5">
+        <div className="mt-4 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
           <span className="text-xs text-slate-700">Dated, sourced, no score</span>
-          <span className="inline-flex items-center gap-1.5 rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-white">
+          <span className="inline-flex items-center gap-1.5 rounded-md bg-cta px-2.5 py-1 text-xs font-medium text-cta-ink">
             <Download className="size-3.5" aria-hidden />
             Save as PDF
           </span>
@@ -216,7 +216,7 @@ function SlideCard({ slide, replayKey }: { slide: Slide; replayKey: number }) {
         </span>
       </div>
       <div className="mt-5 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-slate-500">
-        <Icon className="size-3.5 text-accent-strong" aria-hidden />
+        <Icon className="size-3.5 text-slate-500" aria-hidden />
         {slide.title}
       </div>
       <div key={replayKey} className="mt-2 flex flex-1 flex-col justify-center">
@@ -308,9 +308,7 @@ function WeightBar({
       </span>
       <div className="h-2 flex-1 rounded-full bg-slate-100">
         <motion.div
-          className={`h-2 rounded-full ${
-            muted ? 'bg-slate-300' : 'bg-gradient-to-r from-violet-500 to-fuchsia-500'
-          }`}
+          className={`h-2 rounded-full ${muted ? 'bg-slate-300' : 'bg-chart-1'}`}
           initial={{ width: 0 }}
           animate={{ width: `${share}%` }}
           transition={{ duration: 0.7, delay: 0.15, ease }}
@@ -325,7 +323,7 @@ function Note({ tone, children }: { tone: 'ok' | 'warn' | 'info'; children: Reac
   const styles = {
     ok: 'bg-emerald-50 text-emerald-700',
     warn: 'bg-amber-50 text-amber-700',
-    info: 'bg-accent-soft/60 text-slate-700',
+    info: 'bg-sky-50 text-sky-700',
   }
   return <div className={`rounded-lg px-3 py-2 text-xs ${styles[tone]}`}>{children}</div>
 }

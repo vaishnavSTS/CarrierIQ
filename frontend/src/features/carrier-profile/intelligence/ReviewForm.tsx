@@ -46,7 +46,7 @@ export function ReviewForm({ usdotNumber, signal }: { usdotNumber: number; signa
           type="button"
           disabled={review.isPending}
           onClick={() => decide('REVIEWED')}
-          className={`${button} bg-accent text-white ring-accent hover:bg-accent-strong`}
+          className={`${button} bg-cta text-cta-ink ring-cta hover:bg-cta-hover active:bg-cta-active`}
         >
           {signal.status === 'REVIEWED' ? 'Save note' : 'Mark reviewed'}
         </button>

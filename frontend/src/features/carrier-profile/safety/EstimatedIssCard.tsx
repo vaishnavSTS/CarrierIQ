@@ -96,7 +96,7 @@ function BasicIcon({ basic: b }: { basic: Basic }) {
   if (!b.assessed) return <Minus className="size-4 shrink-0 text-slate-400" aria-hidden />
   if (b.percentile !== null && b.percentile >= b.threshold - NEAR_THRESHOLD_POINTS) {
     return (
-      <CircleAlert className="size-4 shrink-0 text-yellow-500" aria-label="Close to threshold" />
+      <CircleAlert className="size-4 shrink-0 text-amber-600" aria-label="Close to threshold" />
     )
   }
   return (

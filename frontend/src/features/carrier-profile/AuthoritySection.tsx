@@ -66,7 +66,7 @@ function ProcessAgentLine({ agents }: { agents: ProcessAgent[] | null }) {
     <div className="mt-3 border-t border-slate-100 pt-2 text-xs">
       <span className="text-slate-500">Process agent (BOC-3): </span>
       {shown.length === 0 ? (
-        <span className={motus.length === 0 ? 'text-amber-300' : ''}>
+        <span className={motus.length === 0 ? 'text-amber-700' : ''}>
           None listed in FMCSA’s public BOC-3 data
         </span>
       ) : (

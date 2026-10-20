@@ -37,7 +37,7 @@ function Block({
   return (
     <section className="break-inside-avoid">
       <h2 className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 border-b border-slate-200 pb-1.5">
-        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-strong">
+        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
           {title}
         </span>
         {source && <span className="text-[11px] font-normal text-slate-500">{source}</span>}
@@ -163,7 +163,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
         <button
           type="button"
           onClick={saveAsPdf}
-          className="flex items-center gap-2 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white shadow hover:bg-accent-strong print:hidden"
+          className="flex items-center gap-2 rounded-md bg-cta px-3 py-1.5 text-sm font-medium text-cta-ink shadow hover:bg-cta-hover active:bg-cta-active print:hidden"
         >
           <Printer className="size-4" aria-hidden />
           Download / Save as PDF
@@ -189,7 +189,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
           </div>
           {iss && (
             <div className="flex flex-col items-center break-inside-avoid">
-              <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-strong">
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
                 Estimated ISS – Safety score
               </div>
               <IssGauge iss={iss} className="w-40" />

@@ -42,9 +42,7 @@ export function ExampleCheck({ title }: { title: string }) {
                 delay: start + i * step + 0.2,
               }}
               className={`grid size-5 shrink-0 place-items-center rounded-full ${
-                c.tone === 'ok'
-                  ? 'bg-emerald-500/20 text-emerald-600'
-                  : 'bg-amber-500/20 text-amber-600'
+                c.tone === 'ok' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
               }`}
             >
               {c.tone === 'ok' ? (
@@ -79,7 +77,7 @@ export function ExampleCheck({ title }: { title: string }) {
         </div>
         <div className="flex items-center gap-2">
           <span className="text-2xl font-semibold tabular-nums text-slate-950">38</span>
-          <span className="rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-600 ring-1 ring-inset ring-emerald-500/30">
+          <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/30">
             Satisfactory
           </span>
         </div>

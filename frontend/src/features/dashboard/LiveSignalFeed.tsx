@@ -33,7 +33,7 @@ export function LiveSignalFeed({ signals }: { signals: RecentSignal[] | undefine
     <section className="rounded-2xl border border-slate-200 bg-surface p-5">
       <div className="mb-4 flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-          <Radio className="size-4 text-accent-strong" aria-hidden />
+          <Radio className="size-4 text-slate-500" aria-hidden />
           Live intelligence
         </h2>
         <span className="flex flex-col items-end text-xs text-slate-500">
@@ -70,7 +70,7 @@ export function LiveSignalFeed({ signals }: { signals: RecentSignal[] | undefine
                     to={`/carriers/${s.usdot_number}?tab=intelligence&signal=${s.id}`}
                     className="group flex items-start gap-3 rounded-xl border border-transparent px-3 py-2.5 transition-colors hover:border-slate-200 hover:bg-slate-50"
                   >
-                    <span className="mt-0.5 rounded-lg bg-accent-soft p-1.5 text-accent-strong">
+                    <span className="mt-0.5 rounded-lg bg-slate-100 p-1.5 text-slate-700">
                       <Icon className="size-4" aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1">

@@ -183,7 +183,7 @@ export function LandingPage() {
             <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               <motion.article
                 {...reveal(0)}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border border-accent/50 bg-surface/90 p-7 shadow-[0_0_40px_rgba(139,92,246,0.15)]"
+                className="group relative flex flex-col overflow-hidden rounded-2xl border border-brand-glow/40 bg-surface/90 p-7 shadow-2xl shadow-brand-glow/15"
               >
                 <div
                   aria-hidden
@@ -255,7 +255,7 @@ export function LandingPage() {
               <motion.article
                 key={title}
                 {...reveal(i * 0.08)}
-                className="group rounded-2xl border border-slate-200 bg-surface/80 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent/60 hover:shadow-[0_12px_40px_rgba(139,92,246,0.18)]"
+                className="group rounded-2xl border border-slate-200 bg-surface/80 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-brand-glow/15"
               >
                 <IconBadge icon={icon} />
                 <h3 className="mt-5 text-sm font-semibold text-slate-900">{title}</h3>
@@ -272,10 +272,10 @@ export function LandingPage() {
             {STEPS.map(({ icon: Icon, title, text }, i) => (
               <motion.li key={title} {...reveal(i * 0.1)}>
                 <div className="flex items-center gap-3">
-                  <span className="relative grid size-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-[0_0_24px_rgba(139,92,246,0.4)]">
+                  <span className="relative grid size-12 shrink-0 place-items-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-900">
                     <Icon className="size-5" aria-hidden />
                   </span>
-                  <span className="shrink-0 text-xs font-medium uppercase tracking-wider text-accent-strong">
+                  <span className="shrink-0 text-xs font-medium uppercase tracking-wider text-slate-500">
                     Step {i + 1}
                   </span>
                   {/* Connector: starts after the label and runs across the gap (-mr-6 = the
@@ -283,7 +283,7 @@ export function LandingPage() {
                   {i < STEPS.length - 1 && (
                     <span
                       aria-hidden
-                      className="-mr-6 ml-1 hidden h-0.5 flex-1 rounded-full bg-gradient-to-r from-violet-500/80 via-fuchsia-500/60 to-violet-500/80 md:block"
+                      className="-mr-6 ml-1 hidden h-0.5 flex-1 rounded-full bg-gradient-to-r from-slate-300 via-brand-glow/40 to-slate-300 md:block"
                     />
                   )}
                 </div>
@@ -298,7 +298,7 @@ export function LandingPage() {
         {!user && (
           <motion.section
             {...reveal()}
-            className="relative mb-20 overflow-hidden rounded-3xl border border-accent/40 bg-gradient-to-br from-violet-700/40 via-surface to-fuchsia-700/30 px-6 py-12 text-center md:px-12"
+            className="relative mb-20 overflow-hidden rounded-3xl border border-brand-glow/30 bg-gradient-to-br from-violet-700/40 via-surface to-fuchsia-700/30 px-6 py-12 text-center md:px-12"
           >
             <div
               aria-hidden
@@ -338,7 +338,7 @@ function PrimaryLink({
   return (
     <Link
       to={to}
-      className={`group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 font-medium text-white shadow-[0_8px_30px_rgba(139,92,246,0.35)] transition-all hover:shadow-[0_10px_40px_rgba(139,92,246,0.5)] hover:brightness-110 ${
+      className={`group inline-flex items-center gap-2 rounded-xl bg-cta font-medium text-cta-ink shadow-lg shadow-brand-glow/30 transition-all hover:bg-cta-hover hover:shadow-xl hover:shadow-brand-glow/40 active:bg-cta-active ${
         small ? 'px-4 py-2.5 text-sm' : 'px-5 py-3 text-sm'
       }`}
     >
@@ -350,7 +350,7 @@ function PrimaryLink({
 
 function IconBadge({ icon: Icon }: { icon: LucideIcon }) {
   return (
-    <span className="grid size-11 place-items-center rounded-xl border border-accent/30 bg-accent-soft text-accent-strong">
+    <span className="grid size-11 place-items-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700">
       <Icon className="size-5" aria-hidden />
     </span>
   )
@@ -359,9 +359,7 @@ function IconBadge({ icon: Icon }: { icon: LucideIcon }) {
 function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
     <motion.div {...reveal()} className="text-center">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent-strong">
-        {eyebrow}
-      </p>
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{eyebrow}</p>
       <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 md:text-3xl">
         {title}
       </h2>

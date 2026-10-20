@@ -38,7 +38,7 @@ export function CarrierSearchBox({ initialQuery = '', autoFocus = false }: Props
       />
       <button
         type="submit"
-        className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong disabled:opacity-50"
+        className="rounded-md bg-cta px-4 py-2 text-sm font-medium text-cta-ink hover:bg-cta-hover active:bg-cta-active disabled:opacity-50"
         disabled={!query.trim()}
       >
         Search

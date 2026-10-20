@@ -10,7 +10,7 @@ export function SourceTag({
 }) {
   return (
     <span
-      className={`text-[11px] font-normal normal-case tracking-normal text-accent-strong/80 ${className}`}
+      className={`text-[11px] font-normal normal-case tracking-normal text-slate-400 ${className}`}
     >
       Source: {children}
     </span>

@@ -193,7 +193,7 @@ export function TeamNotes({
             <button
               type="submit"
               disabled={add.isPending}
-              className="rounded-md bg-accent px-3 py-1.5 text-sm text-white hover:bg-accent-strong disabled:opacity-50"
+              className="rounded-md bg-cta px-3 py-1.5 text-sm text-cta-ink hover:bg-cta-hover active:bg-cta-active disabled:opacity-50"
             >
               Save
             </button>

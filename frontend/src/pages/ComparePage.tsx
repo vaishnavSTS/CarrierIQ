@@ -46,7 +46,7 @@ export function ComparePage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight text-slate-900">
-            <Columns3 className="size-5 text-accent-strong" aria-hidden />
+            <Columns3 className="size-5 text-slate-500" aria-hidden />
             Compare carriers
           </h1>
           <p className="mt-1 text-sm text-slate-600">
@@ -258,7 +258,7 @@ function AddCarrier({ onAdd, existing }: { onAdd: (usdot: number) => void; exist
         />
         <button
           type="submit"
-          className="inline-flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-strong"
+          className="inline-flex items-center gap-1 rounded-md bg-cta px-3 py-1.5 text-sm font-medium text-cta-ink hover:bg-cta-hover active:bg-cta-active"
         >
           <Plus className="size-4" aria-hidden />
           Add

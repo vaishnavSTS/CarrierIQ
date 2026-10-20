@@ -31,14 +31,14 @@ export function BackgroundSpotlight() {
         className="spotlight-beam absolute left-0 top-0 h-[150vh] w-[70vw] min-w-[40rem]"
         style={{
           background:
-            'radial-gradient(68% 50% at 50% 50%, rgba(167,139,250,0.20) 0%, rgba(139,92,246,0.06) 55%, transparent 80%)',
+            'radial-gradient(68% 50% at 50% 50%, color-mix(in oklab, var(--color-brand-glow) 22%, transparent) 0%, color-mix(in oklab, var(--color-brand-glow) 6%, transparent) 55%, transparent 80%)',
         }}
       />
       <div
         className="spotlight-beam second absolute left-[85%] top-0 h-[120vh] w-[45vw] min-w-[28rem]"
         style={{
           background:
-            'radial-gradient(60% 50% at 50% 50%, rgba(232,121,249,0.12) 0%, rgba(192,132,252,0.04) 55%, transparent 80%)',
+            'radial-gradient(60% 50% at 50% 50%, color-mix(in oklab, var(--color-brand-glow-alt) 12%, transparent) 0%, color-mix(in oklab, var(--color-brand-glow-alt) 4%, transparent) 55%, transparent 80%)',
         }}
       />
       <div
@@ -46,7 +46,7 @@ export function BackgroundSpotlight() {
         className="absolute inset-0 opacity-0 transition-opacity duration-700"
         style={{
           background:
-            'radial-gradient(600px circle at var(--x, 50%) var(--y, 30%), rgba(139,92,246,0.10), transparent 45%)',
+            'radial-gradient(600px circle at var(--x, 50%) var(--y, 30%), color-mix(in oklab, var(--color-brand-glow) 10%, transparent), transparent 45%)',
         }}
       />
     </div>

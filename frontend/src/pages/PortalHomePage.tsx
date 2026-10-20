@@ -65,7 +65,7 @@ export function PortalHomePage() {
                     to={`/portal/carriers/${c.usdot_number}`}
                     className="group -mx-2 flex items-center gap-3 rounded-lg px-2 py-3 hover:bg-slate-50"
                   >
-                    <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent-strong">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-slate-100 text-slate-700">
                       <Truck className="size-4" aria-hidden />
                     </span>
                     <div className="min-w-0">

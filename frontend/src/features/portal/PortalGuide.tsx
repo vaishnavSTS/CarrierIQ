@@ -49,13 +49,13 @@ export function PortalGuide({
               key={title}
               {...reveal(0.05 * i)}
               whileHover={{ y: -3 }}
-              className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-surface p-5 transition-colors hover:border-accent/50"
+              className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-surface p-5 transition-colors hover:border-slate-300"
             >
               <div
                 aria-hidden
-                className="absolute -right-12 -top-12 size-32 rounded-full bg-violet-500/15 opacity-0 blur-2xl transition-opacity group-hover:opacity-100"
+                className="absolute -right-12 -top-12 size-32 rounded-full bg-brand-glow/15 opacity-0 blur-2xl transition-opacity group-hover:opacity-100"
               />
-              <span className="grid size-10 place-items-center rounded-xl bg-accent-soft text-accent-strong">
+              <span className="grid size-10 place-items-center rounded-xl bg-slate-100 text-slate-700">
                 <Icon className="size-5" aria-hidden />
               </span>
               <h3 className="mt-4 text-sm font-semibold text-slate-900">{title}</h3>
@@ -77,10 +77,10 @@ export function PortalGuide({
               className="relative rounded-2xl border border-slate-200 bg-surface p-5"
             >
               <div className="flex items-center gap-3">
-                <span className="grid size-8 place-items-center rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 text-sm font-semibold text-white">
+                <span className="grid size-8 place-items-center rounded-full bg-slate-100 text-sm font-semibold text-slate-900 ring-1 ring-slate-200">
                   {i + 1}
                 </span>
-                <Icon className="size-4 text-accent-strong" aria-hidden />
+                <Icon className="size-4 text-slate-500" aria-hidden />
                 <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
               </div>
               <p className="mt-3 text-sm leading-relaxed text-slate-600">{text}</p>

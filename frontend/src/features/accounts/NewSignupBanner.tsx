@@ -28,9 +28,9 @@ export function NewSignupBanner() {
   return (
     <div
       role="status"
-      className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 text-sm"
+      className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm"
     >
-      <UserPlus className="size-4 shrink-0 text-accent-strong" aria-hidden />
+      <UserPlus className="size-4 shrink-0 text-sky-700" aria-hidden />
       <span className="text-slate-900">
         <span className="font-medium">{parts.join(' and ')}</span> signed up. They can already use
         their portal.

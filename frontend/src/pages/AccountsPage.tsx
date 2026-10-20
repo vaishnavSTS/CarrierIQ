@@ -112,7 +112,7 @@ function NewSignupsDialog({ accounts }: { accounts: AdminUser[] }) {
     >
       <div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-slate-200 bg-surface p-6 shadow-2xl">
         <div className="flex items-center gap-3">
-          <span className="grid size-10 place-items-center rounded-full bg-accent-soft text-accent-strong">
+          <span className="grid size-10 place-items-center rounded-full bg-slate-100 text-slate-700">
             <UserPlus className="size-5" aria-hidden />
           </span>
           <div>
@@ -157,7 +157,7 @@ function NewSignupsDialog({ accounts }: { accounts: AdminUser[] }) {
             autoFocus
             disabled={markSeen.isPending}
             onClick={() => markSeen.mutate()}
-            className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong disabled:opacity-50"
+            className="rounded-md bg-cta px-4 py-2 text-sm font-medium text-cta-ink hover:bg-cta-hover active:bg-cta-active disabled:opacity-50"
           >
             Got it
           </button>
@@ -214,7 +214,7 @@ function AddUsdot({ accountId }: { accountId: number }) {
       <button
         type="submit"
         disabled={add.isPending || !/^\d{1,8}$/.test(value.trim())}
-        className="rounded bg-accent px-2 py-0.5 text-white disabled:opacity-50"
+        className="rounded bg-cta px-2 py-0.5 text-cta-ink hover:bg-cta-hover disabled:opacity-50"
       >
         Link
       </button>
@@ -366,7 +366,7 @@ function AccountKind({ portal }: { portal: AdminUser['portal'] }) {
   return (
     <span
       className={`rounded-md px-2 py-0.5 text-xs font-medium ${
-        broker ? 'bg-sky-50 text-sky-700' : 'bg-violet-50 text-violet-700'
+        broker ? 'bg-sky-50 text-sky-700' : 'bg-slate-100 text-slate-700'
       }`}
     >
       {broker ? 'Broker' : 'Client'}

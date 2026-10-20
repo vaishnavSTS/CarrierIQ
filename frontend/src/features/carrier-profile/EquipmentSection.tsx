@@ -245,7 +245,7 @@ export function EquipmentSection({ usdotNumber }: { usdotNumber: number }) {
                     }}
                     className={`rounded-md px-2.5 py-1 text-xs ring-1 ring-inset ${
                       filter === id
-                        ? 'bg-accent text-white ring-accent'
+                        ? 'bg-accent text-cta-ink ring-accent'
                         : 'bg-surface text-slate-700 ring-slate-300 hover:bg-slate-50'
                     }`}
                   >

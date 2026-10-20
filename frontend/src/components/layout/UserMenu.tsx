@@ -13,7 +13,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
   BROKER_USER: 'Broker',
 }
 
-/** Logged-in user's name, organization and role, with a log-out button (white header bar). */
+/** Logged-in user's name, organization and role, with a log-out button. */
 export function UserMenu() {
   const { data: user } = useMe()
   const logout = useLogout()
@@ -24,8 +24,8 @@ export function UserMenu() {
   return (
     <div className="ml-auto flex items-center gap-3 text-sm">
       <div className="hidden text-right leading-tight sm:block">
-        <div className="font-medium text-gray-900">{user.full_name}</div>
-        <div className="text-xs text-gray-500">
+        <div className="font-medium text-slate-900">{user.full_name}</div>
+        <div className="text-xs text-slate-500">
           {user.organization_name} · {ROLE_LABELS[user.role]}
         </div>
       </div>
@@ -33,7 +33,7 @@ export function UserMenu() {
         type="button"
         onClick={() => logout.mutate(undefined, { onSettled: () => navigate('/') })}
         disabled={logout.isPending}
-        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 disabled:opacity-50"
+        className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50"
       >
         <LogOut className="size-4" aria-hidden />
         Log out

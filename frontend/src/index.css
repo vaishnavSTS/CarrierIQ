@@ -1,47 +1,86 @@
 @import 'tailwindcss';
 
 /*
- * Dark purple theme.
+ * Dark indigo-ink theme.
  *
  * Components are written with the slate scale ("text-slate-900" = strongest text,
  * "bg-slate-50" = subtle fill, "border-slate-200" = hairline). Here that scale is redefined
- * for a dark, violet-tinted surface: low numbers are dark fills, high numbers are light ink.
+ * for a dark, low-chroma indigo surface: low numbers are dark fills, high numbers are light ink.
  * So every page switches theme from this one place. Status colours (emerald / amber / red /
- * blue) are inverted the same way: 50 = a dark tint behind a badge, 600-800 = light text.
+ * sky) are inverted the same way: 50 = a dark tint behind a badge, 600-800 = light text.
+ *
+ * One rule keeps the primary action easy to find: violet means "you can click this".
+ * `cta` is for the main action on a screen, `accent` for other interactive violet (selected
+ * toggles, focus borders), `accent-strong` for links. Icons, labels and info callouts that
+ * cannot be clicked use the slate or sky scales instead. The `brand-*` glows are decoration
+ * only and never sit on a control.
+ *
+ * Every text / background pair here passes WCAG AA (4.5:1); input borders pass 3:1.
  */
+@theme static {
+  --color-canvas: #110f1c; /* page background */
+  --color-surface: #1a1828; /* cards */
+
+  --color-cta: #a48bff; /* primary action; 6.96:1 against the canvas */
+  --color-cta-hover: #b9a6ff; /* lifts toward you */
+  --color-cta-active: #9376f5; /* pressed */
+  --color-cta-ink: #140f2b; /* label on any cta state: 5.4-8.8:1 */
+  --color-accent: #a48bff; /* other interactive violet: selected toggles, focus borders */
+  --color-accent-strong: #b7a6ff; /* links: 8.2:1 on surface */
+  --color-accent-soft: #2a2350; /* tint behind a selected control */
+  --color-focus: #c9bbff; /* keyboard focus ring */
+
+  /* Semantic feedback: text / tinted background pairs. */
+  --color-success: var(--color-emerald-700);
+  --color-success-bg: var(--color-emerald-50);
+  --color-warning: var(--color-amber-700);
+  --color-warning-bg: var(--color-amber-50);
+  --color-danger: var(--color-red-700);
+  --color-danger-bg: var(--color-red-50);
+  --color-info: var(--color-sky-700);
+  --color-info-bg: var(--color-sky-50);
+
+  /* Chart series (see components/charts/chartTheme.ts); 3:1+ against the surface. */
+  --color-chart-1: #3987e5;
+  --color-chart-2: #d95926;
+
+  /* Decorative brand light: glows, shadows, the hero illustration. Never on a control. */
+  --color-brand-glow: #8b5cf6;
+  --color-brand-glow-alt: #e879f9;
+}
+
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 
-  --color-canvas: #1a1430; /* page background */
-  --color-surface: #251d3d; /* cards */
-  --color-accent: #8b5cf6; /* violet: primary actions, highlights */
-  --color-accent-strong: #a78bfa;
-  --color-accent-soft: #3a2b66;
+  --color-slate-50: #221f33; /* raised fill: table heads, hover rows */
+  --color-slate-100: #2a2740; /* sunken fill: chips, pending badges */
+  --color-slate-200: #2f2c45; /* hairline */
+  --color-slate-300: #6b6790; /* input border: 3.3:1 */
+  --color-slate-400: #8f8bab; /* subtle text, placeholders: 5.4:1 */
+  --color-slate-500: #a9a5c2; /* muted text, labels: 7.3:1 */
+  --color-slate-600: #bab6d0;
+  --color-slate-700: #cdcae0; /* body copy */
+  --color-slate-800: #e2e0ee;
+  --color-slate-900: #f4f3fa; /* headings, primary text */
+  --color-slate-950: #fbfaff;
 
-  --color-slate-50: #2d2448;
-  --color-slate-100: #342a52;
-  --color-slate-200: #40355f;
-  --color-slate-300: #554a78;
-  --color-slate-400: #7d73a1;
-  --color-slate-500: #a59cc4;
-  --color-slate-600: #b3aacd;
-  --color-slate-700: #c9c2e1;
-  --color-slate-800: #ddd8ee;
-  --color-slate-900: #f2effa;
-  --color-slate-950: #faf8ff;
-
-  --color-emerald-50: #0e2a20;
+  --color-emerald-50: #0f2a21;
+  --color-emerald-200: #1f5a43;
   --color-emerald-600: #34d399;
-  --color-emerald-700: #6ee7b7;
-  --color-amber-50: #2e2210;
-  --color-amber-600: #fbbf24;
-  --color-amber-700: #fcd34d;
-  --color-red-50: #2f1219;
-  --color-red-200: #5b2232;
+  --color-emerald-700: #5ee0a8;
+  --color-amber-50: #2b2111;
+  --color-amber-200: #5c4413;
+  --color-amber-600: #f5b220;
+  --color-amber-700: #fbc544;
+  --color-red-50: #2f1519;
+  --color-red-200: #5c2530;
   --color-red-600: #f87171;
-  --color-red-700: #fca5a5;
+  --color-red-700: #ff9b9b;
   --color-red-800: #fecaca;
-  --color-blue-700: #93c5fd;
+  --color-sky-50: #0f2338;
+  --color-sky-200: #1d4468;
+  --color-sky-600: #5fb2f7;
+  --color-sky-700: #7cc4ff;
 }
 
 :root {
@@ -58,7 +97,7 @@ body {
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-accent-strong);
+  outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 
@@ -181,7 +220,11 @@ body {
     color-scheme: light;
     --color-canvas: #ffffff;
     --color-surface: #ffffff;
+    --color-accent: #6d4aff;
     --color-accent-strong: #5b21b6;
+    --color-accent-soft: #f1edff;
+    --color-cta: #6d4aff;
+    --color-cta-ink: #ffffff;
     --color-slate-50: #f8fafc;
     --color-slate-100: #f1f5f9;
     --color-slate-200: #e2e8f0;
@@ -203,6 +246,10 @@ body {
     --color-red-200: #fecaca;
     --color-red-600: #dc2626;
     --color-red-700: #b91c1c;
+    --color-sky-50: #eef6ff;
+    --color-sky-200: #bfdbfe;
+    --color-sky-600: #0b62b8;
+    --color-sky-700: #0b62b8;
   }
   @page {
     margin: 12mm;

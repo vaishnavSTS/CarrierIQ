@@ -39,7 +39,7 @@ export function BrokerIdField({
               onClick={() => onKindChange(k)}
               className={`rounded-lg px-3 text-sm font-medium transition-colors ${
                 kind === k
-                  ? 'bg-violet-600 text-white shadow-sm'
+                  ? 'bg-accent text-cta-ink shadow-sm'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >

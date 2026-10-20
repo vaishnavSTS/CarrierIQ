@@ -47,8 +47,8 @@ export function LinkedHeadsUp({ usdotNumber }: { usdotNumber: number }) {
         title="From FMCSA's census. A relationship to review, not a finding."
         className={`flex flex-wrap items-center gap-1.5 rounded-md px-2 py-0.5 text-xs ring-1 ring-inset hover:underline ${
           inactive
-            ? 'bg-amber-500/10 text-amber-300 ring-amber-500/30'
-            : 'bg-accent/10 text-slate-800 ring-accent/30'
+            ? 'bg-amber-50 text-amber-700 ring-amber-600/30'
+            : 'bg-sky-50 text-slate-800 ring-sky-600/30'
         }`}
       >
         <Link2 className="size-3.5 shrink-0" aria-hidden />

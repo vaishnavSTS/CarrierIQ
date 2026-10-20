@@ -32,7 +32,7 @@ function StatTile({
       className="rounded-xl border border-slate-200/80 bg-canvas/60 px-4 py-3 backdrop-blur"
     >
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-        <Icon className="size-4 text-accent-strong" aria-hidden />
+        <Icon className="size-4 text-slate-500" aria-hidden />
         {label}
       </div>
       <div className="mt-1 text-2xl font-semibold text-slate-900">

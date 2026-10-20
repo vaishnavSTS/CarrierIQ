@@ -22,9 +22,9 @@ const TYPE: Record<string, { icon: LucideIcon; label: string }> = {
 }
 
 const SEVERITY: Record<string, string> = {
-  HIGH: 'bg-red-500',
-  MEDIUM: 'bg-amber-400',
-  LOW: 'bg-violet-400',
+  HIGH: 'bg-red-600',
+  MEDIUM: 'bg-amber-600',
+  LOW: 'bg-sky-600',
 }
 
 // Shown before the first signals load, or when there are none: what CarrierSafetyScan checks.
@@ -64,10 +64,10 @@ const ROUTES = [
 function Truck() {
   return (
     <g transform="scale(0.7)">
-      <ellipse rx="22" ry="11" fill="#a78bfa" opacity="0.35" />
-      <rect x="-17" y="-6" width="22" height="12" rx="2" fill="#ede9fe" />
-      <rect x="6" y="-5" width="10" height="10" rx="2.5" fill="#c4b5fd" />
-      <rect x="12" y="-4" width="3" height="8" rx="1" fill="#4c1d95" />
+      <ellipse rx="22" ry="11" className="fill-violet-400" opacity="0.35" />
+      <rect x="-17" y="-6" width="22" height="12" rx="2" className="fill-violet-100" />
+      <rect x="6" y="-5" width="10" height="10" rx="2.5" className="fill-violet-300" />
+      <rect x="12" y="-4" width="3" height="8" rx="1" className="fill-violet-900" />
     </g>
   )
 }
@@ -76,11 +76,19 @@ function Truck() {
 function Car() {
   return (
     <g transform="scale(0.7)">
-      <ellipse rx="13" ry="8" fill="#f0abfc" opacity="0.3" />
-      <rect x="-8" y="-4.5" width="16" height="9" rx="3.5" fill="#f5d0fe" />
-      <rect x="-3" y="-3" width="6" height="6" rx="1.5" fill="#86198f" opacity="0.55" />
-      <circle cx="8" cy="-2.6" r="1.1" fill="#fff7d6" />
-      <circle cx="8" cy="2.6" r="1.1" fill="#fff7d6" />
+      <ellipse rx="13" ry="8" className="fill-fuchsia-300" opacity="0.3" />
+      <rect x="-8" y="-4.5" width="16" height="9" rx="3.5" className="fill-fuchsia-200" />
+      <rect
+        x="-3"
+        y="-3"
+        width="6"
+        height="6"
+        rx="1.5"
+        className="fill-fuchsia-800"
+        opacity="0.55"
+      />
+      <circle cx="8" cy="-2.6" r="1.1" className="fill-yellow-100" />
+      <circle cx="8" cy="2.6" r="1.1" className="fill-yellow-100" />
     </g>
   )
 }
@@ -88,18 +96,18 @@ function Car() {
 function Card({ signal }: { signal: RecentSignal }) {
   const { icon: Icon, label } = TYPE[signal.signal_type] ?? TYPE.AUTHORITY_CHANGE
   return (
-    <div className="w-64 rounded-2xl border border-violet-300/20 bg-[#2b2150]/90 p-3 shadow-[0_18px_40px_-12px_rgba(76,29,149,0.65)]">
+    <div className="w-64 rounded-2xl border border-brand-glow/20 bg-slate-50/90 p-3 shadow-2xl shadow-violet-950/60">
       <div className="flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-violet-200/80">
+        <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
           <Icon className="size-3.5" aria-hidden />
           {label}
         </span>
         <span className={`h-1.5 w-8 rounded-full ${SEVERITY[signal.severity] ?? SEVERITY.LOW}`} />
       </div>
-      <div className="mt-2 line-clamp-2 text-sm font-semibold leading-snug text-white">
+      <div className="mt-2 line-clamp-2 text-sm font-semibold leading-snug text-slate-900">
         {signal.title}
       </div>
-      <div className="mt-1.5 truncate text-xs text-violet-200/70">
+      <div className="mt-1.5 truncate text-xs text-slate-500">
         {signal.legal_name}
         {signal.usdot_number > 0 && ` · USDOT ${signal.usdot_number}`}
       </div>
@@ -159,16 +167,22 @@ export function HeroBoard({ signals }: { signals: RecentSignal[] | undefined }) 
           >
             <defs>
               <linearGradient id="route-glow" x1="0" x2="1">
-                <stop offset="0" stopColor="#a78bfa" stopOpacity="0" />
-                <stop offset="0.5" stopColor="#c4b5fd" stopOpacity="0.9" />
-                <stop offset="1" stopColor="#f0abfc" stopOpacity="0" />
+                <stop offset="0" stopColor="var(--color-violet-400)" stopOpacity="0" />
+                <stop offset="0.5" stopColor="var(--color-violet-300)" stopOpacity="0.9" />
+                <stop offset="1" stopColor="var(--color-fuchsia-300)" stopOpacity="0" />
               </linearGradient>
             </defs>
             {ROUTES.map((d, r) => {
               const duration = 16 + (r % 4) * 5
               return (
                 <g key={d}>
-                  <path d={d} fill="none" stroke="#8b5cf6" strokeOpacity="0.22" strokeWidth="14" />
+                  <path
+                    d={d}
+                    fill="none"
+                    className="stroke-brand-glow"
+                    strokeOpacity="0.22"
+                    strokeWidth="14"
+                  />
                   <path
                     d={d}
                     fill="none"

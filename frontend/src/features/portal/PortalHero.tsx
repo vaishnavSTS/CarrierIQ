@@ -89,7 +89,7 @@ export function PortalHero({
             <motion.div variants={item}>
               <Link
                 to={`/portal/carriers/${only.usdot_number}`}
-                className="group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-5 py-3 text-sm font-medium text-white shadow-[0_8px_30px_rgba(139,92,246,0.35)] transition-all hover:shadow-[0_10px_40px_rgba(139,92,246,0.5)] hover:brightness-110"
+                className="group inline-flex items-center gap-2 rounded-xl bg-cta px-5 py-3 text-sm font-medium text-cta-ink shadow-lg shadow-brand-glow/30 transition-all hover:bg-cta-hover hover:shadow-xl hover:shadow-brand-glow/40 active:bg-cta-active"
               >
                 Open {only.legal_name ?? `USDOT ${only.usdot_number}`}
                 <ArrowRight
@@ -107,7 +107,7 @@ export function PortalHero({
                 variants={item}
                 className="flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-canvas/60 px-3 py-1.5 text-xs text-slate-700 backdrop-blur"
               >
-                <Icon className="size-3.5 text-accent-strong" aria-hidden />
+                <Icon className="size-3.5 text-slate-500" aria-hidden />
                 {label}
               </motion.li>
             ))}

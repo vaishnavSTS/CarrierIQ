@@ -9,7 +9,9 @@ import { UserMenu } from './UserMenu'
 
 function navClass({ isActive }: { isActive: boolean }): string {
   return `flex items-center gap-1.5 rounded-md px-2.5 py-1.5 ${
-    isActive ? 'bg-violet-50 font-medium text-violet-700' : 'text-gray-600 hover:text-gray-900'
+    isActive
+      ? 'bg-accent-soft font-medium text-accent-strong'
+      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
   }`
 }
 
@@ -19,10 +21,10 @@ export function PortalLayout() {
   return (
     <div className="relative isolate min-h-screen">
       <BackgroundSpotlight />
-      <header className="sticky top-0 z-30 border-b border-gray-200 bg-white shadow-sm">
+      <header className="sticky top-0 z-30 border-b border-slate-200 bg-canvas/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">
           <Brand to="/portal" />
-          <span className="rounded-md bg-violet-50 px-2 py-0.5 text-xs font-medium text-violet-700">
+          <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
             Client portal
           </span>
           {searchEnabled && (

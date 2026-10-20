@@ -19,7 +19,7 @@ export function ClientSearchPage() {
       <section className="space-y-4 rounded-2xl border border-slate-200 bg-surface p-5">
         <div>
           <h1 className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-900">
-            <Search className="size-5 text-accent-strong" aria-hidden />
+            <Search className="size-5 text-slate-500" aria-hidden />
             Search carriers
           </h1>
           <p className="mt-1 text-sm text-slate-600">

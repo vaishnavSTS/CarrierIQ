@@ -39,7 +39,7 @@ export function CompareTray() {
             </button>
             <Link
               to={comparePath(compare.page, compare.usdots)}
-              className="inline-flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white hover:bg-accent-strong"
+              className="inline-flex items-center gap-1 rounded-md bg-cta px-3 py-1.5 text-sm font-medium text-cta-ink hover:bg-cta-hover active:bg-cta-active"
             >
               Compare
               <ArrowRight className="size-4" aria-hidden />

@@ -87,7 +87,7 @@ export function VerdictSummary({ facts, ranked }: { facts: CarrierFacts[]; ranke
   const cautions = top ? top.major.length + top.minor.length : 0
 
   return (
-    <div className="space-y-2 rounded-xl border border-accent-soft bg-accent-soft/40 px-4 py-3 text-sm text-slate-800">
+    <div className="space-y-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-slate-800">
       <p className="flex items-start gap-2">
         {top ? (
           <Trophy className="mt-0.5 size-4 shrink-0 text-emerald-700" aria-hidden />
@@ -214,7 +214,7 @@ export function HowWeDecide() {
     <section className="space-y-4 rounded-2xl border border-slate-200 bg-surface p-5">
       <div>
         <h2 className="flex items-center gap-2 text-base font-semibold text-slate-900">
-          <Scale className="size-5 text-accent-strong" aria-hidden />
+          <Scale className="size-5 text-slate-500" aria-hidden />
           How CarrierSafetyScan decides which carrier to prioritize
         </h2>
         <p className="mt-1 text-sm text-slate-600">

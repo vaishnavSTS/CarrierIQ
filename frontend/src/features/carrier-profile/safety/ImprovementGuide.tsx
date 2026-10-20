@@ -98,7 +98,7 @@ export function ImprovementGuide({
   return (
     <div className="space-y-5 text-sm text-slate-700">
       {summary && (
-        <p className="break-inside-avoid rounded-md border-l-4 border-accent bg-accent/10 px-3 py-2 font-medium text-slate-900">
+        <p className="break-inside-avoid rounded-md border-l-4 border-sky-600 bg-sky-50 px-3 py-2 font-medium text-slate-900">
           {summary}
         </p>
       )}
