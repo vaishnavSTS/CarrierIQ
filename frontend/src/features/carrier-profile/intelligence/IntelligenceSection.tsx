@@ -215,7 +215,7 @@ export function IntelligenceSection({ usdotNumber }: { usdotNumber: number }) {
             {SEVERITIES.map((s) => (
               <Stat
                 key={s}
-                label={s === 'INFO' ? 'Information' : `${s.toLowerCase()} severity`}
+                label={s === 'INFO' ? 'Open · information' : `Open · ${s.toLowerCase()} severity`}
                 value={openSignals.filter((x) => x.severity === s).length}
               />
             ))}

@@ -4,6 +4,7 @@ import { Fragment, useMemo, useState } from 'react'
 import { CarrierLink } from '../../components/CarrierLink'
 import { StatusBadge } from '../../components/StatusBadge'
 import { useCarrierEquipment } from '../../hooks/useCarrierEquipment'
+import { useCarrierProfile } from '../../hooks/useCarrierProfile'
 import type { EquipmentVehicle, Fleet, VinCarrier } from '../../types/carrierEquipment'
 import { formatDate, humanize } from '../../utils/format'
 import { Empty, Section, Stat } from './Section'
@@ -15,12 +16,16 @@ const FILTERS = [
   ['all', 'All'],
   ['power', 'Power units'],
   ['trailer', 'Trailers'],
-  ['shared', 'Seen under other USDOTs'],
-  ['check', 'Invalid check digit'],
+  ['shared', 'Also seen under other USDOT numbers'],
+  ['check', 'VIN likely mistyped'],
 ] as const
 
 type FilterId = (typeof FILTERS)[number][0]
 
+/**
+ * Power unit = every decoded vehicle that is not a trailer (trucks, tractors, buses, incomplete
+ * vehicles), the same split the backend counts with.
+ */
 function kind(v: EquipmentVehicle): 'power' | 'trailer' | 'unknown' {
   if (!v.vehicle_type) return 'unknown'
   return v.vehicle_type.toUpperCase() === 'TRAILER' ? 'trailer' : 'power'
@@ -36,9 +41,16 @@ function matches(v: EquipmentVehicle, filter: FilterId, text: string): boolean {
   return haystack.includes(text.toUpperCase())
 }
 
-/** "Class 8: 33,001 lb and above (14,969 kg and above)" -> "Class 8" */
+/** "Class 8: 33,001 lb and above (14,969 kg and above)" -> "Class 8 · 33,001 lb and above" */
 function weightClass(gvwr: string | null): string {
-  return gvwr ? gvwr.split(':')[0] : '—'
+  if (!gvwr) return '—'
+  const [name, range] = gvwr.split(':')
+  const pounds = range?.replace(/(.*)/, '').trim()
+  return pounds ? `${name.trim()} · ${pounds}` : name.trim()
+}
+
+function plural(n: number, word: string): string {
+  return `${n} ${word}${n === 1 ? '' : 's'}`
 }
 
 function describe(v: EquipmentVehicle): string {
@@ -63,10 +75,11 @@ function FleetNote({ fleet }: { fleet: Fleet }) {
     <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
       <p>{text}</p>
       <p className="mt-1 text-xs text-slate-500">
-        Vehicles seen {formatDate(fleet.first_observed)} – {formatDate(fleet.last_observed)}. Truck
-        or trailer comes from the NHTSA VIN decode
+        Inspections on file: {formatDate(fleet.first_observed)} – {formatDate(fleet.last_observed)}.
+        Power unit or trailer comes from the NHTSA VIN decode; every vehicle that is not a trailer
+        (trucks, tractors, buses) counts as a power unit
         {fleet.observed_unknown_type > 0 &&
-          `; ${fleet.observed_unknown_type} vehicle(s) not decoded yet`}
+          `; ${plural(fleet.observed_unknown_type, 'vehicle')} not decoded yet`}
         .
       </p>
     </div>
@@ -77,8 +90,9 @@ function OtherCarriers({ carriers }: { carriers: VinCarrier[] }) {
   return (
     <div className="space-y-2">
       <p className="text-xs text-slate-500">
-        These carriers had the same VIN on their inspections. Trucks often change hands for normal
-        reasons (leases, sales, owner-operators), so this is worth knowing, not a problem by itself.
+        These USDOT numbers had the same VIN on their own inspections. Trucks often change hands for
+        normal reasons (leases, sales, owner-operators), so this is worth knowing, not a problem by
+        itself.
       </p>
       <table className="text-xs">
         <tbody>
@@ -87,7 +101,9 @@ function OtherCarriers({ carriers }: { carriers: VinCarrier[] }) {
               <td className="py-1 pr-4">
                 <CarrierLink usdotNumber={c.usdot_number} />
               </td>
-              <td className="py-1 pr-4 text-slate-700">{c.legal_name ?? 'Not loaded yet'}</td>
+              <td className="py-1 pr-4 text-slate-700">
+                {c.legal_name ?? 'Name not in CarrierSafetyScan yet'}
+              </td>
               <td className="py-1 pr-4 tabular-nums text-slate-700">
                 {c.inspections} inspection{c.inspections === 1 ? '' : 's'}
               </td>
@@ -97,7 +113,14 @@ function OtherCarriers({ carriers }: { carriers: VinCarrier[] }) {
                   : `${formatDate(c.first_seen)} – ${formatDate(c.last_seen)}`}
               </td>
               <td className="py-1">
-                <StatusBadge label={`${c.confidence.toLowerCase()} confidence`} tone="neutral" />
+                <StatusBadge
+                  label={
+                    c.confidence === 'HIGH'
+                      ? 'Seen on 2+ inspections'
+                      : 'Seen on 1 inspection: could be a typo'
+                  }
+                  tone="neutral"
+                />
               </td>
             </tr>
           ))}
@@ -125,9 +148,9 @@ function VehicleRow({
           {v.check_digit_valid === false && (
             <span
               className="ml-2 align-middle"
-              title="The VIN's check digit doesn't match: it was probably mistyped on the inspection report."
+              title="The VIN fails its check-digit test (the 9th character doesn't match the others), so it was probably mistyped on the inspection report."
             >
-              <StatusBadge label="check digit" tone="warn" />
+              <StatusBadge label="likely mistyped" tone="warn" />
             </span>
           )}
         </td>
@@ -152,7 +175,7 @@ function VehicleRow({
               aria-expanded={open}
               className="text-xs text-slate-900 underline hover:text-slate-600"
             >
-              {shared} other USDOT{shared === 1 ? '' : 's'} {open ? '▴' : '▾'}
+              {plural(shared, 'USDOT number')} {open ? '▴' : '▾'}
             </button>
           )}
         </td>
@@ -170,6 +193,7 @@ function VehicleRow({
 
 export function EquipmentSection({ usdotNumber }: { usdotNumber: number }) {
   const { data, error, isPending } = useCarrierEquipment(usdotNumber)
+  const mcs150 = useCarrierProfile(usdotNumber).data?.last_mcs150_date ?? null
   const [filter, setFilter] = useState<FilterId>('all')
   const [text, setText] = useState('')
   const [showAll, setShowAll] = useState(false)
@@ -195,27 +219,35 @@ export function EquipmentSection({ usdotNumber }: { usdotNumber: number }) {
             <Stat
               label="Registered power units"
               value={data.fleet.registered_power_units ?? '—'}
-              note="As reported to FMCSA (MCS-150)"
+              note={
+                mcs150
+                  ? `Reported on the MCS-150 last updated ${formatDate(mcs150)}`
+                  : 'Reported on the MCS-150'
+              }
               source="FMCSA Company Census"
             />
             <Stat
-              label="Power units observed"
-              value={data.fleet.observed_power_units}
-              note={`${data.fleet.recent_power_units} in the last ${data.fleet.recent_months} months`}
+              label={`Power units seen · last ${data.fleet.recent_months} months`}
+              value={data.fleet.recent_power_units}
+              note={`${data.fleet.observed_power_units} in all inspections on file`}
               source="FMCSA inspections (VINs), NHTSA vPIC"
             />
             <Stat
-              label="Trailers observed"
+              label="Trailers seen · all inspections on file"
               value={data.fleet.observed_trailers}
-              note="Different VINs seen on inspections"
+              note={
+                data.fleet.first_observed
+                  ? `Different VINs, ${formatDate(data.fleet.first_observed)} – ${formatDate(data.fleet.last_observed)}`
+                  : 'Different VINs seen on inspections'
+              }
               source="FMCSA inspections (VINs), NHTSA vPIC"
             />
             <Stat
-              label="VINs under other USDOTs"
+              label="VINs also seen under other USDOT numbers"
               value={data.shared_vin_count}
               note={
                 data.other_carrier_count
-                  ? `Across ${data.other_carrier_count} other USDOT number${data.other_carrier_count === 1 ? '' : 's'}`
+                  ? `Across ${plural(data.other_carrier_count, 'other USDOT number')}`
                   : 'None found'
               }
               source="FMCSA Inspections Per Unit"
@@ -282,11 +314,11 @@ export function EquipmentSection({ usdotNumber }: { usdotNumber: number }) {
                       <tr>
                         <th className={cellClass}>VIN</th>
                         <th className={cellClass}>Vehicle</th>
-                        <th className={cellClass}>Type</th>
+                        <th className={cellClass}>Type · weight class</th>
                         <th className={`${cellClass} text-right`}>Inspections</th>
                         <th className={cellClass}>First seen</th>
                         <th className={cellClass}>Last seen</th>
-                        <th className={cellClass}>Other USDOTs</th>
+                        <th className={cellClass}>Also seen under</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">

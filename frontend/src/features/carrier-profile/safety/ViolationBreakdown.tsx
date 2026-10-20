@@ -10,7 +10,7 @@ function partLabel(part: number | null, title: string | null): string {
 
 export function ViolationBreakdown({ summary }: { summary: ViolationSummary }) {
   if (summary.total === 0) {
-    return <p className="text-sm text-slate-500">No violations recorded on these inspections.</p>
+    return <p className="text-sm text-slate-500">No violations on the loaded inspections.</p>
   }
   const max = Math.max(...summary.by_part.map((p) => p.violations))
 
@@ -41,7 +41,7 @@ export function ViolationBreakdown({ summary }: { summary: ViolationSummary }) {
                   <span className="text-slate-700">{partLabel(p.part, p.title)}</span>
                   <span className="whitespace-nowrap text-slate-500 tabular-nums">
                     <span className="font-semibold text-slate-900">{p.violations}</span>
-                    {p.out_of_service > 0 && ` · ${p.out_of_service} OOS`}
+                    {p.out_of_service > 0 && ` · ${p.out_of_service} out of service`}
                   </span>
                 </div>
                 <div className="mt-1 h-3 rounded-r bg-slate-100">
@@ -67,7 +67,7 @@ export function ViolationBreakdown({ summary }: { summary: ViolationSummary }) {
               <tr>
                 <th className={cellClass}>Violation</th>
                 <th className={`${cellClass} text-right`}>Count</th>
-                <th className={`${cellClass} text-right`}>OOS</th>
+                <th className={`${cellClass} text-right`}>Out of service</th>
                 <th className={cellClass}>Last seen</th>
               </tr>
             </thead>

@@ -1,8 +1,9 @@
 import type { OosWindow } from '../../../types/carrierProfile'
 import type { BasicDriver } from '../../../types/carrierSafety'
 import { Disclosure } from '../../../components/Disclosure'
+import { NotLoaded } from '../../../components/NotLoaded'
 import { formatDate, formatPercent } from '../../../utils/format'
-import { BASIC_TIPS, DATAQS_URL, groupTip, improvementSummary } from './improvementTips'
+import { basicTip, DATAQS_URL, groupTip, improvementSummary } from './improvementTips'
 
 const TOP_BASICS = 3
 const TOP_GROUPS = 3
@@ -11,24 +12,24 @@ function RatingNote({ rating, date }: { rating: string | null; date: string | nu
   if (!rating) {
     return (
       <>
-        Not rated. FMCSA gives a rating only after a compliance review, so “Not rated” is not a bad
-        rating. Brokers mostly look at the CSA measures and out-of-service rates below.
+        FMCSA gives a rating only after a compliance review, so “Not rated” is not a bad rating.
+        Brokers mostly look at the CSA measures and out-of-service rates.
       </>
     )
   }
-  const since = date ? ` (since ${formatDate(date)})` : ''
   if (rating === 'SATISFACTORY') {
     return (
       <>
-        Rated Satisfactory by FMCSA{since}. It changes only after a new FMCSA review; the CSA
-        measures below update every month.
+        A Satisfactory rating changes only after a new FMCSA review; the CSA measures update every
+        month.
       </>
     )
   }
   return (
     <>
-      Rated {rating.toLowerCase()} by FMCSA{since}. After fixing the problems found, the carrier can
-      ask FMCSA to upgrade it (49 CFR 385.17), or ask for a review if the rating is wrong (385.15).
+      After fixing the problems FMCSA found, the carrier can ask FMCSA to upgrade a{' '}
+      {rating.toLowerCase()} rating{date ? ` (given ${formatDate(date)})` : ''} (49 CFR 385.17), or
+      ask for a review if the rating is wrong (385.15).
     </>
   )
 }
@@ -53,12 +54,14 @@ export function ImprovementGuide({
   expanded?: boolean
 }) {
   const summary = improvementSummary(drivers, recent)
-  const oos = recent
-    ? [
-        ['vehicle', recent.vehicle_oos_rate, recent.national_vehicle_oos_rate] as const,
-        ['driver', recent.driver_oos_rate, recent.national_driver_oos_rate] as const,
-      ].filter(([, rate, national]) => rate !== null && rate > national)
-    : []
+  const aboveNational =
+    recent !== null &&
+    (
+      [
+        [recent.vehicle_oos_rate, recent.national_vehicle_oos_rate],
+        [recent.driver_oos_rate, recent.national_driver_oos_rate],
+      ] as const
+    ).some(([rate, national]) => rate !== null && rate > national)
 
   return (
     <div className="space-y-5 text-sm text-slate-700">
@@ -68,7 +71,7 @@ export function ImprovementGuide({
         </p>
       )}
       <div>
-        <h4 className="font-semibold text-slate-900">Safety rating</h4>
+        <h4 className="font-semibold text-slate-900">About the safety rating</h4>
         <p className="mt-1">
           <RatingNote rating={rating} date={ratingDate} />
         </p>
@@ -77,7 +80,9 @@ export function ImprovementGuide({
       <div>
         <h4 className="font-semibold text-slate-900">What drives the CSA measures</h4>
         {drivers === null ? (
-          <p className="mt-1 text-slate-500">Not loaded yet. Use Refresh now.</p>
+          <div className="mt-1">
+            <NotLoaded what="FMCSA’s violation detail" />
+          </div>
         ) : drivers.length === 0 ? (
           <p className="mt-1">No violations count against this carrier in the last 24 months.</p>
         ) : (
@@ -93,9 +98,10 @@ export function ImprovementGuide({
                     <>
                       <span className="font-medium text-slate-900">{b.basic}</span>
                       <span className="text-xs text-slate-500">
-                        {b.violations} violation{b.violations === 1 ? '' : 's'}
+                        {b.violations} violation{b.violations === 1 ? '' : 's'} in 24 months
                         {b.out_of_service > 0 && ` · ${b.out_of_service} out of service`} ·{' '}
-                        {b.recent_violations} in the last 6 months · FMCSA weight {b.weight}
+                        {b.recent_violations} in the last 6 months · weighted score{' '}
+                        {Math.round(b.weight)} (severity × time weight)
                       </span>
                     </>
                   }
@@ -120,10 +126,10 @@ export function ImprovementGuide({
                       )
                     })}
                   </ul>
-                  {BASIC_TIPS[b.basic] && (
+                  {basicTip(b.basic) && (
                     <p className="mt-1.5 text-xs text-slate-600">
                       <span className="font-medium">For {b.basic} overall:</span>{' '}
-                      {BASIC_TIPS[b.basic]}
+                      {basicTip(b.basic)}
                     </p>
                   )}
                 </Disclosure>
@@ -133,20 +139,12 @@ export function ImprovementGuide({
         )}
       </div>
 
-      {oos.length > 0 && recent && (
-        <div>
-          <h4 className="font-semibold text-slate-900">Out-of-service rates</h4>
-          <p className="mt-1">
-            {oos
-              .map(
-                ([unit, rate, national]) =>
-                  `${unit === 'vehicle' ? 'Vehicle' : 'Driver'} out-of-service rate: ${formatPercent(rate)} over the last ${recent.months} months (national average ${formatPercent(national)}).`,
-              )
-              .join(' ')}{' '}
-            Out-of-service violations weigh extra in the CSA measures, so start with the groups
-            above that have out-of-service counts.
-          </p>
-        </div>
+      {aboveNational && (
+        <p>
+          An out-of-service rate is above the national average (see the out-of-service table).
+          Out-of-service violations weigh extra in the CSA measures, so start with the groups above
+          that have out-of-service counts.
+        </p>
       )}
 
       <Disclosure

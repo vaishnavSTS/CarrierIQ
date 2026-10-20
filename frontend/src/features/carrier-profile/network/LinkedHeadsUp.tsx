@@ -38,13 +38,13 @@ export function LinkedHeadsUp({ usdotNumber }: { usdotNumber: number }) {
   return (
     <HeaderCard
       label="Linked carriers"
-      source="FMCSA census"
+      source="FMCSA Company Census"
       className="sm:col-span-2 lg:col-span-4"
     >
       <Link
         to="?tab=network"
         replace
-        title="From FMCSA's census. A relationship to review, not a finding."
+        title="From FMCSA's Company Census. A relationship to review, not a finding."
         className={`flex flex-wrap items-center gap-1.5 rounded-md px-2 py-0.5 text-xs ring-1 ring-inset hover:underline ${
           inactive
             ? 'bg-amber-50 text-amber-700 ring-amber-600/30'

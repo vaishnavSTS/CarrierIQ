@@ -2,11 +2,10 @@ import type { CarrierAuthority } from '../../../types/carrierAuthority'
 import type { CrashSummary, EstimatedIss, Sms } from '../../../types/carrierSafety'
 import type { CarrierProfile } from '../../../types/carrierProfile'
 import type { CarrierNetwork } from '../../../types/network'
-import { formatDate, formatMoney, formatPercent, humanize } from '../../../utils/format'
+import { formatDate, formatMoney, formatPercent, humanize, ordinal } from '../../../utils/format'
 import type { BrokerFlag } from '../network/brokerFlags'
-import { BASIC_TIPS } from '../safety/improvementTips'
+import { basicTip } from '../safety/improvementTips'
 import { NEAR_THRESHOLD_POINTS } from '../safety/issBand'
-import { basicKey, ordinal } from './basicTiles'
 
 export interface PacketItem {
   key: string
@@ -39,13 +38,6 @@ const OOS_FIX = {
     'Pre-trip and post-trip inspections with written reports, and fixing brakes, tires and lights before a truck is dispatched (49 CFR 396.11, 396.13).',
   driver:
     'Checking logs, medical certificates and licences before dispatch, so a driver is never stopped for hours, fitness or paperwork (Parts 391, 395).',
-}
-
-/** The improvement tip for a BASIC, whatever name the FMCSA file gives it. */
-function basicTip(name: string): string | null {
-  const key = basicKey(name)
-  const label = Object.keys(BASIC_TIPS).find((l) => basicKey(l) === key)
-  return label ? BASIC_TIPS[label] : null
 }
 
 /**

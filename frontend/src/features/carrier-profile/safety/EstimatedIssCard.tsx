@@ -1,7 +1,7 @@
 import { AlertTriangle, CircleAlert, CircleCheck, Minus } from 'lucide-react'
 
 import type { EstimatedIss, IssHistoryEntry } from '../../../types/carrierSafety'
-import { formatLocalDate } from '../../../utils/format'
+import { formatLocalDate, ordinal } from '../../../utils/format'
 import { Empty } from '../Section'
 import { IssGauge } from './IssGauge'
 import { ISS_BAND, NEAR_THRESHOLD_POINTS } from './issBand'
@@ -40,8 +40,8 @@ export function EstimatedIssCard({
             Estimated ISS – Safety score · inspection priority
           </div>
           <p className="mt-1 text-xs text-slate-500">
-            CarrierSafetyScan estimate from public FMCSA data — not FMCSA’s official ISS. 1–49
-            Satisfactory · 50–74 At risk · 75–100 High risk. Lower is better.
+            CarrierSafetyScan’s estimate from public FMCSA data, not FMCSA’s official ISS. Bands:
+            1–49 Satisfactory · 50–74 At risk · 75–100 High risk.
           </p>
           <p className="mt-3 text-sm text-slate-800">
             <span className="text-slate-500">Why: </span>
@@ -66,10 +66,10 @@ export function EstimatedIssCard({
               <span className="text-slate-800">{b.label}</span>
               <span className="ml-auto text-xs text-slate-500">
                 {!b.assessed
-                  ? 'not enough data'
+                  ? 'Insufficient data'
                   : showPercentiles && b.percentile !== null
-                    ? `est. ${Math.round(b.percentile)}th pct · threshold ${b.threshold}%`
-                    : `${b.over_threshold ? 'over' : 'under'} FMCSA’s ${b.threshold}% threshold`}
+                    ? `estimated ${ordinal(b.percentile)} percentile · threshold ${b.threshold}`
+                    : `${b.over_threshold ? 'Over' : 'Under'} FMCSA’s threshold (${b.threshold})`}
               </span>
             </li>
           ))}
@@ -79,8 +79,9 @@ export function EstimatedIssCard({
       <ScoreHistory history={history} />
 
       <p className="mt-3 text-xs text-slate-500">
-        Follows FMCSA’s published ISS and SMS methods. Based on FMCSA data for{' '}
-        {monthLabel(iss.data_month)} · {iss.version}
+        Follows FMCSA’s published ISS-CSA and SMS methods, using FMCSA’s monthly SMS national file
+        for {monthLabel(iss.data_month)} · {iss.version}. Percentiles rank the carrier against
+        similar carriers (higher is worse); a threshold is FMCSA’s intervention threshold.
       </p>
     </div>
   )

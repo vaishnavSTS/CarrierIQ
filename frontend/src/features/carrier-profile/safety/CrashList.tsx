@@ -1,12 +1,17 @@
+import { NotLoaded } from '../../../components/NotLoaded'
 import type { CrashSummary } from '../../../types/carrierSafety'
 import { formatDate } from '../../../utils/format'
 import { Empty } from '../Section'
 import { cellClass, headClass, tableClass } from '../styles'
 
+function plural(n: number, word: string): string {
+  return `${n} ${word}${n === 1 ? '' : 'es'}`
+}
+
 /** Crashes FMCSA's Crash File lists for the carrier, newest first. */
 export function CrashList({ crashes }: { crashes: CrashSummary | null }) {
   if (crashes === null) {
-    return <Empty>Not loaded yet. Use Refresh now.</Empty>
+    return <NotLoaded what="FMCSA’s crash reports" />
   }
   if (crashes.total === 0) {
     return <Empty>FMCSA’s Crash File lists no crashes in the last {crashes.years} years.</Empty>
@@ -14,9 +19,12 @@ export function CrashList({ crashes }: { crashes: CrashSummary | null }) {
   return (
     <div>
       <p className="mb-2 text-xs text-slate-500">
-        FMCSA Crash File · last {crashes.years} years: {crashes.total} crash
-        {crashes.total === 1 ? '' : 'es'}, {crashes.fatal} with a fatality, {crashes.injury} with an
-        injury. A reported crash does not mean the carrier was at fault.
+        Last {crashes.recent_months} months: {plural(crashes.recent_total, 'crash')} (
+        {crashes.recent_fatal} with a fatality, {crashes.recent_injury} with an injury). All{' '}
+        {crashes.years} years in FMCSA’s Crash File: {plural(crashes.total, 'crash')} (
+        {crashes.fatal} with a fatality, {crashes.injury} with an injury). A crash with both a
+        fatality and an injury counts in each. Crash involvement does not mean the carrier was at
+        fault: the Crash File does not record fault.
       </p>
       <div className="overflow-x-auto">
         <table className={tableClass}>
@@ -27,6 +35,7 @@ export function CrashList({ crashes }: { crashes: CrashSummary | null }) {
               <th className={`${cellClass} text-right`}>Fatalities</th>
               <th className={`${cellClass} text-right`}>Injuries</th>
               <th className={cellClass}>Tow-away</th>
+              <th className={cellClass}>Hazmat released</th>
               <th className={cellClass}>Report</th>
             </tr>
           </thead>
@@ -42,6 +51,7 @@ export function CrashList({ crashes }: { crashes: CrashSummary | null }) {
                 </td>
                 <td className={`${cellClass} text-right`}>{c.injuries}</td>
                 <td className={cellClass}>{c.tow_away ? 'Yes' : 'No'}</td>
+                <td className={cellClass}>{c.hazmat_released ? 'Yes' : 'No'}</td>
                 <td className={`${cellClass} font-mono text-xs text-slate-500`}>
                   {c.report_number}
                 </td>

@@ -12,25 +12,32 @@ import { useIsOwnCarrier } from '../../../hooks/useIsOwnCarrier'
 import { useIsClientPortal } from '../../../hooks/usePortalMode'
 import type { CarrierProfile } from '../../../types/carrierProfile'
 import type { CheckStatus, LinkedCarrier } from '../../../types/network'
-import { formatDate, formatDateTime, formatPhone, humanize } from '../../../utils/format'
+import { formatDate, formatDateTime, formatPhone } from '../../../utils/format'
 import type { Tone } from '../../../utils/status'
 import { Empty, Section } from '../Section'
 import { cellClass, headClass, tableClass } from '../styles'
+import { attributeLabel } from './attributeLabel'
 import { type FlagLevel, brokerFlags } from './brokerFlags'
 import { TeamNotes } from './TeamNotes'
 
 const LEVEL: Record<FlagLevel, { icon: LucideIcon; tone: Tone; label: string; ring: string }> = {
-  alert: { icon: CircleAlert, tone: 'down', label: 'alert', ring: 'border-red-200' },
-  attention: { icon: AlertTriangle, tone: 'warn', label: 'attention', ring: 'border-amber-600/40' },
-  info: { icon: Info, tone: 'neutral', label: 'info', ring: 'border-slate-200' },
+  alert: { icon: CircleAlert, tone: 'down', label: 'Alert', ring: 'border-red-200' },
+  attention: {
+    icon: AlertTriangle,
+    tone: 'warn',
+    label: 'Needs attention',
+    ring: 'border-amber-600/40',
+  },
+  info: { icon: Info, tone: 'neutral', label: 'For information', ring: 'border-slate-200' },
 }
 
-const CHECK_TONE: Record<CheckStatus, Tone> = {
-  ok: 'ok',
-  attention: 'warn',
-  alert: 'down',
-  info: 'neutral',
-  unknown: 'pending',
+/** Registration checks in plain words; alert and attention ones are listed with the flags. */
+const CHECK: Record<CheckStatus, { tone: Tone; label: string }> = {
+  ok: { tone: 'ok', label: 'In order' },
+  attention: { tone: 'warn', label: 'Needs attention' },
+  alert: { tone: 'down', label: 'Alert' },
+  info: { tone: 'neutral', label: 'For information' },
+  unknown: { tone: 'pending', label: 'Unknown' },
 }
 
 const SHARE_LABEL: Record<string, string> = {
@@ -75,8 +82,8 @@ function LinkedTable({ carriers }: { carriers: LinkedCarrier[] }) {
           <tr>
             <th className={cellClass}>Carrier</th>
             <th className={cellClass}>Shares</th>
-            <th className={cellClass}>Status</th>
-            <th className={cellClass}>Registered</th>
+            <th className={cellClass}>Census status</th>
+            <th className={cellClass}>USDOT added</th>
             {!client && <th className={cellClass}>Signal</th>}
           </tr>
         </thead>
@@ -86,7 +93,7 @@ function LinkedTable({ carriers }: { carriers: LinkedCarrier[] }) {
               <td className={cellClass}>
                 <CarrierLink usdotNumber={c.usdot_number} />
                 <div className="text-xs text-slate-500">
-                  {c.legal_name ?? 'Unknown'}
+                  {c.legal_name ?? 'Not in the census'}
                   {c.city && ` · ${c.city}, ${c.state}`}
                 </div>
               </td>
@@ -96,6 +103,9 @@ function LinkedTable({ carriers }: { carriers: LinkedCarrier[] }) {
                     <li key={s.kind}>
                       <span className="text-slate-500">{SHARE_LABEL[s.kind] ?? s.kind}:</span>{' '}
                       <span className="text-slate-900">{shownValue(s.kind, s.value)}</span>
+                      <span className="block text-[11px] text-slate-500">
+                        First matched by CarrierSafetyScan {formatDate(s.first_seen)}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -103,7 +113,7 @@ function LinkedTable({ carriers }: { carriers: LinkedCarrier[] }) {
               <td className={cellClass}>
                 {c.status ? (
                   <StatusBadge
-                    label={c.status.toLowerCase()}
+                    label={c.status === 'ACTIVE' ? 'Active' : 'Not active'}
                     tone={c.status === 'ACTIVE' ? 'ok' : 'neutral'}
                   />
                 ) : (
@@ -139,7 +149,7 @@ export function NetworkSection({ profile }: { profile: CarrierProfile }) {
   // Clients read it about their own company; otherwise it is about the carrier being looked up.
   const title = useIsOwnCarrier(profile.usdot_number)
     ? 'How brokers’ checks may see you'
-    : 'Network & Identity'
+    : 'Network'
 
   return (
     <Section id="network" title={title}>
@@ -180,7 +190,7 @@ function NetworkBody({
     ...profile.recent_changes.map((c) => ({
       key: `change-${c.attribute}-${c.changed_on}`,
       date: c.changed_on,
-      title: `${humanize(c.attribute)} changed`,
+      title: `${attributeLabel(c.attribute)} changed`,
       detail: `${c.old_value ?? '(empty)'} → ${c.new_value ?? '(empty)'}`,
     })),
     ...profile.timeline
@@ -194,6 +204,11 @@ function NetworkBody({
         detail: e.description ?? '',
       })),
   ].sort((a, b) => b.date.localeCompare(a.date))
+  // Alert and attention checks are already in the flag list; list only the rest here.
+  const checks = data.registration_checks.filter(
+    (c) => c.status !== 'alert' && c.status !== 'attention',
+  )
+  const flaggedChecks = data.registration_checks.length - checks.length
 
   return (
     <>
@@ -238,36 +253,44 @@ function NetworkBody({
       )}
 
       <SubHeading
-        note="Checked against FMCSA’s records each time the carrier is refreshed."
+        note={`Checked against FMCSA’s records each time the carrier is refreshed.${
+          flaggedChecks > 0
+            ? ` ${flaggedChecks === 1 ? 'One check needs' : `${flaggedChecks} checks need`} attention and ${flaggedChecks === 1 ? 'is' : 'are'} listed above.`
+            : ''
+        }`}
         source={SOURCES.registration}
       >
         Registration health
       </SubHeading>
-      <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
-        {data.registration_checks.map((c) => (
-          <li key={c.key} className="px-3 py-2 text-sm">
-            <Disclosure
-              summary={
-                <>
-                  <span className="w-24 shrink-0">
-                    <StatusBadge label={c.status} tone={CHECK_TONE[c.status]} />
-                  </span>
-                  <span className="font-medium text-slate-900">{c.label}</span>
-                </>
-              }
-            >
-              <p className="text-slate-700">{c.detail}</p>
-              <SourceTag className="mt-0.5 block">
-                {c.source}
-                {c.as_of && ` · ${formatDate(c.as_of)}`}
-              </SourceTag>
-            </Disclosure>
-          </li>
-        ))}
-      </ul>
+      {checks.length === 0 ? (
+        <Empty>Every registration check is listed above.</Empty>
+      ) : (
+        <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
+          {checks.map((c) => (
+            <li key={c.key} className="px-3 py-2 text-sm">
+              <Disclosure
+                summary={
+                  <>
+                    <span className="w-32 shrink-0">
+                      <StatusBadge label={CHECK[c.status].label} tone={CHECK[c.status].tone} />
+                    </span>
+                    <span className="font-medium text-slate-900">{c.label}</span>
+                  </>
+                }
+              >
+                <p className="text-slate-700">{c.detail}</p>
+                <SourceTag className="mt-0.5 block">
+                  {c.source}
+                  {c.as_of && ` · as of ${formatDate(c.as_of)}`}
+                </SourceTag>
+              </Disclosure>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <SubHeading
-        note={`Other FMCSA carriers with the same phone, email, address or officer. Checked ${formatDateTime(data.links_checked_at)}.`}
+        note={`Other carriers in FMCSA’s Company Census with the same phone, email, address or officer. Last checked ${formatDateTime(data.links_checked_at)}.`}
         source={SOURCES.linked}
       >
         Linked carriers
@@ -302,13 +325,16 @@ function NetworkBody({
       )}
 
       <SubHeading
-        note="Changes CarrierSafetyScan has seen since it first loaded this carrier, and authority transfers."
+        note="Census changes CarrierSafetyScan has detected between its refreshes of this carrier (changes made before it started tracking the carrier are not known), plus transfers in FMCSA’s authority history."
         source={SOURCES.identityHistory}
       >
         Identity and ownership history
       </SubHeading>
       {history.length === 0 ? (
-        <Empty>No name, contact, officer or authority-ownership changes recorded.</Empty>
+        <Empty>
+          No changes detected since CarrierSafetyScan started tracking this carrier, and no
+          transfers in FMCSA’s authority history.
+        </Empty>
       ) : (
         <ol className="space-y-2">
           {history.map((h) => (

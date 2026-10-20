@@ -44,3 +44,13 @@ export function eventSource(eventType: string): string {
   if (eventType.startsWith('IDENTITY_')) return SOURCES.team
   return 'FMCSA records'
 }
+
+/** FMCSA SAFER Company Snapshot for a USDOT number: the official public record. */
+export function saferUrl(usdot: number): string {
+  return `https://safer.fmcsa.dot.gov/query.asp?searchtype=ANY&query_type=queryCarrierSnapshot&query_param=USDOT&query_string=${usdot}`
+}
+
+/** FMCSA SMS (CSA) carrier overview for a USDOT number. */
+export function smsUrl(usdot: number): string {
+  return `https://ai.fmcsa.dot.gov/SMS/Carrier/${usdot}/CarrierOverview.aspx`
+}

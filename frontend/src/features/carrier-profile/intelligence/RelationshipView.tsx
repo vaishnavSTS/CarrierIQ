@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { StatusBadge } from '../../../components/StatusBadge'
 import { useCarrierEquipment } from '../../../hooks/useCarrierEquipment'
+import { useCarrierPath } from '../../../hooks/usePortalMode'
 import type { Signal } from '../../../types/carrierSignals'
 import { formatDate } from '../../../utils/format'
 import { cellClass, headClass, tableClass } from '../styles'
@@ -29,6 +30,7 @@ export function RelationshipView({
   onOpenSignal: (id: number) => void
 }) {
   const { data, error, isPending } = useCarrierEquipment(usdotNumber)
+  const carrierPath = useCarrierPath()
   const [showAll, setShowAll] = useState(false)
   const [openUsdot, setOpenUsdot] = useState<number | null>(null)
 
@@ -68,7 +70,7 @@ export function RelationshipView({
     <section className="mt-8">
       <h3 className="mb-1 text-sm font-semibold text-slate-900">Relationships</h3>
       <p className="mb-3 text-xs text-slate-500">
-        Other USDOT numbers whose inspections recorded the same vehicles (VINs). Equipment
+        Other USDOT numbers whose own inspections recorded this carrier’s vehicles (VINs). Equipment
         legitimately moves between carriers through leases, rentals and sales, so a relationship is
         context for review, not a finding.
       </p>
@@ -87,9 +89,9 @@ export function RelationshipView({
             <thead className={headClass}>
               <tr>
                 <th className={cellClass}>Carrier</th>
-                <th className={`${cellClass} text-right`}>Shared vehicles</th>
-                <th className={`${cellClass} text-right`}>Their inspections</th>
-                <th className={cellClass}>Seen with them</th>
+                <th className={`${cellClass} text-right`}>Shared VINs</th>
+                <th className={`${cellClass} text-right`}>Inspections under that USDOT</th>
+                <th className={cellClass}>Seen under that USDOT</th>
                 <th className={cellClass}>Signal</th>
               </tr>
             </thead>
@@ -102,13 +104,13 @@ export function RelationshipView({
                     <tr>
                       <td className={cellClass}>
                         <Link
-                          to={`/carriers/${r.usdot}`}
+                          to={carrierPath(r.usdot)}
                           className="font-mono text-slate-900 underline hover:text-slate-600"
                         >
                           USDOT {r.usdot}
                         </Link>
                         <div className="text-xs text-slate-500">
-                          {r.name ?? 'Not loaded in CarrierSafetyScan yet'}
+                          {r.name ?? 'Name not in CarrierSafetyScan yet'}
                         </div>
                       </td>
                       <td className={`${cellClass} text-right`}>
@@ -151,8 +153,8 @@ export function RelationshipView({
                             {r.vins.map((v) => (
                               <li key={v.vin}>
                                 <span className="font-mono">{v.vin}</span> · {v.label} ·{' '}
-                                {v.inspections} inspection{v.inspections === 1 ? '' : 's'} with
-                                them, {formatDate(v.first)}
+                                {v.inspections} inspection{v.inspections === 1 ? '' : 's'} under
+                                that USDOT, {formatDate(v.first)}
                                 {v.first !== v.last && ` – ${formatDate(v.last)}`}
                               </li>
                             ))}

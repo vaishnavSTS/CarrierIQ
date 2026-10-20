@@ -7,6 +7,8 @@ export const TYPE_ORDER = [
   'SAFETY_TREND',
   'FLEET_CONSISTENCY',
   'SHARED_VIN',
+  'SHARED_CONTACT',
+  'OWNERSHIP_EVENT',
 ] as const
 
 export const TYPE_LABEL: Record<string, string> = {
@@ -15,7 +17,7 @@ export const TYPE_LABEL: Record<string, string> = {
   IDENTITY_CHANGE: 'Identity changes',
   SAFETY_TREND: 'Safety trend',
   FLEET_CONSISTENCY: 'Fleet consistency',
-  SHARED_VIN: 'Shared equipment',
+  SHARED_VIN: 'VINs also seen under other USDOT numbers',
   SHARED_CONTACT: 'Shared contact details',
   OWNERSHIP_EVENT: 'Ownership events',
 }

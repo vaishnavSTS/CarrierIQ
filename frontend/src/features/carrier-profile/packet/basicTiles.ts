@@ -1,4 +1,5 @@
 import type { BasicDriver, CrashSummary, EstimatedIss, Sms } from '../../../types/carrierSafety'
+import { ordinal } from '../../../utils/format'
 import { NEAR_THRESHOLD_POINTS } from '../safety/issBand'
 
 export type TileTone = 'red' | 'amber' | 'green' | 'grey'
@@ -36,14 +37,6 @@ export function basicKey(name: string): string | null {
   if (/crash/i.test(name)) return 'crash'
   if (/haz/i.test(name)) return 'hazmat'
   return null
-}
-
-/** 71 -> "71st", 88 -> "88th" */
-export function ordinal(value: number): string {
-  const n = Math.round(value)
-  const suffix =
-    n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] ?? 'th')
-  return `${n}${suffix}`
 }
 
 function plural(n: number, word: string): string {

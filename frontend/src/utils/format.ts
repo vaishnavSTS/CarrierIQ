@@ -30,6 +30,19 @@ export function formatPhone(digits: string): string {
     : digits
 }
 
+/** 71 -> "71st", 88 -> "88th", 12 -> "12th" (rounded to a whole number) */
+export function ordinal(value: number): string {
+  const n = Math.round(value)
+  const suffix =
+    n % 100 >= 11 && n % 100 <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] ?? 'th')
+  return `${n}${suffix}`
+}
+
+/** ("MC", "123456") -> "MC 123456": one docket format everywhere. */
+export function formatDocket(prefix: string, number: string | number): string {
+  return `${prefix} ${number}`
+}
+
 /** "legal_name" -> "Legal name" */
 export function humanize(field: string): string {
   const text = field.replace(/_/g, ' ')
@@ -44,7 +57,7 @@ export function formatMoney(value: string | number | null): string {
 
 /** Where an authority / insurance status came from, for display. */
 export function sourceLabel(source: string | null, asOf: string | null): string {
-  if (source === 'MOTUS') return `FMCSA Motus · ${formatDate(asOf)}`
+  if (source === 'MOTUS') return `FMCSA Motus · as of ${formatDate(asOf)}`
   if (source === 'LEGACY_LI') return `FMCSA L&I · as of ${formatDate(asOf)} (no longer updated)`
   if (source === 'CENSUS') return 'Census docket status only — no authority record found'
   if (source === 'MIXED') return `FMCSA Motus and L&I · as of ${formatDate(asOf)}`

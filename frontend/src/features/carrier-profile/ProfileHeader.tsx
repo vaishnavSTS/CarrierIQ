@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { StatusBadge } from '../../components/StatusBadge'
 import type { CarrierProfile } from '../../types/carrierProfile'
 import { needsForHireAuthority } from '../../utils/classification'
-import { censusLabel, formatDateTime, sourceLabel } from '../../utils/format'
+import { censusLabel, formatDateTime, formatDocket, sourceLabel } from '../../utils/format'
+import { saferUrl, smsUrl } from '../../utils/sources'
 import { useIsClientPortal } from '../../hooks/usePortalMode'
 import { reviewLabel } from '../../utils/review'
 import { HeaderCard } from './HeaderCard'
@@ -22,12 +23,40 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
           <h1 className="text-xl font-semibold tracking-tight">{profile.legal_name}</h1>
           {profile.dba_name && <p className="text-sm text-slate-600">DBA {profile.dba_name}</p>}
           <p className="mt-1 font-mono text-sm text-slate-700">
-            USDOT {profile.usdot_number}
+            <a
+              href={saferUrl(profile.usdot_number)}
+              target="_blank"
+              rel="noreferrer"
+              title="Open the FMCSA SAFER Company Snapshot"
+              className="text-accent-strong hover:underline"
+            >
+              USDOT {profile.usdot_number}
+            </a>
             {dockets.map((d) => (
               <span key={`${d.prefix}${d.number}`} className="ml-3">
-                {d.prefix} {d.number}
+                {formatDocket(d.prefix, d.number)}
               </span>
             ))}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            Official records:{' '}
+            <a
+              href={saferUrl(profile.usdot_number)}
+              target="_blank"
+              rel="noreferrer"
+              className="text-accent-strong hover:underline"
+            >
+              FMCSA SAFER snapshot
+            </a>{' '}
+            ·{' '}
+            <a
+              href={smsUrl(profile.usdot_number)}
+              target="_blank"
+              rel="noreferrer"
+              className="text-accent-strong hover:underline"
+            >
+              FMCSA SMS (CSA)
+            </a>
           </p>
         </div>
         <div className="text-right text-xs text-slate-500">

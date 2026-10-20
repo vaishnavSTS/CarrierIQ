@@ -5,11 +5,16 @@ import { useCarrierInspections } from '../../../hooks/useCarrierSafety'
 import type { InspectionDetail } from '../../../types/carrierSafety'
 import { formatDate } from '../../../utils/format'
 import { cellClass, headClass, tableClass } from '../styles'
+import { levelLabel } from './inspectionLevels'
 
 const PAGE_SIZE = 25
 
 function OosFlag({ value }: { value: boolean }) {
-  return value ? <StatusBadge label="OOS" tone="down" /> : <span className="text-slate-400">—</span>
+  return value ? (
+    <StatusBadge label="Out of service" tone="down" />
+  ) : (
+    <span className="text-slate-500">No</span>
+  )
 }
 
 function Violations({ inspection }: { inspection: InspectionDetail }) {
@@ -17,7 +22,7 @@ function Violations({ inspection }: { inspection: InspectionDetail }) {
     return (
       <p className="text-sm text-slate-500">
         {inspection.violation_count > 0
-          ? `${inspection.violation_count} violation(s) on the report; FMCSA has no details for them.`
+          ? `${inspection.violation_count} violation${inspection.violation_count === 1 ? '' : 's'} on the report; FMCSA has no details for ${inspection.violation_count === 1 ? 'it' : 'them'}.`
           : 'No violations on this inspection.'}
       </p>
     )
@@ -40,7 +45,7 @@ function Violations({ inspection }: { inspection: InspectionDetail }) {
               <span className="ml-2 text-xs text-slate-500">Citation {v.citation_number}</span>
             )}
           </span>
-          {v.out_of_service && <StatusBadge label="OOS" tone="down" />}
+          {v.out_of_service && <StatusBadge label="Out of service" tone="down" />}
         </li>
       ))}
     </ul>
@@ -98,8 +103,8 @@ export function InspectionHistory({ usdotNumber }: { usdotNumber: number }) {
                 <th className={cellClass}>Location</th>
                 <th className={cellClass}>VIN</th>
                 <th className={`${cellClass} text-right`}>Violations</th>
-                <th className={cellClass}>Vehicle</th>
-                <th className={cellClass}>Driver</th>
+                <th className={cellClass}>Vehicle out-of-service</th>
+                <th className={cellClass}>Driver out-of-service</th>
                 <th className={cellClass}>
                   <span className="sr-only">Details</span>
                 </th>
@@ -117,7 +122,7 @@ export function InspectionHistory({ usdotNumber }: { usdotNumber: number }) {
                       <td className={`${cellClass} whitespace-nowrap`}>
                         {formatDate(i.inspection_date)}
                       </td>
-                      <td className={cellClass}>{i.level ?? '—'}</td>
+                      <td className={`${cellClass} whitespace-nowrap`}>{levelLabel(i.level)}</td>
                       <td className={cellClass}>{i.location ?? i.state ?? '—'}</td>
                       <td className={`${cellClass} font-mono text-xs`}>{i.vin ?? '—'}</td>
                       <td className={`${cellClass} text-right tabular-nums`}>

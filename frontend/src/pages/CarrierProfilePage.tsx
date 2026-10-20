@@ -21,7 +21,7 @@ const TABS = [
   ['authority', 'Authority & Insurance'],
   ['safety', 'Safety'],
   ['equipment', 'Equipment'],
-  ['network', 'Network & Identity'],
+  ['network', 'Network'],
   ['packet', 'Packet'],
   ['intelligence', 'Intelligence'],
   ['timeline', 'Timeline'],

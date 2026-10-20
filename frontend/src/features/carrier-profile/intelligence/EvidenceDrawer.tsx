@@ -4,7 +4,7 @@ import { motion } from 'motion/react'
 
 import { StatusBadge } from '../../../components/StatusBadge'
 import type { Signal } from '../../../types/carrierSignals'
-import { formatDate, formatDateTime } from '../../../utils/format'
+import { formatDate, formatLocalDate } from '../../../utils/format'
 import { severityTone } from '../../../utils/status'
 import {
   CONFIDENCE_EXPLAINED,
@@ -109,9 +109,13 @@ export function EvidenceDrawer({
                 </div>
                 <div className="mt-1 break-words text-slate-900">{e.observed_value ?? '—'}</div>
                 {e.raw_record_id !== null && (
-                  <div className="mt-1 text-xs text-slate-500">
-                    Stored source record #{e.raw_record_id}
-                    {e.entity_type && ` · ${e.entity_type.replace(/_/g, ' ')} #${e.entity_id}`}
+                  <div
+                    className="mt-1 text-xs text-slate-500"
+                    title={`Source record #${e.raw_record_id}${
+                      e.entity_type ? ` · ${e.entity_type.replace(/_/g, ' ')} #${e.entity_id}` : ''
+                    }`}
+                  >
+                    The original record is kept in CarrierSafetyScan.
                   </div>
                 )}
               </li>
@@ -127,11 +131,11 @@ export function EvidenceDrawer({
           <dl className="space-y-2 text-sm">
             <div>
               <dt className="text-slate-500">Rule</dt>
-              <dd className="text-slate-900">
-                {RULE_EXPLAINED[signal.rule_id] ?? signal.rule_id}{' '}
-                <span className="font-mono text-xs text-slate-500">
-                  ({signal.rule_id} v{signal.rule_version})
-                </span>
+              <dd
+                className="text-slate-900"
+                title={`Rule ${signal.rule_id}, version ${signal.rule_version}`}
+              >
+                {RULE_EXPLAINED[signal.rule_id] ?? signal.rule_id}
               </dd>
             </div>
             <div>
@@ -141,8 +145,8 @@ export function EvidenceDrawer({
             <div>
               <dt className="text-slate-500">Detected</dt>
               <dd className="text-slate-900">
-                First {formatDateTime(signal.first_detected_at)}; last confirmed{' '}
-                {formatDateTime(signal.last_detected_at)}
+                First {formatLocalDate(signal.first_detected_at)}; last confirmed{' '}
+                {formatLocalDate(signal.last_detected_at)}
               </dd>
             </div>
           </dl>

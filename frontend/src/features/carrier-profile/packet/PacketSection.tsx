@@ -605,7 +605,7 @@ export function PacketDocument({
             <Fact label="Power units · drivers">
               {`${fleet.registered_power_units ?? '—'} · ${profile.driver_count ?? '—'}`}
             </Fact>
-            <Fact label={`Trucks seen · ${fleet.recent_months} mo`}>
+            <Fact label={`Power units seen · ${fleet.recent_months} mo`}>
               {fleet.recent_power_units}
             </Fact>
             <Fact label="Avg truck age">{avgAge && `${avgAge} yr`}</Fact>

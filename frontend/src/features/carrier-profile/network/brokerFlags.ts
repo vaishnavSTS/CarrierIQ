@@ -100,8 +100,8 @@ export function brokerFlags(network: CarrierNetwork, profile: CarrierProfile): B
     flags.push({
       key: 'identity',
       level: 'info',
-      title: 'Recent change of name or contact details',
-      why: 'Brokers often check new names, emails or phones on an existing authority.',
+      title: 'Recent change of legal name, DBA name or email',
+      why: 'FMCSA’s census shows a new legal name, DBA name or email since CarrierSafetyScan started tracking this carrier. Brokers often check new names or emails on an existing authority.',
       fix: 'Making sure brokers have the current details, with proof of the change.',
     })
   }

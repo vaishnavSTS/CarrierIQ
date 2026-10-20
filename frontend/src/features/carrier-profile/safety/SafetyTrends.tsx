@@ -17,15 +17,14 @@ function title(quarter: string, current: boolean): string {
   return `${q} ${year}${current ? ' (in progress)' : ''}`
 }
 
-function QuarterTable({ quarters }: { quarters: Quarter[] }) {
+/** The inspections chart as a table: how many inspections and violations each quarter. */
+function InspectionTable({ quarters }: { quarters: Quarter[] }) {
   return (
     <table className={tableClass}>
       <thead className={headClass}>
         <tr>
           <th className={cellClass}>Quarter</th>
           <th className={`${cellClass} text-right`}>Inspections</th>
-          <th className={`${cellClass} text-right`}>Vehicle OOS</th>
-          <th className={`${cellClass} text-right`}>Driver OOS</th>
           <th className={`${cellClass} text-right`}>Violations</th>
         </tr>
       </thead>
@@ -34,15 +33,40 @@ function QuarterTable({ quarters }: { quarters: Quarter[] }) {
           <tr key={q.quarter}>
             <td className={cellClass}>{title(q.quarter, i === 0)}</td>
             <td className={`${cellClass} text-right`}>{q.inspections}</td>
-            <td className={`${cellClass} text-right`}>
-              {q.vehicle_oos}{' '}
-              <span className="text-xs text-slate-500">({formatPercent(q.vehicle_oos_rate)})</span>
-            </td>
-            <td className={`${cellClass} text-right`}>
-              {q.driver_oos}{' '}
-              <span className="text-xs text-slate-500">({formatPercent(q.driver_oos_rate)})</span>
-            </td>
             <td className={`${cellClass} text-right`}>{q.violations}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
+
+/** "3 of 8 (37.5%)": the count behind each rate, so a rate from few inspections is visible. */
+function rateCell(oos: number, base: number, rate: number | null): string {
+  return base === 0 ? 'No inspections' : `${oos} of ${base} (${formatPercent(rate)})`
+}
+
+/** The out-of-service chart as a table, with each rate's inspections. */
+function OosRateTable({ quarters }: { quarters: Quarter[] }) {
+  return (
+    <table className={tableClass}>
+      <thead className={headClass}>
+        <tr>
+          <th className={cellClass}>Quarter</th>
+          <th className={`${cellClass} text-right`}>Vehicle out-of-service</th>
+          <th className={`${cellClass} text-right`}>Driver out-of-service</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-slate-100 tabular-nums">
+        {[...quarters].reverse().map((q, i) => (
+          <tr key={q.quarter}>
+            <td className={cellClass}>{title(q.quarter, i === 0)}</td>
+            <td className={`${cellClass} text-right`}>
+              {rateCell(q.vehicle_oos, q.vehicle_inspections, q.vehicle_oos_rate)}
+            </td>
+            <td className={`${cellClass} text-right`}>
+              {rateCell(q.driver_oos, q.driver_inspections, q.driver_oos_rate)}
+            </td>
           </tr>
         ))}
       </tbody>
@@ -75,15 +99,15 @@ export function SafetyTrends({ quarters }: { quarters: Quarter[] }) {
               title: title(q.quarter, i === last),
               value: q.inspections,
               valueLabel: q.inspections === 1 ? 'inspection' : 'inspections',
-              details: [`${q.violations} violations recorded`],
+              details: [`${q.violations} violation${q.violations === 1 ? '' : 's'} recorded`],
             }))}
           />
         }
-        table={<QuarterTable quarters={quarters} />}
+        table={<InspectionTable quarters={quarters} />}
       />
       <ChartCard
         title="Out-of-service rate per quarter"
-        subtitle="Share of vehicle (or driver) inspections that ended out of service"
+        subtitle="Share of the inspections that examined the vehicle (or driver) that put it out of service"
         note={`${note} The current quarter is shown as a separate dot, not joined to the trend.`}
         chart={
           <LineChart
@@ -105,7 +129,7 @@ export function SafetyTrends({ quarters }: { quarters: Quarter[] }) {
             ]}
           />
         }
-        table={<QuarterTable quarters={quarters} />}
+        table={<OosRateTable quarters={quarters} />}
       />
     </div>
   )

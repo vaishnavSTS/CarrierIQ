@@ -1,3 +1,4 @@
+import { basicKey } from '../packet/basicTiles'
 import type { OosWindow } from '../../../types/carrierProfile'
 import type { BasicDriver } from '../../../types/carrierSafety'
 import { formatPercent } from '../../../utils/format'
@@ -20,6 +21,13 @@ export const BASIC_TIPS: Record<string, string> = {
     'An active DOT drug and alcohol testing program and the required FMCSA Drug & Alcohol Clearinghouse queries (Part 382).',
   'Hazardous Materials Compliance':
     'Hazmat training for drivers and a check of shipping papers, placards and securement before each load (Parts 172, 177).',
+}
+
+/** The tip for a BASIC, whatever name the FMCSA file gives it ("HOS Compliance", "Vehicle Maint."). */
+export function basicTip(name: string): string | null {
+  const key = basicKey(name)
+  const label = Object.keys(BASIC_TIPS).find((l) => basicKey(l) === key)
+  return label ? BASIC_TIPS[label] : null
 }
 
 const GROUP_TIPS: [RegExp, string][] = [
