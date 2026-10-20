@@ -25,15 +25,15 @@ export function AuroraBackdrop({ className = 'inset-0' }: { className?: string }
   return (
     <div aria-hidden className={`pointer-events-none absolute -z-10 overflow-hidden ${className}`}>
       <motion.div
-        className="absolute -left-[10%] -top-[20%] size-[46rem] rounded-full bg-violet-600/25 blur-[140px]"
+        className="absolute -left-[10%] -top-[20%] size-[46rem] rounded-full bg-violet-500/12 blur-[140px]"
         {...drift([0, 80, -40], [0, 60, 20], 26)}
       />
       <motion.div
-        className="absolute -right-[12%] top-[5%] size-[40rem] rounded-full bg-fuchsia-600/20 blur-[140px]"
+        className="absolute -right-[12%] top-[5%] size-[40rem] rounded-full bg-fuchsia-500/10 blur-[140px]"
         {...drift([0, -70, 30], [0, 50, -30], 32)}
       />
       <motion.div
-        className="absolute left-[30%] top-[35%] size-[36rem] rounded-full bg-indigo-500/15 blur-[150px]"
+        className="absolute left-[30%] top-[35%] size-[36rem] rounded-full bg-indigo-400/10 blur-[150px]"
         {...drift([0, 60, -60], [0, -40, 30], 38)}
       />
 

@@ -154,24 +154,24 @@ export function AuthCard({
 function BrandPanel({ audience }: { audience: Audience }) {
   const panel = PANEL[audience]
   return (
-    <aside className="relative hidden overflow-hidden bg-gradient-to-br from-violet-700/50 via-violet-900/40 to-fuchsia-800/40 p-10 lg:flex lg:flex-col">
+    <aside className="relative hidden overflow-hidden bg-gradient-to-br from-violet-600 via-violet-700 to-fuchsia-700 p-10 lg:flex lg:flex-col">
       <div
         aria-hidden
-        className="absolute -right-24 -top-24 size-72 rounded-full bg-fuchsia-500/25 blur-3xl"
+        className="absolute -right-24 -top-24 size-72 rounded-full bg-fuchsia-400/30 blur-3xl"
       />
       <div
         aria-hidden
-        className="absolute -bottom-28 -left-20 size-72 rounded-full bg-violet-500/25 blur-3xl"
+        className="absolute -bottom-28 -left-20 size-72 rounded-full bg-violet-400/30 blur-3xl"
       />
 
       <div className="relative">
-        <h2 className="text-3xl font-semibold leading-tight tracking-tight text-slate-950">
+        <h2 className="text-3xl font-semibold leading-tight tracking-tight text-white">
           {panel.lead}{' '}
           <span className="bg-gradient-to-r from-violet-200 via-fuchsia-200 to-violet-300 bg-clip-text text-transparent">
             {panel.accent}
           </span>
         </h2>
-        <p className="mt-3 text-sm text-slate-700">{panel.intro}</p>
+        <p className="mt-3 text-sm text-white/85">{panel.intro}</p>
       </div>
 
       <ul className="relative mt-10 space-y-6">
@@ -183,21 +183,21 @@ function BrandPanel({ audience }: { audience: Audience }) {
             transition={{ duration: 0.5, delay: 0.25 + i * 0.1, ease }}
             className="flex gap-4"
           >
-            <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-white/15 bg-white/10 text-slate-800 backdrop-blur">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl border border-white/15 bg-white/10 text-white backdrop-blur">
               <Icon className="size-5" aria-hidden />
             </span>
             <span>
-              <span className="block text-sm font-semibold text-slate-950">{title}</span>
-              <span className="mt-0.5 block text-sm text-slate-700">{text}</span>
+              <span className="block text-sm font-semibold text-white">{title}</span>
+              <span className="mt-0.5 block text-sm text-white/85">{text}</span>
             </span>
           </motion.li>
         ))}
       </ul>
 
-      <ul className="relative mt-auto flex flex-wrap gap-x-5 gap-y-2 pt-10 text-xs text-slate-700">
+      <ul className="relative mt-auto flex flex-wrap gap-x-5 gap-y-2 pt-10 text-xs text-white/85">
         {['Public FMCSA & NHTSA data', 'Source named on every value'].map((point) => (
           <li key={point} className="flex items-center gap-1.5">
-            <CircleCheck className="size-3.5 text-emerald-600" aria-hidden />
+            <CircleCheck className="size-3.5 text-emerald-200" aria-hidden />
             {point}
           </li>
         ))}

@@ -24,7 +24,7 @@ function CompareNavLink() {
       <Columns3 className="size-4" aria-hidden />
       Compare
       {count > 0 && (
-        <span className="rounded-full bg-sky-600 px-1.5 text-xs font-medium text-canvas tabular-nums">
+        <span className="rounded-full bg-sky-600 px-1.5 text-xs font-medium text-surface tabular-nums">
           {count}
         </span>
       )}

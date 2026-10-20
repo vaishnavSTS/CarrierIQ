@@ -21,7 +21,7 @@ export function CompareTray() {
           transition={{ duration: 0.25 }}
           className="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4"
         >
-          <div className="flex w-full max-w-xl flex-wrap items-center gap-3 rounded-xl border border-slate-300 bg-surface px-4 py-3 shadow-xl shadow-black/40">
+          <div className="flex w-full max-w-xl flex-wrap items-center gap-3 rounded-xl border border-slate-300 bg-surface px-4 py-3 shadow-xl shadow-slate-900/15">
             <span className="text-sm text-slate-700">
               <span className="font-semibold text-slate-900">{compare.usdots.length}</span> of{' '}
               {MAX_COMPARE} carriers selected

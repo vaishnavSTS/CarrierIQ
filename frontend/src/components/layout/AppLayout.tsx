@@ -40,7 +40,7 @@ function NavItem({
       <Icon className="size-4" aria-hidden />
       {label}
       {badge > 0 && (
-        <span className="rounded-full bg-amber-600 px-1.5 text-xs font-semibold text-canvas">
+        <span className="rounded-full bg-amber-700 px-1.5 text-xs font-semibold text-surface">
           {badge}
         </span>
       )}

@@ -310,13 +310,13 @@ export function PacketDocument({
     <>
       {/* Page 1: the scorecard */}
       <Sheet page={1} title="Carrier safety scorecard" carrier={carrier}>
-        <div className="rounded-xl bg-slate-900 px-5 py-4 text-canvas">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-canvas/70">
+        <div className="rounded-xl border border-accent/20 bg-accent-soft px-5 py-4 text-slate-900">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent-strong">
             Carrier safety scorecard
           </div>
           <h1 className="mt-1 text-2xl font-bold tracking-tight">{profile.legal_name}</h1>
-          {profile.dba_name && <p className="text-sm text-canvas/80">DBA {profile.dba_name}</p>}
-          <p className="mt-1 text-sm text-canvas/80">
+          {profile.dba_name && <p className="text-sm text-slate-600">DBA {profile.dba_name}</p>}
+          <p className="mt-1 text-sm text-slate-600">
             {[`USDOT ${profile.usdot_number}`, ...dockets, address].filter(Boolean).join(' · ')}
           </p>
         </div>
@@ -400,7 +400,7 @@ export function PacketDocument({
             <ol className="mt-1.5 space-y-1 text-sm">
               {hurting.slice(0, 3).map((item, i) => (
                 <li key={item.key} className="flex items-start gap-2">
-                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-red-600 text-[11px] font-bold text-canvas">
+                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-red-600 text-[11px] font-bold text-surface">
                     {i + 1}
                   </span>
                   <span className="font-medium text-red-700">{item.title}</span>

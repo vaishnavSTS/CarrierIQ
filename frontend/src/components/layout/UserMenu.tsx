@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { useLogout, useMe } from '../../hooks/useAuth'
 import type { UserRole } from '../../types/auth'
+import { ThemeToggle } from './ThemeToggle'
 
 const ROLE_LABELS: Record<UserRole, string> = {
   STS_ADMIN: 'STS admin',
@@ -13,7 +14,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
   BROKER_USER: 'Broker',
 }
 
-/** Logged-in user's name, organization and role, with a log-out button. */
+/** Theme switch, then the logged-in user's name, organization and role, with a log-out button. */
 export function UserMenu() {
   const { data: user } = useMe()
   const logout = useLogout()
@@ -23,6 +24,7 @@ export function UserMenu() {
 
   return (
     <div className="ml-auto flex items-center gap-3 text-sm">
+      <ThemeToggle />
       <div className="hidden text-right leading-tight sm:block">
         <div className="font-medium text-slate-900">{user.full_name}</div>
         <div className="text-xs text-slate-500">

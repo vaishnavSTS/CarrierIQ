@@ -3,6 +3,7 @@ import { Link, Outlet } from 'react-router-dom'
 import { homeFor, useMe } from '../../hooks/useAuth'
 import { BackgroundSpotlight } from './BackgroundSpotlight'
 import { Brand } from './Brand'
+import { ThemeToggle } from './ThemeToggle'
 
 /** Landing, login and sign-up pages: no login needed. */
 export function PublicLayout() {
@@ -15,6 +16,7 @@ export function PublicLayout() {
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">
           <Brand to="/" />
           <nav className="ml-auto flex items-center gap-2 text-sm">
+            <ThemeToggle />
             {user ? (
               <Link
                 to={homeFor(user.portal)}

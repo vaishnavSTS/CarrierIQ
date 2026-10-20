@@ -164,7 +164,7 @@ export function SampleShowcase() {
     >
       <div
         aria-hidden
-        className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-violet-500/30 to-fuchsia-500/20 blur-2xl"
+        className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-violet-500/15 to-fuchsia-500/10 blur-2xl"
       />
 
       {/* Room for the cards peeking out below the front one. */}

@@ -100,7 +100,7 @@ export function LandingPage() {
               className="text-4xl font-semibold leading-[1.08] tracking-tight text-slate-950 md:text-5xl lg:text-[3.4rem]"
             >
               Understand your carrier{' '}
-              <span className="bg-gradient-to-r from-violet-300 via-fuchsia-300 to-violet-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-700 bg-clip-text text-transparent">
                 the way brokers do
               </span>
             </motion.h1>
@@ -187,7 +187,7 @@ export function LandingPage() {
               >
                 <div
                   aria-hidden
-                  className="absolute -right-16 -top-16 size-48 rounded-full bg-violet-500/20 blur-3xl transition-opacity group-hover:opacity-80"
+                  className="absolute -right-16 -top-16 size-48 rounded-full bg-violet-500/10 blur-3xl transition-opacity group-hover:opacity-80"
                 />
                 <IconBadge icon={Truck} />
                 <h3 className="mt-5 text-lg font-semibold text-slate-900">I’m an STS client</h3>
@@ -298,11 +298,11 @@ export function LandingPage() {
         {!user && (
           <motion.section
             {...reveal()}
-            className="relative mb-20 overflow-hidden rounded-3xl border border-brand-glow/30 bg-gradient-to-br from-violet-700/40 via-surface to-fuchsia-700/30 px-6 py-12 text-center md:px-12"
+            className="relative mb-20 overflow-hidden rounded-3xl border border-brand-glow/30 bg-gradient-to-br from-accent-soft via-surface to-brand-glow-alt/15 px-6 py-12 text-center md:px-12"
           >
             <div
               aria-hidden
-              className="pointer-events-none absolute -bottom-24 left-1/2 size-72 -translate-x-1/2 rounded-full bg-fuchsia-500/20 blur-3xl"
+              className="pointer-events-none absolute -bottom-24 left-1/2 size-72 -translate-x-1/2 rounded-full bg-fuchsia-500/10 blur-3xl"
             />
             <h2 className="text-2xl font-semibold tracking-tight text-slate-950 md:text-3xl">
               See your carrier the way brokers do

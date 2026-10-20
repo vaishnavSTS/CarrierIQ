@@ -96,7 +96,7 @@ function Car() {
 function Card({ signal }: { signal: RecentSignal }) {
   const { icon: Icon, label } = TYPE[signal.signal_type] ?? TYPE.AUTHORITY_CHANGE
   return (
-    <div className="w-64 rounded-2xl border border-brand-glow/20 bg-slate-50/90 p-3 shadow-2xl shadow-violet-950/60">
+    <div className="w-64 rounded-2xl border border-brand-glow/20 bg-slate-50/90 p-3 shadow-xl shadow-violet-900/15">
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
           <Icon className="size-3.5" aria-hidden />
@@ -219,7 +219,7 @@ export function HeroBoard({ signals }: { signals: RecentSignal[] | undefined }) 
       {/* Keeps the headline and search readable over the board, like Vektor's left fade. */}
       <div className="absolute inset-0 bg-gradient-to-r from-surface from-35% via-surface/85 via-55% to-surface/10" />
       <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface to-transparent" />
-      <div className="absolute -left-24 -top-32 size-96 rounded-full bg-violet-600/25 blur-3xl" />
+      <div className="absolute -left-24 -top-32 size-96 rounded-full bg-violet-500/10 blur-3xl" />
     </div>
   )
 }
