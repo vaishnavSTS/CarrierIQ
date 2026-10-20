@@ -18,7 +18,7 @@ on:
 permissions: {}
 
 env:
-  APP_URL: https://carrier-iq.vercel.app
+  APP_URL: https://carriersafetyscan.vercel.app
   API_URL: https://carrieriq-api.onrender.com
 
 jobs:
