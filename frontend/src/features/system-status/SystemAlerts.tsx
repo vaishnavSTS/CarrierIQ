@@ -5,13 +5,20 @@ import { useHealth } from '../../hooks/useHealth'
 import { useJobs } from '../../hooks/useJobs'
 
 /**
+ * The "worker isn't running" banner is off for now: the hosted backend runs without a worker
+ * (render.yaml, RUN_WORKER_IN_API=false), so it would always show. Set VITE_SHOW_WORKER_ALERT=true
+ * (Vercel environment variable, or frontend/.env.local) to show it again once a worker runs.
+ */
+const SHOW_WORKER_ALERT = import.meta.env.VITE_SHOW_WORKER_ALERT === 'true'
+
+/**
  * Dashboard banner shown only when something is wrong: the API or database is unreachable, or
- * no background worker is running (so Refresh now and the scheduled updates wait). Renders
- * nothing when all is well.
+ * (when SHOW_WORKER_ALERT is on) no background worker is running, so Refresh now and the
+ * scheduled updates wait. Renders nothing when all is well.
  */
 export function SystemAlerts() {
   const health = useHealth()
-  const jobs = useJobs()
+  const jobs = useJobs(SHOW_WORKER_ALERT)
 
   const alerts: { key: string; tone: 'down' | 'warn'; icon: LucideIcon; body: ReactNode }[] = []
 
@@ -31,7 +38,7 @@ export function SystemAlerts() {
     })
   }
 
-  if (jobs.data && !jobs.data.worker_running) {
+  if (SHOW_WORKER_ALERT && jobs.data && !jobs.data.worker_running) {
     const waiting = jobs.data.counts.QUEUED ?? 0
     alerts.push({
       key: 'worker',

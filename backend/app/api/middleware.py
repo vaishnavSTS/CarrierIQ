@@ -23,10 +23,11 @@ async def request_id_middleware(
     try:
         response = await call_next(request)
         elapsed_ms = (time.perf_counter() - started) * 1000
+        query = request.url.query
         logger.info(
             "%s %s -> %s (%.1f ms)",
             request.method,
-            request.url.path,
+            f"{request.url.path}?{query}" if query else request.url.path,
             response.status_code,
             elapsed_ms,
         )
