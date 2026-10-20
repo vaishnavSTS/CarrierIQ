@@ -17,6 +17,7 @@ from app.repositories.carrier_history_repository import CarrierHistoryRepository
 from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.inspection_repository import InspectionRepository
 from app.repositories.insurance_repository import InsuranceRepository
+from app.repositories.iss_pull_in_rate_repository import IssPullInRateRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
 from app.repositories.relationship_repository import RelationshipRepository
 from app.repositories.signal_repository import SignalRepository
@@ -45,6 +46,7 @@ from app.services.contact_link_service import build_contact_link_service
 from app.services.iss_service import iss_for, iss_history
 from app.services.job_status_service import JobStatusService
 from app.services.network_service import NetworkService
+from app.services.pull_in import pull_in_for
 from app.services.qcmobile_service import build_qcmobile_service
 from app.services.registration_orders_service import build_registration_orders_service
 from app.services.signal_service import build_signal_service
@@ -145,6 +147,7 @@ def get_carrier_safety_service(
         drivers=lambda usdot, today: drivers_for(db, usdot, today),
         iss=lambda usdot: iss_for(db, usdot),
         iss_history=lambda usdot: iss_history(db, usdot),
+        pull_in=lambda score: pull_in_for(score, IssPullInRateRepository(db).rows()),
     )
 
 

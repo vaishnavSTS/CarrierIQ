@@ -9,6 +9,7 @@ import { ImprovementGuide } from './safety/ImprovementGuide'
 import { InspectionCounts } from './safety/InspectionCounts'
 import { InspectionHistory } from './safety/InspectionHistory'
 import { OosTable } from './safety/OosTable'
+import { PullInCard } from './safety/PullInCard'
 import { SafetyTrends } from './safety/SafetyTrends'
 import { ViolationBreakdown } from './safety/ViolationBreakdown'
 import { Empty, Section, Stat } from './Section'
@@ -22,7 +23,16 @@ function SubHeading({ children, source }: { children: string; source?: string })
   )
 }
 
-export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; safety: Safety }) {
+export function SafetySection({
+  usdotNumber,
+  safety,
+  homeState = null,
+}: {
+  usdotNumber: number
+  safety: Safety
+  /** The carrier's physical-address state, to mark it in the pull-in rates */
+  homeState?: string | null
+}) {
   const detail = useCarrierSafety(usdotNumber)
   const recent = safety.recent
   const months = recent?.months ?? 24
@@ -86,6 +96,14 @@ export function SafetySection({ usdotNumber, safety }: { usdotNumber: number; sa
               history={detail.data.iss_history ?? []}
             />
           </div>
+          <SubHeading source="PrePass state pull-in rates (shared by STS)">
+            Weigh-station pull-in chance by state
+          </SubHeading>
+          <PullInCard
+            pullIn={detail.data.pull_in}
+            byState={detail.data.by_state}
+            homeState={homeState}
+          />
           <SubHeading
             source={
               detail.data.sms?.dataset

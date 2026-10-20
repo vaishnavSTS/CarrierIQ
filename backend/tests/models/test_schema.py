@@ -44,6 +44,8 @@ TABLES = {
     # Estimated ISS lookup tables
     "iss_references",
     "iss_snapshots",
+    # States' weigh-station pull-in rates by ISS range (PrePass table)
+    "iss_pull_in_rates",
 }
 
 # Rows in these tables always come from a source record (Engineering Principle 5).

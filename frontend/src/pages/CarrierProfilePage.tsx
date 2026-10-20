@@ -148,7 +148,11 @@ export function CarrierProfilePage() {
           />
         )}
         {tab === 'safety' && (
-          <SafetySection usdotNumber={profile.usdot_number} safety={profile.safety} />
+          <SafetySection
+            usdotNumber={profile.usdot_number}
+            safety={profile.safety}
+            homeState={profile.addresses.find((a) => a.address_type === 'PHYSICAL')?.state ?? null}
+          />
         )}
         {tab === 'equipment' && <EquipmentSection usdotNumber={profile.usdot_number} />}
         {tab === 'network' && <NetworkSection profile={profile} />}

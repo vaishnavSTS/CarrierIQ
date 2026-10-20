@@ -122,6 +122,33 @@ export interface BasicDriver {
   groups: ViolationGroup[]
 }
 
+/** One state's weigh-station pull-in rate (PrePass table); null: no rate given for this range */
+export interface PullInRate {
+  state: string
+  percent: number | null
+}
+
+export interface PullInDrop {
+  state: string
+  from_percent: number
+  to_percent: number
+}
+
+/** Each state's pull-in rate for the carrier's Estimated ISS. States not listed have no rate on file. */
+export interface PullIn {
+  score: number
+  band_min: number
+  band_max: number
+  /** The score is above the table's last range; its strictest rates are shown */
+  beyond_table: boolean
+  /** Highest rate first; states with no rate last */
+  rates: PullInRate[]
+  /** The nearest lower ISS range where some state's rate falls */
+  what_if: { below: number; drops: PullInDrop[] } | null
+  source: string
+  effective_date: string
+}
+
 export interface CarrierSafety {
   usdot_number: number
   inspection_count: number
@@ -138,6 +165,8 @@ export interface CarrierSafety {
   estimated_iss?: EstimatedIss | null
   /** Saved Estimated ISS results, newest first */
   iss_history?: IssHistoryEntry[]
+  /** Weigh-station pull-in rate by state for the Estimated ISS; null: no estimate */
+  pull_in?: PullIn | null
 }
 
 /** docs/estimated-iss-v1.md — mirrors EstimatedIssOut */

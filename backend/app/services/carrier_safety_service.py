@@ -14,6 +14,7 @@ from app.schemas.carrier_safety import (
     InspectionDetailOut,
     InspectionPageOut,
     IssHistoryOut,
+    PullInOut,
     SmsOut,
 )
 from app.services.carrier_refresh_service import CarrierRefreshService
@@ -36,9 +37,11 @@ class CarrierSafetyService:
         drivers: Callable[[int, date], list[BasicDriverOut] | None] = lambda _u, _d: None,
         iss: Callable[[int], EstimatedIssOut | None] = lambda _: None,
         iss_history: Callable[[int], list[IssHistoryOut]] = lambda _: [],
+        pull_in: Callable[[int | None], PullInOut | None] = lambda _: None,
     ) -> None:
         self.iss = iss
         self.iss_history = iss_history
+        self.pull_in = pull_in
         self.drivers = drivers
         self.sms = sms
         self.crashes = crashes
@@ -55,6 +58,7 @@ class CarrierSafetyService:
     def safety(self, usdot_number: int) -> CarrierSafetyOut:
         carrier = self._carrier(usdot_number)
         inspections = self.inspections.for_carrier(carrier.id)
+        estimated = self.iss(carrier.usdot_number)
         return CarrierSafetyOut(
             usdot_number=carrier.usdot_number,
             inspection_count=len(inspections),
@@ -71,9 +75,10 @@ class CarrierSafetyService:
             sms=self.sms(carrier.usdot_number),
             crashes=self.crashes(carrier.usdot_number, self.today()),
             drivers=self.drivers(carrier.usdot_number, self.today()),
-            estimated_iss=self.iss(carrier.usdot_number),
+            estimated_iss=estimated,
             # After the estimate, which saves itself to the history first when it changed.
             iss_history=self.iss_history(carrier.usdot_number),
+            pull_in=self.pull_in(estimated.value if estimated else None),
         )
 
     def inspection_page(

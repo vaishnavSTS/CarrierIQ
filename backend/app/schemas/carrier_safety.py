@@ -161,6 +161,38 @@ class IssHistoryOut(BaseModel):
     recorded_at: datetime
 
 
+class PullInRateOut(BaseModel):
+    state: str  # 2-letter state code
+    percent: int | None  # None: the state gives no rate for this range
+
+
+class PullInDropOut(BaseModel):
+    state: str
+    from_percent: int
+    to_percent: int
+
+
+class PullInWhatIfOut(BaseModel):
+    """The nearest lower ISS range where some state's pull-in rate falls."""
+
+    below: int  # an Estimated ISS below this value
+    drops: list[PullInDropOut]  # biggest drop first
+
+
+class PullInOut(BaseModel):
+    """Each state's weigh-station pull-in rate for the carrier's Estimated ISS (PrePass table)."""
+
+    score: int  # the Estimated ISS the rates were looked up for
+    band_min: int
+    band_max: int
+    beyond_table: bool  # the score is above the table's last range; its strictest rates shown
+    # states with a rate on file, highest first; any other state has no rate on file yet
+    rates: list[PullInRateOut]
+    what_if: PullInWhatIfOut | None
+    source: str
+    effective_date: date
+
+
 class CarrierSafetyOut(BaseModel):
     usdot_number: int
     inspection_count: int
@@ -173,6 +205,8 @@ class CarrierSafetyOut(BaseModel):
     drivers: list[BasicDriverOut] | None = None  # None: not fetched yet; heaviest BASIC first
     estimated_iss: EstimatedIssOut | None = None  # None: tables or carrier SMS not loaded yet
     iss_history: list[IssHistoryOut] = []  # saved Estimated ISS results, newest first
+    # Weigh-station pull-in rate by state for the Estimated ISS; None: no estimate or no table
+    pull_in: PullInOut | None = None
 
 
 class ViolationOut(BaseModel):
