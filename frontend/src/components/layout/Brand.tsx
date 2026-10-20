@@ -15,8 +15,11 @@ export function Brand({ to }: { to: string }) {
         <span className="text-base font-semibold tracking-tight text-slate-900">
           CarrierSafetyScan
         </span>
-        <span className="text-[10px] font-medium tracking-wide text-slate-500">
-          Powered by Sky Transport Solutions
+        <span className="text-[13px] font-medium text-slate-400">
+          Powered by{' '}
+          <span className="bg-gradient-to-r from-violet-400 to-fuchsia-400 bg-clip-text font-bold text-transparent">
+            Sky Transport Solutions
+          </span>
         </span>
       </span>
     </Link>
