@@ -121,12 +121,19 @@ class Settings(BaseSettings):
     dataqs_representative_company: str = "Sky Transport Solutions"
     dataqs_representative_email: str = "Info@skytransportsolutions.com"
     dataqs_representative_phone: str = "8004989820"
-    # DataQs emails (docs/DataQ.md) through Resend (resend.com). RESEND_API_KEY is a secret:
-    # environment only. While it is unset nothing is sent; emails wait in dataqs_outbox.
-    # DATAQS_EMAIL_FROM must use a domain verified in Resend.
+    # DataQs emails (docs/DataQ.md), sent over SMTP when SMTP_HOST is set (e.g. Google Workspace:
+    # smtp.gmail.com, 587, a mailbox + its App Password), otherwise through Resend's API
+    # (RESEND_API_KEY). Passwords and keys are secrets: environment only. While neither is set
+    # nothing is sent; emails wait in dataqs_outbox. DATAQS_EMAIL_FROM must be an address the
+    # server may send as (for Google: the mailbox itself or one of its aliases).
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_security: str = "starttls"  # starttls (port 587) | ssl (port 465) | none
     resend_api_key: str | None = None
     dataqs_email_from: str = "Sky Transport Solutions <dataqs@skytransportsolutions.com>"
-    dataqs_email_reply_to: str = "Info@skytransportsolutions.com"  # carriers' replies go here
+    dataqs_email_reply_to: str = "vaishnav@skytransportsolutions.com"  # carriers' replies go here
     # While testing, send every DataQs email for carriers / for STS staff to these addresses
     # instead (comma-separated). Clear them to email the real carrier users and staff.
     dataqs_email_carrier_override: str | None = None
@@ -151,7 +158,7 @@ class Settings(BaseSettings):
 
     @property
     def dataqs_email_enabled(self) -> bool:
-        return bool(self.resend_api_key)
+        return bool(self.smtp_host or self.resend_api_key)
 
     @property
     def dataqs_carrier_override_list(self) -> list[str]:

@@ -44,13 +44,22 @@ services:
         sync: false
       - key: DATAQS_STORAGE_BUCKET
         value: dataqs-evidence
-      # DataQs emails (Resend). No email is sent until RESEND_API_KEY is set.
+      # DataQs emails: over SMTP when SMTP_HOST is set (e.g. Google Workspace), else through
+      # Resend (RESEND_API_KEY). No email is sent until one of them is set.
+      - key: SMTP_HOST
+        sync: false # e.g. smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USERNAME
+        sync: false # the mailbox, e.g. dataqs@skytransportsolutions.com
+      - key: SMTP_PASSWORD
+        sync: false # Google: an App Password, never the account password
       - key: RESEND_API_KEY
         sync: false
       - key: DATAQS_EMAIL_FROM
         sync: false # e.g. Sky Transport Solutions <dataqs@skytransportsolutions.com>
       - key: DATAQS_EMAIL_REPLY_TO
-        value: Info@skytransportsolutions.com
+        value: vaishnav@skytransportsolutions.com
       # While testing: every carrier email to Wesley, every STS staff email to Vaishnav.
       # Delete these two to email the real carrier users and STS staff.
       - key: DATAQS_EMAIL_CARRIER_OVERRIDE

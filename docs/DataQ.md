@@ -3,7 +3,7 @@
 How we will add DataQs (challenging wrong FMCSA safety records) to CarrierSafetyScan, phase by
 phase. Edit freely as decisions are made; record each decision in the log at the bottom.
 
-**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules. Phase 2 built (2026-10-21): carrier intake wizard, evidence uploads, submit to STS. Phase 3 built (2026-10-21): staff queue, assessment, filing package, carrier approval (migration 0025). Phase 4 built (2026-10-21): manual filing console, receipts, unconfirmed attempts and reconciling (migration 0026). Requests are started from the client DataQs tab. Phase 5 built (2026-10-21): agency correspondence, decisions, appeals, reopenings, deadline clocks with pauses (migration 0027). 2026-10-21: matched to the real DataQs portal (from STS's screen recordings) and emails added (Resend; migration 0028), see section 7.
+**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules. Phase 2 built (2026-10-21): carrier intake wizard, evidence uploads, submit to STS. Phase 3 built (2026-10-21): staff queue, assessment, filing package, carrier approval (migration 0025). Phase 4 built (2026-10-21): manual filing console, receipts, unconfirmed attempts and reconciling (migration 0026). Requests are started from the client DataQs tab. Phase 5 built (2026-10-21): agency correspondence, decisions, appeals, reopenings, deadline clocks with pauses (migration 0027). 2026-10-21: matched to the real DataQs portal (from STS's screen recordings) and emails added (Gmail SMTP, Resend as fallback; migration 0028), see section 7.
 **Created:** 2026-10-21
 **Source:** `../../Sky_DataQs_Developer_Integration.docx` (Sky DataQs Developer Integration Specification v1.0)
 **Related:** `client-internal-portal-plan.md`, `../CHECKPOINT.md`
@@ -530,12 +530,12 @@ After filing: request IDs are 7 digits; statuses New → Open - In Review → Cl
 Correction Made; history Submitted → Opened (agency, e.g. "NE SP") → Decision Reached;
 "Add Response / Documents" answers the agency; **"Re-open Request" is how to appeal** (same ID).
 
-**Emails (Resend).** The carrier gives the information; an STS representative files it in
+**Emails (Gmail SMTP, or Resend).** The carrier gives the information; an STS representative files it in
 DataQs on the carrier's behalf. Emails to the carrier: evidence needed, package ready to approve,
 filed (request ID), decision, file closed, plus staff-written messages (kept on the case). Staff
 reminders 7 and 21 days after each filing (to the case specialist, or STS admins). Staff close the
 file with "File closed" and the carrier is emailed. Sent from an outbox by a thread of the API
-once `RESEND_API_KEY` is set; retries, no duplicates.
+once `SMTP_HOST` (or `RESEND_API_KEY`) is set; retries, no duplicates.
 
 ---
 
@@ -565,6 +565,8 @@ once `RESEND_API_KEY` is set; retries, no duplicates.
 | 2026-10-21 | Carriers can add evidence while the agency reviews (e.g. for an information request) | Build |
 | 2026-10-21 | An STS representative files in DataQs on the carrier's behalf; STS emails the carrier about requirements; staff reminders 7 and 21 days after filing; "File closed" emails the carrier | User |
 | 2026-10-21 | D3: email through Resend (`RESEND_API_KEY`, `DATAQS_EMAIL_FROM`), replies to Info@ | User |
+| 2026-10-21 | D3 changed: email over SMTP through STS's Gmail (Google Workspace) with an App Password (`SMTP_HOST=smtp.gmail.com`, 587, STARTTLS); Resend stays as the fallback | User |
+| 2026-10-21 | Carriers' replies go to vaishnav@skytransportsolutions.com (`DATAQS_EMAIL_REPLY_TO`), not Info@ | User |
 | 2026-10-21 | While testing, every carrier email goes to wesley@ and every STS staff email to vaishnav@ (`DATAQS_EMAIL_CARRIER_OVERRIDE` / `DATAQS_EMAIL_STAFF_OVERRIDE`); clear them to email real recipients | User |
 | 2026-10-21 | Reasons, file types and file titles, filing guide, statuses, "Opened" event, appeals by Re-open Request and the attestation match DataQs as recorded | User |
 | 2026-10-21 | CSV, ZIP and ETHOS uploads refused (DataQs takes no CSV; ZIP/ETHOS wait for malware scanning) | Build |
