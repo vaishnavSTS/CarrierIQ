@@ -3,12 +3,17 @@ import { useState, type FormEvent } from 'react'
 import { useRecordDataQsCorrespondence } from '../../../hooks/useDataQs'
 import type { DataQsCase, DataQsCorrespondenceInput } from '../../../types/dataqs'
 import { inputClass, labelClass } from '../intake/intakeState'
-import { primaryButton } from '../ui'
+import { DATAQS_STATUSES, primaryButton } from '../ui'
 
 type Kind = DataQsCorrespondenceInput['kind']
 type IssueOutcome = 'CORRECTED' | 'NOT_CORRECTED'
 
 const KINDS: { value: Kind; label: string; hint: string }[] = [
+  {
+    value: 'OPENED',
+    label: 'Agency opened the request',
+    hint: 'DataQs history shows "Opened" (usually within 7 days); clears the 7-day check.',
+  },
   {
     value: 'INFO_REQUEST',
     label: 'Agency asked for information',
@@ -43,6 +48,7 @@ export function DataQsCorrespondencePanel({ dataqsCase: c }: { dataqsCase: DataQ
   const decided = !!current?.decision_issued_at
   const preparingAppeal = c.review_cycles.some((cycle) => !cycle.submitted_at)
   const allowed = KINDS.filter((k) => {
+    if (k.value === 'OPENED') return c.work_status === 'MONITORING' && !decided
     if (k.value === 'INFO_REQUEST') return c.work_status === 'MONITORING' && !decided && !asked
     if (k.value === 'INFO_RESPONSE') return asked
     if (k.value === 'DECISION') return !decided
@@ -58,6 +64,7 @@ export function DataQsCorrespondencePanel({ dataqsCase: c }: { dataqsCase: DataQ
   const [occurredAt, setOccurredAt] = useState(localNow)
   const [source, setSource] = useState<DataQsCorrespondenceInput['source']>('DATAQS_PORTAL')
   const [portalStatus, setPortalStatus] = useState('')
+  const [agency, setAgency] = useState('')
   const [outcomes, setOutcomes] = useState<Record<number, IssueOutcome>>({})
   const [procedural, setProcedural] = useState<'' | 'INSUFFICIENT_INFORMATION' | 'NO_RESPONSE'>('')
   const [decidedBy, setDecidedBy] = useState('')
@@ -67,6 +74,7 @@ export function DataQsCorrespondencePanel({ dataqsCase: c }: { dataqsCase: DataQ
   const [reopenReason, setReopenReason] = useState('')
   const record = useRecordDataQsCorrespondence(c.id)
 
+  const openedReady = kind !== 'OPENED' || agency.trim().length > 0
   const decisionReady =
     kind !== 'DECISION' || procedural !== '' || covered.every((i) => outcomes[i.id])
   const reopenReady = kind !== 'REOPENING' || reopenReason.trim().length >= 5
@@ -82,6 +90,7 @@ export function DataQsCorrespondencePanel({ dataqsCase: c }: { dataqsCase: DataQ
         occurred_at: new Date(occurredAt).toISOString(),
         external_id: null,
         portal_status: portalStatus.trim() || null,
+        assigned_agency: kind === 'OPENED' ? agency.trim() || null : null,
         decision:
           kind === 'DECISION'
             ? {
@@ -174,6 +183,38 @@ export function DataQsCorrespondencePanel({ dataqsCase: c }: { dataqsCase: DataQ
         />
       </div>
 
+      {kind === 'OPENED' && (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor="opened-agency" className={labelClass}>
+              Assigned agency (as DataQs shows it)
+            </label>
+            <input
+              id="opened-agency"
+              value={agency}
+              maxLength={200}
+              placeholder="e.g. NE SP"
+              onChange={(e) => setAgency(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label htmlFor="opened-status" className={labelClass}>
+              Status shown in DataQs
+            </label>
+            <input
+              id="opened-status"
+              list="dataqs-statuses-event"
+              value={portalStatus}
+              maxLength={100}
+              placeholder="Open - In Review"
+              onChange={(e) => setPortalStatus(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+        </div>
+      )}
+
       {kind === 'DECISION' && (
         <div className="space-y-3 rounded-lg border border-slate-200 p-3">
           <label className="flex items-center gap-2">
@@ -242,6 +283,7 @@ export function DataQsCorrespondencePanel({ dataqsCase: c }: { dataqsCase: DataQ
               </label>
               <input
                 id="portal-status-event"
+                list="dataqs-statuses-event"
                 value={portalStatus}
                 maxLength={100}
                 onChange={(e) => setPortalStatus(e.target.value)}
@@ -308,6 +350,11 @@ export function DataQsCorrespondencePanel({ dataqsCase: c }: { dataqsCase: DataQ
         </div>
       )}
 
+      <datalist id="dataqs-statuses-event">
+        {DATAQS_STATUSES.map((s) => (
+          <option key={s} value={s} />
+        ))}
+      </datalist>
       {record.isError && (
         <p className="text-red-700" role="alert">
           Could not record it: {record.error.message}
@@ -316,7 +363,13 @@ export function DataQsCorrespondencePanel({ dataqsCase: c }: { dataqsCase: DataQ
       <button
         type="submit"
         className={primaryButton}
-        disabled={text.trim().length < 3 || !decisionReady || !reopenReady || record.isPending}
+        disabled={
+          text.trim().length < 3 ||
+          !openedReady ||
+          !decisionReady ||
+          !reopenReady ||
+          record.isPending
+        }
       >
         {record.isPending ? 'Saving…' : 'Record'}
       </button>

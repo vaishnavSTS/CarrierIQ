@@ -32,9 +32,11 @@ from app.schemas.dataqs import (
     DataQsChangesIn,
     DataQsCheckOut,
     DataQsClockOverrideIn,
+    DataQsCloseIn,
     DataQsConfirmIn,
     DataQsCorrespondenceIn,
     DataQsEvidenceLinkOut,
+    DataQsMessageIn,
     DataQsNoteIn,
     DataQsOwnerIn,
     DataQsPackageIn,
@@ -119,6 +121,7 @@ def _add_case_routes(router: APIRouter, who: Callable[..., User]) -> None:
         file: Annotated[UploadFile, File()],
         links: Annotated[str, Form(description='JSON: [{"issue_id": 1, "relevance": "..."}]')],
         document_date: Annotated[date | None, Form()] = None,
+        title: Annotated[str | None, Form(max_length=200)] = None,
     ) -> DataQsCaseOut:
         """Upload one file and link it to issues; answers the updated case."""
         limit = get_settings().dataqs_max_upload_mb * 1024 * 1024
@@ -130,6 +133,7 @@ def _add_case_routes(router: APIRouter, who: Callable[..., User]) -> None:
             file_name=file.filename or "evidence",
             issue_links=_parse_links(links),
             document_date=document_date,
+            title=title,
         )
         return cases.detail(user, case_id)
 
@@ -415,4 +419,25 @@ def override_deadline(
 ) -> DataQsCaseOut:
     """STS admin: set a deadline by hand (e.g. a state's own counting rule), with the reason."""
     lifecycle.override_clock(user, case_id, clock_id, body)
+    return cases.detail(user, case_id)
+
+
+# --- Emails to the carrier, closing the file ------------------------------------------------------
+
+
+@router.post("/cases/{case_id}/messages", response_model=DataQsCaseOut)
+def email_carrier(
+    case_id: int, body: DataQsMessageIn, user: StaffUser, lifecycle: Lifecycle, cases: CaseService
+) -> DataQsCaseOut:
+    """Email the carrier about the case; the message is kept on the case for both sides."""
+    lifecycle.send_message(user, case_id, body)
+    return cases.detail(user, case_id)
+
+
+@router.post("/cases/{case_id}/close", response_model=DataQsCaseOut)
+def close_file(
+    case_id: int, body: DataQsCloseIn, user: StaffUser, lifecycle: Lifecycle, cases: CaseService
+) -> DataQsCaseOut:
+    """Close the file; the carrier is emailed that it is closed, with the note."""
+    lifecycle.close_file(user, case_id, body)
     return cases.detail(user, case_id)

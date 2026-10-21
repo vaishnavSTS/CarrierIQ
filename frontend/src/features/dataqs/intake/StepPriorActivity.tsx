@@ -1,18 +1,45 @@
 import type { DataQsPriorActivity } from '../../../types/dataqs'
 import { inputClass, labelClass } from './intakeState'
 
-/** Step 5: anything already filed or decided about this inspection. */
+/** Step 4: where the carrier saw the record (DataQs asks), and anything already filed or
+ * decided about this inspection. */
 export function StepPriorActivity({
   value,
   onChange,
+  viewedIn,
+  onViewedIn,
 }: {
   value: DataQsPriorActivity
   onChange: (next: DataQsPriorActivity) => void
+  viewedIn: string
+  onViewedIn: (next: string) => void
 }) {
   const set = (patch: Partial<DataQsPriorActivity>) => onChange({ ...value, ...patch })
   const text = (v: string) => v || null
   return (
     <div className="space-y-4 text-sm">
+      <div className="max-w-md">
+        <label htmlFor="viewed-in" className={labelClass}>
+          Where did you see this record?
+        </label>
+        <input
+          id="viewed-in"
+          list="viewed-in-options"
+          value={viewedIn}
+          maxLength={100}
+          placeholder="e.g. A&I/SMS Results"
+          onChange={(e) => onViewedIn(e.target.value)}
+          className={inputClass}
+        />
+        <datalist id="viewed-in-options">
+          <option value="A&I/SMS Results" />
+          <option value="Pre-Employment Screening Program (PSP) report" />
+          <option value="FMCSA Portal" />
+          <option value="Roadside inspection report" />
+          <option value="CarrierSafetyScan" />
+        </datalist>
+        <p className="mt-1 text-xs text-slate-500">DataQs asks this when the request is filed.</p>
+      </div>
       <label className="flex items-start gap-2">
         <input
           type="checkbox"

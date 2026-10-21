@@ -66,10 +66,12 @@ from app.schemas.dataqs import (
     DataQsClockOut,
     DataQsConsentOut,
     DataQsCorrespondenceOut,
+    DataQsEmailOut,
     DataQsEventOut,
     DataQsEvidenceLinkOut,
     DataQsEvidenceOut,
     DataQsIssueOut,
+    DataQsMessageOut,
     DataQsPackageOut,
     DataQsPriorActivityIn,
     DataQsReviewCycleOut,
@@ -88,7 +90,13 @@ from app.services.dataqs_assessment_service import (
     ASSESSMENT_CHECKS,
     OUTCOME_LABELS,
 )
-from app.services.dataqs_checklist import CHECKLIST, REASON_LABELS
+from app.services.dataqs_checklist import (
+    CHECKLIST,
+    DATAQS_REASON,
+    DOCUMENT_TITLES,
+    REASON_LABELS,
+    VIEWED_IN_OPTIONS,
+)
 from app.services.dataqs_clock_service import LABELS as CLOCK_LABELS
 from app.services.dataqs_clock_service import DataQsClockService, state
 from app.services.dataqs_lifecycle import LEVEL_LABEL, NEXT_LEVEL, proposed_cycle
@@ -259,7 +267,12 @@ class DataQsCaseService:
             cannot_open_reason=reason,
             existing_cases=self._summaries(visible),
             reasons=[
-                ReasonOut(reason=r, label=REASON_LABELS[r], checklist=CHECKLIST[r])
+                ReasonOut(
+                    reason=r,
+                    label=REASON_LABELS[r],
+                    dataqs_label=DATAQS_REASON.get(r),
+                    checklist=CHECKLIST[r],
+                )
                 for r in DataQsReason
             ],
         )
@@ -345,6 +358,7 @@ class DataQsCaseService:
             },
             source_observed_at=inspection.updated_at,
             prior_activity=body.prior_activity.model_dump(mode="json"),
+            viewed_in=(body.viewed_in or "").strip() or None,
             work_status=DataQsWorkStatus.DRAFT,
             action_owner=DataQsActionOwner.CARRIER,
             created_by_id=user.id,
@@ -565,6 +579,7 @@ class DataQsCaseService:
                 DataQsEvidenceOut(
                     id=e.id,
                     file_name=e.file_name,
+                    title=e.title,
                     mime_type=e.mime_type,
                     size_bytes=e.size_bytes,
                     sha256=e.sha256,
@@ -615,6 +630,10 @@ class DataQsCaseService:
             can_record_correspondence=staff and case.gov_request_id is not None,
             can_propose_review=can_propose,
             can_override_deadlines=user.role == UserRole.STS_ADMIN and bool(clocks),
+            can_message=staff and case.work_status != DataQsWorkStatus.DRAFT,
+            can_close=staff
+            and case.work_status not in (DataQsWorkStatus.DRAFT, DataQsWorkStatus.CLOSED),
+            email_enabled=get_settings().dataqs_email_enabled,
             consent=DataQsConsentOut(terms_version=CONSENT_TERMS_VERSION, text=CONSENT_TEXT),
             package_terms=DataQsConsentOut(
                 terms_version=PACKAGE_TERMS_VERSION, text=PACKAGE_TERMS_TEXT
@@ -718,6 +737,11 @@ class DataQsCaseService:
             timeline=self._timeline(
                 case, authorizations, packages, attempts, correspondence, cycles, assessments
             ),
+            messages=self._messages(case.id, staff),
+            emails=self._emails(case.id) if staff else None,
+            dataqs_reasons={r.value: label for r, label in DATAQS_REASON.items()},
+            document_titles=DOCUMENT_TITLES,
+            viewed_in_options=VIEWED_IN_OPTIONS,
             audit=(
                 [
                     DataQsAuditEventOut(
@@ -732,6 +756,59 @@ class DataQsCaseService:
                 else None
             ),
         )
+
+    def _messages(self, case_id: int, staff: bool) -> list[DataQsMessageOut]:
+        messages = self.repository.messages(case_id)
+        outbox = self.repository.outbox(case_id)
+        names = self.repository.user_names([m.author_id for m in messages if m.author_id])
+        by_message: dict[int, list[str]] = defaultdict(list)
+        for row in outbox:
+            message_id = (row.payload or {}).get("message_id")
+            if message_id is not None:
+                by_message[int(message_id)].append(row.status.value)
+        result = []
+        for m in reversed(messages):
+            statuses = by_message.get(m.id, [])
+            delivery = (
+                "NOT_SENT"
+                if not statuses
+                else "SENT"
+                if all(s == "SENT" for s in statuses)
+                else "FAILED"
+                if any(s == "FAILED" for s in statuses)
+                else "WAITING"
+            )
+            result.append(
+                DataQsMessageOut(
+                    id=m.id,
+                    kind=m.kind,
+                    subject=m.subject,
+                    body=m.body,
+                    author_name=names.get(m.author_id) if m.author_id else None,
+                    recipients=m.recipients if staff else [],
+                    delivery=delivery,
+                    created_at=m.created_at,
+                )
+            )
+        return result
+
+    def _emails(self, case_id: int) -> list[DataQsEmailOut]:
+        result = []
+        for row in reversed(self.repository.outbox(case_id)):
+            payload = row.payload or {}
+            result.append(
+                DataQsEmailOut(
+                    id=row.id,
+                    kind=row.kind,
+                    to=list(payload.get("to") or payload.get("sent_to") or []),
+                    status=row.status.value,
+                    scheduled_for=row.next_attempt_at,
+                    sent_at=row.sent_at,
+                    attempts=row.attempts,
+                    last_error=row.last_error,
+                )
+            )
+        return result
 
     @staticmethod
     def _clock_out(clock: Any, pauses: Any, now: datetime) -> DataQsClockOut:
@@ -848,6 +925,7 @@ class DataQsCaseService:
             citation_number=v.get("citation_number"),
             reason=issue.reason,
             reason_label=REASON_LABELS[issue.reason],
+            dataqs_reason_label=DATAQS_REASON.get(issue.reason),
             recorded_value=issue.recorded_value,
             requested_value=issue.requested_value,
             factual_basis=issue.factual_basis,
@@ -901,6 +979,7 @@ class DataQsCaseService:
                 source_event_id=c.source_event_id,
                 event_date=c.event_date,
                 event_state=c.event_state,
+                viewed_in=c.viewed_in,
                 work_status=c.work_status,
                 government_raw_status=c.government_raw_status,
                 gov_request_id=c.gov_request_id,

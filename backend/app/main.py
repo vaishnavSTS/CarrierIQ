@@ -13,13 +13,35 @@ from app.api.v1.router import api_router
 from app.core.config import DEV_AUTH_SECRET_KEY, get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
+from app.services.dataqs_notifications import run_dispatcher
 from app.workers.worker import Worker
 
 logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """DataQs emails are sent from a thread of the API process once RESEND_API_KEY is set."""
+    settings = get_settings()
+    stop = threading.Event()
+    dispatcher = None
+    if settings.dataqs_email_enabled and settings.dataqs_email_dispatch_in_api:
+        dispatcher = threading.Thread(
+            target=run_dispatcher, args=(stop,), name="dataqs-email", daemon=True
+        )
+        dispatcher.start()
+        logger.info("DataQs email dispatcher started")
+    try:
+        async with worker_lifespan(app):
+            yield
+    finally:
+        stop.set()
+        if dispatcher is not None:
+            dispatcher.join(timeout=10)
+
+
+@asynccontextmanager
+async def worker_lifespan(_: FastAPI) -> AsyncIterator[None]:
     """With RUN_WORKER_IN_API=true (local development) the background worker runs in a thread of
     the API process, so starting the backend also starts the worker; it stops with the API."""
     if not get_settings().run_worker_in_api:

@@ -17,7 +17,13 @@ import { StepExplain } from './StepExplain'
 import { StepPriorActivity } from './StepPriorActivity'
 import { StepViolations } from './StepViolations'
 
-const STEPS = ['The record', 'What’s wrong', 'Explain', 'Earlier activity', 'Review'] as const
+const STEPS = [
+  'The record',
+  'What’s wrong',
+  'Explain',
+  'Source & earlier activity',
+  'Review',
+] as const
 
 const button =
   'rounded-md px-3 py-1.5 text-sm font-medium ring-1 ring-inset disabled:cursor-not-allowed disabled:opacity-50'
@@ -51,6 +57,7 @@ function Wizard({ check }: { check: DataQsCheck }) {
   const [selection, setSelection] = useState<Selection>([])
   const [issues, setIssues] = useState<Record<string, IssueDraft>>({})
   const [prior, setPrior] = useState(EMPTY_PRIOR)
+  const [viewedIn, setViewedIn] = useState('A&I/SMS Results')
   // One key for this intake: pressing "Create" twice returns the same case.
   const [idempotencyKey] = useState(() => crypto.randomUUID())
   const create = useCreateDataQsCase(check.usdot_number)
@@ -87,7 +94,12 @@ function Wizard({ check }: { check: DataQsCheck }) {
     })
     create.mutate(
       {
-        input: { inspection_id: check.event.inspection_id, issues: payload, prior_activity: prior },
+        input: {
+          inspection_id: check.event.inspection_id,
+          issues: payload,
+          prior_activity: prior,
+          viewed_in: viewedIn.trim() || null,
+        },
         key: idempotencyKey,
       },
       { onSuccess: (created) => navigate(casePath(created.id)) },
@@ -132,7 +144,14 @@ function Wizard({ check }: { check: DataQsCheck }) {
             onChange={(key, next) => setIssues((current) => ({ ...current, [key]: next }))}
           />
         )}
-        {step === 3 && <StepPriorActivity value={prior} onChange={setPrior} />}
+        {step === 3 && (
+          <StepPriorActivity
+            value={prior}
+            onChange={setPrior}
+            viewedIn={viewedIn}
+            onViewedIn={setViewedIn}
+          />
+        )}
         {step === 4 && <StepReview check={check} selection={selection} issues={issues} />}
       </section>
 

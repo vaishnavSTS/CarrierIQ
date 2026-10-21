@@ -11,12 +11,14 @@ export type DataQsWorkStatus =
   | 'VERIFICATION'
   | 'CLOSED'
 
+/** DataQs's own reasons (its request wizard, step 3); UNSURE is ours. */
 export type DataQsReason =
-  | 'WRONG_ATTRIBUTION'
-  | 'INACCURATE_VIOLATION'
-  | 'DUPLICATE'
-  | 'FIELD_CORRECTION'
-  | 'COURT_OUTCOME'
+  | 'CITATION_OUTCOME'
+  | 'VIOLATION_INCORRECT'
+  | 'WRONG_CARRIER'
+  | 'DRIVER_INCORRECT'
+  | 'DUPLICATE_INSPECTION'
+  | 'INCORRECT_INFORMATION'
   | 'UNSURE'
 
 export type EligibilityStatus = 'POTENTIALLY_ELIGIBLE' | 'STAFF_REVIEW' | 'MANUAL_ASSESSMENT'
@@ -61,6 +63,8 @@ export interface DataQsEvent {
 export interface ReasonOption {
   reason: DataQsReason
   label: string
+  /** Exactly as DataQs words it */
+  dataqs_label: string | null
   /** Suggested evidence, not a government standard */
   checklist: string[]
 }
@@ -75,6 +79,8 @@ export interface DataQsCaseSummary {
   source_event_id: string
   event_date: string | null
   event_state: string | null
+  /** Where the carrier saw the record (DataQs step 4) */
+  viewed_in: string | null
   work_status: DataQsWorkStatus
   /** Exactly what DataQs last showed */
   government_raw_status: string | null
@@ -136,6 +142,7 @@ export interface DataQsCaseCreateInput {
   inspection_id: string
   issues: DataQsIssueInput[]
   prior_activity: DataQsPriorActivity
+  viewed_in: string | null
 }
 
 export interface DataQsSubmitInput {
@@ -149,6 +156,8 @@ export interface DataQsSubmitInput {
 export interface DataQsEvidence {
   id: number
   file_name: string
+  /** The short title DataQs asks for */
+  title: string | null
   mime_type: string
   size_bytes: number
   sha256: string
@@ -168,6 +177,7 @@ export interface DataQsIssue {
   citation_number: string | null
   reason: DataQsReason
   reason_label: string
+  dataqs_reason_label: string | null
   recorded_value: string | null
   requested_value: string | null
   factual_basis: string | null
@@ -210,6 +220,12 @@ export interface DataQsCase extends DataQsCaseSummary {
   can_propose_review: boolean
   /** STS admin */
   can_override_deadlines: boolean
+  /** Staff: email the carrier */
+  can_message: boolean
+  /** Staff: close the file (the carrier is emailed) */
+  can_close: boolean
+  /** False until the email service is set up: emails wait */
+  email_enabled: boolean
   consent: { terms_version: string; text: string }
   /** What a carrier agrees to when approving a package */
   package_terms: { terms_version: string; text: string }
@@ -227,6 +243,14 @@ export interface DataQsCase extends DataQsCaseSummary {
   correspondence: DataQsCorrespondence[]
   /** Newest first */
   timeline: DataQsTimelineEvent[]
+  /** Emails to the carrier, newest first */
+  messages: DataQsMessage[]
+  /** STS staff only: every queued email */
+  emails: DataQsEmail[] | null
+  /** reason -> DataQs's wording */
+  dataqs_reasons: Record<string, string>
+  document_titles: string[]
+  viewed_in_options: string[]
   /** STS staff only */
   audit: { action: string; actor_name: string | null; at: string; detail: unknown }[] | null
 }
@@ -282,10 +306,15 @@ export interface DataQsManifest {
     recorded_value: string | null
     requested_value: string | null
   }[]
+  dataqs_reason?: DataQsReason
+  dataqs_reason_label?: string
+  viewed_in?: string
+  review_level?: DataQsReviewLevel
   narrative_sha256: string
   evidence: {
     evidence_id: number
     file_name: string
+    title?: string
     mime_type: string
     size_bytes: number
     sha256: string
@@ -337,6 +366,8 @@ export interface DataQsAssessmentInput {
 
 export interface DataQsPackageInput {
   expected_version: number
+  dataqs_reason: DataQsReason
+  viewed_in: string
   narrative: string
   evidence_ids: number[]
   references: string[]
@@ -431,6 +462,7 @@ export interface DataQsClock {
 
 export type DataQsCorrespondenceKind =
   | 'ACKNOWLEDGEMENT'
+  | 'OPENED'
   | 'INFO_REQUEST'
   | 'INFO_RESPONSE'
   | 'DECISION'
@@ -457,12 +489,13 @@ export interface DataQsTimelineEvent {
 
 export interface DataQsCorrespondenceInput {
   expected_version: number
-  kind: 'INFO_REQUEST' | 'INFO_RESPONSE' | 'DECISION' | 'REOPENING' | 'OTHER'
+  kind: 'OPENED' | 'INFO_REQUEST' | 'INFO_RESPONSE' | 'DECISION' | 'REOPENING' | 'OTHER'
   source: 'DATAQS_PORTAL' | 'EMAIL' | 'PHONE' | 'OTHER'
   text: string
   occurred_at: string
   external_id: string | null
   portal_status: string | null
+  assigned_agency: string | null
   decision: {
     issue_outcomes: Record<number, 'CORRECTED' | 'NOT_CORRECTED'>
     procedural_reason: 'INSUFFICIENT_INFORMATION' | 'NO_RESPONSE' | null
@@ -471,4 +504,29 @@ export interface DataQsCorrespondenceInput {
     appeal_instructions: string | null
   } | null
   reopening: { mode: 'SAME_LEVEL' | 'RETURN_TO_INITIAL'; reason: string } | null
+}
+
+export interface DataQsMessage {
+  id: number
+  /** MESSAGE (written by STS staff) or the step that sent it */
+  kind: string
+  subject: string
+  body: string
+  /** null: sent by the app */
+  author_name: string | null
+  /** STS only */
+  recipients: string[]
+  delivery: 'SENT' | 'WAITING' | 'FAILED' | 'NOT_SENT'
+  created_at: string
+}
+
+export interface DataQsEmail {
+  id: number
+  kind: string
+  to: string[]
+  status: 'PENDING' | 'SENT' | 'FAILED' | 'CANCELLED'
+  scheduled_for: string | null
+  sent_at: string | null
+  attempts: number
+  last_error: string | null
 }

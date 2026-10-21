@@ -3,14 +3,53 @@ import { useRef, useState, type FormEvent } from 'react'
 import { useUploadDataQsEvidence } from '../../hooks/useDataQs'
 import { inputClass, labelClass } from './intake/intakeState'
 
-const ACCEPT =
-  '.pdf,.jpg,.jpeg,.png,.csv,.mp4,application/pdf,image/jpeg,image/png,text/csv,video/mp4'
+/** The file types DataQs accepts (ZIP and ETHOS excepted until uploads are scanned). */
+const ACCEPT = [
+  '.pdf',
+  '.doc',
+  '.docx',
+  '.xls',
+  '.xlsx',
+  '.tif',
+  '.tiff',
+  '.txt',
+  '.wpd',
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.gif',
+  '.mp4',
+  '.avi',
+  '.mkv',
+  '.mpeg',
+  '.mpg',
+  '.wmv',
+].join(',')
 const MAX_MB = 25
 
-/** Upload one file for an issue, with a short note on how it supports it. The server decides the
- * file's type from its content and refuses anything that isn't PDF, JPEG, PNG, CSV or MP4. */
-export function DataQsEvidenceUpload({ caseId, issueId }: { caseId: number; issueId: number }) {
+/** "brake-log_2025-03-14.pdf" -> "brake log 2025 03 14": a starting title from the file name. */
+function titleFromName(name: string): string {
+  return name
+    .replace(/\.[^.]+$/, '')
+    .replace(/[_-]+/g, ' ')
+    .trim()
+    .slice(0, 200)
+}
+
+/** Upload one file for an issue, with the short title DataQs asks for and a note on how it
+ * supports the issue. The server decides the file's type from its content. */
+export function DataQsEvidenceUpload({
+  caseId,
+  issueId,
+  titles,
+}: {
+  caseId: number
+  issueId: number
+  /** Suggested titles */
+  titles: string[]
+}) {
   const [file, setFile] = useState<File | null>(null)
+  const [title, setTitle] = useState('')
   const [relevance, setRelevance] = useState('')
   const [documentDate, setDocumentDate] = useState('')
   const [tooBig, setTooBig] = useState(false)
@@ -25,10 +64,12 @@ export function DataQsEvidenceUpload({ caseId, issueId }: { caseId: number; issu
         file,
         links: [{ issue_id: issueId, relevance: relevance.trim() }],
         documentDate: documentDate || null,
+        title: title.trim() || null,
       },
       {
         onSuccess: () => {
           setFile(null)
+          setTitle('')
           setRelevance('')
           setDocumentDate('')
           if (fileInput.current) fileInput.current.value = ''
@@ -42,7 +83,7 @@ export function DataQsEvidenceUpload({ caseId, issueId }: { caseId: number; issu
       <div className="grid gap-2 sm:grid-cols-[1fr_10rem]">
         <div>
           <label htmlFor={`file-${issueId}`} className={labelClass}>
-            File (PDF, JPEG, PNG, CSV or MP4, up to {MAX_MB} MB)
+            File (up to {MAX_MB} MB)
           </label>
           <input
             id={`file-${issueId}`}
@@ -53,9 +94,14 @@ export function DataQsEvidenceUpload({ caseId, issueId }: { caseId: number; issu
               const chosen = e.target.files?.[0] ?? null
               setTooBig(!!chosen && chosen.size > MAX_MB * 1024 * 1024)
               setFile(chosen)
+              if (chosen && !title) setTitle(titleFromName(chosen.name))
             }}
             className="mt-1 block w-full text-sm"
           />
+          <p className="mt-1 text-xs text-slate-500">
+            PDF, Word, Excel, TIF, TXT, WordPerfect, JPEG, PNG, GIF, MP4, AVI, MKV, MPEG or WMV: the
+            types DataQs accepts. Save ELD exports as PDF, Excel or TXT.
+          </p>
         </div>
         <div>
           <label htmlFor={`docdate-${issueId}`} className={labelClass}>
@@ -69,6 +115,25 @@ export function DataQsEvidenceUpload({ caseId, issueId }: { caseId: number; issu
             className={inputClass}
           />
         </div>
+      </div>
+      <div>
+        <label htmlFor={`title-${issueId}`} className={labelClass}>
+          Title (DataQs asks a brief title for each file)
+        </label>
+        <input
+          id={`title-${issueId}`}
+          list={`titles-${issueId}`}
+          value={title}
+          maxLength={200}
+          placeholder="e.g. Maintenance records"
+          onChange={(e) => setTitle(e.target.value)}
+          className={inputClass}
+        />
+        <datalist id={`titles-${issueId}`}>
+          {titles.map((t) => (
+            <option key={t} value={t} />
+          ))}
+        </datalist>
       </div>
       <div>
         <label htmlFor={`relevance-${issueId}`} className={labelClass}>
@@ -91,7 +156,9 @@ export function DataQsEvidenceUpload({ caseId, issueId }: { caseId: number; issu
       )}
       <button
         type="submit"
-        disabled={!file || tooBig || relevance.trim().length < 5 || upload.isPending}
+        disabled={
+          !file || tooBig || !title.trim() || relevance.trim().length < 5 || upload.isPending
+        }
         className="rounded-md bg-cta px-3 py-1.5 text-sm font-medium text-cta-ink hover:bg-cta-hover disabled:cursor-not-allowed disabled:opacity-50"
       >
         {upload.isPending ? 'Uploading…' : 'Upload'}

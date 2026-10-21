@@ -11,6 +11,7 @@ import { DataQsAssessmentHistory, DataQsTaskList } from './DataQsCaseActivity'
 import { DataQsDeadlines } from './DataQsDeadlines'
 import { DataQsEventSummary } from './DataQsEventSummary'
 import { DataQsFiledCard } from './DataQsFiledCard'
+import { DataQsMessages } from './DataQsMessages'
 import { DataQsEvidenceUpload } from './DataQsEvidenceUpload'
 import { DataQsPackageReview } from './DataQsPackageReview'
 import { DataQsPackageView } from './DataQsPackageView'
@@ -20,7 +21,9 @@ import { DataQsTimeline } from './DataQsTimeline'
 import { WORK_STATUS, fileSize } from './labels'
 import { DataQsAppealPanel } from './staff/DataQsAppealPanel'
 import { DataQsAssessmentPanel } from './staff/DataQsAssessmentPanel'
+import { DataQsCloseFile } from './staff/DataQsCloseFile'
 import { DataQsCorrespondencePanel } from './staff/DataQsCorrespondencePanel'
+import { DataQsEmailLog } from './staff/DataQsEmailLog'
 import { DataQsOwnerPanel } from './staff/DataQsOwnerPanel'
 import { DataQsPackageBuilder } from './staff/DataQsPackageBuilder'
 import { DataQsSubmissionConsole } from './staff/DataQsSubmissionConsole'
@@ -202,9 +205,26 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
         </Card>
       )}
 
+      {(c.can_message || c.messages.length > 0) && (
+        <Card title={staff ? 'Messages to the carrier' : 'Messages from STS'}>
+          <DataQsMessages dataqsCase={c} />
+        </Card>
+      )}
+
       <Card title="Timeline">
         <DataQsTimeline events={c.timeline} />
       </Card>
+
+      {c.emails && c.emails.length > 0 && (
+        <FoldCard title={`Emails (${c.emails.length})`}>
+          <DataQsEmailLog emails={c.emails} />
+        </FoldCard>
+      )}
+      {c.can_close && (
+        <FoldCard title="Close the file">
+          <DataQsCloseFile key={c.row_version} dataqsCase={c} />
+        </FoldCard>
+      )}
 
       {c.audit && (
         <Card title="Audit trail (STS only)">
@@ -226,6 +246,7 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
 }
 
 function IssueBlock({ dataqsCase: c, issue }: { dataqsCase: DataQsCase; issue: DataQsIssue }) {
+  const staffView = usePortalMode() === 'internal'
   const files = c.evidence.filter((e) => e.links.some((link) => link.issue_id === issue.id))
   return (
     <div className="space-y-3 rounded-lg border border-slate-200 p-4">
@@ -243,6 +264,9 @@ function IssueBlock({ dataqsCase: c, issue }: { dataqsCase: DataQsCase; issue: D
           )}
         </div>
         <div className="text-xs text-slate-500">{issue.reason_label}</div>
+        {staffView && issue.dataqs_reason_label && (
+          <div className="text-xs text-slate-500">DataQs: {issue.dataqs_reason_label}</div>
+        )}
         {issue.outcome && (
           <div className="mt-1">
             <StatusBadge
@@ -287,7 +311,7 @@ function IssueBlock({ dataqsCase: c, issue }: { dataqsCase: DataQsCase; issue: D
             Add a file
           </summary>
           <div className="mt-2">
-            <DataQsEvidenceUpload caseId={c.id} issueId={issue.id} />
+            <DataQsEvidenceUpload caseId={c.id} issueId={issue.id} titles={c.document_titles} />
           </div>
           <p className="mt-2 text-xs text-slate-500">
             Suggested: {issue.checklist.join('; ')}. These are suggestions, not a government
@@ -317,8 +341,9 @@ function EvidenceRow({
         className="flex items-center gap-1.5 font-medium text-accent-strong hover:underline"
       >
         <Download className="size-3.5" aria-hidden />
-        {file.file_name}
+        {file.title ?? file.file_name}
       </a>
+      {file.title && <span className="text-xs text-slate-500">{file.file_name}</span>}
       <span className="flex-1 text-slate-600">{relevance}</span>
       <span className="whitespace-nowrap text-xs text-slate-500">
         {fileSize(file.size_bytes)}

@@ -43,11 +43,18 @@ from app.models.enums import (
     UserRole,
 )
 from app.repositories.dataqs_case_repository import DataQsCaseRepository
-from app.schemas.dataqs import DataQsClockOverrideIn, DataQsCorrespondenceIn, DataQsReviewRequestIn
+from app.schemas.dataqs import (
+    DataQsClockOverrideIn,
+    DataQsCloseIn,
+    DataQsCorrespondenceIn,
+    DataQsMessageIn,
+    DataQsReviewRequestIn,
+)
 from app.services.dataqs_access import DataQsAccess
 from app.services.dataqs_assessment_service import ASSESS_TARGET, check_version
 from app.services.dataqs_clock_service import DataQsClockService
 from app.services.dataqs_filing_adapter import CLOCK_SKEW
+from app.services.dataqs_notifications import DataQsNotifications
 
 NEXT_LEVEL = {
     DataQsReviewLevel.INITIAL: DataQsReviewLevel.RECONSIDERATION,
@@ -88,6 +95,7 @@ class DataQsLifecycleService:
         self.repository = DataQsCaseRepository(db)
         self.access = DataQsAccess(db, self.repository)
         self.clocks = DataQsClockService(db)
+        self.notifications = DataQsNotifications(db)
 
     def _staff_case(self, user: User, case_id: int, expected_version: int) -> DataQsCase:
         if not user.role.is_staff:
@@ -135,7 +143,9 @@ class DataQsLifecycleService:
 
         before = {"work_status": case.work_status.value}
         detail: dict[str, Any] = {"kind": kind.value, "occurred_at": body.occurred_at.isoformat()}
-        if kind == DataQsCorrespondenceKind.INFO_REQUEST:
+        if kind == DataQsCorrespondenceKind.OPENED:
+            self._opened(user, case, current, body, at)
+        elif kind == DataQsCorrespondenceKind.INFO_REQUEST:
             self._info_request(user, case, current, item, body, at)
         elif kind == DataQsCorrespondenceKind.INFO_RESPONSE:
             self._info_response(user, case, item, body, at)
@@ -153,6 +163,26 @@ class DataQsLifecycleService:
         )
         self.db.commit()
         return case
+
+    def _opened(
+        self,
+        user: User,
+        case: DataQsCase,
+        current: DataQsReviewCycle,
+        body: DataQsCorrespondenceIn,
+        at: datetime,
+    ) -> None:
+        """DataQs history shows "Opened" by the assigned agency: the 7-day check is done."""
+        if current.decision_issued_at is not None:
+            raise DataQsInvalidTransitionError("This review stage is already decided")
+        self.repository.complete_tasks(case, {"CHECK_OPENED"}, user, at)
+        agency = (body.assigned_agency or "").strip()
+        if agency:
+            confirmed = [
+                a for a in self.repository.attempts(case.id) if a.status.value == "CONFIRMED"
+            ]
+            if confirmed:
+                confirmed[-1].assigned_agency = agency
 
     def _info_request(
         self,
@@ -303,6 +333,7 @@ class DataQsLifecycleService:
             )
         elif final:
             case.work_status, case.action_owner, case.closed_at = DataQsWorkStatus.CLOSED, None, at
+            self.notifications.cancel_pending(case)
         else:
             case.work_status, case.action_owner = (
                 DataQsWorkStatus.STAFF_REVIEW,
@@ -318,7 +349,55 @@ class DataQsLifecycleService:
                 DataQsActionOwner.STS,
                 assignee_id=case.owner_id,
             ).due_at = appeal.due_at
+        self.db.flush()
+        self._decision_email(case, current, outcome, decision.reasons, final)
         return {"outcome": outcome.value, "level": current.level.value}
+
+    def _decision_email(
+        self,
+        case: DataQsCase,
+        cycle: DataQsReviewCycle,
+        outcome: DataQsOutcome,
+        reasons: str | None,
+        final: bool,
+    ) -> None:
+        request = case.gov_request_id or f"case #{case.id}"
+        result = {
+            DataQsOutcome.FULL_CORRECTION: "the record will be corrected",
+            DataQsOutcome.PARTIAL_CORRECTION: "part of the record will be corrected",
+            DataQsOutcome.NO_CORRECTION: "the record was not changed",
+            DataQsOutcome.PROCEDURAL_CLOSURE: "the agency closed it without deciding the merits",
+        }.get(outcome, outcome.value.lower())
+        if outcome in (DataQsOutcome.FULL_CORRECTION, DataQsOutcome.PARTIAL_CORRECTION):
+            after = (
+                "STS will check that FMCSA's data shows the correction. FMCSA's SMS and PSP "
+                "update monthly, so it can take a few weeks to appear."
+            )
+        elif outcome == DataQsOutcome.PROCEDURAL_CLOSURE:
+            after = "STS will look at supplying what was missing and asking the agency to reopen."
+        elif final:
+            after = (
+                "This was the final review, so the normal DataQs appeal route is closed. Your "
+                "file is now closed."
+            )
+        else:
+            after = (
+                f"STS is reviewing whether to ask for {LEVEL_LABEL[NEXT_LEVEL[cycle.level]]} "
+                "within the 30-day appeal window, and will contact you."
+            )
+        body = (
+            f"The agency decided the {LEVEL_LABEL[cycle.level]} of DataQs request {request} "
+            f"(inspection {case.source_event_id}): {result}."
+        )
+        if reasons:
+            body += f"\n\nReasons given: {reasons}"
+        body += f"\n\n{after}"
+        kind, subject = (
+            ("FILE_CLOSED", f"Your DataQs file #{case.id} is closed")
+            if final and case.work_status == DataQsWorkStatus.CLOSED
+            else ("DECISION", f"Decision on your DataQs request {request}")
+        )
+        self.notifications.to_carrier(case, kind, subject, body)
 
     def _reopening(
         self,
@@ -370,7 +449,7 @@ class DataQsLifecycleService:
         case.review_level, case.outcome, case.closed_at = level, None, None
         return {"cycle_id": cycle.id, "level": level.value, "mode": reopening.mode}
 
-    # --- Appeal ----------------------------------------------------------------------------------
+    # --- Appeal -----------------------------------------------------------------------------------
 
     def propose_review(self, user: User, case_id: int, body: DataQsReviewRequestIn) -> DataQsCase:
         case = self._staff_case(user, case_id, body.expected_version)
@@ -433,6 +512,69 @@ class DataQsLifecycleService:
                 "issue_ids": chosen,
                 "work_status": case.work_status.value,
             },
+        )
+        self.db.commit()
+        return case
+
+    # --- Close the file and email the carrier -----------------------------------------------------
+
+    def close_file(self, user: User, case_id: int, body: DataQsCloseIn) -> DataQsCase:
+        """STS closes the file. A case closed before any decision counts as withdrawn. Open tasks,
+        deadlines and reminders end; the carrier is emailed the closing note."""
+        case = self._staff_case(user, case_id, body.expected_version)
+        if case.work_status in (DataQsWorkStatus.DRAFT, DataQsWorkStatus.CLOSED):
+            raise DataQsInvalidTransitionError("This case can't be closed")
+        at = _now()
+        before = {"work_status": case.work_status.value}
+        if case.outcome is None:
+            case.outcome = DataQsOutcome.WITHDRAWN
+        case.work_status, case.action_owner, case.closed_at = DataQsWorkStatus.CLOSED, None, at
+        for task in self.repository.open_tasks([case.id]):
+            task.completed_at, task.completed_by_id = at, user.id
+        for clock in self.clocks.clocks([case.id]):
+            clock.is_active = False
+        self.db.flush()
+        self.notifications.cancel_pending(case)
+        outcome = {
+            DataQsOutcome.FULL_CORRECTION: "The agency corrected the record.",
+            DataQsOutcome.PARTIAL_CORRECTION: "The agency corrected part of the record.",
+            DataQsOutcome.NO_CORRECTION: "The agency did not change the record.",
+            DataQsOutcome.PROCEDURAL_CLOSURE: "The agency closed the request without a decision.",
+            DataQsOutcome.WITHDRAWN: "The request was closed before a decision.",
+        }[case.outcome]
+        self.notifications.to_carrier(
+            case,
+            "FILE_CLOSED",
+            f"Your DataQs file #{case.id} is closed",
+            f"STS has closed your DataQs file for inspection {case.source_event_id}"
+            + (f" (DataQs request {case.gov_request_id})" if case.gov_request_id else "")
+            + f".\n\n{outcome}\n\n{body.note.strip()}",
+            author=user,
+        )
+        self.repository.audit(
+            case,
+            user,
+            "case.closed",
+            before=before,
+            after={"work_status": case.work_status.value, "outcome": case.outcome.value},
+        )
+        self.db.commit()
+        return case
+
+    def send_message(self, user: User, case_id: int, body: DataQsMessageIn) -> DataQsCase:
+        """STS emails the carrier about the case (e.g. what else is needed)."""
+        if not user.role.is_staff:
+            raise DataQsMissingAuthorityError("Only STS staff email carriers from a case")
+        case = self.access.case_to_act_on(user, case_id)
+        if case.work_status == DataQsWorkStatus.DRAFT:
+            raise DataQsInvalidTransitionError("The carrier hasn't submitted this case yet")
+        message = self.notifications.to_carrier(
+            case, "MESSAGE", body.subject.strip(), body.body.strip(), author=user
+        )
+        if not message.recipients:
+            raise ValidationError("The carrier's company has no active users to email")
+        self.repository.audit(
+            case, user, "message.sent", after={"message_id": message.id, "subject": message.subject}
         )
         self.db.commit()
         return case

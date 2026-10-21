@@ -31,6 +31,7 @@ from app.models.enums import (
 from app.repositories.dataqs_case_repository import DataQsCaseRepository
 from app.schemas.dataqs import DataQsAssessmentIn, DataQsCheckDefOut
 from app.services.dataqs_access import DataQsAccess
+from app.services.dataqs_notifications import DataQsNotifications
 
 ASSESSMENT_CHECKS = [
     DataQsCheckDefOut(
@@ -176,6 +177,14 @@ class DataQsAssessmentService:
                 DataQsActionOwner.CARRIER,
                 detail=carrier_message,
             ).due_at = at + CARRIER_EVIDENCE_TARGET
+            self.db.flush()
+            DataQsNotifications(self.db).to_carrier(
+                case,
+                "EVIDENCE_NEEDED",
+                f"STS needs more information for DataQs case #{case.id}",
+                f'{carrier_message}\n\nPlease upload it on the case, then choose "Send back '
+                'to STS".',
+            )
         elif outcome == DataQsAssessmentOutcome.INSUFFICIENT_BASIS:
             case.work_status, case.action_owner, case.closed_at = (
                 DataQsWorkStatus.CLOSED,
@@ -184,6 +193,16 @@ class DataQsAssessmentService:
             )
             for task in self.repository.open_tasks([case.id]):
                 task.completed_at, task.completed_by_id = at, user.id
+            self.db.flush()
+            notifications = DataQsNotifications(self.db)
+            notifications.cancel_pending(case)
+            notifications.to_carrier(
+                case,
+                "FILE_CLOSED",
+                f"Your DataQs file #{case.id} is closed",
+                f"STS reviewed your request for inspection {case.source_event_id} and won't file "
+                f"it with FMCSA.\n\n{carrier_message}",
+            )
         else:
             case.work_status, case.action_owner = (
                 DataQsWorkStatus.STAFF_REVIEW,

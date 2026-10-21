@@ -20,6 +20,27 @@ export function DataQsPackageView({ pkg }: { pkg: DataQsPackage }) {
         </span>
       </div>
 
+      {(m.dataqs_reason_label || m.viewed_in) && (
+        <dl className="grid gap-2 sm:grid-cols-2">
+          {m.dataqs_reason_label && (
+            <div>
+              <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                DataQs reason
+              </dt>
+              <dd className="text-slate-800">{m.dataqs_reason_label}</dd>
+            </div>
+          )}
+          {m.viewed_in && (
+            <div>
+              <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                Where the data was viewed
+              </dt>
+              <dd className="text-slate-800">{m.viewed_in}</dd>
+            </div>
+          )}
+        </dl>
+      )}
+
       <div>
         <h3 className="text-xs font-medium uppercase tracking-wide text-slate-500">Narrative</h3>
         <p className="mt-1 whitespace-pre-line rounded-md bg-slate-50 p-3 text-slate-800">
@@ -60,7 +81,8 @@ export function DataQsPackageView({ pkg }: { pkg: DataQsPackage }) {
           <ul className="mt-1 divide-y divide-slate-100">
             {m.evidence.map((e) => (
               <li key={e.evidence_id} className="flex flex-wrap gap-x-3 py-1.5">
-                <span className="font-medium text-slate-900">{e.file_name}</span>
+                <span className="font-medium text-slate-900">{e.title ?? e.file_name}</span>
+                {e.title && <span className="text-xs text-slate-500">{e.file_name}</span>}
                 <span className="text-xs text-slate-500">
                   {fileSize(e.size_bytes)}
                   {e.document_date && ` · dated ${formatDate(e.document_date)}`}

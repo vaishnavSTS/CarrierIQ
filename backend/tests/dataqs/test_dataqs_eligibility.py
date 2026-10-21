@@ -62,10 +62,21 @@ def test_unknown_future_and_leap_day_dates_go_to_staff_review(event: date | None
         (b"\xff\xd8\xff\xe0 jpeg", "photo.jpg", "image/jpeg"),
         (b"\x89PNG\r\n\x1a\n....", "scan.png", "image/png"),
         (b"\x00\x00\x00\x18ftypmp42....", "dashcam.mp4", "video/mp4"),
-        (b"date,hours\n2026-10-01,10\n", "eld.csv", "text/csv"),
-        (b"date,hours\n", "eld.txt", None),  # text, but not a .csv
+        (b"date,hours\n2026-10-01,10\n", "eld.txt", "text/plain"),
+        (b"date,hours\n", "eld.csv", None),  # DataQs doesn't take CSV
+        (b"GIF89a....", "photo.gif", "image/gif"),
+        (b"II*\x00....", "scan.tif", "image/tiff"),
+        (b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1..", "log.xls", "application/vnd.ms-excel"),
+        (b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1..", "log.exe", None),
+        (
+            b"PK\x03\x04....word/document.xml",
+            "letter.docx",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        ),
+        (b"PK\x03\x04....anything", "archive.zip", None),  # refused until uploads are scanned
+        (b"PK\x03\x04", "records.docx", None),  # a ZIP that isn't a Word file
+        (b"\x30\x26\xb2\x75\x8e\x66\xcf\x11....", "dashcam.wmv", "video/x-ms-wmv"),
         (b"MZ\x90\x00", "report.pdf", None),  # an executable named .pdf
-        (b"PK\x03\x04", "records.docx", None),
     ],
 )
 def test_file_type_comes_from_the_content(data: bytes, name: str, expected: str | None) -> None:

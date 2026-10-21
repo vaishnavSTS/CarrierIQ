@@ -3,10 +3,14 @@
 Rules:
 - Only users who may act on the case upload (dataqs_access.py): the carrier's owner while the case
   is a draft, needs evidence or is in STS review; STS staff until the case is closed.
-- The file's type is decided from its content, not its name or the browser's claim: PDF, JPEG,
-  PNG, MP4 or a CSV (plain text). Anything else, an empty file or one over DATAQS_MAX_UPLOAD_MB
-  is refused. The bucket's own type list does not apply to the backend's keys, so this is the
-  check that counts.
+- The file's type is decided from its content, not its name or the browser's claim. The types
+  are the ones DataQs accepts (so the representative can upload the same file): documents (PDF,
+  Word, Excel, TIF, TXT, WordPerfect), images (JPEG, PNG, GIF) and video (MP4, AVI, MKV, MPEG,
+  WMV). ZIP and ETHOS, which DataQs also takes, are refused until uploads are scanned for malware.
+  Anything else, an empty file or one over DATAQS_MAX_UPLOAD_MB (25 MB, DataQs's limit too) is
+  refused. The bucket's own type list does not apply to the backend's keys, so this is the check
+  that counts.
+- Each file has a short title, which DataQs asks for when it is uploaded there.
 - Every file is linked to at least one of the case's issues, with a note on why it is relevant.
 - The original is kept unchanged with its SHA-256; the object key never contains the file name.
 - Malware scanning is not wired yet (decision D2): files stay scan_status PENDING until it is.
@@ -37,11 +41,24 @@ from app.services.dataqs_evidence_storage import EvidenceStorage
 
 EXTENSIONS = {
     "application/pdf": ".pdf",
+    "application/msword": ".doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+    "application/vnd.ms-excel": ".xls",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+    "application/vnd.wordperfect": ".wpd",
+    "image/tiff": ".tif",
+    "text/plain": ".txt",
     "image/jpeg": ".jpg",
     "image/png": ".png",
+    "image/gif": ".gif",
     "video/mp4": ".mp4",
-    "text/csv": ".csv",
+    "video/x-msvideo": ".avi",
+    "video/x-matroska": ".mkv",
+    "video/mpeg": ".mpg",
+    "video/x-ms-wmv": ".wmv",
 }
+ALLOWED_TEXT = "PDF, Word, Excel, TIF, TXT, WordPerfect, JPEG, PNG, GIF, MP4, AVI, MKV, MPEG or WMV"
+OLE = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"  # old Word / Excel files
 
 
 class DownloadedEvidence(NamedTuple):
@@ -51,21 +68,49 @@ class DownloadedEvidence(NamedTuple):
 
 
 def sniff_type(data: bytes, file_name: str) -> str | None:
-    """The file's real type from its first bytes; None when it is not an allowed type."""
+    """The file's real type from its first bytes (and, where the bytes are shared by several
+    formats, its extension); None when it is not an allowed type."""
+    name = file_name.lower()
     if data.startswith(b"%PDF-"):
         return "application/pdf"
     if data.startswith(b"\xff\xd8\xff"):
         return "image/jpeg"
     if data.startswith(b"\x89PNG\r\n\x1a\n"):
         return "image/png"
+    if data[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif"
+    if data[:4] in (b"II*\x00", b"MM\x00*"):
+        return "image/tiff"
     if len(data) >= 12 and data[4:8] == b"ftyp":
         return "video/mp4"
-    if file_name.lower().endswith(".csv") and b"\x00" not in data:
+    if data[:4] == b"RIFF" and data[8:12] == b"AVI ":
+        return "video/x-msvideo"
+    if data.startswith(b"\x1a\x45\xdf\xa3"):
+        return "video/x-matroska"
+    if data[:4] in (b"\x00\x00\x01\xba", b"\x00\x00\x01\xb3"):
+        return "video/mpeg"
+    if data.startswith(b"\x30\x26\xb2\x75\x8e\x66\xcf\x11"):
+        return "video/x-ms-wmv"
+    if data.startswith(b"\xffWPC"):
+        return "application/vnd.wordperfect"
+    if data.startswith(OLE):  # old Office: tell Word from Excel by the extension
+        if name.endswith(".doc"):
+            return "application/msword"
+        if name.endswith(".xls"):
+            return "application/vnd.ms-excel"
+        return None
+    if data.startswith(b"PK\x03\x04"):  # Office Open XML is a ZIP: Word or Excel only
+        if name.endswith(".docx") and b"word/" in data:
+            return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        if name.endswith(".xlsx") and b"xl/" in data:
+            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        return None
+    if name.endswith(".txt") and b"\x00" not in data:
         try:
             data.decode("utf-8-sig")
         except UnicodeDecodeError:
             return None
-        return "text/csv"
+        return "text/plain"
     return None
 
 
@@ -92,6 +137,7 @@ class DataQsEvidenceService:
         file_name: str,
         issue_links: dict[int, str],
         document_date: date | None,
+        title: str | None = None,
     ) -> DataQsEvidence:
         case = self.access.case_to_act_on(user, case_id)
         allowed = (
@@ -113,7 +159,7 @@ class DataQsEvidenceService:
         mime_type = sniff_type(data, name)
         if mime_type is None:
             raise DataQsEvidenceRejectedError(
-                "Only PDF, JPEG, PNG, MP4 and CSV files can be uploaded"
+                f"Only {ALLOWED_TEXT} files can be uploaded (the types DataQs accepts)"
             )
 
         case_issues = {issue.id for issue in self.repository.issues([case.id])}
@@ -132,6 +178,7 @@ class DataQsEvidenceService:
             object_key=key,
             sha256=sha256,
             file_name=name,
+            title=(title or "").strip()[:200] or None,
             mime_type=mime_type,
             size_bytes=len(data),
             document_date=document_date,

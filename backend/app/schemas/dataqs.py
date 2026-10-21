@@ -61,6 +61,7 @@ class DataQsEventOut(BaseModel):
 class ReasonOut(BaseModel):
     reason: DataQsReason
     label: str
+    dataqs_label: str | None  # exactly as DataQs words it (None: ours, e.g. "not sure")
     checklist: list[str]  # suggested evidence, not a government standard
 
 
@@ -112,6 +113,7 @@ class DataQsCaseCreateIn(BaseModel):
     inspection_id: str = Field(min_length=1, max_length=50)
     issues: list[DataQsIssueIn] = Field(min_length=1, max_length=30)
     prior_activity: DataQsPriorActivityIn = DataQsPriorActivityIn()
+    viewed_in: str | None = Field(default=None, max_length=100)  # where they saw the record
 
 
 class DataQsSubmitIn(BaseModel):
@@ -152,7 +154,19 @@ class DataQsAssessmentIn(BaseModel):
 
 class DataQsPackageIn(BaseModel):
     expected_version: int
+    # DataQs step 3: one reason per request (DataQs's own tiles; not "unsure")
+    dataqs_reason: DataQsReason
+    # DataQs step 4: "Where did you view the data you want reviewed?"
+    viewed_in: str = Field(min_length=2, max_length=100)
     narrative: str = Field(min_length=50, max_length=20000)
+
+    @field_validator("dataqs_reason")
+    @classmethod
+    def _a_dataqs_reason(cls, value: DataQsReason) -> DataQsReason:
+        if value == DataQsReason.UNSURE:
+            raise ValueError("Choose the DataQs reason the request will be filed under")
+        return value
+
     evidence_ids: list[int] = Field(max_length=100)
     references: list[str] = Field(default=[], max_length=20)
 
@@ -334,13 +348,14 @@ class DataQsCorrespondenceIn(BaseModel):
     """A verified agency event, recorded by STS from the DataQs portal (or email, phone)."""
 
     expected_version: int
-    kind: Literal["INFO_REQUEST", "INFO_RESPONSE", "DECISION", "REOPENING", "OTHER"]
+    kind: Literal["OPENED", "INFO_REQUEST", "INFO_RESPONSE", "DECISION", "REOPENING", "OTHER"]
     source: DataQsCorrespondenceSource = DataQsCorrespondenceSource.DATAQS_PORTAL
     text: str = Field(min_length=3, max_length=20000)  # exactly as written
     # When the agency issued it, or (an answer) when STS submitted the response
     occurred_at: datetime
     external_id: str | None = Field(default=None, max_length=100)
     portal_status: str | None = Field(default=None, max_length=100)
+    assigned_agency: str | None = Field(default=None, max_length=200)  # OPENED: e.g. "NE SP"
     decision: DataQsDecisionIn | None = None
     reopening: DataQsReopeningIn | None = None
 
@@ -358,6 +373,44 @@ class DataQsReviewRequestIn(BaseModel):
     expected_version: int
     grounds: str = Field(min_length=50, max_length=20000)  # must address the prior decision
     issue_ids: list[int] = Field(min_length=1, max_length=30)
+
+
+class DataQsCloseIn(BaseModel):
+    """STS closes the file; the note is emailed to the carrier."""
+
+    expected_version: int
+    note: str = Field(min_length=5, max_length=5000)
+
+
+class DataQsMessageIn(BaseModel):
+    """An email from STS to the carrier about the case."""
+
+    subject: str = Field(min_length=3, max_length=200)
+    body: str = Field(min_length=5, max_length=10000)
+
+
+class DataQsMessageOut(BaseModel):
+    id: int
+    kind: str  # MESSAGE (written by staff) or the step that sent it (EVIDENCE_NEEDED, ...)
+    subject: str
+    body: str
+    author_name: str | None  # None: sent by the app
+    recipients: list[str]
+    delivery: Literal["SENT", "WAITING", "FAILED", "NOT_SENT"]
+    created_at: datetime
+
+
+class DataQsEmailOut(BaseModel):
+    """One queued email, for STS staff: what was sent, to whom, and what failed."""
+
+    id: int
+    kind: str
+    to: list[str]
+    status: str
+    scheduled_for: datetime | None
+    sent_at: datetime | None
+    attempts: int
+    last_error: str | None
 
 
 class DataQsClockOverrideIn(BaseModel):
@@ -410,6 +463,7 @@ class DataQsCaseSummaryOut(BaseModel):
     source_event_id: str
     event_date: date | None
     event_state: str | None
+    viewed_in: str | None
     work_status: DataQsWorkStatus
     government_raw_status: str | None  # exactly what DataQs last showed
     gov_request_id: str | None  # the DataQs request ID, once filed
@@ -440,6 +494,7 @@ class DataQsEvidenceLinkOut(BaseModel):
 class DataQsEvidenceOut(BaseModel):
     id: int
     file_name: str
+    title: str | None
     mime_type: str
     size_bytes: int
     sha256: str
@@ -459,6 +514,7 @@ class DataQsIssueOut(BaseModel):
     citation_number: str | None
     reason: DataQsReason
     reason_label: str
+    dataqs_reason_label: str | None
     recorded_value: str | None
     requested_value: str | None
     factual_basis: str | None
@@ -508,6 +564,9 @@ class DataQsCaseOut(DataQsCaseSummaryOut):
     can_record_correspondence: bool  # staff, once filed
     can_propose_review: bool  # staff: appeal denied issues within 30 days
     can_override_deadlines: bool  # STS admin
+    can_message: bool  # staff: email the carrier
+    can_close: bool  # staff: close the file (the carrier is emailed)
+    email_enabled: bool  # False until RESEND_API_KEY is set: emails wait
     consent: DataQsConsentOut  # the current authorization text, shown before submitting
     package_terms: DataQsConsentOut  # the text a carrier agrees to when approving a package
     assessments: list[DataQsAssessmentOut]
@@ -519,6 +578,11 @@ class DataQsCaseOut(DataQsCaseSummaryOut):
     clocks: list[DataQsClockOut]  # active deadlines
     correspondence: list[DataQsCorrespondenceOut]
     timeline: list[DataQsTimelineEventOut]  # newest first
+    messages: list[DataQsMessageOut]  # emails to the carrier, newest first
+    emails: list[DataQsEmailOut] | None  # STS staff only: every queued email
+    dataqs_reasons: dict[str, str]  # reason -> DataQs's wording (package builder)
+    document_titles: list[str]  # suggested file titles
+    viewed_in_options: list[str]
     audit: list[DataQsAuditEventOut] | None  # STS staff only
 
 

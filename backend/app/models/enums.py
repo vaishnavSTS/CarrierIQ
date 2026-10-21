@@ -151,13 +151,16 @@ class DataQsOutcome(StrEnum):
 
 
 class DataQsReason(StrEnum):
-    """Why the carrier believes an issue is wrong (intake wizard, step 3)."""
+    """Why the carrier believes an issue is wrong: DataQs's own reasons for an inspection report
+    (its request wizard, step 3), so the filing uses the same choice. UNSURE is ours: STS picks
+    the DataQs reason when it prepares the package."""
 
-    WRONG_ATTRIBUTION = "WRONG_ATTRIBUTION"  # not our vehicle, driver or company
-    INACCURATE_VIOLATION = "INACCURATE_VIOLATION"
-    DUPLICATE = "DUPLICATE"
-    FIELD_CORRECTION = "FIELD_CORRECTION"  # a wrong field on the report
-    COURT_OUTCOME = "COURT_OUTCOME"  # a citation dismissed or reduced in court
+    CITATION_OUTCOME = "CITATION_OUTCOME"  # citation associated with a violation (court outcome)
+    VIOLATION_INCORRECT = "VIOLATION_INCORRECT"  # incorrect, listed twice, or missing IEP/shipper
+    WRONG_CARRIER = "WRONG_CARRIER"  # company and/or USDOT number listed incorrectly
+    DRIVER_INCORRECT = "DRIVER_INCORRECT"  # driver name and/or license number listed incorrectly
+    DUPLICATE_INSPECTION = "DUPLICATE_INSPECTION"  # the same inspection listed more than once
+    INCORRECT_INFORMATION = "INCORRECT_INFORMATION"  # other report data (level, location, ...)
     UNSURE = "UNSURE"
 
 
@@ -201,6 +204,7 @@ class DataQsCorrespondenceKind(StrEnum):
     ACKNOWLEDGEMENT = "ACKNOWLEDGEMENT"
     INFO_REQUEST = "INFO_REQUEST"  # agency asks the requester for information: pauses the clock
     INFO_RESPONSE = "INFO_RESPONSE"  # requester answers: resumes the clock
+    OPENED = "OPENED"  # the assigned agency opened the request (DataQs history: "Opened")
     DECISION = "DECISION"
     REOPENING = "REOPENING"
     OTHER = "OTHER"
@@ -215,9 +219,10 @@ class DataQsClockType(StrEnum):
 
 
 class DataQsOutboxStatus(StrEnum):
-    PENDING = "PENDING"
+    PENDING = "PENDING"  # waiting to be sent (now, or at next_attempt_at for a reminder)
     SENT = "SENT"
-    FAILED = "FAILED"
+    FAILED = "FAILED"  # gave up after retries
+    CANCELLED = "CANCELLED"  # no longer needed, e.g. a reminder for a case that closed
 
 
 def enum_type(enum_cls: type[StrEnum], name: str, length: int = 20) -> Enum:

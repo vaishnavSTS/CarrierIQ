@@ -9,3 +9,12 @@ export const secondaryButton = `${button} bg-surface text-slate-900 ring-slate-3
 export function shortHash(hash: string): string {
   return `${hash.slice(0, 8)}…${hash.slice(-4)}`
 }
+
+/** DataQs statuses: the first, second and last were seen in STS's recordings; staff can type
+ * others DataQs shows. */
+export const DATAQS_STATUSES = [
+  'New',
+  'Open - In Review',
+  'Closed - Data Correction Made',
+  'Closed - No Data Correction Made',
+]

@@ -78,6 +78,8 @@ class DataQsCase(IdMixin, UpdatedAtMixin, Base):
     # Intake step "check prior activity": existing DataQs id, prior representative, prior
     # decisions, pending court proceedings.
     prior_activity: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    # DataQs step 4 asks "Where did you view the data you want reviewed?" (e.g. A&I/SMS Results)
+    viewed_in: Mapped[str | None] = mapped_column(String(100))
 
     # Status: each dimension separate, None until known.
     work_status: Mapped[DataQsWorkStatus] = mapped_column(
@@ -121,7 +123,9 @@ class DataQsIssue(IdMixin, UpdatedAtMixin, Base):
     violation_code: Mapped[str | None] = mapped_column(String(30))  # None: the whole event
     violation_unit: Mapped[str | None] = mapped_column(String(5))
     violation_snapshot: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
-    reason: Mapped[DataQsReason] = mapped_column(enum_type(DataQsReason, "dataqs_reason"))
+    reason: Mapped[DataQsReason] = mapped_column(
+        enum_type(DataQsReason, "dataqs_reason", length=30)
+    )
     recorded_value: Mapped[str | None] = mapped_column(Text)
     requested_value: Mapped[str | None] = mapped_column(Text)
     factual_basis: Mapped[str | None] = mapped_column(Text)

@@ -5,8 +5,10 @@ import {
   assessDataQsCase,
   assignDataQsOwner,
   buildDataQsPackage,
+  closeDataQsFile,
   confirmDataQsFiling,
   createDataQsCase,
+  emailDataQsCarrier,
   fetchDataQsCase,
   fetchDataQsCases,
   fetchDataQsCheck,
@@ -96,7 +98,8 @@ export function useUploadDataQsEvidence(caseId: number) {
       file: File
       links: { issue_id: number; relevance: string }[]
       documentDate: string | null
-    }) => uploadDataQsEvidence(base, caseId, args.file, args.links, args.documentDate),
+      title: string | null
+    }) => uploadDataQsEvidence(base, caseId, args.file, args.links, args.documentDate, args.title),
     onSuccess: save,
   })
 }
@@ -206,5 +209,19 @@ export function useOverrideDataQsClock(caseId: number) {
       dueAt: string
       reason: string
     }) => overrideDataQsClock(caseId, clockId, version, dueAt, reason),
+  )
+}
+
+// --- Emails to the carrier, closing the file ---------------------------------------------------
+
+export function useEmailDataQsCarrier(caseId: number) {
+  return useCaseAction(({ subject, body }: { subject: string; body: string }) =>
+    emailDataQsCarrier(caseId, subject, body),
+  )
+}
+
+export function useCloseDataQsFile(caseId: number) {
+  return useCaseAction(({ version, note }: { version: number; note: string }) =>
+    closeDataQsFile(caseId, version, note),
   )
 }

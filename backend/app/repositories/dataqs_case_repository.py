@@ -21,6 +21,8 @@ from app.models import (
     DataQsEvidence,
     DataQsEvidenceLink,
     DataQsIssue,
+    DataQsMessage,
+    DataQsOutbox,
     DataQsPackage,
     DataQsReviewCycle,
     DataQsSubmissionAttempt,
@@ -110,7 +112,7 @@ class DataQsCaseRepository:
             )
         )
 
-    # --- Intake ----------------------------------------------------------------------------------
+    # --- Intake -----------------------------------------------------------------------------------
 
     def carrier(self, usdot_number: int) -> Carrier | None:
         return self.db.scalar(select(Carrier).where(Carrier.usdot_number == usdot_number))
@@ -142,7 +144,7 @@ class DataQsCaseRepository:
             )
         )
 
-    # --- A case's parts --------------------------------------------------------------------------
+    # --- A case's parts ---------------------------------------------------------------------------
 
     def issues(self, case_ids: Collection[int]) -> list[DataQsIssue]:
         if not case_ids:
@@ -202,7 +204,7 @@ class DataQsCaseRepository:
         )
         return {organization_id: name for organization_id, name in rows}
 
-    # --- Tasks -----------------------------------------------------------------------------------
+    # --- Tasks ------------------------------------------------------------------------------------
 
     def open_tasks(self, case_ids: Collection[int]) -> list[DataQsTask]:
         if not case_ids:
@@ -243,7 +245,7 @@ class DataQsCaseRepository:
             if task.kind in kinds:
                 task.completed_at, task.completed_by_id = at, by.id
 
-    # --- Assessment, packages, approval ----------------------------------------------------------
+    # --- Assessment, packages, approval -----------------------------------------------------------
 
     def assessments(self, case_id: int) -> list[DataQsAssessment]:
         return list(
@@ -303,7 +305,7 @@ class DataQsCaseRepository:
             )
         )
 
-    # --- Filing (Phase 4) ------------------------------------------------------------------------
+    # --- Filing (Phase 4) -------------------------------------------------------------------------
 
     def attempts(self, case_id: int) -> list[DataQsSubmissionAttempt]:
         return list(
@@ -355,5 +357,23 @@ class DataQsCaseRepository:
                 select(DataQsCorrespondence)
                 .where(DataQsCorrespondence.case_id == case_id)
                 .order_by(DataQsCorrespondence.id)
+            )
+        )
+
+    def messages(self, case_id: int) -> list[DataQsMessage]:
+        return list(
+            self.db.scalars(
+                select(DataQsMessage)
+                .where(DataQsMessage.case_id == case_id)
+                .order_by(DataQsMessage.id)
+            )
+        )
+
+    def outbox(self, case_id: int) -> list[DataQsOutbox]:
+        return list(
+            self.db.scalars(
+                select(DataQsOutbox)
+                .where(DataQsOutbox.case_id == case_id)
+                .order_by(DataQsOutbox.id)
             )
         )

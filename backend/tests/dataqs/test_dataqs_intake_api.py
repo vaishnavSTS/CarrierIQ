@@ -30,7 +30,11 @@ def test_owner_checks_the_inspection_before_opening_a_case(
     assert body["carrier_name"] == "ACME HAULING LLC"
     assert body["eligibility"]["window_ends"] == "2027-09-12"
     assert [v["code"] for v in body["event"]["violations"]] == ["393.9A", "396.3A1BOS"]
-    assert {r["reason"] for r in body["reasons"]} >= {"COURT_OUTCOME", "WRONG_ATTRIBUTION"}
+    assert {r["reason"] for r in body["reasons"]} >= {"CITATION_OUTCOME", "WRONG_CARRIER"}
+    wrong_carrier = next(r for r in body["reasons"] if r["reason"] == "WRONG_CARRIER")
+    assert wrong_carrier["dataqs_label"] == (
+        "Company and/or USDOT Number is listed incorrectly on the inspection report"
+    )  # exactly as DataQs words it
 
     log_in(api, "viewer@acme.test")
     viewer = api.get(f"/api/v1/portal/dataqs/carriers/{USDOT}/inspections/{INSPECTION_ID}/check")

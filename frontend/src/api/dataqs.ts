@@ -54,11 +54,13 @@ export function uploadDataQsEvidence(
   file: File,
   links: { issue_id: number; relevance: string }[],
   documentDate: string | null,
+  title: string | null = null,
 ): Promise<DataQsCase> {
   const form = new FormData()
   form.append('file', file)
   form.append('links', JSON.stringify(links))
   if (documentDate) form.append('document_date', documentDate)
+  if (title) form.append('title', title)
   return apiRequest(`${base}/cases/${caseId}/evidence`, { method: 'POST', body: form })
 }
 
@@ -206,4 +208,23 @@ export function overrideDataQsClock(
     due_at: dueAt,
     reason,
   })
+}
+
+// --- Emails to the carrier, closing the file (staff only) --------------------------------------
+
+export function emailDataQsCarrier(
+  caseId: number,
+  subject: string,
+  body: string,
+): Promise<DataQsCase> {
+  return post(`/dataqs/cases/${caseId}/messages`, { subject, body })
+}
+
+/** Close the file; the carrier is emailed that it is closed, with the note. */
+export function closeDataQsFile(
+  caseId: number,
+  expectedVersion: number,
+  note: string,
+): Promise<DataQsCase> {
+  return post(`/dataqs/cases/${caseId}/close`, { expected_version: expectedVersion, note })
 }

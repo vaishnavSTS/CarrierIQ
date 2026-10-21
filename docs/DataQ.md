@@ -3,7 +3,7 @@
 How we will add DataQs (challenging wrong FMCSA safety records) to CarrierSafetyScan, phase by
 phase. Edit freely as decisions are made; record each decision in the log at the bottom.
 
-**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules. Phase 2 built (2026-10-21): carrier intake wizard, evidence uploads, submit to STS. Phase 3 built (2026-10-21): staff queue, assessment, filing package, carrier approval (migration 0025). Phase 4 built (2026-10-21): manual filing console, receipts, unconfirmed attempts and reconciling (migration 0026). Requests are started from the client DataQs tab. Phase 5 built (2026-10-21): agency correspondence, decisions, appeals, reopenings, deadline clocks with pauses (migration 0027).
+**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules. Phase 2 built (2026-10-21): carrier intake wizard, evidence uploads, submit to STS. Phase 3 built (2026-10-21): staff queue, assessment, filing package, carrier approval (migration 0025). Phase 4 built (2026-10-21): manual filing console, receipts, unconfirmed attempts and reconciling (migration 0026). Requests are started from the client DataQs tab. Phase 5 built (2026-10-21): agency correspondence, decisions, appeals, reopenings, deadline clocks with pauses (migration 0027). 2026-10-21: matched to the real DataQs portal (from STS's screen recordings) and emails added (Resend; migration 0028), see section 7.
 **Created:** 2026-10-21
 **Source:** `../../Sky_DataQs_Developer_Integration.docx` (Sky DataQs Developer Integration Specification v1.0)
 **Related:** `client-internal-portal-plan.md`, `../CHECKPOINT.md`
@@ -510,6 +510,35 @@ failed email keeps the task and shows the exception to a supervisor.
 
 ---
 
+## 7. Matching the real DataQs portal, and emails (2026-10-21)
+
+From STS's recordings of the FMCSA Portal and DataQs (see the summary below), the app now
+collects what the representative types into DataQs, screen for screen.
+
+**How DataQs filing works (observed):** FMCSA Portal (Login.gov) → the "DataQs Secure Access"
+role → DataQs → Start A New Request:
+
+| DataQs step | What it asks | Where our app gets it |
+|---|---|---|
+| 1 Category | "Crash, Inspection, Investigation, or Audit" | fixed |
+| 2 Search for your report | State (required) + one of USDOT#, Report Number, Report Date, Plate | the inspection on the case |
+| 3 Reason (8 tiles) | one reason per request | `DataQsReason` = DataQs's tiles; the package's `dataqs_reason` |
+| 4 Request details | "Where did you view the data", "What information should be reviewed and why", files each with a title (25 MB; DataQs's file types) | case `viewed_in`, package narrative, evidence `title` |
+| 5 Review | attestation (18 U.S.C. 1001), Submit | carrier's package approval + filer's confirmation carry the attestation |
+
+After filing: request IDs are 7 digits; statuses New → Open - In Review → Closed - (No) Data
+Correction Made; history Submitted → Opened (agency, e.g. "NE SP") → Decision Reached;
+"Add Response / Documents" answers the agency; **"Re-open Request" is how to appeal** (same ID).
+
+**Emails (Resend).** The carrier gives the information; an STS representative files it in
+DataQs on the carrier's behalf. Emails to the carrier: evidence needed, package ready to approve,
+filed (request ID), decision, file closed, plus staff-written messages (kept on the case). Staff
+reminders 7 and 21 days after each filing (to the case specialist, or STS admins). Staff close the
+file with "File closed" and the carrier is emailed. Sent from an outbox by a thread of the API
+once `RESEND_API_KEY` is set; retries, no duplicates.
+
+---
+
 ## 6. Decision log
 
 | Date | Decision | By |
@@ -534,3 +563,8 @@ failed email keeps the task and shows the exception to a supervisor.
 | 2026-10-21 | Deadlines count calendar days in UTC; a state's own counting rule is applied by an STS admin override with a reason | Build |
 | 2026-10-21 | Carriers see the agency's questions, decisions and reasons in their timeline; appeal grounds and reviewer-independence flags are STS-only | Build |
 | 2026-10-21 | Carriers can add evidence while the agency reviews (e.g. for an information request) | Build |
+| 2026-10-21 | An STS representative files in DataQs on the carrier's behalf; STS emails the carrier about requirements; staff reminders 7 and 21 days after filing; "File closed" emails the carrier | User |
+| 2026-10-21 | D3: email through Resend (`RESEND_API_KEY`, `DATAQS_EMAIL_FROM`), replies to Info@ | User |
+| 2026-10-21 | While testing, every carrier email goes to wesley@ and every STS staff email to vaishnav@ (`DATAQS_EMAIL_CARRIER_OVERRIDE` / `DATAQS_EMAIL_STAFF_OVERRIDE`); clear them to email real recipients | User |
+| 2026-10-21 | Reasons, file types and file titles, filing guide, statuses, "Opened" event, appeals by Re-open Request and the attestation match DataQs as recorded | User |
+| 2026-10-21 | CSV, ZIP and ETHOS uploads refused (DataQs takes no CSV; ZIP/ETHOS wait for malware scanning) | Build |

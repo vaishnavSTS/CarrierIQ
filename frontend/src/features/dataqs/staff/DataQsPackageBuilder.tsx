@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 
 import { useBuildDataQsPackage } from '../../../hooks/useDataQs'
-import type { DataQsCase } from '../../../types/dataqs'
+import type { DataQsCase, DataQsReason } from '../../../types/dataqs'
 import { formatDate } from '../../../utils/format'
 import { inputClass, labelClass } from '../intake/intakeState'
 import { primaryButton } from '../ui'
@@ -36,6 +36,16 @@ export function DataQsPackageBuilder({ dataqsCase }: { dataqsCase: DataQsCase })
       current?.manifest.evidence.map((e) => e.evidence_id) ?? dataqsCase.evidence.map((e) => e.id),
   )
   const [references, setReferences] = useState(() => current?.manifest.references.join('\n') ?? '')
+  // DataQs files one reason per request: default to the issues' reason when they agree.
+  const issueReasons = [...new Set(dataqsCase.issues.map((i) => i.reason))]
+  const [reason, setReason] = useState<DataQsReason | ''>(
+    () =>
+      current?.manifest.dataqs_reason ??
+      (issueReasons.length === 1 && issueReasons[0] !== 'UNSURE' ? issueReasons[0] : ''),
+  )
+  const [viewedIn, setViewedIn] = useState(
+    () => current?.manifest.viewed_in ?? dataqsCase.viewed_in ?? 'A&I/SMS Results',
+  )
   const build = useBuildDataQsPackage(dataqsCase.id)
 
   const toggle = (id: number) =>
@@ -43,8 +53,11 @@ export function DataQsPackageBuilder({ dataqsCase }: { dataqsCase: DataQsCase })
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
+    if (reason === '') return
     build.mutate({
       expected_version: dataqsCase.row_version,
+      dataqs_reason: reason,
+      viewed_in: viewedIn.trim(),
       narrative: narrative.trim(),
       evidence_ids: evidenceIds,
       references: references
@@ -56,6 +69,50 @@ export function DataQsPackageBuilder({ dataqsCase }: { dataqsCase: DataQsCase })
 
   return (
     <form onSubmit={submit} className="space-y-4 text-sm">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label htmlFor="dataqs-reason" className={labelClass}>
+            DataQs reason (step 3: one per request)
+          </label>
+          <select
+            id="dataqs-reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value as DataQsReason | '')}
+            className={inputClass}
+          >
+            <option value="">Choose…</option>
+            {Object.entries(dataqsCase.dataqs_reasons).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          {issueReasons.length > 1 && (
+            <p className="mt-1 text-xs text-amber-800">
+              The issues have different reasons; DataQs takes one per request. File the others as
+              separate requests.
+            </p>
+          )}
+        </div>
+        <div>
+          <label htmlFor="viewed-in-pkg" className={labelClass}>
+            Where did the carrier view the data? (step 4)
+          </label>
+          <input
+            id="viewed-in-pkg"
+            list="viewed-in-pkg-options"
+            value={viewedIn}
+            maxLength={100}
+            onChange={(e) => setViewedIn(e.target.value)}
+            className={inputClass}
+          />
+          <datalist id="viewed-in-pkg-options">
+            {dataqsCase.viewed_in_options.map((o) => (
+              <option key={o} value={o} />
+            ))}
+          </datalist>
+        </div>
+      </div>
       <div>
         <label htmlFor="narrative" className={labelClass}>
           Narrative (at least 50 characters). Confirm every fact against the evidence.
@@ -81,7 +138,7 @@ export function DataQsPackageBuilder({ dataqsCase }: { dataqsCase: DataQsCase })
               checked={evidenceIds.includes(e.id)}
               onChange={() => toggle(e.id)}
             />
-            {e.file_name}
+            {e.title ?? e.file_name}
             {e.scan_status !== 'CLEAN' && (
               <span className="text-xs text-slate-500">(scan {e.scan_status.toLowerCase()})</span>
             )}
@@ -115,7 +172,12 @@ export function DataQsPackageBuilder({ dataqsCase }: { dataqsCase: DataQsCase })
       <button
         type="submit"
         className={primaryButton}
-        disabled={narrative.trim().length < 50 || build.isPending}
+        disabled={
+          narrative.trim().length < 50 ||
+          reason === '' ||
+          viewedIn.trim().length < 2 ||
+          build.isPending
+        }
       >
         {build.isPending ? 'Building…' : 'Build package and send to carrier'}
       </button>

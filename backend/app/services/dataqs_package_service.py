@@ -42,14 +42,19 @@ from app.repositories.dataqs_case_repository import DataQsCaseRepository
 from app.schemas.dataqs import DataQsApprovalIn, DataQsChangesIn, DataQsPackageIn
 from app.services.dataqs_access import DataQsAccess
 from app.services.dataqs_assessment_service import check_version, now
+from app.services.dataqs_checklist import DATAQS_REASON
+from app.services.dataqs_notifications import DataQsNotifications
 
-PACKAGE_TERMS_VERSION = "2026-10-21-draft"
+PACKAGE_TERMS_VERSION = "2026-10-21b-draft"
 PACKAGE_TERMS_TEXT = (
     "I have reviewed this DataQs request package, including the narrative and every listed file. "
-    "I approve Sky Transport Solutions (STS) filing exactly this package with FMCSA's DataQs for "
-    "my company. If anything in the package changes, STS must ask for my approval again. A state "
-    "agency decides the request; filing does not guarantee that the record will be changed or "
-    "removed."
+    "To the best of my knowledge the statements and documents in it are true, accurate and "
+    "complete. I approve Sky Transport Solutions (STS) filing exactly this package with FMCSA's "
+    "DataQs on my company's behalf. If anything in the package changes, STS must ask for my "
+    "approval again. I understand that, as DataQs warns, any intentionally false or misleading "
+    "statement or document may result in closure of the request and may be subject to prosecution "
+    "under Federal law (18 U.S.C. 1001). A state agency decides the request; filing does not "
+    "guarantee that the record will be changed or removed."
 )
 MANIFEST_FORMAT = "dataqs-package/1"
 CARRIER_APPROVAL_TARGET = timedelta(days=7)
@@ -174,6 +179,14 @@ class DataQsPackageService:
             DataQsActionOwner.CARRIER,
         ).due_at = at + CARRIER_APPROVAL_TARGET
         self.db.flush()
+        DataQsNotifications(self.db).to_carrier(
+            case,
+            "PACKAGE_READY",
+            f"Please review and approve your DataQs request (case #{case.id})",
+            f"STS has prepared the DataQs request for inspection {case.source_event_id} "
+            f"(package v{package.package_version}).\n\nPlease read it and approve it, or tell us "
+            "what to change. STS files it with FMCSA only once you approve this exact version.",
+        )
         self.repository.audit(
             case,
             user,
@@ -249,11 +262,16 @@ class DataQsPackageService:
                 }
                 for i in issues
             ],
+            # DataQs step 3 (one reason per request) and step 4
+            "dataqs_reason": body.dataqs_reason.value,
+            "dataqs_reason_label": DATAQS_REASON[body.dataqs_reason],
+            "viewed_in": body.viewed_in.strip(),
             "narrative_sha256": sha256_text(narrative),
             "evidence": [
                 {
                     "evidence_id": e.id,
                     "file_name": e.file_name,
+                    "title": e.title or e.file_name,
                     "mime_type": e.mime_type,
                     "size_bytes": e.size_bytes,
                     "sha256": e.sha256,

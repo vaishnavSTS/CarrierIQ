@@ -119,7 +119,7 @@ def build_world(db: Session) -> dict[str, User]:
 
 ISSUE = {
     "violation_index": 1,
-    "reason": "INACCURATE_VIOLATION",
+    "reason": "VIOLATION_INCORRECT",
     "recorded_value": "Brakes out of adjustment",
     "requested_value": "Remove the violation",
     "factual_basis": "The brakes were adjusted and inspected the morning of the inspection.",
@@ -201,6 +201,8 @@ def build(api: TestClient, case: dict, narrative: str = NARRATIVE) -> httpx.Resp
         f"/api/v1/dataqs/cases/{case['id']}/packages",
         json={
             "expected_version": case["row_version"],
+            "dataqs_reason": "VIOLATION_INCORRECT",
+            "viewed_in": "A&I/SMS Results",
             "narrative": narrative,
             "evidence_ids": [e["id"] for e in case["evidence"]],
             "references": ["49 CFR 396.3(a)(1)"],

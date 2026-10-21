@@ -121,6 +121,22 @@ class Settings(BaseSettings):
     dataqs_representative_company: str = "Sky Transport Solutions"
     dataqs_representative_email: str = "Info@skytransportsolutions.com"
     dataqs_representative_phone: str = "8004989820"
+    # DataQs emails (docs/DataQ.md) through Resend (resend.com). RESEND_API_KEY is a secret:
+    # environment only. While it is unset nothing is sent; emails wait in dataqs_outbox.
+    # DATAQS_EMAIL_FROM must use a domain verified in Resend.
+    resend_api_key: str | None = None
+    dataqs_email_from: str = "Sky Transport Solutions <dataqs@skytransportsolutions.com>"
+    dataqs_email_reply_to: str = "Info@skytransportsolutions.com"  # carriers' replies go here
+    # While testing, send every DataQs email for carriers / for STS staff to these addresses
+    # instead (comma-separated). Clear them to email the real carrier users and staff.
+    dataqs_email_carrier_override: str | None = None
+    dataqs_email_staff_override: str | None = None
+    # Reminders to STS staff to check a filed request in DataQs, in days after filing.
+    dataqs_reminder_days: str = "7,21"
+    # Send the waiting emails from a thread of the API process (every 30 seconds).
+    dataqs_email_dispatch_in_api: bool = True
+    # Where the app's pages are, for links in emails (the frontend's address).
+    public_app_url: str = "http://localhost:5173"
 
     # "Continue with Google" (OAuth 2.0 / OpenID Connect). Off unless both are set. The redirect
     # URI must match the one registered in Google Cloud Console exactly; in development it goes
@@ -132,6 +148,22 @@ class Settings(BaseSettings):
     @property
     def google_enabled(self) -> bool:
         return bool(self.google_client_id and self.google_client_secret)
+
+    @property
+    def dataqs_email_enabled(self) -> bool:
+        return bool(self.resend_api_key)
+
+    @property
+    def dataqs_carrier_override_list(self) -> list[str]:
+        return _emails(self.dataqs_email_carrier_override)
+
+    @property
+    def dataqs_staff_override_list(self) -> list[str]:
+        return _emails(self.dataqs_email_staff_override)
+
+    @property
+    def dataqs_reminder_day_list(self) -> list[int]:
+        return sorted({int(d) for d in self.dataqs_reminder_days.split(",") if d.strip()})
 
     @property
     def dataqs_storage_enabled(self) -> bool:
@@ -149,6 +181,10 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+
+def _emails(value: str | None) -> list[str]:
+    return [e.strip() for e in (value or "").split(",") if e.strip()]
 
 
 @lru_cache

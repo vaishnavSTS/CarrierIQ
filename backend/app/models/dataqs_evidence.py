@@ -31,6 +31,7 @@ class DataQsEvidence(IdMixin, Base):
         BigInteger, ForeignKey("dataqs_evidence.id")
     )
     file_name: Mapped[str] = mapped_column(String(255))
+    title: Mapped[str | None] = mapped_column(String(200))  # DataQs asks a brief title per file
     mime_type: Mapped[str] = mapped_column(String(100))
     size_bytes: Mapped[int] = mapped_column(BigInteger)
     document_date: Mapped[date | None] = mapped_column(Date)

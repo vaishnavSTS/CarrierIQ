@@ -52,6 +52,7 @@ from app.repositories.dataqs_case_repository import DataQsCaseRepository
 from app.schemas.dataqs import DataQsAttemptStartIn, DataQsConfirmIn
 from app.services.dataqs_access import DataQsAccess
 from app.services.dataqs_clock_service import DataQsClockService
+from app.services.dataqs_notifications import DataQsNotifications
 
 # The agency should open a request within 7 days of submission [S3]: STS checks that it did.
 OPENING_CHECKPOINT = timedelta(days=7)
@@ -248,6 +249,22 @@ class ManualFilingAdapter:
             assignee_id=case.owner_id,
         ).due_at = body.filed_at + OPENING_CHECKPOINT
         self.db.flush()
+        notifications = DataQsNotifications(self.db)
+        notifications.schedule_filing_reminders(case, attempt.id, body.filed_at)
+        stage = {
+            DataQsReviewLevel.INITIAL: "request",
+            DataQsReviewLevel.RECONSIDERATION: "request for reconsideration",
+            DataQsReviewLevel.FINAL: "request for final review",
+        }[cycle.level]
+        notifications.to_carrier(
+            case,
+            "FILED",
+            f"Your DataQs {stage} was filed with FMCSA (request {body.gov_request_id})",
+            f"STS filed your DataQs {stage} for inspection {case.source_event_id} with FMCSA. "
+            f"The DataQs request ID is {body.gov_request_id}.\n\nThe reviewing agency decides "
+            "it; agencies usually open a request within 7 days and decide an initial review within "
+            "21 days. STS watches it and will email you if anything is needed.",
+        )
         self.repository.audit(
             case,
             user,

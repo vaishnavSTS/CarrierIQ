@@ -1,5 +1,5 @@
 import { Copy, Download } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 
 import { dataQsEvidenceUrl } from '../../../api/dataqs'
 import { StatusBadge } from '../../../components/StatusBadge'
@@ -11,8 +11,9 @@ import {
 } from '../../../hooks/useDataQs'
 import type { DataQsAttempt, DataQsCase, DataQsPackage } from '../../../types/dataqs'
 import { formatDate, formatDateTime } from '../../../utils/format'
+import { stateName } from '../../carrier-profile/safety/usStates'
 import { inputClass, labelClass } from '../intake/intakeState'
-import { primaryButton, secondaryButton, shortHash } from '../ui'
+import { DATAQS_STATUSES, primaryButton, secondaryButton } from '../ui'
 
 const ATTEMPT_TONE = {
   STARTED: 'pending',
@@ -157,44 +158,137 @@ function OpenAttempt({
   )
 }
 
-/** What to enter in DataQs: the record to find, the approved narrative and files. */
-function FilingGuide({ dataqsCase: c, pkg }: { dataqsCase: DataQsCase; pkg: DataQsPackage }) {
+/** A value to type into DataQs, with a copy button. */
+function Value({ label, value }: { label: string; value: string | null | undefined }) {
   return (
-    <ol className="list-decimal space-y-3 pl-5 text-slate-700">
-      <li>
-        Sign in to DataQs and find the inspection: report{' '}
-        <span className="font-mono text-xs">{c.event.inspection_id}</span>{' '}
-        <CopyButton text={c.event.inspection_id} label="Copy" />,{' '}
-        {formatDate(c.event.inspection_date)}
-        {c.event.state && `, ${c.event.state}`}, USDOT {c.usdot_number}.
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="w-40 shrink-0 text-xs text-slate-500">{label}</span>
+      {value ? (
+        <>
+          <span className="font-mono text-xs text-slate-900">{value}</span>
+          <CopyButton text={value} label="Copy" />
+        </>
+      ) : (
+        <span className="text-xs text-slate-500">not in our data (not needed)</span>
+      )}
+    </div>
+  )
+}
+
+function Screen({ n, title, children }: { n: number; title: string; children: ReactNode }) {
+  return (
+    <li className="space-y-1.5 rounded-lg border border-slate-200 p-3">
+      <div className="font-medium text-slate-900">
+        DataQs step {n}: {title}
+      </div>
+      {children}
+    </li>
+  )
+}
+
+/**
+ * What to enter in DataQs, screen by screen as its request wizard asks (seen in STS's recordings):
+ * 1 category, 2 search for the report, 3 reason, 4 request details and documents, 5 review and
+ * attest. An appeal is not a new request: it is "Re-open Request" on the same DataQs request.
+ */
+function FilingGuide({ dataqsCase: c, pkg }: { dataqsCase: DataQsCase; pkg: DataQsPackage }) {
+  const m = pkg.manifest
+  const appeal = m.review_level && m.review_level !== 'INITIAL'
+  const state = c.event.state
+  const files = (
+    <ul className="space-y-1">
+      {m.evidence.map((e) => (
+        <li key={e.evidence_id} className="flex flex-wrap items-center gap-2">
+          <a
+            href={dataQsEvidenceUrl('/dataqs', c.id, e.evidence_id)}
+            className="inline-flex items-center gap-1 font-medium text-accent-strong hover:underline"
+          >
+            <Download className="size-3.5" aria-hidden />
+            {e.file_name}
+          </a>
+          <span className="text-xs text-slate-500">title:</span>
+          <span className="text-xs text-slate-900">{e.title ?? e.file_name}</span>
+          <CopyButton text={e.title ?? e.file_name} label="Copy title" />
+        </li>
+      ))}
+    </ul>
+  )
+  const narrative = (
+    <>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-slate-500">
+          {appeal
+            ? 'Comments (the approved grounds)'
+            : '“What information should be reviewed and why?”'}
+        </span>
+        <CopyButton text={pkg.narrative} label="Copy text" />
+      </div>
+      <p className="whitespace-pre-line rounded-md bg-slate-50 p-3 text-slate-800">
+        {pkg.narrative}
+      </p>
+    </>
+  )
+
+  if (appeal) {
+    return (
+      <ol className="space-y-3 text-sm text-slate-700">
+        <li className="rounded-lg border border-slate-200 p-3">
+          In DataQs open <span className="font-medium">My DataQs</span>, find request{' '}
+          <span className="font-mono text-xs">{c.gov_request_id}</span>{' '}
+          {c.gov_request_id && <CopyButton text={c.gov_request_id} label="Copy" />} and choose{' '}
+          <span className="font-medium">Re-open Request</span> (this asks for{' '}
+          {m.review_level === 'FINAL' ? 'final review' : 'reconsideration'}; it is not a new
+          request).
+        </li>
+        <li className="space-y-1.5 rounded-lg border border-slate-200 p-3">{narrative}</li>
+        <li className="space-y-1.5 rounded-lg border border-slate-200 p-3">
+          <div>Attach these files, and only these:</div>
+          {files}
+        </li>
+        <li className="rounded-lg border border-slate-200 p-3">
+          Read the attestation, submit, and record what DataQs shows below.
+        </li>
+      </ol>
+    )
+  }
+
+  return (
+    <ol className="space-y-3 text-sm text-slate-700">
+      <li className="rounded-lg border border-slate-200 p-3">
+        FMCSA Portal → <span className="font-medium">DataQs</span> → Go →{' '}
+        <span className="font-medium">Start A New Request</span>. Use your own STS login.
       </li>
-      <li>
-        Choose the request type that fits, and enter the approved narrative exactly:{' '}
-        <CopyButton text={pkg.narrative} label="Copy narrative" />
-        <p className="mt-1 whitespace-pre-line rounded-md bg-slate-50 p-3 text-slate-800">
-          {pkg.narrative}
+      <Screen n={1} title="What is your request about?">
+        <Value label="Choose" value="Crash, Inspection, Investigation, or Audit" />
+      </Screen>
+      <Screen n={2} title="Search for your report">
+        <Value label="State" value={state ? `${state}-${stateName(state)}` : null} />
+        <Value label="Report type" value="Inspection" />
+        <Value label="Report Number" value={c.event.inspection_id} />
+        <Value label="USDOT#" value={String(c.usdot_number)} />
+        <Value label="Report Date" value={formatDate(c.event.inspection_date)} />
+        <Value label="Plate State / Plate#" value={null} />
+        <p className="text-xs text-slate-500">
+          Pick the result whose report number matches, then Next.
         </p>
-      </li>
-      <li>
-        Upload these files, and only these:
-        <ul className="mt-1 space-y-1">
-          {pkg.manifest.evidence.map((e) => (
-            <li key={e.evidence_id} className="flex flex-wrap items-center gap-2">
-              <a
-                href={dataQsEvidenceUrl('/dataqs', c.id, e.evidence_id)}
-                className="inline-flex items-center gap-1 font-medium text-accent-strong hover:underline"
-              >
-                <Download className="size-3.5" aria-hidden />
-                {e.file_name}
-              </a>
-              <span className="font-mono text-xs text-slate-500" title={e.sha256}>
-                SHA-256 {shortHash(e.sha256)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </li>
-      <li>Submit, then record what DataQs shows below. A saved draft is not a submission.</li>
+      </Screen>
+      <Screen n={3} title="Choose the reason for your request">
+        <Value label="Choose" value={m.dataqs_reason_label} />
+      </Screen>
+      <Screen n={4} title="Complete request details">
+        <Value label="Where did you view the data" value={m.viewed_in} />
+        {narrative}
+        <div className="text-xs text-slate-500">
+          Attach Supporting Document(s): for each file enter the title, add the file, then Add File.
+        </div>
+        {files}
+      </Screen>
+      <Screen n={5} title="Review your request before submitting to FMCSA">
+        <p>
+          Check it matches the approved package v{pkg.package_version}, read the attestation, and
+          Submit. Then record what DataQs shows below; a saved draft is not a submission.
+        </p>
+      </Screen>
     </ol>
   )
 }
@@ -245,9 +339,15 @@ function ConfirmForm({
             id="gov-id"
             value={requestId}
             maxLength={50}
+            placeholder="7 digits, e.g. 1234567"
             onChange={(e) => setRequestId(e.target.value)}
             className={inputClass}
           />
+          {requestId.trim() && !/^\d{7}$/.test(requestId.trim()) && (
+            <p className="mt-1 text-xs text-amber-800">
+              DataQs request IDs are usually 7 digits; check it.
+            </p>
+          )}
         </div>
         <div>
           <label htmlFor="filed-at" className={labelClass}>
@@ -269,7 +369,7 @@ function ConfirmForm({
             id="agency"
             value={agency}
             maxLength={200}
-            placeholder="e.g. Texas DPS"
+            placeholder="e.g. NE SP"
             onChange={(e) => setAgency(e.target.value)}
             className={inputClass}
           />
@@ -280,11 +380,17 @@ function ConfirmForm({
           </label>
           <input
             id="portal-status"
+            list="dataqs-statuses"
             value={portalStatus}
             maxLength={100}
             onChange={(e) => setPortalStatus(e.target.value)}
             className={inputClass}
           />
+          <datalist id="dataqs-statuses">
+            {DATAQS_STATUSES.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
         </div>
       </div>
       <div>
@@ -308,7 +414,9 @@ function ConfirmForm({
           onChange={(e) => setSure(e.target.checked)}
         />
         <span>
-          I submitted package v{pkg.package_version} in DataQs and saw this acknowledgement.
+          I submitted package v{pkg.package_version} in DataQs, as approved, and saw this
+          acknowledgement. I certify the information filed is true, accurate and complete to the
+          best of my knowledge (18 U.S.C. 1001).
         </span>
       </label>
       {confirm.isError && (

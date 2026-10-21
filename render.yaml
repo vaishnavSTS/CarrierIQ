@@ -44,6 +44,21 @@ services:
         sync: false
       - key: DATAQS_STORAGE_BUCKET
         value: dataqs-evidence
+      # DataQs emails (Resend). No email is sent until RESEND_API_KEY is set.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: DATAQS_EMAIL_FROM
+        sync: false # e.g. Sky Transport Solutions <dataqs@skytransportsolutions.com>
+      - key: DATAQS_EMAIL_REPLY_TO
+        value: Info@skytransportsolutions.com
+      # While testing: every carrier email to Wesley, every STS staff email to Vaishnav.
+      # Delete these two to email the real carrier users and STS staff.
+      - key: DATAQS_EMAIL_CARRIER_OVERRIDE
+        value: wesley@skytransportsolutions.com
+      - key: DATAQS_EMAIL_STAFF_OVERRIDE
+        value: vaishnav@skytransportsolutions.com
+      - key: PUBLIC_APP_URL
+        sync: false # the frontend's address, for links in emails
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET
