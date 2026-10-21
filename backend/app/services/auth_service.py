@@ -359,6 +359,7 @@ class AuthService:
                     dba_name=c.dba_name if c else None,
                     registration_status=c.registration_status if c else None,
                     last_refreshed_at=c.last_refreshed_at if c else None,
+                    verified=link.verified,
                 )
                 for link in links
                 for c in [carriers.get(link.usdot_number)]

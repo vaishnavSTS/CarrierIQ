@@ -1,8 +1,7 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useState, type ReactNode } from 'react'
 
 import { StatusBadge } from '../../../components/StatusBadge'
 import { useCarrierInspections } from '../../../hooks/useCarrierSafety'
-import { RequestDataReviewButton } from '../../dataqs/RequestDataReviewButton'
 import type { InspectionDetail } from '../../../types/carrierSafety'
 import { formatDate } from '../../../utils/format'
 import { cellClass, headClass, tableClass } from '../styles'
@@ -53,7 +52,14 @@ function Violations({ inspection }: { inspection: InspectionDetail }) {
   )
 }
 
-export function InspectionHistory({ usdotNumber }: { usdotNumber: number }) {
+/** `rowAction` adds a control to each row, e.g. DataQs' "Request data review". */
+export function InspectionHistory({
+  usdotNumber,
+  rowAction,
+}: {
+  usdotNumber: number
+  rowAction?: (inspection: InspectionDetail) => ReactNode
+}) {
   const [page, setPage] = useState(1)
   const [oosOnly, setOosOnly] = useState(false)
   const [open, setOpen] = useState<string | null>(null)
@@ -106,6 +112,11 @@ export function InspectionHistory({ usdotNumber }: { usdotNumber: number }) {
                 <th className={`${cellClass} text-right`}>Violations</th>
                 <th className={cellClass}>Vehicle out-of-service</th>
                 <th className={cellClass}>Driver out-of-service</th>
+                {rowAction && (
+                  <th className={cellClass}>
+                    <span className="sr-only">Actions</span>
+                  </th>
+                )}
                 <th className={cellClass}>
                   <span className="sr-only">Details</span>
                 </th>
@@ -135,6 +146,12 @@ export function InspectionHistory({ usdotNumber }: { usdotNumber: number }) {
                       <td className={cellClass}>
                         <OosFlag value={i.driver_oos} />
                       </td>
+                      {rowAction && (
+                        // Clicks here act on the control, not the row's expand toggle.
+                        <td className={cellClass} onClick={(e) => e.stopPropagation()}>
+                          {rowAction(i)}
+                        </td>
+                      )}
                       <td className={`${cellClass} text-right`}>
                         <button
                           type="button"
@@ -148,15 +165,9 @@ export function InspectionHistory({ usdotNumber }: { usdotNumber: number }) {
                     </tr>
                     {expanded && (
                       <tr className="bg-slate-50">
-                        <td colSpan={8} className="px-3 py-3">
-                          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                            <span className="text-xs text-slate-500">
-                              Inspection {i.inspection_id}
-                            </span>
-                            <RequestDataReviewButton
-                              usdotNumber={usdotNumber}
-                              inspectionId={i.inspection_id}
-                            />
+                        <td colSpan={rowAction ? 9 : 8} className="px-3 py-3">
+                          <div className="mb-2 text-xs text-slate-500">
+                            Inspection {i.inspection_id}
                           </div>
                           <Violations inspection={i} />
                         </td>

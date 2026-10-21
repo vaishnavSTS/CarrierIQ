@@ -185,6 +185,7 @@ class PortalCarrierOut(BaseModel):
     dba_name: str | None
     registration_status: str | None
     last_refreshed_at: datetime | None
+    verified: bool  # STS has verified the carrier is the client's (needed for DataQs)
 
 
 class PortalOverviewOut(BaseModel):

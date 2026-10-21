@@ -127,9 +127,9 @@ def test_client_signs_up_and_sees_portal_at_once(api: TestClient, db: Session) -
     assert (me["email"], me["role"], me["portal"]) == ("owner@client.com", "CLIENT_ADMIN", "client")
     overview = api.get("/api/v1/portal/overview").json()
     assert overview["organization_name"] == "Client Trucking LLC"
-    assert [(c["usdot_number"], c["legal_name"]) for c in overview["carriers"]] == [
-        (295017, "CLIENT TRUCKING LLC")
-    ]
+    assert [(c["usdot_number"], c["legal_name"], c["verified"]) for c in overview["carriers"]] == [
+        (295017, "CLIENT TRUCKING LLC", False)
+    ]  # STS has not verified it yet
 
     api.post("/api/v1/auth/logout")
     assert log_in(api, "OWNER@client.com")["status"] == "ACTIVE"  # email case does not matter

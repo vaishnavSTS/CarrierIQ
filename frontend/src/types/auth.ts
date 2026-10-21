@@ -40,6 +40,8 @@ export interface PortalCarrier {
   dba_name: string | null
   registration_status: string | null
   last_refreshed_at: string | null
+  /** STS has verified the carrier is the client's; DataQs requests need it */
+  verified: boolean
 }
 
 export interface PortalOverview {

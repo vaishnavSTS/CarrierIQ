@@ -12,10 +12,7 @@ export function PortalDataQsIntakePage() {
   return (
     <div className="space-y-5">
       <div>
-        <Link
-          to={valid ? `/portal/carriers/${usdot}?tab=safety` : '/portal/dataqs'}
-          className="text-sm text-accent-strong hover:underline"
-        >
+        <Link to="/portal/dataqs" className="text-sm text-accent-strong hover:underline">
           ← Back
         </Link>
         <h1 className="mt-2 text-xl font-semibold tracking-tight">Request a data review</h1>
@@ -31,9 +28,7 @@ export function PortalDataQsIntakePage() {
           inspectionId={inspection}
         />
       ) : (
-        <p className="text-sm text-slate-600">
-          Start from an inspection on your carrier’s Inspections tab.
-        </p>
+        <p className="text-sm text-slate-600">Start from an inspection on the DataQs tab.</p>
       )}
     </div>
   )
