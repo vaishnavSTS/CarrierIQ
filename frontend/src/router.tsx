@@ -12,12 +12,14 @@ import { BrokerRegisterPage } from './pages/BrokerRegisterPage'
 import { CarrierProfilePage } from './pages/CarrierProfilePage'
 import { ComparePage } from './pages/ComparePage'
 import { DashboardPage } from './pages/DashboardPage'
+import { DataQsCasePage } from './pages/DataQsCasePage'
 import { DataQsPage } from './pages/DataQsPage'
 import { GoogleSignupPage } from './pages/GoogleSignupPage'
 import { LandingPage } from './pages/LandingPage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ClientSearchPage } from './pages/ClientSearchPage'
+import { PortalDataQsIntakePage } from './pages/PortalDataQsIntakePage'
 import { PortalDataQsPage } from './pages/PortalDataQsPage'
 import { PortalHomePage } from './pages/PortalHomePage'
 import { RegisterPage } from './pages/RegisterPage'
@@ -58,6 +60,7 @@ export const router = createBrowserRouter([
           { path: 'compare', element: <ComparePage /> },
           { path: 'carriers/:usdot', element: <CarrierProfilePage /> },
           { path: 'dataqs', element: <DataQsPage /> },
+          { path: 'dataqs/cases/:caseId', element: <DataQsCasePage /> },
           { path: 'accounts', element: <AccountsPage /> },
         ],
       },
@@ -72,6 +75,8 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <PortalHomePage /> },
           { path: 'dataqs', element: <PortalDataQsPage /> },
+          { path: 'dataqs/new', element: <PortalDataQsIntakePage /> },
+          { path: 'dataqs/cases/:caseId', element: <DataQsCasePage /> },
           { path: 'search', element: <ClientSearchPage /> },
           { path: 'carriers/:usdot', element: <CarrierProfilePage /> },
         ],

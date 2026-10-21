@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react'
 
 import { StatusBadge } from '../../../components/StatusBadge'
 import { useCarrierInspections } from '../../../hooks/useCarrierSafety'
+import { RequestDataReviewButton } from '../../dataqs/RequestDataReviewButton'
 import type { InspectionDetail } from '../../../types/carrierSafety'
 import { formatDate } from '../../../utils/format'
 import { cellClass, headClass, tableClass } from '../styles'
@@ -148,8 +149,14 @@ export function InspectionHistory({ usdotNumber }: { usdotNumber: number }) {
                     {expanded && (
                       <tr className="bg-slate-50">
                         <td colSpan={8} className="px-3 py-3">
-                          <div className="mb-2 text-xs text-slate-500">
-                            Inspection {i.inspection_id}
+                          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-xs text-slate-500">
+                              Inspection {i.inspection_id}
+                            </span>
+                            <RequestDataReviewButton
+                              usdotNumber={usdotNumber}
+                              inspectionId={i.inspection_id}
+                            />
                           </div>
                           <Violations inspection={i} />
                         </td>

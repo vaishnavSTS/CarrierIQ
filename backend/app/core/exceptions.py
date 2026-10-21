@@ -72,6 +72,37 @@ class ConflictError(CarrierSafetyScanError):
     code = "conflict"
 
 
+class DataQsDuplicateCaseError(ConflictError):
+    """An open DataQs case already covers the same event and violation."""
+
+    code = "dataqs_duplicate_case"
+
+
+class DataQsStaleVersionError(ConflictError):
+    """The case changed since the caller read it; reload and try again."""
+
+    code = "dataqs_stale_version"
+
+
+class DataQsInvalidTransitionError(ConflictError):
+    """Not allowed at the case's current stage (e.g. uploading to a closed case)."""
+
+    code = "dataqs_invalid_transition"
+
+
+class DataQsEvidenceRejectedError(ValidationError):
+    """An uploaded file is empty, too large, or not an allowed type."""
+
+    code = "dataqs_evidence_rejected"
+
+
+class DataQsStorageUnavailableError(CarrierSafetyScanError):
+    """Evidence storage is not configured or did not answer."""
+
+    status_code = 503
+    code = "dataqs_storage_unavailable"
+
+
 class SourceFetchError(CarrierSafetyScanError):
     """An external data source (data.transportation.gov, NHTSA, ...) failed or returned bad data."""
 

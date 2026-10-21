@@ -1,4 +1,5 @@
-import { DataQsComingSoon, DataQsIntro } from '../features/dataqs/DataQsIntro'
+import { DataQsCaseList } from '../features/dataqs/DataQsCaseList'
+import { DataQsIntro } from '../features/dataqs/DataQsIntro'
 
 /** Internal portal DataQs: STS staff assess, file and track carriers' DataQs requests. */
 export function DataQsPage() {
@@ -11,10 +12,11 @@ export function DataQsPage() {
           correspondence and decisions.
         </p>
       </div>
+      <DataQsCaseList
+        showCompany
+        empty="No DataQs cases yet. Carriers open them from an inspection in the client portal."
+      />
       <DataQsIntro audience="staff" />
-      <DataQsComingSoon>
-        The case queue (owner, urgency, overdue work and evidence gaps) is coming soon.
-      </DataQsComingSoon>
     </div>
   )
 }

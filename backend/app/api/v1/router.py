@@ -8,7 +8,17 @@ per route.
 from fastapi import APIRouter, Depends
 
 from app.api.auth import require_staff
-from app.api.v1.routes import admin, auth, carriers, dashboard, health, jobs, portal, signals
+from app.api.v1.routes import (
+    admin,
+    auth,
+    carriers,
+    dashboard,
+    dataqs,
+    health,
+    jobs,
+    portal,
+    signals,
+)
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(health.router)
@@ -23,3 +33,6 @@ api_router.include_router(dashboard.router, dependencies=staff_only)
 api_router.include_router(admin.router)
 api_router.include_router(portal.router)
 api_router.include_router(portal.broker_router)
+# DataQs: staff (/dataqs) and client (/portal/dataqs) routes check their own login per route.
+api_router.include_router(dataqs.router)
+api_router.include_router(dataqs.portal_router)

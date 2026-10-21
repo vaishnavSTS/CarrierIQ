@@ -101,13 +101,26 @@ class Settings(BaseSettings):
     auth_cookie_name: str = "carrieriq_session"
     auth_min_password_length: int = 10
 
-    # "Continue with Google" (OAuth 2.0 / OpenID Connect). Off unless both are set. The redirect
-    # URI must match the one registered in Google Cloud Console exactly; in development it goes
-    # through the Vite proxy so the session cookie lands on the frontend's origin.
     # Off: clients see only their own carriers, with no search. CLIENT_SEARCH_ENABLED=true lets
     # them search and open any carrier (used for STS team testing).
     client_search_enabled: bool = False
 
+    # DataQs evidence files (docs/DataQ.md): a private bucket reached over the S3 protocol
+    # (Supabase Storage → S3 Configuration). The keys are secrets: environment only, backend only.
+    # Uploads are refused (503) while these are unset.
+    dataqs_storage_endpoint: str | None = None
+    dataqs_storage_region: str = "us-east-1"
+    dataqs_storage_access_key_id: str | None = None
+    dataqs_storage_secret_access_key: str | None = None
+    dataqs_storage_bucket: str = "dataqs-evidence"
+    dataqs_max_upload_mb: int = 25
+    # Ask carriers to request a review this many days before the government window closes, so
+    # STS has time to prepare it. An STS target, not a government rule.
+    dataqs_internal_cutoff_days: int = 30
+
+    # "Continue with Google" (OAuth 2.0 / OpenID Connect). Off unless both are set. The redirect
+    # URI must match the one registered in Google Cloud Console exactly; in development it goes
+    # through the Vite proxy so the session cookie lands on the frontend's origin.
     google_client_id: str | None = None
     google_client_secret: str | None = None
     google_redirect_uri: str = "http://localhost:5173/api/v1/auth/google/callback"
@@ -115,6 +128,14 @@ class Settings(BaseSettings):
     @property
     def google_enabled(self) -> bool:
         return bool(self.google_client_id and self.google_client_secret)
+
+    @property
+    def dataqs_storage_enabled(self) -> bool:
+        return bool(
+            self.dataqs_storage_endpoint
+            and self.dataqs_storage_access_key_id
+            and self.dataqs_storage_secret_access_key
+        )
 
     @property
     def auth_cookie_secure(self) -> bool:

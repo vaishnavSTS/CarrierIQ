@@ -3,7 +3,7 @@
 How we will add DataQs (challenging wrong FMCSA safety records) to CarrierSafetyScan, phase by
 phase. Edit freely as decisions are made; record each decision in the log at the bottom.
 
-**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules.
+**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules. Phase 2 built (2026-10-21): carrier intake wizard, evidence uploads, submit to STS.
 **Created:** 2026-10-21
 **Source:** `../../Sky_DataQs_Developer_Integration.docx` (Sky DataQs Developer Integration Specification v1.0)
 **Related:** `client-internal-portal-plan.md`, `../CHECKPOINT.md`
@@ -236,19 +236,25 @@ backend/app/services/dataqs_case_service.py          create, dedupe, status chan
 backend/app/services/dataqs_evidence_service.py      upload, hash, scan, link to issue
 backend/app/services/dataqs_evidence_storage.py      private file storage (see decision D1)
 backend/app/schemas/dataqs.py
-backend/app/api/v1/routes/dataqs.py
-  POST /carriers/{usdot}/dataqs/cases                create intake (idempotency key)
-  POST /dataqs/cases/{id}/evidence                   upload; finalize after scan
-  GET  /dataqs/cases, /dataqs/cases/{id}
+backend/app/services/dataqs_checklist.py              suggested evidence by reason
+backend/app/api/v1/routes/dataqs.py                  /dataqs/... (staff), /portal/dataqs/... (clients)
+  GET  .../carriers/{usdot}/inspections/{id}/check   record, review window, open cases, can_open
+  POST /portal/dataqs/carriers/{usdot}/cases         create DRAFT case (Idempotency-Key header)
+  POST .../cases/{id}/evidence                       upload (type from content, ≤ 25 MB, SHA-256)
+  GET  .../cases/{id}/evidence/{evidence_id}         download (logged in the audit trail)
+  POST /portal/dataqs/cases/{id}/submit              sign authorization + submit → STAFF_REVIEW
+  GET  .../cases, .../cases/{id}
 frontend/src/api/dataqs.ts
 frontend/src/hooks/useDataQs.ts
 frontend/src/types/dataqs.ts
 frontend/src/features/dataqs/RequestDataReviewButton.tsx
 frontend/src/features/dataqs/intake/DataQsIntakeWizard.tsx   + one file per step
 frontend/src/features/dataqs/DataQsEvidenceUpload.tsx
-frontend/src/features/dataqs/DataQsCarrierDashboard.tsx      records, eligibility, cases, freshness
-frontend/src/features/dataqs/DataQsCaseRoom.tsx              issues, uploads, next action (carrier)
-backend/tests/dataqs/test_dataqs_eligibility.py, test_dataqs_intake.py
+frontend/src/features/dataqs/DataQsCaseList.tsx             cases list (both portals)
+frontend/src/features/dataqs/DataQsCaseRoom.tsx              issues, uploads, missing items, next action
+frontend/src/features/dataqs/DataQsSubmitPanel.tsx           authorization + submit
+frontend/src/pages/PortalDataQsIntakePage.tsx, DataQsCasePage.tsx
+backend/tests/dataqs/test_dataqs_eligibility.py, test_dataqs_intake_api.py
 ```
 
 **Done when:** a carrier submits a case with evidence; repeated submit does not create two cases;
@@ -459,3 +465,7 @@ failed email keeps the task and shows the exception to a supervisor.
 | 2026-10-21 | `action_owner` uses `STS` (the spec's `SKY`), matching the rest of the app | Build |
 | 2026-10-21 | A case does not point at inspection or violation rows by id (FMCSA refreshes replace them); it keeps a snapshot of the event as opened | Build |
 | 2026-10-21 | Client access to a case needs the carrier to be STS-verified for their company; client search never widens DataQs access | Build |
+| 2026-10-21 | D1: evidence in the private Supabase bucket `dataqs-evidence`, reached over S3 with storage-only access keys (not the service_role key); files only through the API | User |
+| 2026-10-21 | Only the client's account owner opens and submits a case (it needs their signed authorization); staff view all cases and can add evidence | Build |
+| 2026-10-21 | Internal filing cutoff: 30 days before the government window ends (`DATAQS_INTERNAL_CUTOFF_DAYS`) | Build |
+| 2026-10-21 | Authorization text is a draft (`2026-10-21-draft`) until STS legal wording (D4) | Build |

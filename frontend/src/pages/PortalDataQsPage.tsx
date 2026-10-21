@@ -1,4 +1,5 @@
-import { DataQsComingSoon, DataQsIntro } from '../features/dataqs/DataQsIntro'
+import { DataQsCaseList } from '../features/dataqs/DataQsCaseList'
+import { DataQsIntro } from '../features/dataqs/DataQsIntro'
 
 /** Client portal DataQs: ask STS to challenge a safety record the carrier believes is wrong. */
 export function PortalDataQsPage() {
@@ -11,11 +12,11 @@ export function PortalDataQsPage() {
           DataQs request with FMCSA on your behalf and track it to a decision.
         </p>
       </div>
+      <DataQsCaseList
+        showCompany={false}
+        empty="No requests yet. To start one, open your carrier, go to the Safety tab, open an inspection in Inspection history and choose “Request data review”."
+      />
       <DataQsIntro audience="carrier" />
-      <DataQsComingSoon>
-        Your DataQs requests will appear here. Starting a request from your inspections is coming
-        soon.
-      </DataQsComingSoon>
     </div>
   )
 }

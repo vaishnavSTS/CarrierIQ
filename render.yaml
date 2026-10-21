@@ -33,6 +33,17 @@ services:
         sync: false
       - key: QCMOBILE_WEB_KEY
         sync: false # FMCSA QCMobile WebKey: carriers' EIN (Identity, Chameleon check)
+      # DataQs evidence files: Supabase Storage → S3 Configuration (private bucket dataqs-evidence)
+      - key: DATAQS_STORAGE_ENDPOINT
+        sync: false
+      - key: DATAQS_STORAGE_REGION
+        sync: false
+      - key: DATAQS_STORAGE_ACCESS_KEY_ID
+        sync: false
+      - key: DATAQS_STORAGE_SECRET_ACCESS_KEY
+        sync: false
+      - key: DATAQS_STORAGE_BUCKET
+        value: dataqs-evidence
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET

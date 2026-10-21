@@ -70,12 +70,3 @@ export function DataQsIntro({ audience }: { audience: Audience }) {
     </section>
   )
 }
-
-/** Placeholder until the next build phases fill the page. */
-export function DataQsComingSoon({ children }: { children: string }) {
-  return (
-    <section className="rounded-2xl border border-dashed border-slate-300 bg-surface p-5 text-sm text-slate-600">
-      {children}
-    </section>
-  )
-}
