@@ -12,20 +12,24 @@ import { BrokerRegisterPage } from './pages/BrokerRegisterPage'
 import { CarrierProfilePage } from './pages/CarrierProfilePage'
 import { ComparePage } from './pages/ComparePage'
 import { DashboardPage } from './pages/DashboardPage'
+import { DataQsPage } from './pages/DataQsPage'
 import { GoogleSignupPage } from './pages/GoogleSignupPage'
 import { LandingPage } from './pages/LandingPage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ClientSearchPage } from './pages/ClientSearchPage'
+import { PortalDataQsPage } from './pages/PortalDataQsPage'
 import { PortalHomePage } from './pages/PortalHomePage'
 import { RegisterPage } from './pages/RegisterPage'
 import { SearchPage } from './pages/SearchPage'
 
 /**
  * Public: landing, login, sign-up (clients at /register, brokers at /broker/register).
- * Internal portal (STS staff): dashboard, search, compare, carrier profiles, accounts (STS admins).
- * Client portal (STS clients): /portal (their own carriers), /portal/search and
- *   /portal/carriers/:usdot (any carrier).
+ * Internal portal (STS staff): dashboard, search, compare, carrier profiles, DataQs, accounts
+ *   (STS admins).
+ * Client portal (STS clients): /portal (their own carriers), /portal/dataqs, /portal/search and
+ *   /portal/carriers/:usdot (any carrier, while client search is on).
+ * DataQs build plan: docs/DataQ.md.
  * Broker portal (freight brokers): /broker (search), /broker/compare (up to 3 side by side),
  *   /broker/carriers/:usdot (any carrier).
  */
@@ -53,6 +57,7 @@ export const router = createBrowserRouter([
           { path: 'search', element: <SearchPage /> },
           { path: 'compare', element: <ComparePage /> },
           { path: 'carriers/:usdot', element: <CarrierProfilePage /> },
+          { path: 'dataqs', element: <DataQsPage /> },
           { path: 'accounts', element: <AccountsPage /> },
         ],
       },
@@ -66,6 +71,7 @@ export const router = createBrowserRouter([
         element: <PortalLayout />,
         children: [
           { index: true, element: <PortalHomePage /> },
+          { path: 'dataqs', element: <PortalDataQsPage /> },
           { path: 'search', element: <ClientSearchPage /> },
           { path: 'carriers/:usdot', element: <CarrierProfilePage /> },
         ],

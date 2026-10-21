@@ -1,4 +1,11 @@
-import { Columns3, LayoutDashboard, Search, UserCheck, type LucideIcon } from 'lucide-react'
+import {
+  Columns3,
+  FileSearch,
+  LayoutDashboard,
+  Search,
+  UserCheck,
+  type LucideIcon,
+} from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { NewSignupBanner } from '../../features/accounts/NewSignupBanner'
@@ -76,6 +83,7 @@ function AppFrame() {
             <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
             <NavItem to="/search" icon={Search} label="Search" />
             <CompareNavItem />
+            <NavItem to="/dataqs" icon={FileSearch} label="DataQs" />
             {me?.role === 'STS_ADMIN' && (
               <NavItem to="/accounts" icon={UserCheck} label="Accounts" badge={newAccounts} />
             )}

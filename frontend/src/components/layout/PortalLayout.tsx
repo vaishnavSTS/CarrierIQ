@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react'
+import { FileSearch, Search, Truck } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { PortalModeContext } from '../../hooks/usePortalMode'
@@ -15,7 +15,7 @@ function navClass({ isActive }: { isActive: boolean }): string {
   }`
 }
 
-/** Client portal frame: their own carriers, and search for any other. */
+/** Client portal frame: their own carriers, DataQs requests, and search while it is on. */
 export function PortalLayout() {
   const searchEnabled = useClientSearchEnabled()
   return (
@@ -27,17 +27,22 @@ export function PortalLayout() {
           <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
             Client portal
           </span>
-          {searchEnabled && (
-            <nav className="ml-4 flex items-center gap-1 text-sm">
-              <NavLink to="/portal" end className={navClass}>
-                My carriers
-              </NavLink>
+          <nav className="ml-4 flex items-center gap-1 text-sm">
+            <NavLink to="/portal" end className={navClass}>
+              <Truck className="size-4" aria-hidden />
+              My carriers
+            </NavLink>
+            <NavLink to="/portal/dataqs" className={navClass}>
+              <FileSearch className="size-4" aria-hidden />
+              DataQs
+            </NavLink>
+            {searchEnabled && (
               <NavLink to="/portal/search" className={navClass}>
                 <Search className="size-4" aria-hidden />
                 Search carriers
               </NavLink>
-            </nav>
-          )}
+            )}
+          </nav>
           <UserMenu />
         </div>
       </header>
