@@ -42,6 +42,7 @@ from app.models import (
 )
 from app.models.enums import (
     DataQsActionOwner,
+    DataQsAssessmentOutcome,
     DataQsAuthorizationKind,
     DataQsEventType,
     DataQsReason,
@@ -50,26 +51,41 @@ from app.models.enums import (
 )
 from app.repositories.dataqs_case_repository import DataQsCaseRepository
 from app.schemas.dataqs import (
+    DataQsAssessmentOut,
     DataQsAuditEventOut,
     DataQsAuthorizationOut,
     DataQsCaseCreateIn,
     DataQsCaseOut,
     DataQsCaseSummaryOut,
+    DataQsCheckIn,
     DataQsCheckOut,
     DataQsConsentOut,
     DataQsEventOut,
     DataQsEvidenceLinkOut,
     DataQsEvidenceOut,
     DataQsIssueOut,
+    DataQsPackageOut,
     DataQsPriorActivityIn,
     DataQsSubmitIn,
+    DataQsTaskOut,
     DataQsViolationOut,
     EligibilityOut,
     ReasonOut,
 )
 from app.services import dataqs_eligibility
 from app.services.dataqs_access import DataQsAccess, may_act
+from app.services.dataqs_assessment_service import (
+    ASSESS_TARGET,
+    ASSESSABLE,
+    ASSESSMENT_CHECKS,
+    OUTCOME_LABELS,
+)
 from app.services.dataqs_checklist import CHECKLIST, REASON_LABELS
+from app.services.dataqs_package_service import (
+    BUILDABLE,
+    PACKAGE_TERMS_TEXT,
+    PACKAGE_TERMS_VERSION,
+)
 from app.services.safety_analysis import violations_of
 
 # The authorization text a carrier signs in step 6. Draft wording until STS's legal text is
@@ -402,6 +418,7 @@ class DataQsCaseService:
                 kind="ASSESS_CASE",
                 title=f"Assess DataQs case #{case.id}",
                 action_owner=DataQsActionOwner.STS,
+                due_at=now + ASSESS_TARGET,
             )
         )
         self.repository.audit(
@@ -429,10 +446,23 @@ class DataQsCaseService:
         evidence = self.repository.evidence([case.id])
         links = self.repository.evidence_links([e.id for e in evidence])
         authorizations = self.repository.authorizations(case.id)
-        audit = self.repository.audit_events(case.id) if user.role.is_staff else None
+        staff = user.role.is_staff
+        audit = self.repository.audit_events(case.id) if staff else None
+        assessments = self.repository.assessments(case.id)
+        packages = self.repository.packages(case.id)
+        current_package = self.repository.current_package(case.id)
+        approval = self.repository.current_approval(case.id)
+        tasks = [
+            task
+            for task in self.repository.open_tasks([case.id])
+            if staff or task.action_owner == DataQsActionOwner.CARRIER
+        ]
         names = self.repository.user_names(
             [e.uploaded_by_id for e in evidence]
             + [a.actor_id for a in audit or [] if a.actor_id is not None]
+            + [a.assessor_id for a in assessments]
+            + [p.created_by_id for p in packages]
+            + [t.assignee_id for t in tasks if t.assignee_id is not None]
         )
 
         links_by_evidence: dict[int, list[DataQsEvidenceLinkOut]] = defaultdict(list)
@@ -455,6 +485,16 @@ class DataQsCaseService:
         ]
         if not has_consent:
             missing.append("Authorization for STS to act on this case")
+        asked = assessments[-1].carrier_message if assessments else None
+        if case.work_status == DataQsWorkStatus.EVIDENCE_NEEDED and asked:
+            missing.insert(0, f"STS asked: {asked}")
+        owner_client = can_act and user.role == UserRole.CLIENT_ADMIN
+        ready_to_prepare = bool(
+            assessments and assessments[-1].outcome == DataQsAssessmentOutcome.READY_TO_PREPARE
+        )
+        shown_packages = (
+            list(reversed(packages)) if staff else [current_package] if current_package else []
+        )
 
         summary = self._summaries([case])[0]
         snapshot = case.source_snapshot
@@ -499,15 +539,68 @@ class DataQsCaseService:
                 )
                 for a in authorizations
             ],
-            missing_items=missing if case.work_status in CARRIER_UPLOAD_STATUSES else [],
+            missing_items=(
+                missing
+                if case.work_status in (DataQsWorkStatus.DRAFT, DataQsWorkStatus.EVIDENCE_NEEDED)
+                else []
+            ),
             can_act=can_act,
             can_upload=can_upload,
-            can_submit=(
-                can_act
-                and user.role == UserRole.CLIENT_ADMIN
-                and case.work_status == DataQsWorkStatus.DRAFT
+            can_submit=owner_client and case.work_status == DataQsWorkStatus.DRAFT,
+            can_resubmit=owner_client and case.work_status == DataQsWorkStatus.EVIDENCE_NEEDED,
+            can_approve=(
+                owner_client
+                and case.work_status == DataQsWorkStatus.AWAITING_APPROVAL
+                and current_package is not None
             ),
+            can_assign=staff and case.work_status != DataQsWorkStatus.CLOSED,
+            can_assess=staff and case.work_status in ASSESSABLE,
+            can_build_package=staff and ready_to_prepare and case.work_status in BUILDABLE,
             consent=DataQsConsentOut(terms_version=CONSENT_TERMS_VERSION, text=CONSENT_TEXT),
+            package_terms=DataQsConsentOut(
+                terms_version=PACKAGE_TERMS_VERSION, text=PACKAGE_TERMS_TEXT
+            ),
+            assessments=[
+                DataQsAssessmentOut(
+                    id=a.id,
+                    outcome=a.outcome,
+                    outcome_label=OUTCOME_LABELS[a.outcome],
+                    assessor_name=names.get(a.assessor_id),
+                    created_at=a.created_at,
+                    checks={k: DataQsCheckIn.model_validate(v) for k, v in a.checks.items()},
+                    carrier_message=a.carrier_message,
+                    internal_note=a.internal_note if staff else None,
+                )
+                for a in assessments
+            ],
+            assessment_checks=ASSESSMENT_CHECKS,
+            packages=[
+                DataQsPackageOut(
+                    id=pkg.id,
+                    package_version=pkg.package_version,
+                    narrative=pkg.narrative,
+                    manifest=pkg.manifest,
+                    manifest_hash=pkg.manifest_hash,
+                    created_by_name=names.get(pkg.created_by_id),
+                    created_at=pkg.created_at,
+                    invalidated_at=pkg.invalidated_at,
+                    approved=approval is not None and approval.package_id == pkg.id,
+                )
+                for pkg in shown_packages
+            ],
+            tasks=[
+                DataQsTaskOut(
+                    id=task.id,
+                    kind=task.kind,
+                    title=task.title,
+                    detail=task.detail,
+                    action_owner=task.action_owner,
+                    assignee_name=names.get(task.assignee_id) if task.assignee_id else None,
+                    due_at=task.due_at,
+                    created_at=task.created_at,
+                )
+                for task in tasks
+            ],
             audit=(
                 [
                     DataQsAuditEventOut(
@@ -552,13 +645,30 @@ class DataQsCaseService:
     def _summaries(self, cases: list[DataQsCase]) -> list[DataQsCaseSummaryOut]:
         ids = [c.id for c in cases]
         issue_counts: dict[int, int] = defaultdict(int)
-        for issue in self.repository.issues(ids):
+        issues = self.repository.issues(ids)
+        for issue in issues:
             issue_counts[issue.case_id] += 1
         evidence_counts: dict[int, int] = defaultdict(int)
         evidence: list[DataQsEvidence] = self.repository.evidence(ids)
         for e in evidence:
             evidence_counts[e.case_id] += 1
         org_names = self.repository.organization_names([c.organization_id for c in cases])
+        linked_issues = {
+            link.issue_id for link in self.repository.evidence_links([e.id for e in evidence])
+        }
+        evidence_gaps: dict[int, int] = defaultdict(int)
+        for issue in issues:
+            if issue.id not in linked_issues:
+                evidence_gaps[issue.case_id] += 1
+        open_tasks: dict[int, int] = defaultdict(int)
+        overdue_tasks: dict[int, int] = defaultdict(int)
+        at = _now()
+        for task in self.repository.open_tasks(ids):
+            open_tasks[task.case_id] += 1
+            if task.due_at is not None and task.due_at < at:
+                overdue_tasks[task.case_id] += 1
+        owners = self.repository.user_names([c.owner_id for c in cases if c.owner_id])
+        today = at.date()
         return [
             DataQsCaseSummaryOut(
                 id=c.id,
@@ -576,6 +686,21 @@ class DataQsCaseService:
                 outcome=c.outcome,
                 issue_count=issue_counts[c.id],
                 evidence_count=evidence_counts[c.id],
+                evidence_gaps=evidence_gaps[c.id],
+                owner_id=c.owner_id,
+                owner_name=owners.get(c.owner_id) if c.owner_id else None,
+                window_days_left=(
+                    (
+                        dataqs_eligibility.anniversary(
+                            c.event_date, dataqs_eligibility.WINDOW_YEARS[c.event_type]
+                        )
+                        - today
+                    ).days
+                    if c.event_date
+                    else None
+                ),
+                open_task_count=open_tasks[c.id],
+                overdue_task_count=overdue_tasks[c.id],
                 next_action=NEXT_ACTION[c.work_status],
                 created_at=c.created_at,
                 updated_at=c.updated_at,

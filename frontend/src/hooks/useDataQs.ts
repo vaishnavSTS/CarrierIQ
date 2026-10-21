@@ -1,15 +1,29 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
+  approveDataQsPackage,
+  assessDataQsCase,
+  assignDataQsOwner,
+  buildDataQsPackage,
   createDataQsCase,
   fetchDataQsCase,
   fetchDataQsCases,
   fetchDataQsCheck,
+  fetchDataQsStaff,
+  requestDataQsPackageChanges,
+  resubmitDataQsCase,
   submitDataQsCase,
   uploadDataQsEvidence,
   type DataQsBase,
 } from '../api/dataqs'
-import type { DataQsCase, DataQsCaseCreateInput, DataQsSubmitInput } from '../types/dataqs'
+import type {
+  DataQsApprovalInput,
+  DataQsAssessmentInput,
+  DataQsCase,
+  DataQsCaseCreateInput,
+  DataQsPackageInput,
+  DataQsSubmitInput,
+} from '../types/dataqs'
 import { usePortalMode } from './usePortalMode'
 
 /** DataQs API prefix for the current portal (DataQs is not part of the broker portal). */
@@ -84,4 +98,45 @@ export function useSubmitDataQsCase(caseId: number) {
     mutationFn: (input: DataQsSubmitInput) => submitDataQsCase(caseId, input),
     onSuccess: save,
   })
+}
+
+// --- Phase 3 ----------------------------------------------------------------------------------
+
+/** Staff only: who a case can be assigned to. */
+export function useDataQsStaff() {
+  return useQuery({ queryKey: ['dataqs', 'staff'], queryFn: fetchDataQsStaff, staleTime: 300_000 })
+}
+
+/** A DataQs change that answers the updated case. */
+function useCaseAction<T>(action: (input: T) => Promise<DataQsCase>) {
+  const save = useSaveCase()
+  return useMutation({ mutationFn: action, onSuccess: save })
+}
+
+export function useAssignDataQsOwner(caseId: number) {
+  return useCaseAction(({ version, ownerId }: { version: number; ownerId: number | null }) =>
+    assignDataQsOwner(caseId, version, ownerId),
+  )
+}
+
+export function useAssessDataQsCase(caseId: number) {
+  return useCaseAction((input: DataQsAssessmentInput) => assessDataQsCase(caseId, input))
+}
+
+export function useBuildDataQsPackage(caseId: number) {
+  return useCaseAction((input: DataQsPackageInput) => buildDataQsPackage(caseId, input))
+}
+
+export function useResubmitDataQsCase(caseId: number) {
+  return useCaseAction((version: number) => resubmitDataQsCase(caseId, version))
+}
+
+export function useApproveDataQsPackage(caseId: number) {
+  return useCaseAction((input: DataQsApprovalInput) => approveDataQsPackage(caseId, input))
+}
+
+export function useRequestDataQsPackageChanges(caseId: number) {
+  return useCaseAction(({ version, message }: { version: number; message: string }) =>
+    requestDataQsPackageChanges(caseId, version, message),
+  )
 }

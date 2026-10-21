@@ -81,6 +81,15 @@ export interface DataQsCaseSummary {
   outcome: string | null
   issue_count: number
   evidence_count: number
+  /** Issues with no evidence linked */
+  evidence_gaps: number
+  /** The STS case specialist */
+  owner_id: number | null
+  owner_name: string | null
+  /** Days until the state review window ends, from today */
+  window_days_left: number | null
+  open_task_count: number
+  overdue_task_count: number
   next_action: string
   created_at: string
   updated_at: string
@@ -179,7 +188,143 @@ export interface DataQsCase extends DataQsCaseSummary {
   can_act: boolean
   can_upload: boolean
   can_submit: boolean
+  /** Carrier: send the case back to STS after adding evidence */
+  can_resubmit: boolean
+  /** Carrier: approve or ask for changes to the current package */
+  can_approve: boolean
+  can_assign: boolean
+  can_assess: boolean
+  can_build_package: boolean
   consent: { terms_version: string; text: string }
+  /** What a carrier agrees to when approving a package */
+  package_terms: { terms_version: string; text: string }
+  assessments: DataQsAssessment[]
+  assessment_checks: { key: string; label: string; hint: string }[]
+  /** Staff: every version, newest first; clients: the current one */
+  packages: DataQsPackage[]
+  /** Open tasks (clients see only their own) */
+  tasks: DataQsTask[]
   /** STS staff only */
   audit: { action: string; actor_name: string | null; at: string; detail: unknown }[] | null
+}
+
+export type DataQsAssessmentOutcome =
+  | 'READY_TO_PREPARE'
+  | 'EVIDENCE_NEEDED'
+  | 'PENDING_EXTERNAL'
+  | 'SPECIALIST_REVIEW'
+  | 'INSUFFICIENT_BASIS'
+
+export type CheckResult = 'PASS' | 'ISSUE' | 'NA'
+
+/** One assessment check's answer. */
+export interface DataQsCheckAnswer {
+  result: CheckResult
+  note: string | null
+}
+
+export interface DataQsAssessment {
+  id: number
+  outcome: DataQsAssessmentOutcome
+  outcome_label: string
+  assessor_name: string | null
+  created_at: string
+  checks: Record<string, DataQsCheckAnswer>
+  /** Shown to the carrier */
+  carrier_message: string | null
+  /** STS only; always null for clients */
+  internal_note: string | null
+}
+
+export interface DataQsManifest {
+  format: string
+  package_version: number
+  carrier: { usdot_number: number; legal_name: string | null; company: string | null }
+  representative: { company: string; email: string; phone: string; specialist: string | null }
+  event: {
+    type: string
+    source_event_id: string
+    inspection_report_number: string | null
+    citation_number: string | null
+    police_report_number: string | null
+    date: string | null
+    state: string | null
+  }
+  issues: {
+    issue_id: number
+    violation_code: string | null
+    violation_unit: string | null
+    description: string | null
+    reason: DataQsReason
+    recorded_value: string | null
+    requested_value: string | null
+  }[]
+  narrative_sha256: string
+  evidence: {
+    evidence_id: number
+    file_name: string
+    mime_type: string
+    size_bytes: number
+    sha256: string
+    document_date: string | null
+    scan_status: string
+    issue_ids: number[]
+  }[]
+  references: string[]
+}
+
+export interface DataQsPackage {
+  id: number
+  package_version: number
+  narrative: string
+  manifest: DataQsManifest
+  /** SHA-256 of the manifest: the package's fingerprint */
+  manifest_hash: string
+  created_by_name: string | null
+  created_at: string
+  invalidated_at: string | null
+  /** The carrier's approval of this exact package still stands */
+  approved: boolean
+}
+
+export interface DataQsTask {
+  id: number
+  kind: string
+  title: string
+  detail: string | null
+  action_owner: 'CARRIER' | 'STS' | 'AGENCY'
+  assignee_name: string | null
+  due_at: string | null
+  created_at: string
+}
+
+export interface DataQsStaffUser {
+  id: number
+  full_name: string
+  role: string
+}
+
+export interface DataQsAssessmentInput {
+  expected_version: number
+  outcome: DataQsAssessmentOutcome
+  checks: Record<string, DataQsCheckAnswer>
+  carrier_message: string | null
+  internal_note: string | null
+}
+
+export interface DataQsPackageInput {
+  expected_version: number
+  narrative: string
+  evidence_ids: number[]
+  references: string[]
+}
+
+export interface DataQsApprovalInput {
+  expected_version: number
+  package_id: number
+  package_hash: string
+  signer_name: string
+  signer_title: string | null
+  terms_version: string
+  accept: true
 }

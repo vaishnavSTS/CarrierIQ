@@ -1,8 +1,12 @@
 import type {
+  DataQsApprovalInput,
+  DataQsAssessmentInput,
   DataQsCase,
   DataQsCaseCreateInput,
   DataQsCaseSummary,
   DataQsCheck,
+  DataQsPackageInput,
+  DataQsStaffUser,
   DataQsSubmitInput,
 } from '../types/dataqs'
 import { apiGet, apiRequest } from './client'
@@ -67,4 +71,66 @@ export function submitDataQsCase(caseId: number, input: DataQsSubmitInput): Prom
 /** A plain link: the browser downloads it with the session cookie; the API logs each download. */
 export function dataQsEvidenceUrl(base: DataQsBase, caseId: number, evidenceId: number): string {
   return `/api/v1${base}/cases/${caseId}/evidence/${evidenceId}`
+}
+
+function post<T>(path: string, body: unknown): Promise<T> {
+  return apiRequest(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+// --- Phase 3: assessment, package, approval ---------------------------------------------------
+
+/** Staff only: who a case can be assigned to. */
+export function fetchDataQsStaff(): Promise<DataQsStaffUser[]> {
+  return apiGet('/dataqs/staff')
+}
+
+export function assignDataQsOwner(
+  caseId: number,
+  expectedVersion: number,
+  ownerId: number | null,
+): Promise<DataQsCase> {
+  return post(`/dataqs/cases/${caseId}/owner`, {
+    expected_version: expectedVersion,
+    owner_id: ownerId,
+  })
+}
+
+export function assessDataQsCase(
+  caseId: number,
+  input: DataQsAssessmentInput,
+): Promise<DataQsCase> {
+  return post(`/dataqs/cases/${caseId}/assessments`, input)
+}
+
+export function buildDataQsPackage(caseId: number, input: DataQsPackageInput): Promise<DataQsCase> {
+  return post(`/dataqs/cases/${caseId}/packages`, input)
+}
+
+/** Clients only: send the case back to STS after adding evidence. */
+export function resubmitDataQsCase(caseId: number, expectedVersion: number): Promise<DataQsCase> {
+  return post(`/portal/dataqs/cases/${caseId}/resubmit`, { expected_version: expectedVersion })
+}
+
+/** Clients only: approve one exact package (id + fingerprint). */
+export function approveDataQsPackage(
+  caseId: number,
+  input: DataQsApprovalInput,
+): Promise<DataQsCase> {
+  return post(`/portal/dataqs/cases/${caseId}/approvals`, input)
+}
+
+/** Clients only: ask STS to change the package. */
+export function requestDataQsPackageChanges(
+  caseId: number,
+  expectedVersion: number,
+  message: string,
+): Promise<DataQsCase> {
+  return post(`/portal/dataqs/cases/${caseId}/package-changes`, {
+    expected_version: expectedVersion,
+    message,
+  })
 }

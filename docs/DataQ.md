@@ -3,7 +3,7 @@
 How we will add DataQs (challenging wrong FMCSA safety records) to CarrierSafetyScan, phase by
 phase. Edit freely as decisions are made; record each decision in the log at the bottom.
 
-**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules. Phase 2 built (2026-10-21): carrier intake wizard, evidence uploads, submit to STS.
+**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules. Phase 2 built (2026-10-21): carrier intake wizard, evidence uploads, submit to STS. Phase 3 built (2026-10-21): staff queue, assessment, filing package, carrier approval (migration 0025).
 **Created:** 2026-10-21
 **Source:** `../../Sky_DataQs_Developer_Integration.docx` (Sky DataQs Developer Integration Specification v1.0)
 **Related:** `client-internal-portal-plan.md`, `../CHECKPOINT.md`
@@ -153,6 +153,7 @@ frontend/src/
 | `dataqs_clocks` | type, base event, policy version, due_at, confidence, override reason |
 | `dataqs_clock_pauses` | clock id, paused_at, resumed_at |
 | `dataqs_tasks` | case, assignee, due_at, kind, done_at |
+| `dataqs_assessments` | (Phase 3, migration 0025) assessor, checks, outcome, message to the carrier, internal note |
 | `dataqs_audit_events` | case, actor, action, before/after values, at (append-only) |
 | `dataqs_outbox` | notification events with stable ids, delivery status, retries |
 
@@ -281,16 +282,37 @@ leap-day and near-anniversary dates are flagged.
 **Files**
 
 ```
-backend/app/services/dataqs_assessment_service.py
-backend/app/services/dataqs_package_service.py       build, freeze, hash, invalidate on edit
+backend/app/models/dataqs_assessment.py              + migration 20261021_0025_dataqs_assessments.py
+backend/app/services/dataqs_assessment_service.py    assign owner, 7 checks + outcome, resubmit
+backend/app/services/dataqs_package_service.py       build, freeze, hash, invalidate on edit, approve
+  GET  /dataqs/staff                                 staff a case can be assigned to
+  POST /dataqs/cases/{id}/owner
   POST /dataqs/cases/{id}/assessments
   POST /dataqs/cases/{id}/packages
-  POST /dataqs/cases/{id}/approvals
-frontend/src/features/dataqs/DataQsStaffQueue.tsx
-frontend/src/features/dataqs/DataQsAssessmentPanel.tsx
+  POST /portal/dataqs/cases/{id}/resubmit            carrier: back to STS after adding evidence
+  POST /portal/dataqs/cases/{id}/approvals           carrier: approve package id + fingerprint
+  POST /portal/dataqs/cases/{id}/package-changes     carrier: ask for changes
+frontend/src/features/dataqs/staff/DataQsStaffQueue.tsx
+frontend/src/features/dataqs/staff/DataQsOwnerPanel.tsx
+frontend/src/features/dataqs/staff/DataQsAssessmentPanel.tsx
+frontend/src/features/dataqs/staff/DataQsPackageBuilder.tsx
+frontend/src/features/dataqs/DataQsPackageView.tsx
 frontend/src/features/dataqs/DataQsPackageReview.tsx      carrier approves here
-backend/tests/dataqs/test_dataqs_package_approval.py
+frontend/src/features/dataqs/DataQsCaseActivity.tsx       open tasks, assessment history
+backend/tests/dataqs/test_dataqs_package_approval.py (+ shared conftest.py, helpers.py)
 ```
+
+**How the states move**
+
+| From | Action | To | Who acts next |
+|---|---|---|---|
+| STAFF_REVIEW | Assessed: ready to prepare | STAFF_REVIEW | STS (prepare package) |
+| STAFF_REVIEW | Assessed: evidence needed | EVIDENCE_NEEDED | Carrier |
+| EVIDENCE_NEEDED | Carrier sends it back | STAFF_REVIEW | STS (reassess) |
+| STAFF_REVIEW | Assessed: insufficient basis | CLOSED | — |
+| STAFF_REVIEW / AWAITING_APPROVAL / READY_TO_FILE | Package built (changed) | AWAITING_APPROVAL | Carrier |
+| AWAITING_APPROVAL | Carrier approves package id + fingerprint | READY_TO_FILE | STS (file it, Phase 4) |
+| AWAITING_APPROVAL | Carrier asks for changes | STAFF_REVIEW | STS (revise) |
 
 **Done when:** editing an approved package blocks filing until re-approved.
 
@@ -469,3 +491,7 @@ failed email keeps the task and shows the exception to a supervisor.
 | 2026-10-21 | Only the client's account owner opens and submits a case (it needs their signed authorization); staff view all cases and can add evidence | Build |
 | 2026-10-21 | Internal filing cutoff: 30 days before the government window ends (`DATAQS_INTERNAL_CUTOFF_DAYS`) | Build |
 | 2026-10-21 | Authorization text is a draft (`2026-10-21-draft`) until STS legal wording (D4) | Build |
+| 2026-10-21 | Package fingerprint = SHA-256 of the manifest as canonical JSON (includes the narrative's hash and every file's SHA-256); an identical rebuild keeps the package and its approval | Build |
+| 2026-10-21 | Package approval text is a draft (`2026-10-21-draft`), separate from the service consent | Build |
+| 2026-10-21 | Carriers can ask for changes to a package (not in the spec) so disagreements stay in the case | Build |
+| 2026-10-21 | STS targets (not government rules): assess within 3 days, carrier evidence within 14 days, carrier approval within 7 days | Build |

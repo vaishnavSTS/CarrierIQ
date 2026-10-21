@@ -1,8 +1,8 @@
 """DataQs cases (docs/DataQ.md): /dataqs/... for STS staff, /portal/dataqs/... for clients.
 
 Both sides read cases and evidence through the same service; dataqs_access.py decides what each
-user may see or change. Only a client's account owner opens and submits a case (it needs their
-authorization); staff can view every case and add evidence.
+user may see or change. Only a client's account owner opens, submits and approves (each needs
+their authorization); staff view every case, add evidence, assign, assess and build packages.
 """
 
 import json
@@ -21,17 +21,27 @@ from app.core.config import get_settings
 from app.core.exceptions import ValidationError
 from app.db.session import get_db
 from app.models import User
+from app.repositories.dataqs_case_repository import DataQsCaseRepository
 from app.schemas.dataqs import (
+    DataQsApprovalIn,
+    DataQsAssessmentIn,
     DataQsCaseCreateIn,
     DataQsCaseListOut,
     DataQsCaseOut,
+    DataQsChangesIn,
     DataQsCheckOut,
     DataQsEvidenceLinkOut,
+    DataQsOwnerIn,
+    DataQsPackageIn,
+    DataQsStaffUserOut,
     DataQsSubmitIn,
+    DataQsVersionIn,
 )
+from app.services.dataqs_assessment_service import DataQsAssessmentService
 from app.services.dataqs_case_service import DataQsCaseService
 from app.services.dataqs_evidence_service import DataQsEvidenceService
 from app.services.dataqs_evidence_storage import EvidenceStorage, get_evidence_storage
+from app.services.dataqs_package_service import DataQsPackageService
 
 router = APIRouter(prefix="/dataqs", tags=["dataqs"])
 portal_router = APIRouter(prefix="/portal/dataqs", tags=["dataqs"])
@@ -164,3 +174,107 @@ def submit_case(
     """Sign the authorization and submit the case for STS review (wizard steps 6-7)."""
     service.submit(user, case_id, body)
     return service.detail(user, case_id)
+
+
+# --- Phase 3: assessment, package, approval -------------------------------------------------------
+
+
+def get_assessment_service(db: Annotated[Session, Depends(get_db)]) -> DataQsAssessmentService:
+    return DataQsAssessmentService(db)
+
+
+def get_package_service(db: Annotated[Session, Depends(get_db)]) -> DataQsPackageService:
+    return DataQsPackageService(db)
+
+
+AssessmentService = Annotated[DataQsAssessmentService, Depends(get_assessment_service)]
+PackageService = Annotated[DataQsPackageService, Depends(get_package_service)]
+StaffUser = Annotated[User, Depends(require_staff)]
+ClientUser = Annotated[User, Depends(require_client)]
+
+
+@router.get("/staff", response_model=list[DataQsStaffUserOut])
+def list_staff(_: StaffUser, db: Annotated[Session, Depends(get_db)]) -> list[DataQsStaffUserOut]:
+    """STS staff a case can be assigned to."""
+    return [
+        DataQsStaffUserOut(id=u.id, full_name=u.full_name, role=u.role.value)
+        for u in DataQsCaseRepository(db).staff_users()
+    ]
+
+
+@router.post("/cases/{case_id}/owner", response_model=DataQsCaseOut)
+def assign_owner(
+    case_id: int,
+    body: DataQsOwnerIn,
+    user: StaffUser,
+    service: AssessmentService,
+    cases: CaseService,
+) -> DataQsCaseOut:
+    service.assign_owner(user, case_id, body.owner_id, body.expected_version)
+    return cases.detail(user, case_id)
+
+
+@router.post("/cases/{case_id}/assessments", response_model=DataQsCaseOut)
+def assess_case(
+    case_id: int,
+    body: DataQsAssessmentIn,
+    user: StaffUser,
+    service: AssessmentService,
+    cases: CaseService,
+) -> DataQsCaseOut:
+    """Record the specialist's checks and outcome; the outcome decides who acts next."""
+    service.assess(user, case_id, body)
+    return cases.detail(user, case_id)
+
+
+@router.post("/cases/{case_id}/packages", response_model=DataQsCaseOut)
+def build_package(
+    case_id: int,
+    body: DataQsPackageIn,
+    user: StaffUser,
+    service: PackageService,
+    cases: CaseService,
+) -> DataQsCaseOut:
+    """Freeze the narrative and evidence manifest as a new package version (a material edit
+    replaces the old package and any approval of it) and send it to the carrier for approval."""
+    service.build(user, case_id, body)
+    return cases.detail(user, case_id)
+
+
+@portal_router.post("/cases/{case_id}/resubmit", response_model=DataQsCaseOut)
+def resubmit_case(
+    case_id: int,
+    body: DataQsVersionIn,
+    user: ClientUser,
+    service: AssessmentService,
+    cases: CaseService,
+) -> DataQsCaseOut:
+    """After adding the evidence STS asked for: send the case back to STS."""
+    service.resubmit(user, case_id, body.expected_version)
+    return cases.detail(user, case_id)
+
+
+@portal_router.post("/cases/{case_id}/approvals", response_model=DataQsCaseOut)
+def approve_package(
+    case_id: int,
+    body: DataQsApprovalIn,
+    user: ClientUser,
+    service: PackageService,
+    cases: CaseService,
+) -> DataQsCaseOut:
+    """Approve filing one exact package, named by its id and fingerprint."""
+    service.approve(user, case_id, body)
+    return cases.detail(user, case_id)
+
+
+@portal_router.post("/cases/{case_id}/package-changes", response_model=DataQsCaseOut)
+def request_package_changes(
+    case_id: int,
+    body: DataQsChangesIn,
+    user: ClientUser,
+    service: PackageService,
+    cases: CaseService,
+) -> DataQsCaseOut:
+    """Ask STS to change the package before approving it."""
+    service.request_changes(user, case_id, body)
+    return cases.detail(user, case_id)

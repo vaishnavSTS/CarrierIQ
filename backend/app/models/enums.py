@@ -161,6 +161,16 @@ class DataQsReason(StrEnum):
     UNSURE = "UNSURE"
 
 
+class DataQsAssessmentOutcome(StrEnum):
+    """STS's assessment of a submitted case (docs/DataQ.md, Phase 3)."""
+
+    READY_TO_PREPARE = "READY_TO_PREPARE"  # build the filing package
+    EVIDENCE_NEEDED = "EVIDENCE_NEEDED"  # back to the carrier for more evidence
+    PENDING_EXTERNAL = "PENDING_EXTERNAL"  # waiting on something outside (e.g. a court date)
+    SPECIALIST_REVIEW = "SPECIALIST_REVIEW"  # needs a more experienced reviewer
+    INSUFFICIENT_BASIS = "INSUFFICIENT_BASIS"  # STS will not file it; the case closes
+
+
 class DataQsScanStatus(StrEnum):
     PENDING = "PENDING"
     CLEAN = "CLEAN"

@@ -49,6 +49,7 @@ TABLES = {
     # DataQs cases (docs/DataQ.md)
     "dataqs_cases",
     "dataqs_issues",
+    "dataqs_assessments",
     "dataqs_evidence",
     "dataqs_evidence_links",
     "dataqs_packages",

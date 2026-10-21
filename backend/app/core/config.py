@@ -117,6 +117,10 @@ class Settings(BaseSettings):
     # Ask carriers to request a review this many days before the government window closes, so
     # STS has time to prepare it. An STS target, not a government rule.
     dataqs_internal_cutoff_days: int = 30
+    # The representative named in every DataQs filing package.
+    dataqs_representative_company: str = "Sky Transport Solutions"
+    dataqs_representative_email: str = "Info@skytransportsolutions.com"
+    dataqs_representative_phone: str = "8004989820"
 
     # "Continue with Google" (OAuth 2.0 / OpenID Connect). Off unless both are set. The redirect
     # URI must match the one registered in Google Cloud Console exactly; in development it goes

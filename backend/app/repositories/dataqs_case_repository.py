@@ -5,6 +5,7 @@ tenant filters in.
 """
 
 from collections.abc import Collection
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import select
@@ -12,18 +13,27 @@ from sqlalchemy.orm import Session
 
 from app.models import (
     Carrier,
+    DataQsAssessment,
     DataQsAuditEvent,
     DataQsAuthorization,
     DataQsCase,
     DataQsEvidence,
     DataQsEvidenceLink,
     DataQsIssue,
+    DataQsPackage,
+    DataQsTask,
     Inspection,
     Organization,
     OrganizationCarrier,
     User,
 )
-from app.models.enums import DataQsWorkStatus, OrganizationKind
+from app.models.enums import (
+    DataQsActionOwner,
+    DataQsAuthorizationKind,
+    DataQsWorkStatus,
+    OrganizationKind,
+    UserStatus,
+)
 
 
 class DataQsCaseRepository:
@@ -186,3 +196,104 @@ class DataQsCaseRepository:
             select(Organization.id, Organization.name).where(Organization.id.in_(ids))
         )
         return {organization_id: name for organization_id, name in rows}
+
+    # --- Tasks -----------------------------------------------------------------------------------
+
+    def open_tasks(self, case_ids: Collection[int]) -> list[DataQsTask]:
+        if not case_ids:
+            return []
+        return list(
+            self.db.scalars(
+                select(DataQsTask)
+                .where(DataQsTask.case_id.in_(list(case_ids)), DataQsTask.completed_at.is_(None))
+                .order_by(DataQsTask.id)
+            )
+        )
+
+    def add_task(
+        self,
+        case: DataQsCase,
+        kind: str,
+        title: str,
+        owner: DataQsActionOwner,
+        *,
+        detail: str | None = None,
+        assignee_id: int | None = None,
+    ) -> DataQsTask:
+        task = DataQsTask(
+            case_id=case.id,
+            kind=kind,
+            title=title,
+            detail=detail,
+            action_owner=owner,
+            assignee_id=assignee_id,
+        )
+        self.db.add(task)
+        return task
+
+    def complete_tasks(
+        self, case: DataQsCase, kinds: Collection[str], by: User, at: datetime
+    ) -> None:
+        for task in self.open_tasks([case.id]):
+            if task.kind in kinds:
+                task.completed_at, task.completed_by_id = at, by.id
+
+    # --- Assessment, packages, approval ----------------------------------------------------------
+
+    def assessments(self, case_id: int) -> list[DataQsAssessment]:
+        return list(
+            self.db.scalars(
+                select(DataQsAssessment)
+                .where(DataQsAssessment.case_id == case_id)
+                .order_by(DataQsAssessment.id)
+            )
+        )
+
+    def packages(self, case_id: int) -> list[DataQsPackage]:
+        """Every version, oldest first."""
+        return list(
+            self.db.scalars(
+                select(DataQsPackage)
+                .where(DataQsPackage.case_id == case_id)
+                .order_by(DataQsPackage.package_version)
+            )
+        )
+
+    def current_package(self, case_id: int) -> DataQsPackage | None:
+        """The newest package that a later edit has not replaced."""
+        return self.db.scalar(
+            select(DataQsPackage)
+            .where(DataQsPackage.case_id == case_id, DataQsPackage.invalidated_at.is_(None))
+            .order_by(DataQsPackage.package_version.desc())
+            .limit(1)
+        )
+
+    def current_approval(self, case_id: int) -> DataQsAuthorization | None:
+        """The carrier's approval of the current package, if it still stands: same package, same
+        hash, not revoked. A package edit makes a new package, so an old approval never matches."""
+        package = self.current_package(case_id)
+        if package is None:
+            return None
+        return self.db.scalar(
+            select(DataQsAuthorization)
+            .where(
+                DataQsAuthorization.case_id == case_id,
+                DataQsAuthorization.kind == DataQsAuthorizationKind.PACKAGE_APPROVAL,
+                DataQsAuthorization.package_id == package.id,
+                DataQsAuthorization.package_hash == package.manifest_hash,
+                DataQsAuthorization.revoked_at.is_(None),
+            )
+            .order_by(DataQsAuthorization.id.desc())
+            .limit(1)
+        )
+
+    def staff_users(self) -> list[User]:
+        """Active STS staff, for assigning a case owner."""
+        return list(
+            self.db.scalars(
+                select(User)
+                .join(Organization, Organization.id == User.organization_id)
+                .where(Organization.kind == OrganizationKind.STS, User.status == UserStatus.ACTIVE)
+                .order_by(User.full_name)
+            )
+        )
