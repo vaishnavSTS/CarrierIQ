@@ -84,6 +84,10 @@ class DataQsPackageService:
         check_version(case, body.expected_version)
         if case.work_status not in BUILDABLE:
             raise DataQsInvalidTransitionError("A package can't be built at this stage")
+        if self.repository.open_attempt(case.id) is not None:
+            raise DataQsInvalidTransitionError(
+                "Filing is in progress; settle the filing attempt before changing the package"
+            )
         assessments = self.repository.assessments(case.id)
         if not assessments or assessments[-1].outcome != DataQsAssessmentOutcome.READY_TO_PREPARE:
             raise DataQsInvalidTransitionError(

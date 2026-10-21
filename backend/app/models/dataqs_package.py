@@ -89,3 +89,5 @@ class DataQsSubmissionAttempt(IdMixin, UpdatedAtMixin, Base):
     assigned_agency: Mapped[str | None] = mapped_column(String(200))
     receipt: Mapped[dict[str, Any] | None] = mapped_column(JSONB)  # acknowledgement as recorded
     confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Why an attempt was left unconfirmed or abandoned, e.g. "portal timed out after Submit".
+    note: Mapped[str | None] = mapped_column(Text)

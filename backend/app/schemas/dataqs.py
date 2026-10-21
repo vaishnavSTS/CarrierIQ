@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 from app.models.enums import (
     DataQsActionOwner,
     DataQsAssessmentOutcome,
+    DataQsAttemptStatus,
     DataQsEventType,
     DataQsOutcome,
     DataQsReason,
@@ -228,6 +229,74 @@ class DataQsStaffUserOut(BaseModel):
     role: str
 
 
+# --- Phase 4: filing ---------------------------------------------------------------------------
+
+
+class DataQsAttemptStartIn(BaseModel):
+    """STS starts filing the approved package in the DataQs portal."""
+
+    package_id: int
+    package_hash: str = Field(min_length=64, max_length=64)
+    filing_account: str = Field(
+        min_length=3, max_length=200
+    )  # whose DataQs login; never a password
+
+
+class DataQsConfirmIn(BaseModel):
+    """What DataQs showed once the request was submitted (a saved draft is not a submission)."""
+
+    gov_request_id: str = Field(min_length=1, max_length=50)
+    filed_at: datetime
+    assigned_agency: str | None = Field(default=None, max_length=200)
+    acknowledgement: str = Field(min_length=3, max_length=5000)  # as shown, pasted
+    package_version: int  # the version actually entered in DataQs
+    portal_status: str | None = Field(default=None, max_length=100)  # e.g. "Submitted"
+
+    @field_validator("gov_request_id")
+    @classmethod
+    def _strip_id(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Enter the DataQs request ID")
+        return value
+
+    @field_validator("filed_at")
+    @classmethod
+    def _aware(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            raise ValueError("filed_at needs a time zone")
+        return value
+
+
+class DataQsNoteIn(BaseModel):
+    note: str = Field(min_length=5, max_length=2000)
+
+
+class DataQsAttemptOut(BaseModel):
+    id: int
+    status: DataQsAttemptStatus
+    package_version: int | None
+    filed_by_name: str | None
+    filing_account: str | None
+    started_at: datetime
+    filed_at: datetime | None
+    gov_request_id: str | None
+    assigned_agency: str | None
+    acknowledgement: str | None
+    confirmed_at: datetime | None
+    note: str | None
+
+
+class DataQsReviewCycleOut(BaseModel):
+    id: int
+    level: DataQsReviewLevel
+    cycle_number: int
+    submitted_at: datetime | None
+    decision_issued_at: datetime | None
+    outcome: DataQsOutcome | None
+    closed_at: datetime | None
+
+
 class DataQsCaseSummaryOut(BaseModel):
     id: int
     organization_id: int
@@ -239,6 +308,8 @@ class DataQsCaseSummaryOut(BaseModel):
     event_date: date | None
     event_state: str | None
     work_status: DataQsWorkStatus
+    government_raw_status: str | None  # exactly what DataQs last showed
+    gov_request_id: str | None  # the DataQs request ID, once filed
     review_level: DataQsReviewLevel | None
     action_owner: DataQsActionOwner | None
     outcome: DataQsOutcome | None
@@ -328,12 +399,15 @@ class DataQsCaseOut(DataQsCaseSummaryOut):
     can_assign: bool  # staff
     can_assess: bool  # staff
     can_build_package: bool  # staff
+    can_file: bool  # staff: start filing the approved package
     consent: DataQsConsentOut  # the current authorization text, shown before submitting
     package_terms: DataQsConsentOut  # the text a carrier agrees to when approving a package
     assessments: list[DataQsAssessmentOut]
     assessment_checks: list[DataQsCheckDefOut]
     packages: list[DataQsPackageOut]  # staff: every version; clients: the current one
     tasks: list[DataQsTaskOut]  # open tasks (clients: only their own)
+    attempts: list[DataQsAttemptOut]  # staff: every filing attempt; clients: confirmed ones
+    review_cycles: list[DataQsReviewCycleOut]
     audit: list[DataQsAuditEventOut] | None  # STS staff only
 
 

@@ -116,6 +116,9 @@ export function DataQsStaffQueue() {
                   <td className={cellClass}>
                     <StatusBadge {...WORK_STATUS[c.work_status]} />
                     <div className="mt-0.5 text-xs text-slate-500">{c.next_action}</div>
+                    {c.gov_request_id && (
+                      <div className="font-mono text-xs text-slate-500">{c.gov_request_id}</div>
+                    )}
                   </td>
                   <td className={cellClass}>
                     {c.owner_name ?? <span className="text-slate-500">—</span>}

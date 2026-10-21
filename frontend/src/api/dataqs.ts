@@ -4,7 +4,9 @@ import type {
   DataQsCase,
   DataQsCaseCreateInput,
   DataQsCaseSummary,
+  DataQsAttemptStartInput,
   DataQsCheck,
+  DataQsConfirmInput,
   DataQsPackageInput,
   DataQsStaffUser,
   DataQsSubmitInput,
@@ -133,4 +135,37 @@ export function requestDataQsPackageChanges(
     expected_version: expectedVersion,
     message,
   })
+}
+
+// --- Phase 4: manual filing (staff only) --------------------------------------------------------
+
+/** Record that filing has started; the key makes a repeated click return the same attempt. */
+export function startDataQsFiling(
+  caseId: number,
+  input: DataQsAttemptStartInput,
+  idempotencyKey: string,
+): Promise<DataQsCase> {
+  return apiRequest(`/dataqs/cases/${caseId}/submission-attempts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
+    body: JSON.stringify(input),
+  })
+}
+
+export function confirmDataQsFiling(
+  caseId: number,
+  attemptId: number,
+  input: DataQsConfirmInput,
+): Promise<DataQsCase> {
+  return post(`/dataqs/cases/${caseId}/submission-attempts/${attemptId}/confirm`, input)
+}
+
+/** `unconfirmed`: the portal timed out; `abandon`: nothing was submitted / not found in DataQs. */
+export function settleDataQsFiling(
+  caseId: number,
+  attemptId: number,
+  action: 'unconfirmed' | 'abandon',
+  note: string,
+): Promise<DataQsCase> {
+  return post(`/dataqs/cases/${caseId}/submission-attempts/${attemptId}/${action}`, { note })
 }

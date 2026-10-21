@@ -3,7 +3,7 @@
 How we will add DataQs (challenging wrong FMCSA safety records) to CarrierSafetyScan, phase by
 phase. Edit freely as decisions are made; record each decision in the log at the bottom.
 
-**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules. Phase 2 built (2026-10-21): carrier intake wizard, evidence uploads, submit to STS. Phase 3 built (2026-10-21): staff queue, assessment, filing package, carrier approval (migration 0025).
+**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules. Phase 2 built (2026-10-21): carrier intake wizard, evidence uploads, submit to STS. Phase 3 built (2026-10-21): staff queue, assessment, filing package, carrier approval (migration 0025). Phase 4 built (2026-10-21): manual filing console, receipts, unconfirmed attempts and reconciling (migration 0026). Requests are started from the client DataQs tab.
 **Created:** 2026-10-21
 **Source:** `../../Sky_DataQs_Developer_Integration.docx` (Sky DataQs Developer Integration Specification v1.0)
 **Related:** `client-internal-portal-plan.md`, `../CHECKPOINT.md`
@@ -339,12 +339,26 @@ backend/tests/dataqs/test_dataqs_package_approval.py (+ shared conftest.py, help
 **Files**
 
 ```
-backend/app/services/dataqs_filing_adapter.py        contract + ManualFilingAdapter
-  POST /dataqs/cases/{id}/submission-attempts
-  POST /dataqs/cases/{id}/submission-attempts/{attempt_id}/confirm   (receipt required)
-frontend/src/features/dataqs/DataQsSubmissionConsole.tsx
+backend/app/services/dataqs_filing_adapter.py        FilingAdapter contract + ManualFilingAdapter
+backend/alembic/versions/20261021_0026_dataqs_attempt_note.py   attempt `note` column
+  POST /dataqs/cases/{id}/submission-attempts                        start (Idempotency-Key)
+  POST /dataqs/cases/{id}/submission-attempts/{attempt_id}/confirm   request ID + acknowledgement
+  POST /dataqs/cases/{id}/submission-attempts/{attempt_id}/unconfirmed   portal timed out
+  POST /dataqs/cases/{id}/submission-attempts/{attempt_id}/abandon   nothing submitted / not found
+frontend/src/features/dataqs/staff/DataQsSubmissionConsole.tsx   checklist, filing guide, receipt form
+frontend/src/features/dataqs/DataQsFiledCard.tsx                 request ID, filed, agency, stage
 backend/tests/dataqs/test_dataqs_filing.py
 ```
+
+**How filing moves**
+
+| Attempt | Action | Case becomes |
+|---|---|---|
+| — | Start filing (approved package, no other open attempt) | READY_TO_FILE (attempt STARTED) |
+| STARTED | Confirm: request ID, filed time, agency, acknowledgement | MONITORING (agency), INITIAL review cycle, "check it was opened" task due in 7 days |
+| STARTED | Portal timed out / not sure | SUBMISSION_UNCONFIRMED: no new attempt, package locked, reconcile task |
+| UNCONFIRMED | Found in DataQs → Confirm | MONITORING |
+| STARTED / UNCONFIRMED | Nothing submitted / not found → Abandon | READY_TO_FILE (file again) |
 
 **Done when:** repeated confirm does not duplicate acknowledgements; unconfirmed blocks blind retry.
 
@@ -495,3 +509,6 @@ failed email keeps the task and shows the exception to a supervisor.
 | 2026-10-21 | Package approval text is a draft (`2026-10-21-draft`), separate from the service consent | Build |
 | 2026-10-21 | Carriers can ask for changes to a package (not in the spec) so disagreements stay in the case | Build |
 | 2026-10-21 | STS targets (not government rules): assess within 3 days, carrier evidence within 14 days, carrier approval within 7 days | Build |
+| 2026-10-21 | Clients start requests from the DataQs tab (inspection list per verified carrier), not the Safety tab | User |
+| 2026-10-21 | Filing: one open attempt at a time; the package can't change while one is open; a DataQs request ID belongs to one case | Build |
+| 2026-10-21 | Carriers see the request ID, filing date and agency; the acknowledgement text, filing account and attempt notes are STS-only | Build |

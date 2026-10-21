@@ -5,6 +5,7 @@ import {
   assessDataQsCase,
   assignDataQsOwner,
   buildDataQsPackage,
+  confirmDataQsFiling,
   createDataQsCase,
   fetchDataQsCase,
   fetchDataQsCases,
@@ -12,6 +13,8 @@ import {
   fetchDataQsStaff,
   requestDataQsPackageChanges,
   resubmitDataQsCase,
+  settleDataQsFiling,
+  startDataQsFiling,
   submitDataQsCase,
   uploadDataQsEvidence,
   type DataQsBase,
@@ -19,8 +22,10 @@ import {
 import type {
   DataQsApprovalInput,
   DataQsAssessmentInput,
+  DataQsAttemptStartInput,
   DataQsCase,
   DataQsCaseCreateInput,
+  DataQsConfirmInput,
   DataQsPackageInput,
   DataQsSubmitInput,
 } from '../types/dataqs'
@@ -138,5 +143,33 @@ export function useApproveDataQsPackage(caseId: number) {
 export function useRequestDataQsPackageChanges(caseId: number) {
   return useCaseAction(({ version, message }: { version: number; message: string }) =>
     requestDataQsPackageChanges(caseId, version, message),
+  )
+}
+
+// --- Phase 4: manual filing --------------------------------------------------------------------
+
+export function useStartDataQsFiling(caseId: number) {
+  return useCaseAction(({ input, key }: { input: DataQsAttemptStartInput; key: string }) =>
+    startDataQsFiling(caseId, input, key),
+  )
+}
+
+export function useConfirmDataQsFiling(caseId: number) {
+  return useCaseAction(({ attemptId, input }: { attemptId: number; input: DataQsConfirmInput }) =>
+    confirmDataQsFiling(caseId, attemptId, input),
+  )
+}
+
+export function useSettleDataQsFiling(caseId: number) {
+  return useCaseAction(
+    ({
+      attemptId,
+      action,
+      note,
+    }: {
+      attemptId: number
+      action: 'unconfirmed' | 'abandon'
+      note: string
+    }) => settleDataQsFiling(caseId, attemptId, action, note),
   )
 }

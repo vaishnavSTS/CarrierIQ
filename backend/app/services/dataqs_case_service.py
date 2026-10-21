@@ -43,6 +43,7 @@ from app.models import (
 from app.models.enums import (
     DataQsActionOwner,
     DataQsAssessmentOutcome,
+    DataQsAttemptStatus,
     DataQsAuthorizationKind,
     DataQsEventType,
     DataQsReason,
@@ -52,6 +53,7 @@ from app.models.enums import (
 from app.repositories.dataqs_case_repository import DataQsCaseRepository
 from app.schemas.dataqs import (
     DataQsAssessmentOut,
+    DataQsAttemptOut,
     DataQsAuditEventOut,
     DataQsAuthorizationOut,
     DataQsCaseCreateIn,
@@ -66,6 +68,7 @@ from app.schemas.dataqs import (
     DataQsIssueOut,
     DataQsPackageOut,
     DataQsPriorActivityIn,
+    DataQsReviewCycleOut,
     DataQsSubmitIn,
     DataQsTaskOut,
     DataQsViolationOut,
@@ -452,6 +455,14 @@ class DataQsCaseService:
         packages = self.repository.packages(case.id)
         current_package = self.repository.current_package(case.id)
         approval = self.repository.current_approval(case.id)
+        attempts = [
+            a
+            for a in self.repository.attempts(case.id)
+            if staff or a.status == DataQsAttemptStatus.CONFIRMED
+        ]
+        open_attempt = self.repository.open_attempt(case.id)
+        cycles = self.repository.review_cycles(case.id)
+        package_versions = {p.id: p.package_version for p in packages}
         tasks = [
             task
             for task in self.repository.open_tasks([case.id])
@@ -463,6 +474,7 @@ class DataQsCaseService:
             + [a.assessor_id for a in assessments]
             + [p.created_by_id for p in packages]
             + [t.assignee_id for t in tasks if t.assignee_id is not None]
+            + [a.filed_by_id for a in attempts]
         )
 
         links_by_evidence: dict[int, list[DataQsEvidenceLinkOut]] = defaultdict(list)
@@ -555,7 +567,18 @@ class DataQsCaseService:
             ),
             can_assign=staff and case.work_status != DataQsWorkStatus.CLOSED,
             can_assess=staff and case.work_status in ASSESSABLE,
-            can_build_package=staff and ready_to_prepare and case.work_status in BUILDABLE,
+            can_build_package=(
+                staff
+                and ready_to_prepare
+                and case.work_status in BUILDABLE
+                and open_attempt is None
+            ),
+            can_file=(
+                staff
+                and case.work_status == DataQsWorkStatus.READY_TO_FILE
+                and approval is not None
+                and open_attempt is None
+            ),
             consent=DataQsConsentOut(terms_version=CONSENT_TERMS_VERSION, text=CONSENT_TEXT),
             package_terms=DataQsConsentOut(
                 terms_version=PACKAGE_TERMS_VERSION, text=PACKAGE_TERMS_TEXT
@@ -600,6 +623,35 @@ class DataQsCaseService:
                     created_at=task.created_at,
                 )
                 for task in tasks
+            ],
+            attempts=[
+                DataQsAttemptOut(
+                    id=a.id,
+                    status=a.status,
+                    package_version=package_versions.get(a.package_id),
+                    filed_by_name=names.get(a.filed_by_id),
+                    filing_account=a.filing_account if staff else None,
+                    started_at=a.created_at,
+                    filed_at=a.filed_at,
+                    gov_request_id=a.gov_request_id,
+                    assigned_agency=a.assigned_agency,
+                    acknowledgement=(a.receipt or {}).get("acknowledgement") if staff else None,
+                    confirmed_at=a.confirmed_at,
+                    note=a.note if staff else None,
+                )
+                for a in attempts
+            ],
+            review_cycles=[
+                DataQsReviewCycleOut(
+                    id=c.id,
+                    level=c.level,
+                    cycle_number=c.cycle_number,
+                    submitted_at=c.submitted_at,
+                    decision_issued_at=c.decision_issued_at,
+                    outcome=c.outcome,
+                    closed_at=c.closed_at,
+                )
+                for c in cycles
             ],
             audit=(
                 [
@@ -681,6 +733,8 @@ class DataQsCaseService:
                 event_date=c.event_date,
                 event_state=c.event_state,
                 work_status=c.work_status,
+                government_raw_status=c.government_raw_status,
+                gov_request_id=c.gov_request_id,
                 review_level=c.review_level,
                 action_owner=c.action_owner,
                 outcome=c.outcome,

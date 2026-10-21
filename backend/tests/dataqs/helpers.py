@@ -10,6 +10,9 @@ from sqlalchemy.orm import Session
 from app.core.security import hash_password
 from app.models import Inspection, Organization, OrganizationCarrier, User
 from app.models.enums import OrganizationKind, UserRole, UserStatus
+from app.services.dataqs_assessment_service import CHECK_KEYS
+from app.services.dataqs_case_service import CONSENT_TERMS_VERSION
+from app.services.dataqs_package_service import PACKAGE_TERMS_VERSION
 from tests.factories import make_carrier, make_raw_record
 
 PASSWORD = "correct-horse-battery"
@@ -142,3 +145,89 @@ def upload(
         files={"file": (name, data, "application/pdf")},
         data={"links": json.dumps(links), "document_date": "2024-09-12"},
     )
+
+
+# --- Phase 3 flow: submit, assess, build, approve ---------------------------------------------
+
+ALL_PASS = {key: {"result": "PASS", "note": None} for key in CHECK_KEYS}
+NARRATIVE = (
+    "The carrier's shop record shows the brakes were measured and adjusted within limits on the "
+    "morning of the inspection. We request removal of violation 396.3A1BOS."
+)
+
+
+def submitted_case(api: TestClient) -> dict:
+    """The carrier's owner opens a case, uploads a file and submits it to STS."""
+    log_in(api, "owner@acme.test")
+    case = create_case(api)
+    upload(api, case)
+    case = api.get(f"/api/v1/portal/dataqs/cases/{case['id']}").json()
+    return submit(api, case)
+
+
+def submit(api: TestClient, case: dict) -> dict:
+    """The carrier's owner signs the authorization and submits the case to STS."""
+    response = api.post(
+        f"/api/v1/portal/dataqs/cases/{case['id']}/submit",
+        json={
+            "expected_version": case["row_version"],
+            "signer_name": "Pat Owner",
+            "terms_version": CONSENT_TERMS_VERSION,
+            "accept": True,
+        },
+    )
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def staff_case(api: TestClient, case_id: int) -> dict:
+    return api.get(f"/api/v1/dataqs/cases/{case_id}").json()
+
+
+def assess(api: TestClient, case: dict, outcome: str, **extra: object) -> httpx.Response:
+    return api.post(
+        f"/api/v1/dataqs/cases/{case['id']}/assessments",
+        json={
+            "expected_version": case["row_version"],
+            "outcome": outcome,
+            "checks": ALL_PASS,
+            **extra,
+        },
+    )
+
+
+def build(api: TestClient, case: dict, narrative: str = NARRATIVE) -> httpx.Response:
+    return api.post(
+        f"/api/v1/dataqs/cases/{case['id']}/packages",
+        json={
+            "expected_version": case["row_version"],
+            "narrative": narrative,
+            "evidence_ids": [e["id"] for e in case["evidence"]],
+            "references": ["49 CFR 396.3(a)(1)"],
+        },
+    )
+
+
+def approve(api: TestClient, case: dict, package: dict) -> httpx.Response:
+    return api.post(
+        f"/api/v1/portal/dataqs/cases/{case['id']}/approvals",
+        json={
+            "expected_version": case["row_version"],
+            "package_id": package["id"],
+            "package_hash": package["manifest_hash"],
+            "signer_name": "Pat Owner",
+            "terms_version": PACKAGE_TERMS_VERSION,
+            "accept": True,
+        },
+    )
+
+
+def ready_package(api: TestClient) -> tuple[int, dict]:
+    """A case assessed as ready, with package v1 built and waiting for the carrier."""
+    case_id = submitted_case(api)["id"]
+    log_in(api, "analyst@sts.test")
+    assessed = assess(api, staff_case(api, case_id), "READY_TO_PREPARE")
+    assert assessed.status_code == 200, assessed.text
+    built = build(api, assessed.json())
+    assert built.status_code == 200, built.text
+    return case_id, built.json()

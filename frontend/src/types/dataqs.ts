@@ -76,6 +76,10 @@ export interface DataQsCaseSummary {
   event_date: string | null
   event_state: string | null
   work_status: DataQsWorkStatus
+  /** Exactly what DataQs last showed */
+  government_raw_status: string | null
+  /** The DataQs request ID, once filed */
+  gov_request_id: string | null
   review_level: 'INITIAL' | 'RECONSIDERATION' | 'FINAL' | null
   action_owner: 'CARRIER' | 'STS' | 'AGENCY' | null
   outcome: string | null
@@ -195,6 +199,8 @@ export interface DataQsCase extends DataQsCaseSummary {
   can_assign: boolean
   can_assess: boolean
   can_build_package: boolean
+  /** Staff: start filing the approved package */
+  can_file: boolean
   consent: { terms_version: string; text: string }
   /** What a carrier agrees to when approving a package */
   package_terms: { terms_version: string; text: string }
@@ -204,6 +210,9 @@ export interface DataQsCase extends DataQsCaseSummary {
   packages: DataQsPackage[]
   /** Open tasks (clients see only their own) */
   tasks: DataQsTask[]
+  /** Staff: every filing attempt; clients: confirmed ones */
+  attempts: DataQsAttempt[]
+  review_cycles: DataQsReviewCycle[]
   /** STS staff only */
   audit: { action: string; actor_name: string | null; at: string; detail: unknown }[] | null
 }
@@ -327,4 +336,49 @@ export interface DataQsApprovalInput {
   signer_title: string | null
   terms_version: string
   accept: true
+}
+
+export type DataQsAttemptStatus = 'STARTED' | 'UNCONFIRMED' | 'CONFIRMED' | 'ABANDONED'
+
+export interface DataQsAttempt {
+  id: number
+  status: DataQsAttemptStatus
+  package_version: number | null
+  filed_by_name: string | null
+  /** STS only */
+  filing_account: string | null
+  started_at: string
+  filed_at: string | null
+  gov_request_id: string | null
+  assigned_agency: string | null
+  /** STS only: the acknowledgement as DataQs showed it */
+  acknowledgement: string | null
+  confirmed_at: string | null
+  /** STS only: why it was left unconfirmed or abandoned */
+  note: string | null
+}
+
+export interface DataQsReviewCycle {
+  id: number
+  level: 'INITIAL' | 'RECONSIDERATION' | 'FINAL'
+  cycle_number: number
+  submitted_at: string | null
+  decision_issued_at: string | null
+  outcome: string | null
+  closed_at: string | null
+}
+
+export interface DataQsAttemptStartInput {
+  package_id: number
+  package_hash: string
+  filing_account: string
+}
+
+export interface DataQsConfirmInput {
+  gov_request_id: string
+  filed_at: string
+  assigned_agency: string | null
+  acknowledgement: string
+  package_version: number
+  portal_status: string | null
 }

@@ -4,10 +4,12 @@ import type { ReactNode } from 'react'
 import { dataQsEvidenceUrl } from '../../api/dataqs'
 import { StatusBadge } from '../../components/StatusBadge'
 import { useDataQsBase, useDataQsCase, useResubmitDataQsCase } from '../../hooks/useDataQs'
+import { usePortalMode } from '../../hooks/usePortalMode'
 import type { DataQsCase, DataQsEvidence, DataQsIssue } from '../../types/dataqs'
 import { formatDate, formatDateTime } from '../../utils/format'
 import { DataQsAssessmentHistory, DataQsTaskList } from './DataQsCaseActivity'
 import { DataQsEventSummary } from './DataQsEventSummary'
+import { DataQsFiledCard } from './DataQsFiledCard'
 import { DataQsEvidenceUpload } from './DataQsEvidenceUpload'
 import { DataQsPackageReview } from './DataQsPackageReview'
 import { DataQsPackageView } from './DataQsPackageView'
@@ -16,6 +18,7 @@ import { WORK_STATUS, fileSize } from './labels'
 import { DataQsAssessmentPanel } from './staff/DataQsAssessmentPanel'
 import { DataQsOwnerPanel } from './staff/DataQsOwnerPanel'
 import { DataQsPackageBuilder } from './staff/DataQsPackageBuilder'
+import { DataQsSubmissionConsole } from './staff/DataQsSubmissionConsole'
 import { primaryButton } from './ui'
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
@@ -52,6 +55,8 @@ export function DataQsCaseRoom({ caseId }: { caseId: number }) {
 
 function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
   const status = WORK_STATUS[c.work_status]
+  const staff = usePortalMode() === 'internal'
+  const filing = c.can_file || c.attempts.some((a) => a.status !== 'CONFIRMED')
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3">
@@ -83,6 +88,17 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
       {c.tasks.length > 0 && (
         <Card title="Open tasks">
           <DataQsTaskList tasks={c.tasks} />
+        </Card>
+      )}
+
+      {c.gov_request_id && (
+        <Card title="Filed with DataQs">
+          <DataQsFiledCard dataqsCase={c} />
+        </Card>
+      )}
+      {staff && filing && (
+        <Card title="File with DataQs">
+          <DataQsSubmissionConsole dataqsCase={c} />
         </Card>
       )}
 

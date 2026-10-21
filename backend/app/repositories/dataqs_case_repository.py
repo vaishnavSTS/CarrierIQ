@@ -21,6 +21,8 @@ from app.models import (
     DataQsEvidenceLink,
     DataQsIssue,
     DataQsPackage,
+    DataQsReviewCycle,
+    DataQsSubmissionAttempt,
     DataQsTask,
     Inspection,
     Organization,
@@ -29,7 +31,9 @@ from app.models import (
 )
 from app.models.enums import (
     DataQsActionOwner,
+    DataQsAttemptStatus,
     DataQsAuthorizationKind,
+    DataQsRoute,
     DataQsWorkStatus,
     OrganizationKind,
     UserStatus,
@@ -295,5 +299,51 @@ class DataQsCaseRepository:
                 .join(Organization, Organization.id == User.organization_id)
                 .where(Organization.kind == OrganizationKind.STS, User.status == UserStatus.ACTIVE)
                 .order_by(User.full_name)
+            )
+        )
+
+    # --- Filing (Phase 4) ------------------------------------------------------------------------
+
+    def attempts(self, case_id: int) -> list[DataQsSubmissionAttempt]:
+        return list(
+            self.db.scalars(
+                select(DataQsSubmissionAttempt)
+                .where(DataQsSubmissionAttempt.case_id == case_id)
+                .order_by(DataQsSubmissionAttempt.id)
+            )
+        )
+
+    def open_attempt(self, case_id: int) -> DataQsSubmissionAttempt | None:
+        """An attempt still STARTED or UNCONFIRMED: it must be settled before another one."""
+        return self.db.scalar(
+            select(DataQsSubmissionAttempt).where(
+                DataQsSubmissionAttempt.case_id == case_id,
+                DataQsSubmissionAttempt.status.in_(
+                    [DataQsAttemptStatus.STARTED, DataQsAttemptStatus.UNCONFIRMED]
+                ),
+            )
+        )
+
+    def attempt_by_key(self, case_id: int, key: str) -> DataQsSubmissionAttempt | None:
+        return self.db.scalar(
+            select(DataQsSubmissionAttempt).where(
+                DataQsSubmissionAttempt.case_id == case_id,
+                DataQsSubmissionAttempt.idempotency_key == key,
+            )
+        )
+
+    def case_by_gov_request_id(self, route: DataQsRoute, gov_request_id: str) -> DataQsCase | None:
+        return self.db.scalar(
+            select(DataQsCase).where(
+                DataQsCase.route == route, DataQsCase.gov_request_id == gov_request_id
+            )
+        )
+
+    def review_cycles(self, case_id: int) -> list[DataQsReviewCycle]:
+        return list(
+            self.db.scalars(
+                select(DataQsReviewCycle)
+                .where(DataQsReviewCycle.case_id == case_id)
+                .order_by(DataQsReviewCycle.id)
             )
         )

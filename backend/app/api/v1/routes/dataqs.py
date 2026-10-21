@@ -25,12 +25,15 @@ from app.repositories.dataqs_case_repository import DataQsCaseRepository
 from app.schemas.dataqs import (
     DataQsApprovalIn,
     DataQsAssessmentIn,
+    DataQsAttemptStartIn,
     DataQsCaseCreateIn,
     DataQsCaseListOut,
     DataQsCaseOut,
     DataQsChangesIn,
     DataQsCheckOut,
+    DataQsConfirmIn,
     DataQsEvidenceLinkOut,
+    DataQsNoteIn,
     DataQsOwnerIn,
     DataQsPackageIn,
     DataQsStaffUserOut,
@@ -41,6 +44,7 @@ from app.services.dataqs_assessment_service import DataQsAssessmentService
 from app.services.dataqs_case_service import DataQsCaseService
 from app.services.dataqs_evidence_service import DataQsEvidenceService
 from app.services.dataqs_evidence_storage import EvidenceStorage, get_evidence_storage
+from app.services.dataqs_filing_adapter import ManualFilingAdapter
 from app.services.dataqs_package_service import DataQsPackageService
 
 router = APIRouter(prefix="/dataqs", tags=["dataqs"])
@@ -277,4 +281,82 @@ def request_package_changes(
 ) -> DataQsCaseOut:
     """Ask STS to change the package before approving it."""
     service.request_changes(user, case_id, body)
+    return cases.detail(user, case_id)
+
+
+# --- Phase 4: manual filing -----------------------------------------------------------------------
+
+
+def get_filing_adapter(db: Annotated[Session, Depends(get_db)]) -> ManualFilingAdapter:
+    return ManualFilingAdapter(db)
+
+
+Filing = Annotated[ManualFilingAdapter, Depends(get_filing_adapter)]
+
+
+@router.post(
+    "/cases/{case_id}/submission-attempts",
+    response_model=DataQsCaseOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def start_filing(
+    case_id: int,
+    body: DataQsAttemptStartIn,
+    user: StaffUser,
+    filing: Filing,
+    cases: CaseService,
+    idempotency_key: Annotated[str | None, Header(max_length=100)] = None,
+) -> DataQsCaseOut:
+    """Record that a specialist is filing the approved package in DataQs (one open attempt at a
+    time, so nobody files it twice)."""
+    filing.start(user, case_id, body, idempotency_key)
+    return cases.detail(user, case_id)
+
+
+@router.post(
+    "/cases/{case_id}/submission-attempts/{attempt_id}/confirm", response_model=DataQsCaseOut
+)
+def confirm_filing(
+    case_id: int,
+    attempt_id: int,
+    body: DataQsConfirmIn,
+    user: StaffUser,
+    filing: Filing,
+    cases: CaseService,
+) -> DataQsCaseOut:
+    """Record the request ID and acknowledgement DataQs showed; only now is the case submitted.
+    Also how an unconfirmed attempt is settled when the request is found in DataQs."""
+    filing.confirm(user, case_id, attempt_id, body)
+    return cases.detail(user, case_id)
+
+
+@router.post(
+    "/cases/{case_id}/submission-attempts/{attempt_id}/unconfirmed", response_model=DataQsCaseOut
+)
+def unconfirmed_filing(
+    case_id: int,
+    attempt_id: int,
+    body: DataQsNoteIn,
+    user: StaffUser,
+    filing: Filing,
+    cases: CaseService,
+) -> DataQsCaseOut:
+    """The portal timed out or the result is unclear: no new attempt until it is settled."""
+    filing.mark_unconfirmed(user, case_id, attempt_id, body.note)
+    return cases.detail(user, case_id)
+
+
+@router.post(
+    "/cases/{case_id}/submission-attempts/{attempt_id}/abandon", response_model=DataQsCaseOut
+)
+def abandon_filing(
+    case_id: int,
+    attempt_id: int,
+    body: DataQsNoteIn,
+    user: StaffUser,
+    filing: Filing,
+    cases: CaseService,
+) -> DataQsCaseOut:
+    """Nothing was submitted, or DataQs shows no such request: ready to file again."""
+    filing.abandon(user, case_id, attempt_id, body.note)
     return cases.detail(user, case_id)
