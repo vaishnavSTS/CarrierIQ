@@ -44,8 +44,15 @@ services:
         sync: false
       - key: DATAQS_STORAGE_BUCKET
         value: dataqs-evidence
-      # DataQs emails: over SMTP when SMTP_HOST is set (e.g. Google Workspace), else through
+      # DataQs emails: through the Gmail API when the three GMAIL_* are set (HTTPS: works on
+      # the free plan, which blocks SMTP), else over SMTP when SMTP_HOST is set, else through
       # Resend (RESEND_API_KEY). No email is sent until one of them is set.
+      - key: GMAIL_CLIENT_ID
+        sync: false
+      - key: GMAIL_CLIENT_SECRET
+        sync: false
+      - key: GMAIL_REFRESH_TOKEN
+        sync: false # from python -m app.workers.gmail_authorize
       - key: SMTP_HOST
         sync: false # e.g. smtp.gmail.com
       - key: SMTP_PORT

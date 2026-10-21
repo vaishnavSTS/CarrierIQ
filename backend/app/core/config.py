@@ -121,11 +121,16 @@ class Settings(BaseSettings):
     dataqs_representative_company: str = "Sky Transport Solutions"
     dataqs_representative_email: str = "Info@skytransportsolutions.com"
     dataqs_representative_phone: str = "8004989820"
-    # DataQs emails (docs/DataQ.md), sent over SMTP when SMTP_HOST is set (e.g. Google Workspace:
-    # smtp.gmail.com, 587, a mailbox + its App Password), otherwise through Resend's API
-    # (RESEND_API_KEY). Passwords and keys are secrets: environment only. While neither is set
+    # DataQs emails (docs/DataQ.md), sent through the Gmail API when GMAIL_REFRESH_TOKEN is set
+    # (HTTPS, so it works where SMTP ports are blocked, e.g. Render's free plan; the token comes
+    # from `python -m app.workers.gmail_authorize`), else over SMTP when SMTP_HOST is set (e.g.
+    # smtp.gmail.com, 587, a mailbox + its App Password), else through Resend's API
+    # (RESEND_API_KEY). Secrets, tokens and passwords: environment only. While none is set
     # nothing is sent; emails wait in dataqs_outbox. DATAQS_EMAIL_FROM must be an address the
-    # server may send as (for Google: the mailbox itself or one of its aliases).
+    # mailbox may send as (for Google: the mailbox itself or one of its aliases).
+    gmail_client_id: str | None = None
+    gmail_client_secret: str | None = None
+    gmail_refresh_token: str | None = None
     smtp_host: str | None = None
     smtp_port: int = 587
     smtp_username: str | None = None
@@ -157,8 +162,12 @@ class Settings(BaseSettings):
         return bool(self.google_client_id and self.google_client_secret)
 
     @property
+    def gmail_api_enabled(self) -> bool:
+        return bool(self.gmail_client_id and self.gmail_client_secret and self.gmail_refresh_token)
+
+    @property
     def dataqs_email_enabled(self) -> bool:
-        return bool(self.smtp_host or self.resend_api_key)
+        return bool(self.gmail_api_enabled or self.smtp_host or self.resend_api_key)
 
     @property
     def dataqs_carrier_override_list(self) -> list[str]:
