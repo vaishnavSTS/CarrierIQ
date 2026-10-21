@@ -3,7 +3,7 @@
 How we will add DataQs (challenging wrong FMCSA safety records) to CarrierSafetyScan, phase by
 phase. Edit freely as decisions are made; record each decision in the log at the bottom.
 
-**Status:** Planning. Nothing built yet.
+**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules.
 **Created:** 2026-10-21
 **Source:** `../../Sky_DataQs_Developer_Integration.docx` (Sky DataQs Developer Integration Specification v1.0)
 **Related:** `client-internal-portal-plan.md`, `../CHECKPOINT.md`
@@ -143,7 +143,8 @@ frontend/src/
 |---|---|
 | `dataqs_cases` | id, organization_id (tenant), usdot, event (inspection) reference, route, work_status, owner, gov_request_id, row_version |
 | `dataqs_issues` | case_id, violation reference, reason code, recorded value, requested value, factual basis, per-issue outcome |
-| `dataqs_evidence` | case_id, issue links, storage key, SHA-256, original/redacted version, mime type, scan status, uploader, document date, relevance |
+| `dataqs_evidence` | case_id, storage key, SHA-256, original/redacted version, mime type, scan status, uploader, document date, relevance |
+| `dataqs_evidence_links` | evidence ↔ issue, with a note on why the file is relevant |
 | `dataqs_authorizations` | signer, authority check, scope, terms version, package hash, approved_at, revoked_at |
 | `dataqs_packages` | package version, narrative, manifest hash, approved version |
 | `dataqs_submission_attempts` | attempt status, filing account identity, receipt, filed_at |
@@ -455,3 +456,6 @@ failed email keeps the task and shows the exception to a supervisor.
 | 2026-10-21 | DataQs tab in the client portal and the STS (internal) portal; opens a new DataQs page | User |
 | 2026-10-21 | All DataQs code, tables and routes prefixed `dataqs` | User |
 | 2026-10-21 | Manual filing only; no DataQs automation until permitted by DataQs | Spec |
+| 2026-10-21 | `action_owner` uses `STS` (the spec's `SKY`), matching the rest of the app | Build |
+| 2026-10-21 | A case does not point at inspection or violation rows by id (FMCSA refreshes replace them); it keeps a snapshot of the event as opened | Build |
+| 2026-10-21 | Client access to a case needs the carrier to be STS-verified for their company; client search never widens DataQs access | Build |

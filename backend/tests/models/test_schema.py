@@ -46,6 +46,21 @@ TABLES = {
     "iss_snapshots",
     # States' weigh-station pull-in rates by ISS range (PrePass table)
     "iss_pull_in_rates",
+    # DataQs cases (docs/DataQ.md)
+    "dataqs_cases",
+    "dataqs_issues",
+    "dataqs_evidence",
+    "dataqs_evidence_links",
+    "dataqs_packages",
+    "dataqs_authorizations",
+    "dataqs_submission_attempts",
+    "dataqs_review_cycles",
+    "dataqs_correspondence",
+    "dataqs_clocks",
+    "dataqs_clock_pauses",
+    "dataqs_tasks",
+    "dataqs_audit_events",
+    "dataqs_outbox",
 }
 
 # Rows in these tables always come from a source record (Engineering Principle 5).
@@ -72,6 +87,7 @@ APPEND_ONLY_TABLES = {
     "carrier_attribute_history",
     "carrier_snapshots",
     "authority_history",
+    "dataqs_audit_events",
 }
 
 

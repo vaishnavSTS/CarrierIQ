@@ -101,7 +101,116 @@ class UserStatus(StrEnum):
     DISABLED = "DISABLED"
 
 
-def enum_type(enum_cls: type[StrEnum], name: str) -> Enum:
+# --- DataQs: requests to correct FMCSA safety records (docs/DataQ.md) -------------------------
+
+
+class DataQsRoute(StrEnum):
+    DATAQS = "DATAQS"  # a DataQs request for data review (inspections, violations, citations)
+    CPDP = "CPDP"  # Crash Preventability Determination Program: separate program, later release
+
+
+class DataQsEventType(StrEnum):
+    INSPECTION = "INSPECTION"
+    CRASH = "CRASH"
+
+
+class DataQsWorkStatus(StrEnum):
+    """Where the case is in STS's own work, apart from the government's status."""
+
+    DRAFT = "DRAFT"
+    EVIDENCE_NEEDED = "EVIDENCE_NEEDED"
+    STAFF_REVIEW = "STAFF_REVIEW"
+    AWAITING_APPROVAL = "AWAITING_APPROVAL"
+    READY_TO_FILE = "READY_TO_FILE"
+    SUBMISSION_UNCONFIRMED = "SUBMISSION_UNCONFIRMED"  # filing attempted, no acknowledgement yet
+    MONITORING = "MONITORING"  # filed; waiting on the agency
+    VERIFICATION = "VERIFICATION"  # decided; checking the FMCSA record actually changed
+    CLOSED = "CLOSED"
+
+
+class DataQsReviewLevel(StrEnum):
+    INITIAL = "INITIAL"
+    RECONSIDERATION = "RECONSIDERATION"
+    FINAL = "FINAL"
+
+
+class DataQsActionOwner(StrEnum):
+    """Who has to act next."""
+
+    CARRIER = "CARRIER"
+    STS = "STS"
+    AGENCY = "AGENCY"
+
+
+class DataQsOutcome(StrEnum):
+    FULL_CORRECTION = "FULL_CORRECTION"
+    PARTIAL_CORRECTION = "PARTIAL_CORRECTION"
+    NO_CORRECTION = "NO_CORRECTION"
+    PROCEDURAL_CLOSURE = "PROCEDURAL_CLOSURE"  # insufficient information or no response, not merits
+    WITHDRAWN = "WITHDRAWN"
+
+
+class DataQsReason(StrEnum):
+    """Why the carrier believes an issue is wrong (intake wizard, step 3)."""
+
+    WRONG_ATTRIBUTION = "WRONG_ATTRIBUTION"  # not our vehicle, driver or company
+    INACCURATE_VIOLATION = "INACCURATE_VIOLATION"
+    DUPLICATE = "DUPLICATE"
+    FIELD_CORRECTION = "FIELD_CORRECTION"  # a wrong field on the report
+    COURT_OUTCOME = "COURT_OUTCOME"  # a citation dismissed or reduced in court
+    UNSURE = "UNSURE"
+
+
+class DataQsScanStatus(StrEnum):
+    PENDING = "PENDING"
+    CLEAN = "CLEAN"
+    INFECTED = "INFECTED"
+    FAILED = "FAILED"
+
+
+class DataQsAuthorizationKind(StrEnum):
+    SERVICE_CONSENT = "SERVICE_CONSENT"  # general authority for STS to act on this case
+    PACKAGE_APPROVAL = "PACKAGE_APPROVAL"  # approval to file one exact package (by its hash)
+
+
+class DataQsAttemptStatus(StrEnum):
+    STARTED = "STARTED"
+    UNCONFIRMED = "UNCONFIRMED"  # e.g. the portal timed out: reconcile before retrying
+    CONFIRMED = "CONFIRMED"  # acknowledgement / receipt recorded
+    ABANDONED = "ABANDONED"
+
+
+class DataQsCorrespondenceSource(StrEnum):
+    DATAQS_PORTAL = "DATAQS_PORTAL"
+    EMAIL = "EMAIL"
+    PHONE = "PHONE"
+    OTHER = "OTHER"
+
+
+class DataQsCorrespondenceKind(StrEnum):
+    ACKNOWLEDGEMENT = "ACKNOWLEDGEMENT"
+    INFO_REQUEST = "INFO_REQUEST"  # agency asks the requester for information: pauses the clock
+    INFO_RESPONSE = "INFO_RESPONSE"  # requester answers: resumes the clock
+    DECISION = "DECISION"
+    REOPENING = "REOPENING"
+    OTHER = "OTHER"
+
+
+class DataQsClockType(StrEnum):
+    FILING_WINDOW = "FILING_WINDOW"  # from the event date: 3 years inspections, 5 years crashes
+    AGENCY_REVIEW = "AGENCY_REVIEW"  # 21 / 21 / 45 days from the confirmed stage request
+    REQUESTER_INFO = "REQUESTER_INFO"  # 14 days to answer an agency information request
+    APPEAL = "APPEAL"  # 30 days from the prior decision's issue date
+    INTERNAL = "INTERNAL"  # STS's own earlier targets, never shown as government rules
+
+
+class DataQsOutboxStatus(StrEnum):
+    PENDING = "PENDING"
+    SENT = "SENT"
+    FAILED = "FAILED"
+
+
+def enum_type(enum_cls: type[StrEnum], name: str, length: int = 20) -> Enum:
     """VARCHAR column restricted to the enum's values by a CHECK constraint named after `name`."""
     return Enum(
         enum_cls,
@@ -109,6 +218,6 @@ def enum_type(enum_cls: type[StrEnum], name: str) -> Enum:
         native_enum=False,
         create_constraint=True,
         validate_strings=True,
-        length=20,
+        length=length,
         values_callable=lambda cls: [member.value for member in cls],
     )

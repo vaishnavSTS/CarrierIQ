@@ -28,6 +28,12 @@ class CarrierNotFoundError(NotFoundError):
     code = "carrier_not_found"
 
 
+class DataQsCaseNotFoundError(NotFoundError):
+    """No such DataQs case, or not one this user may see (the answer is the same)."""
+
+    code = "dataqs_case_not_found"
+
+
 class ValidationError(CarrierSafetyScanError):
     status_code = 422
     code = "validation_error"
@@ -45,6 +51,12 @@ class ForbiddenError(CarrierSafetyScanError):
 
     status_code = 403
     code = "forbidden"
+
+
+class DataQsMissingAuthorityError(ForbiddenError):
+    """A DataQs case needs a verified carrier of the client company, and a user allowed to act."""
+
+    code = "dataqs_missing_authority"
 
 
 class AccountPendingError(ForbiddenError):

@@ -7,6 +7,15 @@ from app.models.carrier import Carrier
 from app.models.carrier_attribute_history import CarrierAttributeHistory
 from app.models.carrier_snapshot import CarrierSnapshot
 from app.models.crash import Crash
+from app.models.dataqs_audit_event import DataQsAuditEvent
+from app.models.dataqs_case import DataQsCase, DataQsIssue
+from app.models.dataqs_clock import DataQsClock, DataQsClockPause
+from app.models.dataqs_correspondence import DataQsCorrespondence
+from app.models.dataqs_evidence import DataQsEvidence, DataQsEvidenceLink
+from app.models.dataqs_outbox import DataQsOutbox
+from app.models.dataqs_package import DataQsAuthorization, DataQsPackage, DataQsSubmissionAttempt
+from app.models.dataqs_review_cycle import DataQsReviewCycle
+from app.models.dataqs_task import DataQsTask
 from app.models.domain import Domain
 from app.models.identity_event import IdentityEvent
 from app.models.ingestion_run import IngestionRun
@@ -40,6 +49,20 @@ __all__ = [
     "CarrierAttributeHistory",
     "CarrierSnapshot",
     "Crash",
+    "DataQsAuditEvent",
+    "DataQsAuthorization",
+    "DataQsCase",
+    "DataQsClock",
+    "DataQsClockPause",
+    "DataQsCorrespondence",
+    "DataQsEvidence",
+    "DataQsEvidenceLink",
+    "DataQsIssue",
+    "DataQsOutbox",
+    "DataQsPackage",
+    "DataQsReviewCycle",
+    "DataQsSubmissionAttempt",
+    "DataQsTask",
     "Domain",
     "IdentityEvent",
     "IngestionRun",
