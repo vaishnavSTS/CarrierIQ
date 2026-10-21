@@ -64,8 +64,12 @@ def test_client_opens_own_carrier_without_internal_fields(portal: TestClient, db
         assert portal.get(f"/api/v1/portal/carriers/{USDOT}/{tab}").status_code == 200, tab
 
 
-def test_client_searches_and_opens_other_carriers(portal: TestClient, db: Session) -> None:
-    """Not only their own: a client can look up any carrier, in the same client view."""
+def test_with_client_search_on_clients_search_and_open_other_carriers(
+    portal: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Team testing (CLIENT_SEARCH_ENABLED=true): a client can look up any carrier, in the same
+    client view."""
+    monkeypatch.setattr(get_settings(), "client_search_enabled", True)
     make_user(db, "owner@client.test", UserRole.CLIENT_ADMIN, UserStatus.ACTIVE)  # no carriers
     log_in(portal, "owner@client.test")
 
@@ -81,11 +85,8 @@ def test_client_searches_and_opens_other_carriers(portal: TestClient, db: Sessio
     assert portal.get(f"/api/v1/portal/carriers/{USDOT}/network").status_code == 200
 
 
-def test_with_client_search_off_clients_see_only_their_own_carriers(
-    portal: TestClient, db: Session, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """The setting for after team testing: back to own carriers only, and no search."""
-    monkeypatch.setattr(get_settings(), "client_search_enabled", False)
+def test_by_default_clients_see_only_their_own_carriers(portal: TestClient, db: Session) -> None:
+    """CLIENT_SEARCH_ENABLED is off by default: own carriers only, and no search."""
     client_with_carrier(db, verified=True)
     log_in(portal, "owner@client.test")
 

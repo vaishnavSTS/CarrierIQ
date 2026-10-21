@@ -58,7 +58,7 @@ Goal: `React → FastAPI → PostgreSQL` works locally.
 - [x] Initialize git and make the first commit (remote: github.com/vaishnavSTS/CarrierIQ)
 - [ ] Reset the Supabase database password (it was shared in chat) and update both `.env` files
 - [ ] Rename the app on Google's sign-in screen to CarrierSafetyScan (Google Cloud Console → OAuth consent screen / Branding)
-- [ ] After team testing: set `CLIENT_SEARCH_ENABLED=false` on Render (clients see only their own carriers), then match it in `render.yaml`
+- [x] After team testing: set `CLIENT_SEARCH_ENABLED=false` (clients see only their own carriers): now the default and in `render.yaml`; also set it on Render if it was set there by hand
 - [ ] Once nobody uses carrier-iq.vercel.app: remove its old redirect URI from the Google OAuth client
 
 ---

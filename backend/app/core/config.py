@@ -104,9 +104,9 @@ class Settings(BaseSettings):
     # "Continue with Google" (OAuth 2.0 / OpenID Connect). Off unless both are set. The redirect
     # URI must match the one registered in Google Cloud Console exactly; in development it goes
     # through the Vite proxy so the session cookie lands on the frontend's origin.
-    # Temporary, while the STS team tests: clients may search and open any carrier. Set
-    # CLIENT_SEARCH_ENABLED=false to return clients to their own carriers only.
-    client_search_enabled: bool = True
+    # Off: clients see only their own carriers, with no search. CLIENT_SEARCH_ENABLED=true lets
+    # them search and open any carrier (used for STS team testing).
+    client_search_enabled: bool = False
 
     google_client_id: str | None = None
     google_client_secret: str | None = None

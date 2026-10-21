@@ -83,10 +83,10 @@ monthly Estimated ISS reference is not rebuilt, and older carriers are not refre
    `frontend/vercel.json` first.
    Every push to `main` redeploys both: Vercel and Render each build from GitHub on their own
    servers (not GitHub Actions). Render applies database migrations on start.
-   **Client search (temporary, for team testing):** `CLIENT_SEARCH_ENABLED` is `true` in
-   `render.yaml`, so clients can search and open any carrier. After testing, set it to `false`
-   in Render → carrieriq-api → Environment (Save and deploy): clients then see only their own
-   carriers again, with no search. No code change is needed.
+   **Client search:** `CLIENT_SEARCH_ENABLED` is `false` (the default, and in `render.yaml`), so
+   clients see only their own carriers, with no search. To let clients search and open any
+   carrier again (e.g. for team testing), set it to `true` in Render → carrieriq-api →
+   Environment (Save and deploy). No code change is needed.
 3. **Google sign-in.** Set `GOOGLE_REDIRECT_URI` on Render to
    `https://<vercel-domain>/api/v1/auth/google/callback` and add the same URL to the OAuth client's
    Authorized redirect URIs in Google Cloud Console.
