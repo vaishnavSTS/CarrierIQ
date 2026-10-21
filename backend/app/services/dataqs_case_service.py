@@ -42,10 +42,12 @@ from app.models import (
 )
 from app.models.enums import (
     DataQsActionOwner,
-    DataQsAssessmentOutcome,
     DataQsAttemptStatus,
     DataQsAuthorizationKind,
+    DataQsClockType,
+    DataQsCorrespondenceKind,
     DataQsEventType,
+    DataQsOutcome,
     DataQsReason,
     DataQsWorkStatus,
     UserRole,
@@ -61,7 +63,9 @@ from app.schemas.dataqs import (
     DataQsCaseSummaryOut,
     DataQsCheckIn,
     DataQsCheckOut,
+    DataQsClockOut,
     DataQsConsentOut,
+    DataQsCorrespondenceOut,
     DataQsEventOut,
     DataQsEvidenceLinkOut,
     DataQsEvidenceOut,
@@ -71,6 +75,7 @@ from app.schemas.dataqs import (
     DataQsReviewCycleOut,
     DataQsSubmitIn,
     DataQsTaskOut,
+    DataQsTimelineEventOut,
     DataQsViolationOut,
     EligibilityOut,
     ReasonOut,
@@ -84,10 +89,14 @@ from app.services.dataqs_assessment_service import (
     OUTCOME_LABELS,
 )
 from app.services.dataqs_checklist import CHECKLIST, REASON_LABELS
+from app.services.dataqs_clock_service import LABELS as CLOCK_LABELS
+from app.services.dataqs_clock_service import DataQsClockService, state
+from app.services.dataqs_lifecycle import LEVEL_LABEL, NEXT_LEVEL, proposed_cycle
 from app.services.dataqs_package_service import (
     BUILDABLE,
     PACKAGE_TERMS_TEXT,
     PACKAGE_TERMS_VERSION,
+    ready_to_prepare,
 )
 from app.services.safety_analysis import violations_of
 
@@ -111,6 +120,15 @@ CARRIER_UPLOAD_STATUSES = {
     DataQsWorkStatus.DRAFT,
     DataQsWorkStatus.EVIDENCE_NEEDED,
     DataQsWorkStatus.STAFF_REVIEW,
+    DataQsWorkStatus.MONITORING,  # e.g. records for an agency information request
+}
+
+OUTCOME_LABEL = {
+    DataQsOutcome.FULL_CORRECTION: "corrected",
+    DataQsOutcome.PARTIAL_CORRECTION: "partly corrected",
+    DataQsOutcome.NO_CORRECTION: "not corrected",
+    DataQsOutcome.PROCEDURAL_CLOSURE: "closed without a decision on the merits",
+    DataQsOutcome.WITHDRAWN: "withdrawn",
 }
 
 NEXT_ACTION: dict[DataQsWorkStatus, str] = {
@@ -501,9 +519,27 @@ class DataQsCaseService:
         if case.work_status == DataQsWorkStatus.EVIDENCE_NEEDED and asked:
             missing.insert(0, f"STS asked: {asked}")
         owner_client = can_act and user.role == UserRole.CLIENT_ADMIN
-        ready_to_prepare = bool(
-            assessments and assessments[-1].outcome == DataQsAssessmentOutcome.READY_TO_PREPARE
+        prepared = ready_to_prepare(
+            assessments, {t.kind for t in self.repository.open_tasks([case.id])}
         )
+        clock_service = DataQsClockService(self.db)
+        clocks = clock_service.clocks([case.id])
+        pauses = clock_service.pauses([c.id for c in clocks])
+        correspondence = self.repository.correspondence(case.id)
+        names.update(self.repository.user_names([m.recorded_by_id for m in correspondence]))
+        appeal_clock = next((c for c in clocks if c.clock_type == DataQsClockType.APPEAL), None)
+        decided = [c for c in cycles if c.submitted_at is not None]
+        can_propose = bool(
+            staff
+            and decided
+            and decided[-1].outcome
+            in (DataQsOutcome.NO_CORRECTION, DataQsOutcome.PARTIAL_CORRECTION)
+            and decided[-1].level in NEXT_LEVEL
+            and proposed_cycle(cycles) is None
+            and appeal_clock is not None
+            and (appeal_clock.due_at is None or appeal_clock.due_at >= _now())
+        )
+        now = _now()
         shown_packages = (
             list(reversed(packages)) if staff else [current_package] if current_package else []
         )
@@ -568,10 +604,7 @@ class DataQsCaseService:
             can_assign=staff and case.work_status != DataQsWorkStatus.CLOSED,
             can_assess=staff and case.work_status in ASSESSABLE,
             can_build_package=(
-                staff
-                and ready_to_prepare
-                and case.work_status in BUILDABLE
-                and open_attempt is None
+                staff and prepared and case.work_status in BUILDABLE and open_attempt is None
             ),
             can_file=(
                 staff
@@ -579,6 +612,9 @@ class DataQsCaseService:
                 and approval is not None
                 and open_attempt is None
             ),
+            can_record_correspondence=staff and case.gov_request_id is not None,
+            can_propose_review=can_propose,
+            can_override_deadlines=user.role == UserRole.STS_ADMIN and bool(clocks),
             consent=DataQsConsentOut(terms_version=CONSENT_TERMS_VERSION, text=CONSENT_TEXT),
             package_terms=DataQsConsentOut(
                 terms_version=PACKAGE_TERMS_VERSION, text=PACKAGE_TERMS_TEXT
@@ -646,13 +682,42 @@ class DataQsCaseService:
                     id=c.id,
                     level=c.level,
                     cycle_number=c.cycle_number,
+                    parent_cycle_id=c.parent_cycle_id,
+                    opened_reason=c.opened_reason,
                     submitted_at=c.submitted_at,
                     decision_issued_at=c.decision_issued_at,
                     outcome=c.outcome,
+                    decided_by=c.decided_by,
+                    reasons=(c.decision or {}).get("reasons"),
+                    appeal_instructions=(c.decision or {}).get("appeal_instructions"),
+                    procedural_reason=(c.decision or {}).get("procedural_reason"),
+                    appealed_issue_ids=c.appealed_issue_ids,
+                    grounds=c.grounds if staff else None,
+                    independence_concern=(
+                        (c.decision or {}).get("independence_concern") if staff else None
+                    ),
                     closed_at=c.closed_at,
                 )
                 for c in cycles
             ],
+            clocks=[self._clock_out(c, pauses[c.id], now) for c in clocks],
+            correspondence=[
+                DataQsCorrespondenceOut(
+                    id=m.id,
+                    kind=m.kind,
+                    source=m.source,
+                    inbound=m.inbound,
+                    text=m.original_payload,
+                    occurred_at=m.received_at or m.sent_at,
+                    external_id=m.external_id,
+                    recorded_by_name=names.get(m.recorded_by_id),
+                    recorded_at=m.created_at,
+                )
+                for m in correspondence
+            ],
+            timeline=self._timeline(
+                case, authorizations, packages, attempts, correspondence, cycles, assessments
+            ),
             audit=(
                 [
                     DataQsAuditEventOut(
@@ -667,6 +732,103 @@ class DataQsCaseService:
                 else None
             ),
         )
+
+    @staticmethod
+    def _clock_out(clock: Any, pauses: Any, now: datetime) -> DataQsClockOut:
+        current = state(clock, pauses, now)
+        return DataQsClockOut(
+            id=clock.id,
+            clock_type=clock.clock_type,
+            label=CLOCK_LABELS[clock.clock_type],
+            base_event=clock.base_event,
+            base_at=clock.base_at,
+            budget_days=clock.budget_days,
+            due_at=current.due_at,
+            paused=current.paused,
+            days_left=round(current.remaining.total_seconds() / 86400, 1),
+            confidence=clock.confidence.value,
+            policy_version=clock.policy_version,
+            authority_source=clock.authority_source,
+            override_reason=clock.override_reason,
+        )
+
+    @staticmethod
+    def _timeline(
+        case: DataQsCase,
+        authorizations: list[Any],
+        packages: list[Any],
+        attempts: list[Any],
+        correspondence: list[Any],
+        cycles: list[Any],
+        assessments: list[Any],
+    ) -> list[DataQsTimelineEventOut]:
+        """What happened on the case, newest first, in words both portals can show."""
+        events = [DataQsTimelineEventOut(at=case.created_at, title="Request opened", detail=None)]
+        for a in authorizations:
+            title = (
+                "Authorized STS and submitted for review"
+                if a.kind == DataQsAuthorizationKind.SERVICE_CONSENT
+                else "Approved the request package"
+            )
+            events.append(
+                DataQsTimelineEventOut(at=a.approved_at, title=title, detail=a.signer_name)
+            )
+        for a in assessments:
+            events.append(
+                DataQsTimelineEventOut(
+                    at=a.created_at,
+                    title=f"STS assessment: {OUTCOME_LABELS[a.outcome].lower()}",
+                    detail=a.carrier_message,
+                )
+            )
+        for p in packages:
+            events.append(
+                DataQsTimelineEventOut(
+                    at=p.created_at,
+                    title=f"STS prepared request package v{p.package_version}",
+                    detail=None,
+                )
+            )
+        for a in attempts:
+            if a.status.value == "CONFIRMED" and a.filed_at:
+                events.append(
+                    DataQsTimelineEventOut(
+                        at=a.filed_at, title=f"Filed with DataQs ({a.gov_request_id})", detail=None
+                    )
+                )
+        titles = {
+            DataQsCorrespondenceKind.INFO_REQUEST: "The agency asked for more information",
+            DataQsCorrespondenceKind.INFO_RESPONSE: "STS answered the agency",
+            DataQsCorrespondenceKind.REOPENING: "The agency reopened the request",
+            DataQsCorrespondenceKind.OTHER: "Message from the agency",
+        }
+        for m in correspondence:
+            if m.kind in titles:
+                events.append(
+                    DataQsTimelineEventOut(
+                        at=m.received_at or m.sent_at or m.created_at,
+                        title=titles[m.kind],
+                        detail=m.original_payload,
+                    )
+                )
+        for c in cycles:
+            if c.decision_issued_at and c.outcome:
+                events.append(
+                    DataQsTimelineEventOut(
+                        at=c.decision_issued_at,
+                        title=f"Decision on the {LEVEL_LABEL[c.level]}: {OUTCOME_LABEL[c.outcome]}",
+                        detail=(c.decision or {}).get("reasons"),
+                    )
+                )
+            if c.submitted_at is None:
+                events.append(
+                    DataQsTimelineEventOut(
+                        at=c.created_at,
+                        title=f"STS is preparing a request for {LEVEL_LABEL[c.level]}",
+                        detail=None,
+                    )
+                )
+        return sorted(events, key=lambda e: e.at, reverse=True)
 
     @staticmethod
     def _issue_label(issue: DataQsIssueOut) -> str:
@@ -720,6 +882,13 @@ class DataQsCaseService:
             if task.due_at is not None and task.due_at < at:
                 overdue_tasks[task.case_id] += 1
         owners = self.repository.user_names([c.owner_id for c in cases if c.owner_id])
+        deadlines: dict[int, tuple[datetime, str]] = {}
+        for clock in DataQsClockService(self.db).clocks(ids):
+            if clock.due_at is None:
+                continue
+            soonest = deadlines.get(clock.case_id)
+            if soonest is None or clock.due_at < soonest[0]:
+                deadlines[clock.case_id] = (clock.due_at, CLOCK_LABELS[clock.clock_type])
         today = at.date()
         return [
             DataQsCaseSummaryOut(
@@ -756,6 +925,8 @@ class DataQsCaseService:
                 open_task_count=open_tasks[c.id],
                 overdue_task_count=overdue_tasks[c.id],
                 next_action=NEXT_ACTION[c.work_status],
+                next_deadline_at=deadlines[c.id][0] if c.id in deadlines else None,
+                next_deadline_label=deadlines[c.id][1] if c.id in deadlines else None,
                 created_at=c.created_at,
                 updated_at=c.updated_at,
                 row_version=c.row_version,

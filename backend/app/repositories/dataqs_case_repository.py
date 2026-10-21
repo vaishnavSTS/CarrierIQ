@@ -17,6 +17,7 @@ from app.models import (
     DataQsAuditEvent,
     DataQsAuthorization,
     DataQsCase,
+    DataQsCorrespondence,
     DataQsEvidence,
     DataQsEvidenceLink,
     DataQsIssue,
@@ -345,5 +346,14 @@ class DataQsCaseRepository:
                 select(DataQsReviewCycle)
                 .where(DataQsReviewCycle.case_id == case_id)
                 .order_by(DataQsReviewCycle.id)
+            )
+        )
+
+    def correspondence(self, case_id: int) -> list[DataQsCorrespondence]:
+        return list(
+            self.db.scalars(
+                select(DataQsCorrespondence)
+                .where(DataQsCorrespondence.case_id == case_id)
+                .order_by(DataQsCorrespondence.id)
             )
         )

@@ -31,11 +31,14 @@ from app.schemas.dataqs import (
     DataQsCaseOut,
     DataQsChangesIn,
     DataQsCheckOut,
+    DataQsClockOverrideIn,
     DataQsConfirmIn,
+    DataQsCorrespondenceIn,
     DataQsEvidenceLinkOut,
     DataQsNoteIn,
     DataQsOwnerIn,
     DataQsPackageIn,
+    DataQsReviewRequestIn,
     DataQsStaffUserOut,
     DataQsSubmitIn,
     DataQsVersionIn,
@@ -45,6 +48,7 @@ from app.services.dataqs_case_service import DataQsCaseService
 from app.services.dataqs_evidence_service import DataQsEvidenceService
 from app.services.dataqs_evidence_storage import EvidenceStorage, get_evidence_storage
 from app.services.dataqs_filing_adapter import ManualFilingAdapter
+from app.services.dataqs_lifecycle import DataQsLifecycleService
 from app.services.dataqs_package_service import DataQsPackageService
 
 router = APIRouter(prefix="/dataqs", tags=["dataqs"])
@@ -359,4 +363,56 @@ def abandon_filing(
 ) -> DataQsCaseOut:
     """Nothing was submitted, or DataQs shows no such request: ready to file again."""
     filing.abandon(user, case_id, attempt_id, body.note)
+    return cases.detail(user, case_id)
+
+
+# --- Phase 5: agency correspondence, appeals, deadlines -------------------------------------------
+
+
+def get_lifecycle(db: Annotated[Session, Depends(get_db)]) -> DataQsLifecycleService:
+    return DataQsLifecycleService(db)
+
+
+Lifecycle = Annotated[DataQsLifecycleService, Depends(get_lifecycle)]
+
+
+@router.post("/cases/{case_id}/correspondence", response_model=DataQsCaseOut)
+def record_correspondence(
+    case_id: int,
+    body: DataQsCorrespondenceIn,
+    user: StaffUser,
+    lifecycle: Lifecycle,
+    cases: CaseService,
+) -> DataQsCaseOut:
+    """Record a verified agency event: an information request, STS's answer, a decision or a
+    reopening. Only these move the case's stage and deadlines."""
+    lifecycle.record(user, case_id, body)
+    return cases.detail(user, case_id)
+
+
+@router.post("/cases/{case_id}/review-requests", response_model=DataQsCaseOut)
+def propose_review(
+    case_id: int,
+    body: DataQsReviewRequestIn,
+    user: StaffUser,
+    lifecycle: Lifecycle,
+    cases: CaseService,
+) -> DataQsCaseOut:
+    """Propose the next review stage for denied issues; it then needs assessment, a new package
+    and the carrier's approval before it is filed."""
+    lifecycle.propose_review(user, case_id, body)
+    return cases.detail(user, case_id)
+
+
+@router.post("/cases/{case_id}/clocks/{clock_id}/override", response_model=DataQsCaseOut)
+def override_deadline(
+    case_id: int,
+    clock_id: int,
+    body: DataQsClockOverrideIn,
+    user: StaffUser,
+    lifecycle: Lifecycle,
+    cases: CaseService,
+) -> DataQsCaseOut:
+    """STS admin: set a deadline by hand (e.g. a state's own counting rule), with the reason."""
+    lifecycle.override_clock(user, case_id, clock_id, body)
     return cases.detail(user, case_id)

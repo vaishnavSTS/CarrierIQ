@@ -42,6 +42,7 @@ from app.models import (
 from app.models.enums import (
     DataQsActionOwner,
     DataQsAttemptStatus,
+    DataQsClockType,
     DataQsCorrespondenceKind,
     DataQsCorrespondenceSource,
     DataQsReviewLevel,
@@ -50,6 +51,7 @@ from app.models.enums import (
 from app.repositories.dataqs_case_repository import DataQsCaseRepository
 from app.schemas.dataqs import DataQsAttemptStartIn, DataQsConfirmIn
 from app.services.dataqs_access import DataQsAccess
+from app.services.dataqs_clock_service import DataQsClockService
 
 # The agency should open a request within 7 days of submission [S3]: STS checks that it did.
 OPENING_CHECKPOINT = timedelta(days=7)
@@ -87,6 +89,7 @@ class ManualFilingAdapter:
         self.db = db
         self.repository = DataQsCaseRepository(db)
         self.access = DataQsAccess(db, self.repository)
+        self.clocks = DataQsClockService(db)
 
     def _staff_case(self, user: User, case_id: int) -> DataQsCase:
         if not user.role.is_staff:
@@ -204,15 +207,23 @@ class ManualFilingAdapter:
         if body.portal_status:
             case.government_raw_status = body.portal_status.strip()
         case.work_status, case.action_owner = DataQsWorkStatus.MONITORING, DataQsActionOwner.AGENCY
-        case.review_level = DataQsReviewLevel.INITIAL
-        self.db.add(
-            DataQsReviewCycle(
+        # The first filing opens the initial review; an appeal's filing opens the stage STS
+        # proposed (Phase 5). Either way the stage's full review budget starts now.
+        cycles = self.repository.review_cycles(case.id)
+        cycle = next((c for c in reversed(cycles) if c.submitted_at is None), None)
+        if cycle is None:
+            cycle = DataQsReviewCycle(
                 case_id=case.id,
                 level=DataQsReviewLevel.INITIAL,
                 cycle_number=1,
-                submitted_at=body.filed_at,
+                opened_reason="First filing",
             )
-        )
+            self.db.add(cycle)
+        cycle.submitted_at = body.filed_at
+        case.review_level, case.outcome = cycle.level, None
+        self.db.flush()
+        self.clocks.stop(case, {DataQsClockType.APPEAL})
+        self.clocks.start_agency(case, cycle, body.filed_at)
         self.db.add(
             DataQsCorrespondence(
                 case_id=case.id,
@@ -247,6 +258,7 @@ class ManualFilingAdapter:
                 "gov_request_id": body.gov_request_id,
                 "filed_at": body.filed_at.isoformat(),
                 "package_version": package.package_version,
+                "review_level": cycle.level.value,
                 "work_status": case.work_status.value,
             },
         )

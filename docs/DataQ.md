@@ -3,7 +3,7 @@
 How we will add DataQs (challenging wrong FMCSA safety records) to CarrierSafetyScan, phase by
 phase. Edit freely as decisions are made; record each decision in the log at the bottom.
 
-**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules. Phase 2 built (2026-10-21): carrier intake wizard, evidence uploads, submit to STS. Phase 3 built (2026-10-21): staff queue, assessment, filing package, carrier approval (migration 0025). Phase 4 built (2026-10-21): manual filing console, receipts, unconfirmed attempts and reconciling (migration 0026). Requests are started from the client DataQs tab.
+**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules. Phase 2 built (2026-10-21): carrier intake wizard, evidence uploads, submit to STS. Phase 3 built (2026-10-21): staff queue, assessment, filing package, carrier approval (migration 0025). Phase 4 built (2026-10-21): manual filing console, receipts, unconfirmed attempts and reconciling (migration 0026). Requests are started from the client DataQs tab. Phase 5 built (2026-10-21): agency correspondence, decisions, appeals, reopenings, deadline clocks with pauses (migration 0027).
 **Created:** 2026-10-21
 **Source:** `../../Sky_DataQs_Developer_Integration.docx` (Sky DataQs Developer Integration Specification v1.0)
 **Related:** `client-internal-portal-plan.md`, `../CHECKPOINT.md`
@@ -396,16 +396,35 @@ backend/tests/dataqs/test_dataqs_filing.py
 **Files**
 
 ```
-backend/app/services/dataqs_clock_service.py         rules, pauses, remaining days
-backend/app/services/dataqs_lifecycle.py             allowed transitions per event
-backend/app/services/dataqs_correspondence_service.py
-  POST /dataqs/cases/{id}/correspondence
-  POST /dataqs/cases/{id}/review-requests
-  GET  /dataqs/cases/{id}/timeline, /dataqs/cases/{id}/tasks
-frontend/src/features/dataqs/DataQsDecisionWorkspace.tsx
-frontend/src/features/dataqs/DataQsTimeline.tsx
+backend/app/services/dataqs_clock_service.py         budgets, pauses (merged), due dates, overrides
+backend/app/services/dataqs_lifecycle.py             agency events, decisions, appeals, reopenings
+backend/alembic/versions/20261021_0027_dataqs_review_cycle_appeals.py   opened_reason, grounds,
+                                                     appealed_issue_ids on review cycles
+  POST /dataqs/cases/{id}/correspondence             INFO_REQUEST / INFO_RESPONSE / DECISION /
+                                                     REOPENING / OTHER (record_correspondence)
+  POST /dataqs/cases/{id}/review-requests            propose the next stage (appeal)
+  POST /dataqs/cases/{id}/clocks/{clock_id}/override STS admin: set a due date by hand, with reason
+  (timeline, tasks, clocks and stages are part of GET /cases/{id}, filtered by role)
+frontend/src/features/dataqs/DataQsDeadlines.tsx            active clocks (+ admin override)
+frontend/src/features/dataqs/DataQsReviewStages.tsx         every review cycle and its decision
+frontend/src/features/dataqs/DataQsTimeline.tsx             what happened, both portals
+frontend/src/features/dataqs/staff/DataQsCorrespondencePanel.tsx   record agency events + decisions
+frontend/src/features/dataqs/staff/DataQsAppealPanel.tsx    propose reconsideration / final review
 backend/tests/dataqs/test_dataqs_clock.py, test_dataqs_lifecycle.py
 ```
+
+**How the stages move**
+
+| Event (recorded by STS) | Effect |
+|---|---|
+| Agency asks for information | Agency clock pauses; 14-day answer deadline + task with the exact question |
+| STS answered | Agency clock resumes with the time left (8 used + 5 paused → 13 left) |
+| Decision: all corrected | VERIFICATION (check FMCSA data, Phase 6) |
+| Decision: partly corrected | VERIFICATION for corrected issues; 30-day appeal window for the rest |
+| Decision: not corrected | STAFF_REVIEW + 30-day appeal window (from the decision's issue date); after a final review: CLOSED |
+| Procedural closure | STAFF_REVIEW, kept apart from a merits denial; no appeal window |
+| Reopened (same level / back to initial) | New linked cycle, full review budget; old cycles kept |
+| STS proposes an appeal | Cycle "being prepared" → assess → new package → carrier approval → file (Phase 4) |
 
 **Done when:** pause, resume, overlapping pauses, late imported decision, new evidence on appeal and
 reopening all pass their tests.
@@ -512,3 +531,6 @@ failed email keeps the task and shows the exception to a supervisor.
 | 2026-10-21 | Clients start requests from the DataQs tab (inspection list per verified carrier), not the Safety tab | User |
 | 2026-10-21 | Filing: one open attempt at a time; the package can't change while one is open; a DataQs request ID belongs to one case | Build |
 | 2026-10-21 | Carriers see the request ID, filing date and agency; the acknowledgement text, filing account and attempt notes are STS-only | Build |
+| 2026-10-21 | Deadlines count calendar days in UTC; a state's own counting rule is applied by an STS admin override with a reason | Build |
+| 2026-10-21 | Carriers see the agency's questions, decisions and reasons in their timeline; appeal grounds and reviewer-independence flags are STS-only | Build |
+| 2026-10-21 | Carriers can add evidence while the agency reviews (e.g. for an information request) | Build |

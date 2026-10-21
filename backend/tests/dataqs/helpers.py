@@ -1,7 +1,7 @@
 """Shared data and helpers for the DataQs API tests (fixtures are in conftest.py)."""
 
 import json
-from datetime import date
+from datetime import UTC, date, datetime
 
 import httpx
 from fastapi.testclient import TestClient
@@ -231,3 +231,48 @@ def ready_package(api: TestClient) -> tuple[int, dict]:
     built = build(api, assessed.json())
     assert built.status_code == 200, built.text
     return case_id, built.json()
+
+
+# --- Phase 4 flow: file the approved package -------------------------------------------------
+
+FILING_ACK = "Your request has been submitted. Request #RDR-2026-001234"
+
+
+def approved_case(api: TestClient) -> dict:
+    """A case whose package v1 the carrier approved: READY_TO_FILE, seen by STS staff."""
+    case_id, _ = ready_package(api)
+    log_in(api, "owner@acme.test")
+    case = api.get(f"/api/v1/portal/dataqs/cases/{case_id}").json()
+    assert approve(api, case, case["packages"][0]).status_code == 200
+    log_in(api, "analyst@sts.test")
+    return staff_case(api, case_id)
+
+
+def start_filing(api: TestClient, case: dict, key: str = "file-1") -> httpx.Response:
+    package = case["packages"][0]
+    return api.post(
+        f"/api/v1/dataqs/cases/{case['id']}/submission-attempts",
+        json={
+            "package_id": package["id"],
+            "package_hash": package["manifest_hash"],
+            "filing_account": "STS DataQs account (Analyst)",
+        },
+        headers={"Idempotency-Key": key},
+    )
+
+
+def confirm_filing(
+    api: TestClient, case: dict, attempt_id: int, gov_id: str = "RDR-2026-001234", **extra: object
+) -> httpx.Response:
+    return api.post(
+        f"/api/v1/dataqs/cases/{case['id']}/submission-attempts/{attempt_id}/confirm",
+        json={
+            "gov_request_id": gov_id,
+            "filed_at": datetime.now(UTC).isoformat(),
+            "assigned_agency": "Texas DPS",
+            "acknowledgement": FILING_ACK,
+            "package_version": 1,
+            "portal_status": "Submitted",
+            **extra,
+        },
+    )

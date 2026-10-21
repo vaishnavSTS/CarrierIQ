@@ -29,7 +29,7 @@ from app.core.exceptions import (
     DataQsStaleVersionError,
     ValidationError,
 )
-from app.models import DataQsAuthorization, DataQsCase, DataQsPackage, User
+from app.models import DataQsAssessment, DataQsAuthorization, DataQsCase, DataQsPackage, User
 from app.models.enums import (
     DataQsActionOwner,
     DataQsAssessmentOutcome,
@@ -60,6 +60,18 @@ BUILDABLE = {
 }
 
 
+# Open tasks that mean the case still waits for (another) assessment, e.g. an appeal just proposed.
+AWAITING_ASSESSMENT = {"ASSESS_CASE", "SPECIALIST_REVIEW", "WAIT_EXTERNAL"}
+
+
+def ready_to_prepare(assessments: list[DataQsAssessment], open_task_kinds: set[str]) -> bool:
+    """The latest assessment says ready to prepare, and no newer assessment is due (an appeal
+    STS proposes needs its own staff review before its package)."""
+    if not assessments or assessments[-1].outcome != DataQsAssessmentOutcome.READY_TO_PREPARE:
+        return False
+    return not open_task_kinds & AWAITING_ASSESSMENT
+
+
 def sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
@@ -88,8 +100,8 @@ class DataQsPackageService:
             raise DataQsInvalidTransitionError(
                 "Filing is in progress; settle the filing attempt before changing the package"
             )
-        assessments = self.repository.assessments(case.id)
-        if not assessments or assessments[-1].outcome != DataQsAssessmentOutcome.READY_TO_PREPARE:
+        open_kinds = {t.kind for t in self.repository.open_tasks([case.id])}
+        if not ready_to_prepare(self.repository.assessments(case.id), open_kinds):
             raise DataQsInvalidTransitionError(
                 "Assess the case as ready to prepare before building a package"
             )
@@ -179,6 +191,12 @@ class DataQsPackageService:
     def _manifest(self, case: DataQsCase, body: DataQsPackageIn) -> dict[str, Any]:
         settings = get_settings()
         issues = self.repository.issues([case.id])
+        appeal = next(
+            (c for c in reversed(self.repository.review_cycles(case.id)) if c.submitted_at is None),
+            None,
+        )
+        if appeal is not None and appeal.appealed_issue_ids:
+            issues = [i for i in issues if i.id in appeal.appealed_issue_ids]
         evidence = {e.id: e for e in self.repository.evidence([case.id])}
         chosen = list(dict.fromkeys(body.evidence_ids))
         unknown = [i for i in chosen if i not in evidence]
@@ -197,6 +215,8 @@ class DataQsPackageService:
             "format": MANIFEST_FORMAT,
             "case_id": case.id,
             "package_version": None,  # set once the version is known
+            "review_level": appeal.level.value if appeal else "INITIAL",
+            "appeal_of_cycle_id": appeal.parent_cycle_id if appeal else None,
             "carrier": {
                 "usdot_number": case.usdot_number,
                 "legal_name": case.source_snapshot.get("carrier_name"),

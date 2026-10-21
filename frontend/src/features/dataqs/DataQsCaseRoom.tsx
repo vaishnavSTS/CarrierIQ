@@ -8,14 +8,19 @@ import { usePortalMode } from '../../hooks/usePortalMode'
 import type { DataQsCase, DataQsEvidence, DataQsIssue } from '../../types/dataqs'
 import { formatDate, formatDateTime } from '../../utils/format'
 import { DataQsAssessmentHistory, DataQsTaskList } from './DataQsCaseActivity'
+import { DataQsDeadlines } from './DataQsDeadlines'
 import { DataQsEventSummary } from './DataQsEventSummary'
 import { DataQsFiledCard } from './DataQsFiledCard'
 import { DataQsEvidenceUpload } from './DataQsEvidenceUpload'
 import { DataQsPackageReview } from './DataQsPackageReview'
 import { DataQsPackageView } from './DataQsPackageView'
+import { DataQsReviewStages } from './DataQsReviewStages'
 import { DataQsSubmitPanel } from './DataQsSubmitPanel'
+import { DataQsTimeline } from './DataQsTimeline'
 import { WORK_STATUS, fileSize } from './labels'
+import { DataQsAppealPanel } from './staff/DataQsAppealPanel'
 import { DataQsAssessmentPanel } from './staff/DataQsAssessmentPanel'
+import { DataQsCorrespondencePanel } from './staff/DataQsCorrespondencePanel'
 import { DataQsOwnerPanel } from './staff/DataQsOwnerPanel'
 import { DataQsPackageBuilder } from './staff/DataQsPackageBuilder'
 import { DataQsSubmissionConsole } from './staff/DataQsSubmissionConsole'
@@ -96,6 +101,31 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
           <DataQsFiledCard dataqsCase={c} />
         </Card>
       )}
+      {c.clocks.length > 0 && (
+        <Card title="Deadlines">
+          <DataQsDeadlines dataqsCase={c} />
+        </Card>
+      )}
+      {c.can_record_correspondence &&
+        (c.work_status === 'MONITORING' ? (
+          <Card title="Record an agency event">
+            <DataQsCorrespondencePanel key={c.row_version} dataqsCase={c} />
+          </Card>
+        ) : (
+          <FoldCard title="Record an agency event">
+            <DataQsCorrespondencePanel key={c.row_version} dataqsCase={c} />
+          </FoldCard>
+        ))}
+      {c.can_propose_review && (
+        <Card title="Appeal">
+          <DataQsAppealPanel key={c.row_version} dataqsCase={c} />
+        </Card>
+      )}
+      {c.review_cycles.length > 0 && (
+        <Card title="Review stages">
+          <DataQsReviewStages dataqsCase={c} />
+        </Card>
+      )}
       {staff && filing && (
         <Card title="File with DataQs">
           <DataQsSubmissionConsole dataqsCase={c} />
@@ -172,6 +202,10 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
         </Card>
       )}
 
+      <Card title="Timeline">
+        <DataQsTimeline events={c.timeline} />
+      </Card>
+
       {c.audit && (
         <Card title="Audit trail (STS only)">
           <ol className="space-y-1 text-sm">
@@ -209,6 +243,14 @@ function IssueBlock({ dataqsCase: c, issue }: { dataqsCase: DataQsCase; issue: D
           )}
         </div>
         <div className="text-xs text-slate-500">{issue.reason_label}</div>
+        {issue.outcome && (
+          <div className="mt-1">
+            <StatusBadge
+              label={issue.outcome === 'FULL_CORRECTION' ? 'Corrected' : 'Not corrected'}
+              tone={issue.outcome === 'FULL_CORRECTION' ? 'ok' : 'down'}
+            />
+          </div>
+        )}
       </div>
       {(issue.recorded_value || issue.requested_value) && (
         <dl className="grid gap-2 text-sm sm:grid-cols-2">

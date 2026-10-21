@@ -9,8 +9,11 @@ const LEVEL_LABEL = {
 
 /** Once filed: the DataQs request ID, when it was filed, and where the review stands. */
 export function DataQsFiledCard({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
-  const filed = c.attempts.find((a) => a.status === 'CONFIRMED')
-  const cycle = c.review_cycles[c.review_cycles.length - 1]
+  const confirmed = c.attempts.filter((a) => a.status === 'CONFIRMED')
+  const filed = confirmed[confirmed.length - 1] // the latest filing (an appeal, once filed)
+  // The latest stage actually filed (an appeal being prepared isn't filed yet).
+  const filedCycles = c.review_cycles.filter((r) => r.submitted_at)
+  const cycle = filedCycles[filedCycles.length - 1]
   return (
     <dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
       <div>

@@ -7,6 +7,7 @@ import type {
   DataQsAttemptStartInput,
   DataQsCheck,
   DataQsConfirmInput,
+  DataQsCorrespondenceInput,
   DataQsPackageInput,
   DataQsStaffUser,
   DataQsSubmitInput,
@@ -168,4 +169,41 @@ export function settleDataQsFiling(
   note: string,
 ): Promise<DataQsCase> {
   return post(`/dataqs/cases/${caseId}/submission-attempts/${attemptId}/${action}`, { note })
+}
+
+// --- Phase 5: agency events, appeals, deadlines (staff only) -----------------------------------
+
+export function recordDataQsCorrespondence(
+  caseId: number,
+  input: DataQsCorrespondenceInput,
+): Promise<DataQsCase> {
+  return post(`/dataqs/cases/${caseId}/correspondence`, input)
+}
+
+export function proposeDataQsReview(
+  caseId: number,
+  expectedVersion: number,
+  grounds: string,
+  issueIds: number[],
+): Promise<DataQsCase> {
+  return post(`/dataqs/cases/${caseId}/review-requests`, {
+    expected_version: expectedVersion,
+    grounds,
+    issue_ids: issueIds,
+  })
+}
+
+/** STS admin: set a deadline by hand, with the reason. */
+export function overrideDataQsClock(
+  caseId: number,
+  clockId: number,
+  expectedVersion: number,
+  dueAt: string,
+  reason: string,
+): Promise<DataQsCase> {
+  return post(`/dataqs/cases/${caseId}/clocks/${clockId}/override`, {
+    expected_version: expectedVersion,
+    due_at: dueAt,
+    reason,
+  })
 }

@@ -4,12 +4,17 @@ A cycle starts only on a confirmed request for that stage. Appeals and reopening
 linked to the one before (`parent_cycle_id`); earlier cycles, their decisions and receipts are never
 overwritten. `decided_by` records the government reviewer, so STS can flag a reconsideration or
 final review decided by someone who took part earlier.
+
+An appeal STS proposes is a cycle with `submitted_at` still None: it carries the `grounds` and the
+issues appealed, goes through assessment, a new package and the carrier's approval, and becomes a
+submitted cycle only when the filing is confirmed (Phase 4). `opened_reason` says why each cycle
+exists (first filing, appeal, reopened at the same level, returned to initial review).
 """
 
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -44,3 +49,8 @@ class DataQsReviewCycle(IdMixin, UpdatedAtMixin, Base):
     decided_by: Mapped[str | None] = mapped_column(String(200))
     decision: Mapped[dict[str, Any] | None] = mapped_column(JSONB)  # reasons, appeal instructions
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    opened_reason: Mapped[str | None] = mapped_column(String(200))
+    grounds: Mapped[str | None] = mapped_column(
+        Text
+    )  # an appeal's grounds, addressing the decision
+    appealed_issue_ids: Mapped[list[int] | None] = mapped_column(JSONB)

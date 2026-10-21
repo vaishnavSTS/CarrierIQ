@@ -11,6 +11,9 @@ import {
   fetchDataQsCases,
   fetchDataQsCheck,
   fetchDataQsStaff,
+  overrideDataQsClock,
+  proposeDataQsReview,
+  recordDataQsCorrespondence,
   requestDataQsPackageChanges,
   resubmitDataQsCase,
   settleDataQsFiling,
@@ -26,6 +29,7 @@ import type {
   DataQsCase,
   DataQsCaseCreateInput,
   DataQsConfirmInput,
+  DataQsCorrespondenceInput,
   DataQsPackageInput,
   DataQsSubmitInput,
 } from '../types/dataqs'
@@ -171,5 +175,36 @@ export function useSettleDataQsFiling(caseId: number) {
       action: 'unconfirmed' | 'abandon'
       note: string
     }) => settleDataQsFiling(caseId, attemptId, action, note),
+  )
+}
+
+// --- Phase 5: agency events, appeals, deadlines ------------------------------------------------
+
+export function useRecordDataQsCorrespondence(caseId: number) {
+  return useCaseAction((input: DataQsCorrespondenceInput) =>
+    recordDataQsCorrespondence(caseId, input),
+  )
+}
+
+export function useProposeDataQsReview(caseId: number) {
+  return useCaseAction(
+    ({ version, grounds, issueIds }: { version: number; grounds: string; issueIds: number[] }) =>
+      proposeDataQsReview(caseId, version, grounds, issueIds),
+  )
+}
+
+export function useOverrideDataQsClock(caseId: number) {
+  return useCaseAction(
+    ({
+      clockId,
+      version,
+      dueAt,
+      reason,
+    }: {
+      clockId: number
+      version: number
+      dueAt: string
+      reason: string
+    }) => overrideDataQsClock(caseId, clockId, version, dueAt, reason),
   )
 }

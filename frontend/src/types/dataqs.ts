@@ -95,6 +95,9 @@ export interface DataQsCaseSummary {
   open_task_count: number
   overdue_task_count: number
   next_action: string
+  /** The soonest active deadline */
+  next_deadline_at: string | null
+  next_deadline_label: string | null
   created_at: string
   updated_at: string
   row_version: number
@@ -201,6 +204,12 @@ export interface DataQsCase extends DataQsCaseSummary {
   can_build_package: boolean
   /** Staff: start filing the approved package */
   can_file: boolean
+  /** Staff, once filed: record agency events */
+  can_record_correspondence: boolean
+  /** Staff: appeal denied issues within 30 days */
+  can_propose_review: boolean
+  /** STS admin */
+  can_override_deadlines: boolean
   consent: { terms_version: string; text: string }
   /** What a carrier agrees to when approving a package */
   package_terms: { terms_version: string; text: string }
@@ -213,6 +222,11 @@ export interface DataQsCase extends DataQsCaseSummary {
   /** Staff: every filing attempt; clients: confirmed ones */
   attempts: DataQsAttempt[]
   review_cycles: DataQsReviewCycle[]
+  /** Active deadlines */
+  clocks: DataQsClock[]
+  correspondence: DataQsCorrespondence[]
+  /** Newest first */
+  timeline: DataQsTimelineEvent[]
   /** STS staff only */
   audit: { action: string; actor_name: string | null; at: string; detail: unknown }[] | null
 }
@@ -358,13 +372,27 @@ export interface DataQsAttempt {
   note: string | null
 }
 
+export type DataQsReviewLevel = 'INITIAL' | 'RECONSIDERATION' | 'FINAL'
+
 export interface DataQsReviewCycle {
   id: number
-  level: 'INITIAL' | 'RECONSIDERATION' | 'FINAL'
+  level: DataQsReviewLevel
   cycle_number: number
+  parent_cycle_id: number | null
+  opened_reason: string | null
+  /** null: an appeal STS is preparing, not filed yet */
   submitted_at: string | null
   decision_issued_at: string | null
   outcome: string | null
+  decided_by: string | null
+  reasons: string | null
+  appeal_instructions: string | null
+  procedural_reason: string | null
+  appealed_issue_ids: number[] | null
+  /** STS only */
+  grounds: string | null
+  /** STS only */
+  independence_concern: string | null
   closed_at: string | null
 }
 
@@ -381,4 +409,66 @@ export interface DataQsConfirmInput {
   acknowledgement: string
   package_version: number
   portal_status: string | null
+}
+
+export interface DataQsClock {
+  id: number
+  clock_type: 'FILING_WINDOW' | 'AGENCY_REVIEW' | 'REQUESTER_INFO' | 'APPEAL' | 'INTERNAL'
+  label: string
+  base_event: string
+  base_at: string
+  budget_days: number | null
+  /** null while paused */
+  due_at: string | null
+  paused: boolean
+  /** Remaining budget in days; negative once past */
+  days_left: number
+  confidence: string
+  policy_version: string
+  authority_source: string | null
+  override_reason: string | null
+}
+
+export type DataQsCorrespondenceKind =
+  | 'ACKNOWLEDGEMENT'
+  | 'INFO_REQUEST'
+  | 'INFO_RESPONSE'
+  | 'DECISION'
+  | 'REOPENING'
+  | 'OTHER'
+
+export interface DataQsCorrespondence {
+  id: number
+  kind: DataQsCorrespondenceKind
+  source: string
+  inbound: boolean
+  text: string
+  occurred_at: string | null
+  external_id: string | null
+  recorded_by_name: string | null
+  recorded_at: string
+}
+
+export interface DataQsTimelineEvent {
+  at: string
+  title: string
+  detail: string | null
+}
+
+export interface DataQsCorrespondenceInput {
+  expected_version: number
+  kind: 'INFO_REQUEST' | 'INFO_RESPONSE' | 'DECISION' | 'REOPENING' | 'OTHER'
+  source: 'DATAQS_PORTAL' | 'EMAIL' | 'PHONE' | 'OTHER'
+  text: string
+  occurred_at: string
+  external_id: string | null
+  portal_status: string | null
+  decision: {
+    issue_outcomes: Record<number, 'CORRECTED' | 'NOT_CORRECTED'>
+    procedural_reason: 'INSUFFICIENT_INFORMATION' | 'NO_RESPONSE' | null
+    decided_by: string | null
+    reasons: string | null
+    appeal_instructions: string | null
+  } | null
+  reopening: { mode: 'SAME_LEVEL' | 'RETURN_TO_INITIAL'; reason: string } | null
 }

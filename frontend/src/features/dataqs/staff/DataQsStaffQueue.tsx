@@ -30,7 +30,10 @@ const FILTERS: {
 
 /** Most urgent first: overdue work, then the fewest days left in the review window. */
 function urgency(c: DataQsCaseSummary): number {
-  return (c.overdue_task_count > 0 ? -100_000 : 0) + (c.window_days_left ?? 100_000)
+  const deadline = c.next_deadline_at
+    ? (new Date(c.next_deadline_at).getTime() - Date.now()) / 86_400_000
+    : (c.window_days_left ?? 100_000)
+  return (c.overdue_task_count > 0 ? -100_000 : 0) + deadline
 }
 
 /** STS work queue: owner, urgency, overdue work and evidence gaps. */
@@ -85,6 +88,7 @@ export function DataQsStaffQueue() {
                 <th className={cellClass}>Inspection</th>
                 <th className={cellClass}>Status</th>
                 <th className={cellClass}>Owner</th>
+                <th className={cellClass}>Next deadline</th>
                 <th className={`${cellClass} text-right`}>Window</th>
                 <th className={`${cellClass} text-right`}>Evidence gaps</th>
                 <th className={cellClass}>Tasks</th>
@@ -122,6 +126,16 @@ export function DataQsStaffQueue() {
                   </td>
                   <td className={cellClass}>
                     {c.owner_name ?? <span className="text-slate-500">—</span>}
+                  </td>
+                  <td className={`${cellClass} whitespace-nowrap`}>
+                    {c.next_deadline_at ? (
+                      <>
+                        {formatDateTime(c.next_deadline_at)}
+                        <div className="text-xs text-slate-500">{c.next_deadline_label}</div>
+                      </>
+                    ) : (
+                      <span className="text-slate-500">—</span>
+                    )}
                   </td>
                   <td className={`${cellClass} text-right tabular-nums`}>
                     {c.window_days_left === null

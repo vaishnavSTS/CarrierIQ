@@ -9,6 +9,9 @@ from app.models.enums import (
     DataQsActionOwner,
     DataQsAssessmentOutcome,
     DataQsAttemptStatus,
+    DataQsClockType,
+    DataQsCorrespondenceKind,
+    DataQsCorrespondenceSource,
     DataQsEventType,
     DataQsOutcome,
     DataQsReason,
@@ -291,10 +294,110 @@ class DataQsReviewCycleOut(BaseModel):
     id: int
     level: DataQsReviewLevel
     cycle_number: int
-    submitted_at: datetime | None
+    parent_cycle_id: int | None
+    opened_reason: str | None
+    submitted_at: datetime | None  # None: an appeal STS is preparing, not filed yet
     decision_issued_at: datetime | None
     outcome: DataQsOutcome | None
+    decided_by: str | None
+    reasons: str | None
+    appeal_instructions: str | None
+    procedural_reason: str | None
+    appealed_issue_ids: list[int] | None
+    grounds: str | None
+    independence_concern: str | None  # STS only
     closed_at: datetime | None
+
+
+# --- Phase 5: correspondence, decisions, appeals, deadlines --------------------------------------
+
+
+class DataQsDecisionIn(BaseModel):
+    """An agency decision, as issued. Give each decided issue an outcome, or a procedural
+    reason when the agency closed it without deciding the merits."""
+
+    issue_outcomes: dict[int, Literal["CORRECTED", "NOT_CORRECTED"]] = {}
+    procedural_reason: Literal["INSUFFICIENT_INFORMATION", "NO_RESPONSE"] | None = None
+    decided_by: str | None = Field(default=None, max_length=200)  # the government reviewer
+    reasons: str | None = Field(default=None, max_length=10000)
+    appeal_instructions: str | None = Field(default=None, max_length=5000)
+
+
+class DataQsReopeningIn(BaseModel):
+    # SAME_LEVEL: requested information supplied after closure (a fresh full period);
+    # RETURN_TO_INITIAL: new evidence at appeal sends the request back to initial review.
+    mode: Literal["SAME_LEVEL", "RETURN_TO_INITIAL"]
+    reason: str = Field(min_length=5, max_length=1000)
+
+
+class DataQsCorrespondenceIn(BaseModel):
+    """A verified agency event, recorded by STS from the DataQs portal (or email, phone)."""
+
+    expected_version: int
+    kind: Literal["INFO_REQUEST", "INFO_RESPONSE", "DECISION", "REOPENING", "OTHER"]
+    source: DataQsCorrespondenceSource = DataQsCorrespondenceSource.DATAQS_PORTAL
+    text: str = Field(min_length=3, max_length=20000)  # exactly as written
+    # When the agency issued it, or (an answer) when STS submitted the response
+    occurred_at: datetime
+    external_id: str | None = Field(default=None, max_length=100)
+    portal_status: str | None = Field(default=None, max_length=100)
+    decision: DataQsDecisionIn | None = None
+    reopening: DataQsReopeningIn | None = None
+
+    @field_validator("occurred_at")
+    @classmethod
+    def _aware(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            raise ValueError("occurred_at needs a time zone")
+        return value
+
+
+class DataQsReviewRequestIn(BaseModel):
+    """STS proposes the next review stage for denied issues."""
+
+    expected_version: int
+    grounds: str = Field(min_length=50, max_length=20000)  # must address the prior decision
+    issue_ids: list[int] = Field(min_length=1, max_length=30)
+
+
+class DataQsClockOverrideIn(BaseModel):
+    expected_version: int
+    due_at: datetime
+    reason: str = Field(min_length=5, max_length=1000)
+
+
+class DataQsClockOut(BaseModel):
+    id: int
+    clock_type: DataQsClockType
+    label: str
+    base_event: str
+    base_at: datetime
+    budget_days: int | None
+    due_at: datetime | None  # None while paused
+    paused: bool
+    days_left: float  # remaining budget in days (negative once past)
+    confidence: str
+    policy_version: str
+    authority_source: str | None
+    override_reason: str | None
+
+
+class DataQsCorrespondenceOut(BaseModel):
+    id: int
+    kind: DataQsCorrespondenceKind
+    source: DataQsCorrespondenceSource
+    inbound: bool
+    text: str
+    occurred_at: datetime | None
+    external_id: str | None
+    recorded_by_name: str | None
+    recorded_at: datetime
+
+
+class DataQsTimelineEventOut(BaseModel):
+    at: datetime
+    title: str
+    detail: str | None
 
 
 class DataQsCaseSummaryOut(BaseModel):
@@ -322,6 +425,8 @@ class DataQsCaseSummaryOut(BaseModel):
     open_task_count: int
     overdue_task_count: int
     next_action: str
+    next_deadline_at: datetime | None  # the soonest active deadline
+    next_deadline_label: str | None
     created_at: datetime
     updated_at: datetime
     row_version: int
@@ -400,6 +505,9 @@ class DataQsCaseOut(DataQsCaseSummaryOut):
     can_assess: bool  # staff
     can_build_package: bool  # staff
     can_file: bool  # staff: start filing the approved package
+    can_record_correspondence: bool  # staff, once filed
+    can_propose_review: bool  # staff: appeal denied issues within 30 days
+    can_override_deadlines: bool  # STS admin
     consent: DataQsConsentOut  # the current authorization text, shown before submitting
     package_terms: DataQsConsentOut  # the text a carrier agrees to when approving a package
     assessments: list[DataQsAssessmentOut]
@@ -408,6 +516,9 @@ class DataQsCaseOut(DataQsCaseSummaryOut):
     tasks: list[DataQsTaskOut]  # open tasks (clients: only their own)
     attempts: list[DataQsAttemptOut]  # staff: every filing attempt; clients: confirmed ones
     review_cycles: list[DataQsReviewCycleOut]
+    clocks: list[DataQsClockOut]  # active deadlines
+    correspondence: list[DataQsCorrespondenceOut]
+    timeline: list[DataQsTimelineEventOut]  # newest first
     audit: list[DataQsAuditEventOut] | None  # STS staff only
 
 
