@@ -52,6 +52,8 @@ export interface PortalOverview {
 /** An account as an STS admin sees it, with the USDOT numbers its company gave. */
 export interface AdminUser extends User {
   usdot_numbers: number[]
+  /** The ones STS has verified as the company's: only these can be used for DataQs */
+  verified_usdot_numbers: number[]
   /** A client sign-up STS hasn't seen yet (shown in the Accounts pop-up) */
   is_new: boolean
   carrier_checks: CarrierContactCheck[]

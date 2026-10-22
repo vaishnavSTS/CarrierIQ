@@ -308,6 +308,7 @@ class AuthService:
         return AdminUserOut(
             **_user_fields(user, organization),
             usdot_numbers=usdots,
+            verified_usdot_numbers=[link.usdot_number for link in links if link.verified],
             is_new=user.seen_at is None and not user.role.is_staff,
             carrier_checks=self._contact_checks(user, usdots),
             broker=_broker_out(organization) if user.role.is_broker and organization else None,

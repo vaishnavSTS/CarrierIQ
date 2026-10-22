@@ -189,3 +189,27 @@ def test_admin_links_a_carrier_to_an_existing_client(portal: TestClient, db: Ses
 
     log_in(portal, "owner@client.test")
     assert portal.get(f"/api/v1/portal/carriers/{USDOT}").status_code == 200
+
+
+def test_admin_sees_and_verifies_a_carrier_named_at_sign_up(
+    portal: TestClient, db: Session
+) -> None:
+    client_user = make_user(db, "owner@client.test", UserRole.CLIENT_ADMIN, UserStatus.ACTIVE)
+    make_user(db, "admin@sts.test", UserRole.STS_ADMIN, UserStatus.ACTIVE)
+    db.add(
+        OrganizationCarrier(
+            organization_id=client_user.organization_id, usdot_number=USDOT, verified=False
+        )
+    )
+    db.commit()
+
+    log_in(portal, "admin@sts.test")
+    [listed] = [u for u in portal.get("/api/v1/admin/users").json() if u["id"] == client_user.id]
+    assert (listed["usdot_numbers"], listed["verified_usdot_numbers"]) == ([USDOT], [])
+
+    verified = portal.post(
+        f"/api/v1/admin/users/{client_user.id}/carriers", json={"usdot_number": USDOT}
+    )
+    assert verified.status_code == 200, verified.text
+    assert verified.json()["usdot_numbers"] == [USDOT]  # the same link, now verified
+    assert verified.json()["verified_usdot_numbers"] == [USDOT]

@@ -45,6 +45,45 @@ function UsdotLinks({ numbers }: { numbers: number[] }) {
   )
 }
 
+/**
+ * Each USDOT with whether STS has verified it as the client's. Approving the account does not
+ * verify a carrier; until it is verified the client cannot start DataQs requests for it.
+ */
+function AccountCarriers({ account }: { account: AdminUser }) {
+  const verify = useAddAccountCarrier()
+  const canVerify = account.role.startsWith('CLIENT_') && account.status !== 'DISABLED'
+  if (account.usdot_numbers.length === 0) return <UsdotLinks numbers={[]} />
+  return (
+    <ul className="space-y-1">
+      {account.usdot_numbers.map((n) => {
+        const verified = account.verified_usdot_numbers.includes(n)
+        const pending = verify.isPending && verify.variables?.usdotNumber === n
+        return (
+          <li key={n} className="flex flex-wrap items-center gap-1.5">
+            <UsdotLinks numbers={[n]} />
+            <StatusBadge
+              label={verified ? 'Verified' : 'Not verified'}
+              tone={verified ? 'ok' : 'warn'}
+            />
+            {!verified && canVerify && (
+              <button
+                type="button"
+                disabled={verify.isPending}
+                onClick={() => verify.mutate({ id: account.id, usdotNumber: n })}
+                title="Confirm this carrier belongs to the client. Needed before they can use DataQs."
+                className="rounded bg-cta px-2 py-0.5 font-medium text-cta-ink hover:bg-cta-hover disabled:opacity-50"
+              >
+                {pending ? 'Verifying…' : 'Verify'}
+              </button>
+            )}
+          </li>
+        )
+      })}
+      {verify.isError && <li className="text-red-700">{verify.error.message}</li>}
+    </ul>
+  )
+}
+
 function formatPhone(phone: string | null): string {
   if (!phone) return 'no phone'
   return phone.length === 10
@@ -140,6 +179,8 @@ function NewSignupsDialog({ accounts }: { accounts: AdminUser[] }) {
                 ) : (
                   <>
                     USDOT: <UsdotLinks numbers={a.usdot_numbers} />
+                    {a.usdot_numbers.some((n) => !a.verified_usdot_numbers.includes(n)) &&
+                      ' (not verified yet: verify it in the table to allow DataQs)'}
                   </>
                 )}{' '}
                 · Signed up {formatDateTime(a.created_at)}
@@ -248,7 +289,7 @@ function AccountRow({ account, isMe }: { account: AdminUser; isMe: boolean }) {
           <BrokerIdentity broker={account.broker} />
         ) : (
           <>
-            <UsdotLinks numbers={account.usdot_numbers} />
+            <AccountCarriers account={account} />
             {account.carrier_checks.map((check) => (
               <ContactCheck key={check.usdot_number} check={check} />
             ))}

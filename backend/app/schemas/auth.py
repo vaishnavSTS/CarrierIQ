@@ -174,6 +174,9 @@ class AdminUserOut(UserOut):
     """A user as an STS admin sees them, with the USDOT numbers their organization named."""
 
     usdot_numbers: list[int]
+    # The ones STS has verified as the organization's (needed for DataQs); the others were only
+    # named at sign-up.
+    verified_usdot_numbers: list[int]
     is_new: bool  # a client or broker sign-up STS has not seen yet (the Accounts pop-up)
     carrier_checks: list[CarrierContactCheckOut]
     broker: "BrokerOut | None" = None  # broker accounts: the brokerage FMCSA confirmed
