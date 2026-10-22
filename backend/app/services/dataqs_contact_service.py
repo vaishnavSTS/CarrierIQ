@@ -40,7 +40,6 @@ class DataQsContactService:
             carrier_name=carrier.legal_name if carrier else None,
             email=contact.email if contact else None,
             phone=contact.phone if contact else None,
-            best_time=contact.best_time if contact else None,
             updated_at=contact.updated_at if contact else None,
             updated_by_name=names.get(contact.updated_by_id) if contact else None,
         )
@@ -78,7 +77,6 @@ class DataQsContactService:
             self.db.add(contact)
         contact.email = body.email.strip()
         contact.phone = body.phone.strip()
-        contact.best_time = (body.best_time or "").strip() or None
         contact.updated_by_id = user.id
         self.db.commit()
         return self.for_company(user)

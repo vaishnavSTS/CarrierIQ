@@ -1,6 +1,6 @@
-"""How STS reaches a carrier about its DataQs requests: the email on the carrier's FMCSA account,
-a phone number, and the best time to call. The company's account owner keeps it up to date in the
-client portal (one per carrier the company holds); STS staff see it on that carrier's cases.
+"""How STS reaches a carrier about its DataQs requests: the email on the carrier's FMCSA account
+and a phone number. The company's account owner keeps it up to date in the client portal (one
+per carrier the company holds); STS staff see it on that carrier's cases.
 """
 
 from sqlalchemy import BigInteger, ForeignKey, String, UniqueConstraint
@@ -24,5 +24,4 @@ class DataQsCarrierContact(IdMixin, UpdatedAtMixin, Base):
     usdot_number: Mapped[int] = mapped_column(BigInteger)
     email: Mapped[str] = mapped_column(String(254))  # the email on the carrier's FMCSA account
     phone: Mapped[str] = mapped_column(String(30))
-    best_time: Mapped[str | None] = mapped_column(String(100))  # e.g. "Weekdays 8-11 am CT"
     updated_by_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"))

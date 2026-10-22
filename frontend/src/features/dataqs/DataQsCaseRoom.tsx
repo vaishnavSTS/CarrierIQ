@@ -350,9 +350,6 @@ function ContactLine({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
             <Mail className="size-3.5" aria-hidden />
             {contact.email}
           </a>
-          {contact.best_time && (
-            <span className="text-slate-600">Best time: {contact.best_time}</span>
-          )}
         </>
       ) : (
         <span className="text-slate-600">

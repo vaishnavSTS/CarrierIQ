@@ -214,7 +214,7 @@ def save_contact(
     user: Annotated[User, Depends(require_client)],
     db: Annotated[Session, Depends(get_db)],
 ) -> DataQsCarrierContactListOut:
-    """The company's account owner sets a carrier's email, phone and best time to call."""
+    """The company's account owner sets a carrier's email and phone number."""
     return DataQsContactService(db).save(user, usdot_number, body)
 
 

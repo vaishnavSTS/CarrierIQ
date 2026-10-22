@@ -290,7 +290,6 @@ export interface DataQsCarrierContact {
   /** The email on the carrier's FMCSA account; null until given */
   email: string | null
   phone: string | null
-  best_time: string | null
   updated_at: string | null
   updated_by_name: string | null
 }
@@ -304,7 +303,6 @@ export interface DataQsCarrierContactList {
 export interface DataQsCarrierContactInput {
   email: string
   phone: string
-  best_time: string | null
 }
 
 export type DataQsAssessmentOutcome =

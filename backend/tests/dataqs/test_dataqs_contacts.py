@@ -5,11 +5,7 @@ from fastapi.testclient import TestClient
 from app.models import User
 from tests.dataqs.helpers import USDOT, log_in, staff_case, submitted_case
 
-CONTACT = {
-    "email": "safety@acme.test",
-    "phone": "+1 (555) 010-2030",
-    "best_time": "Weekdays 8-11 am CT",
-}
+CONTACT = {"email": "safety@acme.test", "phone": "+1 (555) 010-2030"}
 URL = f"/api/v1/portal/dataqs/contacts/{USDOT}"
 
 
@@ -34,13 +30,13 @@ def test_the_account_owner_keeps_the_contact_and_sts_sees_it_on_cases(
     assert api.get(f"/api/v1/portal/dataqs/cases/{case_id}").json()["carrier_contact"] is None
     log_in(api, "analyst@sts.test")
     contact = staff_case(api, case_id)["carrier_contact"]
-    assert (contact["email"], contact["best_time"]) == (CONTACT["email"], CONTACT["best_time"])
+    assert (contact["email"], contact["phone"]) == (CONTACT["email"], CONTACT["phone"])
 
     # Updating replaces it.
     log_in(api, "owner@acme.test")
-    again = api.put(URL, json={**CONTACT, "phone": "555-010-9999", "best_time": "  "})
+    again = api.put(URL, json={**CONTACT, "phone": "555-010-9999"})
     [carrier] = again.json()["carriers"]
-    assert (carrier["phone"], carrier["best_time"]) == ("555-010-9999", None)
+    assert carrier["phone"] == "555-010-9999"
 
 
 def test_only_the_account_owner_of_a_verified_carrier_can_change_it(

@@ -9,7 +9,7 @@ import { primaryButton, secondaryButton } from './ui'
 
 /**
  * Client portal: how STS reaches the company's carriers about DataQs requests (the email on the
- * carrier's FMCSA account, a phone number, the best time to call), in a pop-up. The account owner
+ * carrier's FMCSA account and a phone number), in a pop-up. The account owner
  * edits it; other users see it.
  */
 export function DataQsContactButton() {
@@ -125,17 +125,13 @@ function ContactForm({
 }) {
   const [email, setEmail] = useState(c.email ?? '')
   const [phone, setPhone] = useState(c.phone ?? '')
-  const [bestTime, setBestTime] = useState(c.best_time ?? '')
   const save = useSaveDataQsContact()
   const ready = /^\S+@\S+\.\S+$/.test(email.trim()) && phone.replace(/\D/g, '').length >= 7
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
     save.mutate(
-      {
-        usdot: c.usdot_number,
-        input: { email: email.trim(), phone: phone.trim(), best_time: bestTime.trim() || null },
-      },
+      { usdot: c.usdot_number, input: { email: email.trim(), phone: phone.trim() } },
       { onSuccess: onDone },
     )
   }
@@ -172,19 +168,6 @@ function ContactForm({
           className={inputClass}
         />
       </div>
-      <div>
-        <label htmlFor="contact-time" className={labelClass}>
-          Best time to call (optional)
-        </label>
-        <input
-          id="contact-time"
-          value={bestTime}
-          maxLength={100}
-          placeholder="e.g. Weekdays 8–11 am CT"
-          onChange={(e) => setBestTime(e.target.value)}
-          className={inputClass}
-        />
-      </div>
       {save.isError && (
         <p className="text-red-700" role="alert">
           Could not save: {save.error.message}
@@ -217,12 +200,6 @@ function ContactView({ contact: c }: { contact: DataQsCarrierContact }) {
             <dt className={labelClass}>Phone number</dt>
             <dd className="text-slate-900">{c.phone}</dd>
           </div>
-          {c.best_time && (
-            <div>
-              <dt className={labelClass}>Best time to call</dt>
-              <dd className="text-slate-900">{c.best_time}</dd>
-            </div>
-          )}
         </dl>
       ) : (
         <p className="text-slate-700">No contact details yet.</p>
