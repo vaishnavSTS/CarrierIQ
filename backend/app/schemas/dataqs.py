@@ -590,4 +590,39 @@ class DataQsCaseListOut(BaseModel):
     cases: list[DataQsCaseSummaryOut]
 
 
+class DataQsExceptionOut(BaseModel):
+    """Something on a case an STS supervisor should look at (the supervisor view)."""
+
+    kind: str  # e.g. DEADLINE_OVERDUE, UNASSIGNED, EMAIL_FAILED, STALE
+    severity: Literal["HIGH", "MEDIUM", "LOW"]
+    case_id: int
+    organization_name: str | None
+    usdot_number: int
+    owner_name: str | None
+    work_status: DataQsWorkStatus
+    title: str
+    detail: str
+    at: datetime | None  # when it was due, failed or last moved
+
+
+class DataQsWorkloadOut(BaseModel):
+    """Open cases (sent to STS, not closed) per case specialist; owner_id None = unassigned."""
+
+    owner_id: int | None
+    owner_name: str | None
+    active_cases: int = 0
+    needs_sts: int = 0
+    waiting_carrier: int = 0
+    waiting_agency: int = 0
+    overdue_tasks: int = 0
+    overdue_deadlines: int = 0
+
+
+class DataQsSupervisorOut(BaseModel):
+    generated_at: datetime
+    stale_days: int
+    exceptions: list[DataQsExceptionOut]  # most serious first
+    workload: list[DataQsWorkloadOut]
+
+
 DataQsCheckOut.model_rebuild()

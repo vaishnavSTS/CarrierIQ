@@ -530,3 +530,40 @@ export interface DataQsEmail {
   attempts: number
   last_error: string | null
 }
+
+/** Something on a case an STS supervisor should look at */
+export interface DataQsException {
+  /** e.g. DEADLINE_OVERDUE, UNASSIGNED, EMAIL_FAILED, STALE */
+  kind: string
+  severity: 'HIGH' | 'MEDIUM' | 'LOW'
+  case_id: number
+  organization_name: string | null
+  usdot_number: number
+  owner_name: string | null
+  work_status: DataQsWorkStatus
+  title: string
+  detail: string
+  /** When it was due, failed or last moved */
+  at: string | null
+}
+
+/** Open cases per case specialist; owner_id null = unassigned */
+export interface DataQsWorkload {
+  owner_id: number | null
+  owner_name: string | null
+  active_cases: number
+  needs_sts: number
+  waiting_carrier: number
+  waiting_agency: number
+  overdue_tasks: number
+  overdue_deadlines: number
+}
+
+/** STS admins only */
+export interface DataQsSupervisor {
+  generated_at: string
+  stale_days: number
+  /** Most serious first */
+  exceptions: DataQsException[]
+  workload: DataQsWorkload[]
+}

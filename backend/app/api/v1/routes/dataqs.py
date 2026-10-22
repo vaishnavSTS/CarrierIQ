@@ -7,7 +7,7 @@ their authorization); staff view every case, add evidence, assign, assess and bu
 
 import json
 from collections.abc import Callable
-from datetime import date
+from datetime import UTC, date, datetime, time, timedelta
 from typing import Annotated
 from urllib.parse import quote
 
@@ -16,7 +16,7 @@ from pydantic import TypeAdapter
 from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.orm import Session
 
-from app.api.auth import require_client, require_staff
+from app.api.auth import require_client, require_staff, require_sts_admin
 from app.core.config import get_settings
 from app.core.exceptions import ValidationError
 from app.db.session import get_db
@@ -43,6 +43,7 @@ from app.schemas.dataqs import (
     DataQsReviewRequestIn,
     DataQsStaffUserOut,
     DataQsSubmitIn,
+    DataQsSupervisorOut,
     DataQsVersionIn,
 )
 from app.services.dataqs_assessment_service import DataQsAssessmentService
@@ -52,6 +53,7 @@ from app.services.dataqs_evidence_storage import EvidenceStorage, get_evidence_s
 from app.services.dataqs_filing_adapter import ManualFilingAdapter
 from app.services.dataqs_lifecycle import DataQsLifecycleService
 from app.services.dataqs_package_service import DataQsPackageService
+from app.services.dataqs_supervisor_service import DataQsSupervisorService
 
 router = APIRouter(prefix="/dataqs", tags=["dataqs"])
 portal_router = APIRouter(prefix="/portal/dataqs", tags=["dataqs"])
@@ -203,6 +205,44 @@ AssessmentService = Annotated[DataQsAssessmentService, Depends(get_assessment_se
 PackageService = Annotated[DataQsPackageService, Depends(get_package_service)]
 StaffUser = Annotated[User, Depends(require_staff)]
 ClientUser = Annotated[User, Depends(require_client)]
+StsAdmin = Annotated[User, Depends(require_sts_admin)]
+
+
+@router.get("/supervisor", response_model=DataQsSupervisorOut)
+def supervisor_view(_: StsAdmin, db: Annotated[Session, Depends(get_db)]) -> DataQsSupervisorOut:
+    """STS admins: exceptions across every case (late deadlines, unassigned work, failed emails,
+    stale cases) and each specialist's workload."""
+    return DataQsSupervisorService(db).overview()
+
+
+@router.get("/supervisor/audit.csv")
+def export_audit(
+    _: StsAdmin,
+    db: Annotated[Session, Depends(get_db)],
+    since: date | None = None,
+    until: date | None = None,
+) -> Response:
+    """STS admins: every DataQs audit event from `since` to `until` (inclusive, UTC dates;
+    default the last 90 days) as CSV."""
+    last = until or datetime.now(UTC).date()
+    first = since or last - timedelta(days=90)
+    if first > last:
+        raise ValidationError("The start date is after the end date")
+    if (last - first).days > 366:
+        raise ValidationError("Export at most a year at a time")
+    body = DataQsSupervisorService(db).audit_csv(
+        datetime.combine(first, time(), UTC),
+        datetime.combine(last + timedelta(days=1), time(), UTC),
+    )
+    name = f"dataqs-audit-{first.isoformat()}-to-{last.isoformat()}.csv"
+    return Response(
+        content=body,
+        media_type="text/csv; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="{name}"',
+            "Cache-Control": "private, no-store",
+        },
+    )
 
 
 @router.get("/staff", response_model=list[DataQsStaffUserOut])

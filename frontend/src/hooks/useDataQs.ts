@@ -11,6 +11,7 @@ import {
   emailDataQsCarrier,
   fetchDataQsCase,
   fetchDataQsCases,
+  fetchDataQsSupervisor,
   fetchDataQsCheck,
   fetchDataQsStaff,
   overrideDataQsClock,
@@ -46,6 +47,15 @@ export function useDataQsBase(): DataQsBase {
 export function useDataQsCasePath(): (caseId: number) => string {
   const internal = usePortalMode() === 'internal'
   return (caseId) => (internal ? `/dataqs/cases/${caseId}` : `/portal/dataqs/cases/${caseId}`)
+}
+
+/** STS admins: the supervisor view, refreshed every minute. */
+export function useDataQsSupervisor() {
+  return useQuery({
+    queryKey: ['dataqs', 'supervisor'],
+    queryFn: fetchDataQsSupervisor,
+    refetchInterval: 60_000,
+  })
 }
 
 export function useDataQsCases() {

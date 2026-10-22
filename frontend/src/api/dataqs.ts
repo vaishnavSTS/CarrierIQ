@@ -11,6 +11,7 @@ import type {
   DataQsPackageInput,
   DataQsStaffUser,
   DataQsSubmitInput,
+  DataQsSupervisor,
 } from '../types/dataqs'
 import { apiGet, apiRequest } from './client'
 
@@ -71,6 +72,17 @@ export function submitDataQsCase(caseId: number, input: DataQsSubmitInput): Prom
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
   })
+}
+
+/** STS admins: exceptions across every case and each specialist's workload. */
+export function fetchDataQsSupervisor(): Promise<DataQsSupervisor> {
+  return apiGet('/dataqs/supervisor')
+}
+
+/** STS admins: the audit trail from `since` to `until` (YYYY-MM-DD, inclusive) as a CSV download. */
+export function dataQsAuditExportUrl(since: string, until: string): string {
+  const query = new URLSearchParams({ since, until })
+  return `/api/v1/dataqs/supervisor/audit.csv?${query}`
 }
 
 /** A plain link: the browser downloads it with the session cookie; the API logs each download. */

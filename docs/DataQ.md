@@ -3,7 +3,7 @@
 How we will add DataQs (challenging wrong FMCSA safety records) to CarrierSafetyScan, phase by
 phase. Edit freely as decisions are made; record each decision in the log at the bottom.
 
-**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules. Phase 2 built (2026-10-21): carrier intake wizard, evidence uploads, submit to STS. Phase 3 built (2026-10-21): staff queue, assessment, filing package, carrier approval (migration 0025). Phase 4 built (2026-10-21): manual filing console, receipts, unconfirmed attempts and reconciling (migration 0026). Requests are started from the client DataQs tab. Phase 5 built (2026-10-21): agency correspondence, decisions, appeals, reopenings, deadline clocks with pauses (migration 0027). 2026-10-21: matched to the real DataQs portal (from STS's screen recordings) and emails added (Gmail SMTP, Resend as fallback; migration 0028), see section 7.
+**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules. Phase 2 built (2026-10-21): carrier intake wizard, evidence uploads, submit to STS. Phase 3 built (2026-10-21): staff queue, assessment, filing package, carrier approval (migration 0025). Phase 4 built (2026-10-21): manual filing console, receipts, unconfirmed attempts and reconciling (migration 0026). Requests are started from the client DataQs tab. Phase 5 built (2026-10-21): agency correspondence, decisions, appeals, reopenings, deadline clocks with pauses (migration 0027). 2026-10-21: matched to the real DataQs portal (from STS's screen recordings) and emails added (Gmail SMTP, Resend as fallback; migration 0028), see section 7. Phase 6 in progress: emails and filing reminders built; supervisor view built (2026-10-21); outcome verification and deadline reminders to come.
 **Created:** 2026-10-21
 **Source:** `../../Sky_DataQs_Developer_Integration.docx` (Sky DataQs Developer Integration Specification v1.0)
 **Related:** `client-internal-portal-plan.md`, `../CHECKPOINT.md`
@@ -448,14 +448,20 @@ reopening all pass their tests.
 - **Carrier view** shows the last verified government update time and "awaiting staff
   verification" when relevant.
 - **Supervisor view:** unassigned work, deadline exceptions, stale statuses, workload, audit export.
+  *Built 2026-10-21* (STS admins: DataQs → Supervisor; `GET /dataqs/supervisor`,
+  `GET /dataqs/supervisor/audit.csv`): overdue or near (3 days) answers to the agency and appeals,
+  late agency decisions, filing windows passed or closing on unfiled requests, unconfirmed filings,
+  unassigned cases, overdue tasks, failed or retrying emails, uncertain dates, and cases with no
+  activity for 14 days; workload per specialist; the audit trail as CSV (up to a year at a time).
 
 **Files**
 
 ```
 backend/app/services/dataqs_verification_service.py
+backend/app/services/dataqs_supervisor_service.py    supervisor view + audit export (built)
 backend/app/services/dataqs_notifications.py         outbox + reminder schedule
 backend/app/jobs/handlers.py                         + DataQs reminder / outbox jobs
-frontend/src/features/dataqs/DataQsSupervisorView.tsx
+frontend/src/features/dataqs/staff/DataQsSupervisorView.tsx   (built)
 frontend/src/features/dataqs/DataQsTasks.tsx
 backend/tests/dataqs/test_dataqs_verification.py, test_dataqs_notifications.py
 ```
