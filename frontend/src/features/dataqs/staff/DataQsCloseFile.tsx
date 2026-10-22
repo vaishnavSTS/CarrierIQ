@@ -8,13 +8,19 @@ import { secondaryButton } from '../ui'
 /** STS: close the file. The carrier is emailed that it is closed, with this note. */
 export function DataQsCloseFile({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
   const [note, setNote] = useState('')
+  const [reason, setReason] = useState('')
   const [sure, setSure] = useState(false)
   const close = useCloseDataQsFile(c.id)
   const beforeDecision = c.outcome === null
+  // Approved corrections FMCSA's data doesn't show yet: closing anyway needs a reason.
+  const unseen = c.issues.filter(
+    (i) => i.verification_status !== null && i.verification_status !== 'VERIFIED',
+  ).length
+  const ready = note.trim().length >= 5 && (unseen === 0 || reason.trim().length >= 5)
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    close.mutate({ version: c.row_version, note: note.trim() })
+    close.mutate({ version: c.row_version, note: note.trim(), reason: reason.trim() })
   }
 
   return (
@@ -38,6 +44,24 @@ export function DataQsCloseFile({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
           className={inputClass}
         />
       </div>
+      {unseen > 0 && (
+        <div>
+          <label htmlFor="close-unverified" className={labelClass}>
+            FMCSA’s data doesn’t show{' '}
+            {unseen === 1 ? 'an approved correction' : `${unseen} approved corrections`} yet. Why
+            close anyway? (STS only)
+          </label>
+          <textarea
+            id="close-unverified"
+            rows={2}
+            value={reason}
+            maxLength={2000}
+            placeholder="e.g. DPS confirmed by phone; PSP report shows the record corrected."
+            onChange={(e) => setReason(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+      )}
       <label className="flex items-start gap-2">
         <input
           type="checkbox"
@@ -55,7 +79,7 @@ export function DataQsCloseFile({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
       <button
         type="submit"
         className={secondaryButton}
-        disabled={!sure || note.trim().length < 5 || close.isPending}
+        disabled={!sure || !ready || close.isPending}
       >
         {close.isPending ? 'Closing…' : 'File closed'}
       </button>

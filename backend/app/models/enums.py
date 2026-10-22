@@ -225,6 +225,15 @@ class DataQsOutboxStatus(StrEnum):
     CANCELLED = "CANCELLED"  # no longer needed, e.g. a reminder for a case that closed
 
 
+class DataQsVerificationStatus(StrEnum):
+    """Whether FMCSA's data shows a correction the agency approved (Phase 6)."""
+
+    WAITING = "WAITING"  # not seen in FMCSA's data yet; checked again daily
+    VERIFIED = "VERIFIED"  # seen by the check, or confirmed by STS with proof
+    REVIEW = "REVIEW"  # the record changed (or can't be told apart): STS confirms by hand
+    MANUAL = "MANUAL"  # not in FMCSA's public data (driver details): STS confirms with proof
+
+
 def enum_type(enum_cls: type[StrEnum], name: str, length: int = 20) -> Enum:
     """VARCHAR column restricted to the enum's values by a CHECK constraint named after `name`."""
     return Enum(

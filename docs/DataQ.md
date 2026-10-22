@@ -3,7 +3,7 @@
 How we will add DataQs (challenging wrong FMCSA safety records) to CarrierSafetyScan, phase by
 phase. Edit freely as decisions are made; record each decision in the log at the bottom.
 
-**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules. Phase 2 built (2026-10-21): carrier intake wizard, evidence uploads, submit to STS. Phase 3 built (2026-10-21): staff queue, assessment, filing package, carrier approval (migration 0025). Phase 4 built (2026-10-21): manual filing console, receipts, unconfirmed attempts and reconciling (migration 0026). Requests are started from the client DataQs tab. Phase 5 built (2026-10-21): agency correspondence, decisions, appeals, reopenings, deadline clocks with pauses (migration 0027). 2026-10-21: matched to the real DataQs portal (from STS's screen recordings) and emails added (Gmail SMTP, Resend as fallback; migration 0028), see section 7. Phase 6 in progress: emails and filing reminders built; supervisor view and deadline reminders built (2026-10-21); outcome verification to come.
+**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules. Phase 2 built (2026-10-21): carrier intake wizard, evidence uploads, submit to STS. Phase 3 built (2026-10-21): staff queue, assessment, filing package, carrier approval (migration 0025). Phase 4 built (2026-10-21): manual filing console, receipts, unconfirmed attempts and reconciling (migration 0026). Requests are started from the client DataQs tab. Phase 5 built (2026-10-21): agency correspondence, decisions, appeals, reopenings, deadline clocks with pauses (migration 0027). 2026-10-21: matched to the real DataQs portal (from STS's screen recordings) and emails added (Gmail SMTP, Resend as fallback; migration 0028), see section 7. Phase 6 built: emails and filing reminders; supervisor view and deadline reminders (2026-10-21); outcome verification (2026-10-22, migration 0029).
 **Created:** 2026-10-21
 **Source:** `../../Sky_DataQs_Developer_Integration.docx` (Sky DataQs Developer Integration Specification v1.0)
 **Related:** `client-internal-portal-plan.md`, `../CHECKPOINT.md`
@@ -440,6 +440,20 @@ reopening all pass their tests.
 - **Outcome verification:** four separate milestones: requested correction → government decision
   → FMCSA record changed → shown in CarrierSafetyScan. Before/after snapshots with observed time.
   "Correction approved, awaiting refresh" until the change is seen (SMS/PSP refresh monthly).
+  *Built 2026-10-22* (`dataqs_verification_service.py`, migration 0029): each corrected issue
+  waits until FMCSA's Vehicle Inspection File shows it. A thread of the API process re-fetches the
+  inspection by id once a day (`DATAQS_VERIFICATION_CHECK_HOURS`, failed looks retried hourly) and
+  compares it with the copy kept at intake: a violation no longer listed, or the inspection gone
+  from the carrier, is verified automatically; a violation that changed some other way, or an
+  inspection missing near the end of the file's three-year window, waits for STS to confirm;
+  driver details (not in public data) are always confirmed by STS with proof (PSP report,
+  DataQs). Every look is kept, with FMCSA's copy each time it changes. Once verified, the carrier
+  is emailed, the carrier's inspections are refreshed (an inspection FMCSA took off the carrier is
+  removed) and "shown in CarrierSafetyScan" is marked once our copy matches; when nothing is left
+  to confirm STS gets a "close the file" task. Closing before then needs a written reason (kept in
+  the audit). Supervisor view: correction not seen 60 days after the decision
+  (`DATAQS_VERIFICATION_ESCALATE_DAYS`), corrections to confirm by hand, checks failing 3+ days.
+  STS can also "Check FMCSA now" from the case.
 - **Tasks and reminders:** in-app tasks immediately; reminders 7/3/1 days before evidence
   deadlines and 14/7/3/1 before appeal deadlines; escalate missing acknowledgements, late
   decisions, uncertain dates and unassigned cases.
@@ -582,3 +596,4 @@ once `GMAIL_REFRESH_TOKEN` (or `SMTP_HOST`, or `RESEND_API_KEY`) is set; retries
 | 2026-10-21 | While testing, every carrier email goes to wesley@ and every STS staff email to vaishnav@ (`DATAQS_EMAIL_CARRIER_OVERRIDE` / `DATAQS_EMAIL_STAFF_OVERRIDE`); clear them to email real recipients | User |
 | 2026-10-21 | Reasons, file types and file titles, filing guide, statuses, "Opened" event, appeals by Re-open Request and the attestation match DataQs as recorded | User |
 | 2026-10-21 | CSV, ZIP and ETHOS uploads refused (DataQs takes no CSV; ZIP/ETHOS wait for malware scanning) | Build |
+| 2026-10-22 | A correction is verified when FMCSA's inspection record changes (checked daily); the monthly CSA recalculation is not waited for. Escalate after 60 days unseen. Driver corrections are confirmed by STS with proof | User |

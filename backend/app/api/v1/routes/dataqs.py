@@ -44,6 +44,7 @@ from app.schemas.dataqs import (
     DataQsStaffUserOut,
     DataQsSubmitIn,
     DataQsSupervisorOut,
+    DataQsVerifyIssueIn,
     DataQsVersionIn,
 )
 from app.services.dataqs_assessment_service import DataQsAssessmentService
@@ -54,6 +55,11 @@ from app.services.dataqs_filing_adapter import ManualFilingAdapter
 from app.services.dataqs_lifecycle import DataQsLifecycleService
 from app.services.dataqs_package_service import DataQsPackageService
 from app.services.dataqs_supervisor_service import DataQsSupervisorService
+from app.services.dataqs_verification_service import (
+    DataQsVerificationService,
+    FmcsaSource,
+    get_fmcsa_source,
+)
 
 router = APIRouter(prefix="/dataqs", tags=["dataqs"])
 portal_router = APIRouter(prefix="/portal/dataqs", tags=["dataqs"])
@@ -480,4 +486,34 @@ def close_file(
 ) -> DataQsCaseOut:
     """Close the file; the carrier is emailed that it is closed, with the note."""
     lifecycle.close_file(user, case_id, body)
+    return cases.detail(user, case_id)
+
+
+# --- Phase 6: is the correction in FMCSA's data? ----------------------------------------------
+
+
+@router.post("/cases/{case_id}/verification/check", response_model=DataQsCaseOut)
+def check_correction(
+    case_id: int,
+    user: StaffUser,
+    cases: CaseService,
+    db: Annotated[Session, Depends(get_db)],
+    source: Annotated[FmcsaSource, Depends(get_fmcsa_source)],
+) -> DataQsCaseOut:
+    """Look at FMCSA's inspection record now instead of waiting for the daily check."""
+    DataQsVerificationService(db, source).check_now(user, case_id)
+    return cases.detail(user, case_id)
+
+
+@router.post("/cases/{case_id}/issues/{issue_id}/verification", response_model=DataQsCaseOut)
+def confirm_correction(
+    case_id: int,
+    issue_id: int,
+    body: DataQsVerifyIssueIn,
+    user: StaffUser,
+    cases: CaseService,
+    db: Annotated[Session, Depends(get_db)],
+) -> DataQsCaseOut:
+    """STS confirms by hand, with its proof, that FMCSA's records show the correction."""
+    DataQsVerificationService(db).confirm(user, case_id, issue_id, body)
     return cases.detail(user, case_id)

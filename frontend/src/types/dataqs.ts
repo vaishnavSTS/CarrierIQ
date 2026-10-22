@@ -184,6 +184,25 @@ export interface DataQsIssue {
   outcome: string | null
   evidence_count: number
   checklist: string[]
+  /** Phase 6, for a corrected issue: the decision, FMCSA's record, then CarrierSafetyScan */
+  decided_at: string | null
+  verification_status: DataQsVerificationStatus | null
+  /** What the check saw (clients: not STS's own proof) */
+  verification_note: string | null
+  verified_at: string | null
+  /** null: the automatic check */
+  verified_by_name: string | null
+  shown_at: string | null
+}
+
+export type DataQsVerificationStatus = 'WAITING' | 'VERIFIED' | 'REVIEW' | 'MANUAL'
+
+/** A look at FMCSA's record that saw something new */
+export interface DataQsVerificationCheck {
+  at: string
+  found: boolean | null
+  changes: string[]
+  error: string | null
 }
 
 export interface DataQsCase extends DataQsCaseSummary {
@@ -253,6 +272,13 @@ export interface DataQsCase extends DataQsCaseSummary {
   viewed_in_options: string[]
   /** STS staff only */
   audit: { action: string; actor_name: string | null; at: string; detail: unknown }[] | null
+  /** When FMCSA's record was last looked at for an approved correction */
+  verification_checked_at: string | null
+  /** STS staff only: the last look failed */
+  verification_error: string | null
+  verification_checks: DataQsVerificationCheck[]
+  /** Staff: check FMCSA now, confirm a correction by hand */
+  can_verify: boolean
 }
 
 export type DataQsAssessmentOutcome =

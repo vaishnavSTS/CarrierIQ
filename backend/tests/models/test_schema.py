@@ -63,6 +63,7 @@ TABLES = {
     "dataqs_audit_events",
     "dataqs_outbox",
     "dataqs_messages",
+    "dataqs_verification_checks",
 }
 
 # Rows in these tables always come from a source record (Engineering Principle 5).

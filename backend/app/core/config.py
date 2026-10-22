@@ -147,6 +147,12 @@ class Settings(BaseSettings):
     dataqs_reminder_days: str = "7,21"
     # Send the waiting emails from a thread of the API process (every 30 seconds).
     dataqs_email_dispatch_in_api: bool = True
+    # Checking FMCSA's data for approved corrections (Phase 6): from a thread of the API process,
+    # each case at most once per this many hours; a correction still not seen this many days
+    # after the decision shows in the supervisor view.
+    dataqs_verification_in_api: bool = True
+    dataqs_verification_check_hours: int = 24
+    dataqs_verification_escalate_days: int = 60
     # Where the app's pages are, for links in emails (the frontend's address).
     public_app_url: str = "http://localhost:5173"
 

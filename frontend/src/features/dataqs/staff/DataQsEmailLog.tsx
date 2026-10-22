@@ -9,6 +9,7 @@ const KIND: Record<string, string> = {
   FILED: 'Filed with DataQs (carrier)',
   DECISION: 'Agency decision (carrier)',
   FILE_CLOSED: 'File closed (carrier)',
+  CORRECTION_VERIFIED: "Correction seen in FMCSA's data (carrier)",
   REMINDER_7_DAYS: 'Reminder: 7 days since filing (STS)',
   REMINDER_21_DAYS: 'Reminder: 21 days since filing (STS)',
   REMINDER_ANSWER_7_DAYS_LEFT: 'Reminder: answer the agency, 7 days left (STS)',

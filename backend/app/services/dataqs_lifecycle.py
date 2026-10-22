@@ -55,6 +55,7 @@ from app.services.dataqs_assessment_service import ASSESS_TARGET, check_version
 from app.services.dataqs_clock_service import DataQsClockService
 from app.services.dataqs_filing_adapter import CLOCK_SKEW
 from app.services.dataqs_notifications import DataQsNotifications
+from app.services.dataqs_verification_service import start_verification, unverified
 
 NEXT_LEVEL = {
     DataQsReviewLevel.INITIAL: DataQsReviewLevel.RECONSIDERATION,
@@ -262,6 +263,10 @@ class DataQsLifecycleService:
                 )
                 issue.outcome_reason = decision.reasons
                 issue.resolved_at = body.occurred_at if fixed else None
+                if fixed:
+                    start_verification(issue)  # until FMCSA's data shows it (Phase 6)
+                else:
+                    issue.verification_status = None
         else:
             outcome = DataQsOutcome.PROCEDURAL_CLOSURE
 
@@ -524,6 +529,13 @@ class DataQsLifecycleService:
         case = self._staff_case(user, case_id, body.expected_version)
         if case.work_status in (DataQsWorkStatus.DRAFT, DataQsWorkStatus.CLOSED):
             raise DataQsInvalidTransitionError("This case can't be closed")
+        waiting = unverified(self.repository.issues([case.id]))
+        reason = (body.unverified_reason or "").strip()
+        if waiting and len(reason) < 5:
+            raise ValidationError(
+                "FMCSA's data doesn't show every approved correction yet. Say why the file is "
+                "closing anyway."
+            )
         at = _now()
         before = {"work_status": case.work_status.value}
         if case.outcome is None:
@@ -556,7 +568,15 @@ class DataQsLifecycleService:
             user,
             "case.closed",
             before=before,
-            after={"work_status": case.work_status.value, "outcome": case.outcome.value},
+            after={
+                "work_status": case.work_status.value,
+                "outcome": case.outcome.value,
+                **(
+                    {"unverified_issue_ids": [i.id for i in waiting], "unverified_reason": reason}
+                    if waiting
+                    else {}
+                ),
+            },
         )
         self.db.commit()
         return case

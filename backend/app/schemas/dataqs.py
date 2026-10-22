@@ -17,6 +17,7 @@ from app.models.enums import (
     DataQsReason,
     DataQsReviewLevel,
     DataQsScanStatus,
+    DataQsVerificationStatus,
     DataQsWorkStatus,
 )
 from app.services.dataqs_eligibility import EligibilityStatus
@@ -380,6 +381,14 @@ class DataQsCloseIn(BaseModel):
 
     expected_version: int
     note: str = Field(min_length=5, max_length=5000)
+    # Required while FMCSA's data doesn't show every approved correction: why close anyway.
+    unverified_reason: str | None = Field(default=None, max_length=2000)
+
+
+class DataQsVerifyIssueIn(BaseModel):
+    """STS confirms by hand that FMCSA's records show a correction, and how it knows."""
+
+    note: str = Field(min_length=5, max_length=2000)
 
 
 class DataQsMessageIn(BaseModel):
@@ -521,6 +530,22 @@ class DataQsIssueOut(BaseModel):
     outcome: DataQsOutcome | None
     evidence_count: int
     checklist: list[str]
+    # Phase 6, for a corrected issue: the decision, then FMCSA's record, then CarrierSafetyScan.
+    decided_at: datetime | None = None
+    verification_status: DataQsVerificationStatus | None = None
+    verification_note: str | None = None  # what the check saw (clients: not STS's own proof)
+    verified_at: datetime | None = None
+    verified_by_name: str | None = None  # None: the automatic check
+    shown_at: datetime | None = None
+
+
+class DataQsVerificationCheckOut(BaseModel):
+    """A look at FMCSA's record that saw something new (or, for STS, failed)."""
+
+    at: datetime
+    found: bool | None
+    changes: list[str]
+    error: str | None
 
 
 class DataQsAuthorizationOut(BaseModel):
@@ -584,6 +609,11 @@ class DataQsCaseOut(DataQsCaseSummaryOut):
     document_titles: list[str]  # suggested file titles
     viewed_in_options: list[str]
     audit: list[DataQsAuditEventOut] | None  # STS staff only
+    # Phase 6: when FMCSA's record was last looked at, and what each look saw new.
+    verification_checked_at: datetime | None = None
+    verification_error: str | None = None  # STS staff only: the last look failed
+    verification_checks: list[DataQsVerificationCheckOut] = []
+    can_verify: bool = False  # staff: check now, confirm by hand
 
 
 class DataQsCaseListOut(BaseModel):

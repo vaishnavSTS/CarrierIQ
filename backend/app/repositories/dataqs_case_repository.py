@@ -239,11 +239,12 @@ class DataQsCaseRepository:
         return task
 
     def complete_tasks(
-        self, case: DataQsCase, kinds: Collection[str], by: User, at: datetime
+        self, case: DataQsCase, kinds: Collection[str], by: User | None, at: datetime
     ) -> None:
+        """`by` None: done by the app (e.g. the FMCSA correction check)."""
         for task in self.open_tasks([case.id]):
             if task.kind in kinds:
-                task.completed_at, task.completed_by_id = at, by.id
+                task.completed_at, task.completed_by_id = at, by.id if by else None
 
     # --- Assessment, packages, approval -----------------------------------------------------------
 

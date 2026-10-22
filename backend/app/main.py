@@ -14,6 +14,7 @@ from app.core.config import DEV_AUTH_SECRET_KEY, get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
 from app.services.dataqs_notifications import run_dispatcher, wake_dispatcher
+from app.services.dataqs_verification_service import run_verifier
 from app.workers.worker import Worker
 
 logger = logging.getLogger(__name__)
@@ -21,7 +22,8 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """DataQs emails are sent from a thread of the API process once RESEND_API_KEY is set."""
+    """DataQs emails are sent from a thread of the API process once email is set up, and approved
+    corrections are checked against FMCSA's data from another (DATAQS_VERIFICATION_IN_API)."""
     settings = get_settings()
     stop = threading.Event()
     dispatcher = None
@@ -31,6 +33,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         )
         dispatcher.start()
         logger.info("DataQs email dispatcher started")
+    verifier = None
+    if settings.dataqs_verification_in_api:
+        verifier = threading.Thread(
+            target=run_verifier, args=(stop,), name="dataqs-verification", daemon=True
+        )
+        verifier.start()
+        logger.info("DataQs correction checks started")
     try:
         async with worker_lifespan(app):
             yield
@@ -39,6 +48,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         if dispatcher is not None:
             wake_dispatcher()  # stop waiting now
             dispatcher.join(timeout=10)
+        if verifier is not None:
+            verifier.join(timeout=10)
 
 
 @asynccontextmanager

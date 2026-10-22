@@ -18,6 +18,7 @@ import { DataQsPackageView } from './DataQsPackageView'
 import { DataQsReviewStages } from './DataQsReviewStages'
 import { DataQsSubmitPanel } from './DataQsSubmitPanel'
 import { DataQsTimeline } from './DataQsTimeline'
+import { DataQsVerification } from './DataQsVerification'
 import { WORK_STATUS, fileSize } from './labels'
 import { DataQsAppealPanel } from './staff/DataQsAppealPanel'
 import { DataQsAssessmentPanel } from './staff/DataQsAssessmentPanel'
@@ -99,6 +100,11 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
         </Card>
       )}
 
+      {c.issues.some((i) => i.verification_status !== null) && (
+        <Card title="Correction check">
+          <DataQsVerification dataqsCase={c} />
+        </Card>
+      )}
       {c.gov_request_id && (
         <Card title="Filed with DataQs">
           <DataQsFiledCard dataqsCase={c} />

@@ -237,6 +237,25 @@ export function closeDataQsFile(
   caseId: number,
   expectedVersion: number,
   note: string,
+  unverifiedReason?: string,
 ): Promise<DataQsCase> {
-  return post(`/dataqs/cases/${caseId}/close`, { expected_version: expectedVersion, note })
+  return post(`/dataqs/cases/${caseId}/close`, {
+    expected_version: expectedVersion,
+    note,
+    unverified_reason: unverifiedReason || null,
+  })
+}
+
+/** Look at FMCSA's inspection record now instead of waiting for the daily check. */
+export function checkDataQsCorrection(caseId: number): Promise<DataQsCase> {
+  return post(`/dataqs/cases/${caseId}/verification/check`, {})
+}
+
+/** STS confirms by hand, with its proof, that FMCSA's records show the correction. */
+export function confirmDataQsCorrection(
+  caseId: number,
+  issueId: number,
+  note: string,
+): Promise<DataQsCase> {
+  return post(`/dataqs/cases/${caseId}/issues/${issueId}/verification`, { note })
 }

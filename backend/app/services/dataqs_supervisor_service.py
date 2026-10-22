@@ -7,7 +7,9 @@ Exceptions, most serious first:
 - a filing attempt with no confirmation yet;
 - an agency decision later than its expected date (STS should follow up);
 - open cases nobody owns, overdue tasks, emails that failed or are being retried;
-- deadlines whose date is uncertain, and cases with no activity for STALE_DAYS.
+- deadlines whose date is uncertain, and cases with no activity for STALE_DAYS;
+- approved corrections FMCSA's data still doesn't show DATAQS_VERIFICATION_ESCALATE_DAYS after the
+  decision, ones STS must confirm by hand, and FMCSA checks that keep failing.
 
 Everything is read-only and computed when asked; nothing here changes a case.
 """
@@ -19,6 +21,7 @@ from collections import defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -30,6 +33,7 @@ from app.models.enums import (
     DataQsActionOwner,
     DataQsClockType,
     DataQsOutboxStatus,
+    DataQsVerificationStatus,
     DataQsWorkStatus,
 )
 from app.repositories.dataqs_case_repository import DataQsCaseRepository
@@ -40,8 +44,10 @@ from app.schemas.dataqs import (
 )
 from app.services import dataqs_eligibility
 from app.services.dataqs_clock_service import DataQsClockService
+from app.services.dataqs_verification_service import DataQsVerificationService, unverified
 
 DUE_SOON_DAYS = 3
+CHECK_FAILING_DAYS = 3  # FMCSA checks failing this long
 STALE_DAYS = 14
 EMAIL_LOOKBACK_DAYS = 30
 SEVERITY_ORDER = {"HIGH": 0, "MEDIUM": 1, "LOW": 2}
@@ -60,6 +66,7 @@ EMAIL_KINDS = {
     "FILED": "Filed with DataQs (carrier)",
     "DECISION": "Agency decision (carrier)",
     "FILE_CLOSED": "File closed (carrier)",
+    "CORRECTION_VERIFIED": "Correction seen in FMCSA's data (carrier)",
     "REMINDER_7_DAYS": "Reminder: 7 days since filing (STS)",
     "REMINDER_21_DAYS": "Reminder: 21 days since filing (STS)",
     **{
@@ -181,6 +188,7 @@ class DataQsSupervisorService:
         self._tasks(active, by_id, now, found, loads)
         self._emails(by_id, now, found)
         self._stale(active, by_id, now, found)
+        self._verification(active, now, found)
 
         exceptions = found.items
         exceptions.sort(
@@ -387,6 +395,7 @@ class DataQsSupervisorService:
             for c in active
             if c.work_status != DataQsWorkStatus.DRAFT
             and c.action_owner != DataQsActionOwner.AGENCY  # covered by the agency's own date
+            and c.work_status != DataQsWorkStatus.VERIFICATION  # waiting on FMCSA: see below
         ]
         if not ids:
             return
@@ -411,6 +420,53 @@ class DataQsSupervisorService:
                     f"Nothing has happened for {quiet.days} days; waiting on {waiting}.",
                     seen,
                 )
+
+    def _verification(self, active: list[DataQsCase], now: datetime, found: _Found) -> None:
+        escalate = timedelta(days=get_settings().dataqs_verification_escalate_days)
+        open_cases = {c.id: c for c in active if c.work_status != DataQsWorkStatus.DRAFT}
+        waiting: dict[int, list[Any]] = defaultdict(list)
+        for issue in unverified(self.repository.issues(list(open_cases))):
+            waiting[issue.case_id].append(issue)
+        checks = DataQsVerificationService(self.db)
+        for case_id, issues in waiting.items():
+            case = open_cases[case_id]
+            for issue in issues:
+                name = DataQsVerificationService.label(issue)
+                if issue.verification_status == DataQsVerificationStatus.WAITING:
+                    if issue.resolved_at is not None and now - issue.resolved_at >= escalate:
+                        found.add(
+                            case,
+                            "CORRECTION_NOT_SEEN",
+                            "HIGH",
+                            "Correction not in FMCSA's data",
+                            f"{name}: approved {(now - issue.resolved_at).days} days ago and "
+                            "FMCSA's record still doesn't show it. Check the request in DataQs "
+                            "and follow up with the agency.",
+                            issue.resolved_at + escalate,
+                        )
+                else:
+                    found.add(
+                        case,
+                        "VERIFY_BY_HAND",
+                        "MEDIUM",
+                        "Confirm the correction",
+                        f"{name}: {(issue.verification_note or '')[:300]}",
+                        issue.resolved_at,
+                    )
+            history = checks.checks(case_id)
+            if history and history[-1].error:
+                last_ok = next((c.created_at for c in reversed(history) if not c.error), None)
+                since = last_ok or history[0].created_at
+                if now - since >= timedelta(days=CHECK_FAILING_DAYS):
+                    found.add(
+                        case,
+                        "VERIFICATION_CHECK_FAILING",
+                        "MEDIUM",
+                        "FMCSA check failing",
+                        f"The check of FMCSA's record has failed since {since:%b} {since.day}: "
+                        f"{history[-1].error[:200]}",
+                        history[-1].created_at,
+                    )
 
     # --- Audit export -----------------------------------------------------------------------------
 

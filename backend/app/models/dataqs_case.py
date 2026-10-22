@@ -36,6 +36,7 @@ from app.models.enums import (
     DataQsReason,
     DataQsReviewLevel,
     DataQsRoute,
+    DataQsVerificationStatus,
     DataQsWorkStatus,
     enum_type,
 )
@@ -134,3 +135,33 @@ class DataQsIssue(IdMixin, UpdatedAtMixin, Base):
     )
     outcome_reason: Mapped[str | None] = mapped_column(Text)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+    # Phase 6, for a corrected issue: whether FMCSA's data shows it (None: not corrected).
+    verification_status: Mapped[DataQsVerificationStatus | None] = mapped_column(
+        enum_type(DataQsVerificationStatus, "dataqs_verification_status")
+    )
+    verification_note: Mapped[str | None] = mapped_column(Text)  # what was seen, or STS's proof
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    verified_by_id: Mapped[int | None] = mapped_column(  # None: the automatic check
+        BigInteger, ForeignKey("users.id")
+    )
+    # When CarrierSafetyScan's copy of the inspection matched FMCSA's corrected record.
+    shown_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class DataQsVerificationCheck(IdMixin, Base):
+    """One look at FMCSA's inspection file for a case with a correction to confirm (Phase 6).
+    `created_at` is when it was looked at. FMCSA's copy (`record`) is kept only when it differs
+    from the last one kept, so the history shows when each change first appeared."""
+
+    __tablename__ = "dataqs_verification_checks"
+
+    case_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("dataqs_cases.id", ondelete="CASCADE"), index=True
+    )
+    error: Mapped[str | None] = mapped_column(Text)  # the fetch failed: nothing else is set
+    found: Mapped[bool | None] = mapped_column()  # False: not in FMCSA's inspection file
+    usdot_number: Mapped[int | None] = mapped_column(BigInteger)  # the carrier FMCSA lists now
+    record: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    # What differs from the inspection as it was when the case was opened, in words.
+    changes: Mapped[list[str] | None] = mapped_column(JSONB)

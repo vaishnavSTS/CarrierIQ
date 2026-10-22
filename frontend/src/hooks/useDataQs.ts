@@ -5,7 +5,9 @@ import {
   assessDataQsCase,
   assignDataQsOwner,
   buildDataQsPackage,
+  checkDataQsCorrection,
   closeDataQsFile,
+  confirmDataQsCorrection,
   confirmDataQsFiling,
   createDataQsCase,
   emailDataQsCarrier,
@@ -244,7 +246,18 @@ export function useEmailDataQsCarrier(caseId: number) {
 }
 
 export function useCloseDataQsFile(caseId: number) {
-  return useCaseAction(({ version, note }: { version: number; note: string }) =>
-    closeDataQsFile(caseId, version, note),
+  return useCaseAction(
+    ({ version, note, reason }: { version: number; note: string; reason?: string }) =>
+      closeDataQsFile(caseId, version, note, reason),
+  )
+}
+
+export function useCheckDataQsCorrection(caseId: number) {
+  return useCaseAction(() => checkDataQsCorrection(caseId))
+}
+
+export function useConfirmDataQsCorrection(caseId: number) {
+  return useCaseAction(({ issueId, note }: { issueId: number; note: string }) =>
+    confirmDataQsCorrection(caseId, issueId, note),
   )
 }

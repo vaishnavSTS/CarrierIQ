@@ -78,6 +78,7 @@ from app.schemas.dataqs import (
     DataQsSubmitIn,
     DataQsTaskOut,
     DataQsTimelineEventOut,
+    DataQsVerificationCheckOut,
     DataQsViolationOut,
     EligibilityOut,
     ReasonOut,
@@ -106,6 +107,7 @@ from app.services.dataqs_package_service import (
     PACKAGE_TERMS_VERSION,
     ready_to_prepare,
 )
+from app.services.dataqs_verification_service import DataQsVerificationService
 from app.services.safety_analysis import violations_of
 
 # The authorization text a carrier signs in step 6. Draft wording until STS's legal text is
@@ -507,6 +509,7 @@ class DataQsCaseService:
             + [p.created_by_id for p in packages]
             + [t.assignee_id for t in tasks if t.assignee_id is not None]
             + [a.filed_by_id for a in attempts]
+            + [i.verified_by_id for i in issues if i.verified_by_id is not None]
         )
 
         links_by_evidence: dict[int, list[DataQsEvidenceLinkOut]] = defaultdict(list)
@@ -517,7 +520,12 @@ class DataQsCaseService:
             )
             evidence_per_issue[link.issue_id] += 1
 
-        issue_out = [self._issue_out(issue, evidence_per_issue[issue.id]) for issue in issues]
+        issue_out = [
+            self._issue_out(issue, evidence_per_issue[issue.id], staff, names) for issue in issues
+        ]
+        verification = DataQsVerificationService(self.db)
+        checks = verification.checks(case.id)
+        last_ok = next((c for c in reversed(checks) if c.error is None), None)
         has_consent = any(
             a.kind == DataQsAuthorizationKind.SERVICE_CONSENT and a.revoked_at is None
             for a in authorizations
@@ -755,6 +763,20 @@ class DataQsCaseService:
                 if audit is not None
                 else None
             ),
+            verification_checked_at=last_ok.created_at if last_ok else None,
+            verification_error=checks[-1].error if staff and checks else None,
+            verification_checks=[
+                DataQsVerificationCheckOut(
+                    at=c.created_at, found=c.found, changes=c.changes or [], error=None
+                )
+                for c in reversed(checks)
+                if c.changes is not None
+            ],
+            can_verify=(
+                staff
+                and case.work_status != DataQsWorkStatus.CLOSED
+                and bool(verification.to_check(issues))
+            ),
         )
 
     def _messages(self, case_id: int, staff: bool) -> list[DataQsMessageOut]:
@@ -914,8 +936,11 @@ class DataQsCaseService:
         return f"{issue.violation_code} {issue.violation_description or ''}".strip()
 
     @staticmethod
-    def _issue_out(issue: DataQsIssue, evidence_count: int) -> DataQsIssueOut:
+    def _issue_out(
+        issue: DataQsIssue, evidence_count: int, staff: bool, names: dict[int, str]
+    ) -> DataQsIssueOut:
         v = issue.violation_snapshot or {}
+        by_sts = issue.verified_by_id is not None
         return DataQsIssueOut(
             id=issue.id,
             violation_code=issue.violation_code,
@@ -932,6 +957,15 @@ class DataQsCaseService:
             outcome=issue.outcome,
             evidence_count=evidence_count,
             checklist=CHECKLIST[issue.reason],
+            decided_at=issue.resolved_at,
+            verification_status=issue.verification_status,
+            # STS's proof (e.g. a PSP report) stays internal; what the check saw is shown to all.
+            verification_note=issue.verification_note if staff or not by_sts else None,
+            verified_at=issue.verified_at,
+            verified_by_name=(
+                names.get(issue.verified_by_id, "STS") if issue.verified_by_id is not None else None
+            ),
+            shown_at=issue.shown_at,
         )
 
     def _summaries(self, cases: list[DataQsCase]) -> list[DataQsCaseSummaryOut]:
