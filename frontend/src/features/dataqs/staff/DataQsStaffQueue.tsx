@@ -105,7 +105,7 @@ export function DataQsStaffQueue() {
                       to={`/dataqs/cases/${c.id}`}
                       className="font-medium text-accent-strong hover:underline"
                     >
-                      #{c.id}
+                      {c.id}
                     </Link>
                   </td>
                   <td className={cellClass}>

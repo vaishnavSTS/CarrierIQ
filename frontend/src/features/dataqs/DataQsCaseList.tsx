@@ -44,7 +44,7 @@ export function DataQsCaseList({ showCompany, empty }: { showCompany: boolean; e
                   to={casePath(c.id)}
                   className="font-medium text-accent-strong hover:underline"
                 >
-                  #{c.id}
+                  {c.id}
                 </Link>
               </td>
               {showCompany && <td className={cellClass}>{c.organization_name ?? '—'}</td>}
