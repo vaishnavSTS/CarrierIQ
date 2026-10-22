@@ -52,6 +52,8 @@ function FoldCard({ title, children }: { title: string; children: ReactNode }) {
 /** Open STS tasks that make a staff tool the next step. */
 const ASSESS_TASKS = ['ASSESS_CASE', 'SPECIALIST_REVIEW', 'WAIT_EXTERNAL']
 const PACKAGE_TASKS = ['PREPARE_PACKAGE', 'REVISE_PACKAGE']
+/** Stages where the carrier is gathering evidence. */
+const CARRIER_STEPS: DataQsCase['work_status'][] = ['DRAFT', 'EVIDENCE_NEEDED']
 
 /** One DataQs case: what is wrong, its evidence, what's missing and what happens next. Shared by
  * the client portal and the STS portal; the server says what this user may do (can_upload, …). */
@@ -254,6 +256,14 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
 function IssueBlock({ dataqsCase: c, issue }: { dataqsCase: DataQsCase; issue: DataQsIssue }) {
   const staffView = usePortalMode() === 'internal'
   const files = c.evidence.filter((e) => e.links.some((link) => link.issue_id === issue.id))
+  const upload = (
+    <>
+      <DataQsEvidenceUpload caseId={c.id} issueId={issue.id} titles={c.document_titles} />
+      <p className="mt-2 text-xs text-slate-500">
+        Suggested: {issue.checklist.join('; ')}. These are suggestions, not a government standard.
+      </p>
+    </>
+  )
   return (
     <div className="space-y-3 rounded-lg border border-slate-200 p-4">
       <div>
@@ -311,20 +321,21 @@ function IssueBlock({ dataqsCase: c, issue }: { dataqsCase: DataQsCase; issue: D
         )}
       </div>
 
-      {c.can_upload && (
-        <details className="group">
-          <summary className="cursor-pointer text-sm font-medium text-accent-strong">
-            Add a file
-          </summary>
-          <div className="mt-2">
-            <DataQsEvidenceUpload caseId={c.id} issueId={issue.id} titles={c.document_titles} />
+      {c.can_upload &&
+        (files.length === 0 && CARRIER_STEPS.includes(c.work_status) ? (
+          // Evidence is what's needed next: the form is open from the start.
+          <div>
+            <h3 className="mb-2 text-sm font-medium text-slate-900">Add evidence</h3>
+            {upload}
           </div>
-          <p className="mt-2 text-xs text-slate-500">
-            Suggested: {issue.checklist.join('; ')}. These are suggestions, not a government
-            standard.
-          </p>
-        </details>
-      )}
+        ) : (
+          <details className="group">
+            <summary className="cursor-pointer text-sm font-medium text-accent-strong">
+              Add a file
+            </summary>
+            <div className="mt-2">{upload}</div>
+          </details>
+        ))}
     </div>
   )
 }

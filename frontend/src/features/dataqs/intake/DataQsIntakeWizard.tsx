@@ -180,7 +180,7 @@ function Wizard({ check }: { check: DataQsCheck }) {
           </button>
         ) : (
           <button type="button" className={primary} disabled={create.isPending} onClick={submit}>
-            {create.isPending ? 'Opening…' : 'Open draft case'}
+            {create.isPending ? 'Opening…' : 'Open draft case and add evidence'}
           </button>
         )}
       </div>
