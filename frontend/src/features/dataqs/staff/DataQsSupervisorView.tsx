@@ -120,7 +120,7 @@ function ExceptionTable({ rows }: { rows: DataQsException[] }) {
                   to={`/dataqs/cases/${e.case_id}`}
                   className="font-medium text-accent-strong hover:underline"
                 >
-                  #{e.case_id}
+                  Case {e.case_id}
                 </Link>
                 <div className="text-xs text-slate-500">
                   {e.organization_name ?? '—'} · USDOT{' '}

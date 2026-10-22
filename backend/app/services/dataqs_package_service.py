@@ -182,7 +182,7 @@ class DataQsPackageService:
         DataQsNotifications(self.db).to_carrier(
             case,
             "PACKAGE_READY",
-            f"Please review and approve your DataQs request (case #{case.id})",
+            f"Please review and approve your DataQs request (case {case.id})",
             f"STS has prepared the DataQs request for inspection {case.source_event_id} "
             f"(package v{package.package_version}).\n\nPlease read it and approve it, or tell us "
             "what to change. STS files it with FMCSA only once you approve this exact version.",

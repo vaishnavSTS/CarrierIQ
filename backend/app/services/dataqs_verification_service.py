@@ -481,7 +481,7 @@ class DataQsVerificationService:
     ) -> None:
         """Tell the carrier; once nothing is left to confirm, STS closes the file."""
         names = "\n".join(f"- {self.label(i)}" for i in issues)
-        request = case.gov_request_id or f"case #{case.id}"
+        request = case.gov_request_id or f"case {case.id}"
         seen = (
             "STS has confirmed that FMCSA's records now show the correction"
             if by

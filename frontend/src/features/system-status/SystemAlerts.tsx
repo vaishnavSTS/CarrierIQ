@@ -9,7 +9,7 @@ import { useJobs } from '../../hooks/useJobs'
  * (render.yaml, RUN_WORKER_IN_API=false), so it would always show. Set VITE_SHOW_WORKER_ALERT=true
  * (Vercel environment variable, or frontend/.env.local) to show it again once a worker runs.
  */
-const SHOW_WORKER_ALERT = import.meta.env.VITE_SHOW_WORKER_ALERT === 'true'
+export const SHOW_WORKER_ALERT = import.meta.env.VITE_SHOW_WORKER_ALERT === 'true'
 
 /**
  * Dashboard banner shown only when something is wrong: the API or database is unreachable, or

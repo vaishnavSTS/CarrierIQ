@@ -19,7 +19,7 @@ import { DataQsReviewStages } from './DataQsReviewStages'
 import { DataQsSubmitPanel } from './DataQsSubmitPanel'
 import { DataQsTimeline } from './DataQsTimeline'
 import { DataQsVerification } from './DataQsVerification'
-import { WORK_STATUS, fileSize } from './labels'
+import { WORK_STATUS, auditLabel, fileSize } from './labels'
 import { DataQsAppealPanel } from './staff/DataQsAppealPanel'
 import { DataQsAssessmentPanel } from './staff/DataQsAssessmentPanel'
 import { DataQsCloseFile } from './staff/DataQsCloseFile'
@@ -71,7 +71,7 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-semibold tracking-tight">DataQs case #{c.id}</h1>
+        <h1 className="text-xl font-semibold tracking-tight">DataQs case {c.id}</h1>
         <StatusBadge {...status} />
         {c.organization_name && (
           <span className="text-sm text-slate-500">{c.organization_name}</span>
@@ -204,9 +204,18 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
           <ul className="space-y-1 text-sm text-slate-700">
             {c.authorizations.map((a) => (
               <li key={`${a.kind}-${a.approved_at}`}>
-                Signed by {a.signer_name}
-                {a.signer_title && `, ${a.signer_title}`} on {formatDateTime(a.approved_at)}{' '}
-                <span className="text-xs text-slate-500">(text version {a.terms_version})</span>
+                <span className="font-medium text-slate-900">
+                  {a.kind === 'SERVICE_CONSENT'
+                    ? 'Authorized STS to act on this request'
+                    : 'Approved the request package'}
+                </span>
+                {' · '}
+                {a.signer_name}
+                {a.signer_title && `, ${a.signer_title}`} on {formatDateTime(a.approved_at)}
+                {/* Which wording was agreed to: STS's record */}
+                {staff && (
+                  <span className="text-xs text-slate-500"> (text version {a.terms_version})</span>
+                )}
               </li>
             ))}
           </ul>
@@ -242,8 +251,10 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
                 <span className="w-40 shrink-0 text-xs text-slate-500">
                   {formatDateTime(event.at)}
                 </span>
-                <span className="font-mono text-xs text-slate-700">{event.action}</span>
-                <span className="text-slate-500">{event.actor_name ?? 'System'}</span>
+                <span className="text-slate-800" title={event.action}>
+                  {auditLabel(event.action)}
+                </span>
+                <span className="text-slate-500">{event.actor_name ?? 'Automatic'}</span>
               </li>
             ))}
           </ol>

@@ -4,7 +4,7 @@ import { DashboardHero } from '../features/dashboard/DashboardHero'
 import { LiveSignalFeed } from '../features/dashboard/LiveSignalFeed'
 import { SeverityBreakdown } from '../features/dashboard/SeverityBreakdown'
 import { JobsCard } from '../features/system-status/JobsCard'
-import { SystemAlerts } from '../features/system-status/SystemAlerts'
+import { SHOW_WORKER_ALERT, SystemAlerts } from '../features/system-status/SystemAlerts'
 import { useDashboard } from '../hooks/useDashboard'
 
 const rise = (delay: number) => ({
@@ -31,9 +31,13 @@ export function DashboardPage() {
           </motion.div>
         </div>
 
-        <motion.div {...rise(0.5)}>
-          <JobsCard />
-        </motion.div>
+        {/* Job status only means something once a background worker runs (same switch as the
+            worker banner); until then it would always read "no worker running". */}
+        {SHOW_WORKER_ALERT && (
+          <motion.div {...rise(0.5)}>
+            <JobsCard />
+          </motion.div>
+        )}
       </div>
     </>
   )

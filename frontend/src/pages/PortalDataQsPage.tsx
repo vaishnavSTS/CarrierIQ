@@ -1,9 +1,13 @@
 import { DataQsCaseList } from '../features/dataqs/DataQsCaseList'
 import { DataQsIntro } from '../features/dataqs/DataQsIntro'
 import { DataQsStartRequest } from '../features/dataqs/DataQsStartRequest'
+import { useDataQsCases } from '../hooks/useDataQs'
 
 /** Client portal DataQs: the company's requests, and where to start a new one from an inspection. */
 export function PortalDataQsPage() {
+  const { data } = useDataQsCases()
+  // Explained up front until the company has a request of its own; then folded away.
+  const hasRequests = (data?.cases.length ?? 0) > 0
   return (
     <div className="space-y-6">
       <div>
@@ -21,7 +25,7 @@ export function PortalDataQsPage() {
         />
       </section>
       <DataQsStartRequest />
-      <DataQsIntro audience="carrier" />
+      <DataQsIntro audience="carrier" folded={hasRequests} />
     </div>
   )
 }

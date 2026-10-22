@@ -125,7 +125,7 @@ class ManualFilingAdapter:
         open_attempt = self.repository.open_attempt(case.id)
         if open_attempt is not None:
             raise DataQsInvalidTransitionError(
-                f"Filing attempt #{open_attempt.id} is still open: confirm it, or settle it "
+                f"Filing attempt {open_attempt.id} is still open: confirm it, or settle it "
                 "against DataQs, before starting another"
             )
         if case.work_status != DataQsWorkStatus.READY_TO_FILE:
@@ -189,7 +189,7 @@ class ManualFilingAdapter:
         other = self.repository.case_by_gov_request_id(case.route, body.gov_request_id)
         if other is not None and other.id != case.id:
             raise DataQsDuplicateCaseError(
-                f"DataQs request {body.gov_request_id} is already recorded on case #{other.id}"
+                f"DataQs request {body.gov_request_id} is already recorded on case {other.id}"
             )
 
         before = {"work_status": case.work_status.value}

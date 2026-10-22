@@ -73,7 +73,7 @@ def _sender(security: str = "starttls") -> SmtpSender:
 def _send(sender: SmtpSender) -> str:
     return sender.send(
         to=["carrier@acme.test"],
-        subject="Your DataQs file #7 is closed",
+        subject="Your DataQs file 7 is closed",
         text="Plain text",
         html="<p>HTML</p>",
         idempotency_key="dataqs-msg-7-u3",
@@ -89,7 +89,7 @@ def test_smtp_sends_a_text_and_html_email_with_starttls_and_login() -> None:
     assert message["To"] == "carrier@acme.test"
     assert message["From"] == "Sky Transport Solutions <dataqs@sts.test>"
     assert message["Reply-To"] == "info@sts.test"
-    assert message["Subject"] == "Your DataQs file #7 is closed"
+    assert message["Subject"] == "Your DataQs file 7 is closed"
     assert "dataqs-msg-7-u3" in message_id
     kinds = [part.get_content_type() for part in message.iter_parts()]
     assert kinds == ["text/plain", "text/html"]

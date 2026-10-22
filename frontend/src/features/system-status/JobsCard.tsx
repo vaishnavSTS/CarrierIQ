@@ -85,10 +85,8 @@ export function JobsCard() {
           </dl>
           {!data.worker_running && (
             <p className="mt-3 text-xs text-slate-500">
-              Queued refreshes run once a worker is started:{' '}
-              <span className="font-mono">python -m app.workers.worker</span> (or the Docker{' '}
-              <span className="font-mono">worker</span> service). Carriers still refresh when
-              opened.
+              Queued refreshes wait until the background worker is running again. Carriers still
+              refresh when they are opened.
             </p>
           )}
           {data.jobs.length === 0 ? (

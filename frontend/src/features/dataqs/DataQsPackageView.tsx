@@ -1,4 +1,5 @@
 import { StatusBadge } from '../../components/StatusBadge'
+import { usePortalMode } from '../../hooks/usePortalMode'
 import type { DataQsPackage } from '../../types/dataqs'
 import { formatDate, formatDateTime } from '../../utils/format'
 import { fileSize } from './labels'
@@ -7,15 +8,21 @@ import { shortHash } from './ui'
 /** A frozen filing package: exactly what STS will file once the carrier approves it. */
 export function DataQsPackageView({ pkg }: { pkg: DataQsPackage }) {
   const m = pkg.manifest
+  // Fingerprints prove which exact package was approved and filed: STS's record, not the carrier's.
+  const staff = usePortalMode() === 'internal'
   return (
     <div className="space-y-4 text-sm">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium text-slate-900">Package v{pkg.package_version}</span>
         {pkg.approved && <StatusBadge label="Approved by carrier" tone="ok" />}
         {pkg.invalidated_at && <StatusBadge label="Replaced" tone="neutral" />}
-        <span className="text-xs text-slate-500" title={pkg.manifest_hash}>
-          Fingerprint <span className="font-mono">{shortHash(pkg.manifest_hash)}</span> · built{' '}
-          {formatDateTime(pkg.created_at)}
+        <span className="text-xs text-slate-500" title={staff ? pkg.manifest_hash : undefined}>
+          {staff && (
+            <>
+              Fingerprint <span className="font-mono">{shortHash(pkg.manifest_hash)}</span> ·{' '}
+            </>
+          )}
+          Prepared {formatDateTime(pkg.created_at)}
           {pkg.created_by_name && ` by ${pkg.created_by_name}`}
         </span>
       </div>
@@ -87,9 +94,11 @@ export function DataQsPackageView({ pkg }: { pkg: DataQsPackage }) {
                   {fileSize(e.size_bytes)}
                   {e.document_date && ` · dated ${formatDate(e.document_date)}`}
                 </span>
-                <span className="font-mono text-xs text-slate-500" title={e.sha256}>
-                  SHA-256 {shortHash(e.sha256)}
-                </span>
+                {staff && (
+                  <span className="font-mono text-xs text-slate-500" title={e.sha256}>
+                    SHA-256 {shortHash(e.sha256)}
+                  </span>
+                )}
               </li>
             ))}
           </ul>

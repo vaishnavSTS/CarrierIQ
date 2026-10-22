@@ -9,7 +9,7 @@ export function DataQsOwnerPanel({ dataqsCase }: { dataqsCase: DataQsCase }) {
   return (
     <div className="max-w-sm text-sm">
       <label htmlFor="case-owner" className={labelClass}>
-        Case specialist
+        Who handles this case (saved as soon as you choose)
       </label>
       <select
         id="case-owner"

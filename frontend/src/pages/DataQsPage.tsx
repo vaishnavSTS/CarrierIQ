@@ -1,6 +1,5 @@
 import { useState } from 'react'
 
-import { DataQsIntro } from '../features/dataqs/DataQsIntro'
 import { DataQsStaffQueue } from '../features/dataqs/staff/DataQsStaffQueue'
 import { DataQsSupervisorView } from '../features/dataqs/staff/DataQsSupervisorView'
 import { useMe } from '../hooks/useAuth'
@@ -46,14 +45,7 @@ export function DataQsPage() {
           ))}
         </div>
       )}
-      {supervisor ? (
-        <DataQsSupervisorView />
-      ) : (
-        <>
-          <DataQsStaffQueue />
-          <DataQsIntro audience="staff" />
-        </>
-      )}
+      {supervisor ? <DataQsSupervisorView /> : <DataQsStaffQueue />}
     </div>
   )
 }

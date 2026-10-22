@@ -278,7 +278,7 @@ class DataQsNotifications:
         if "clock_id" in row.payload:
             return self._deadline_reminder(row, case, staff, now)
         days = int(row.payload.get("days", 0))
-        request = case.gov_request_id or f"case #{case.id}"
+        request = case.gov_request_id or f"case {case.id}"
         carrier = case.source_snapshot.get("carrier_name") or f"USDOT {case.usdot_number}"
         what = (
             "The agency should have opened it by now (agencies open requests within 7 days). "
@@ -326,7 +326,7 @@ class DataQsNotifications:
             if left < timedelta(days=1)
             else f"in {left.days + (1 if left.seconds else 0)} days"
         )
-        request = case.gov_request_id or f"case #{case.id}"
+        request = case.gov_request_id or f"case {case.id}"
         carrier = case.source_snapshot.get("carrier_name") or f"USDOT {case.usdot_number}"
         due = _day(clock.due_at)
         if clock.clock_type == DataQsClockType.REQUESTER_INFO:

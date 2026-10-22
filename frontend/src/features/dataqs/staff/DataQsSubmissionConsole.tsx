@@ -142,7 +142,7 @@ function OpenAttempt({
     <div className="space-y-4">
       {unconfirmed ? (
         <div className="rounded-md bg-amber-50 p-3 text-amber-900">
-          <p className="font-medium">Filing attempt #{attempt.id} is unconfirmed.</p>
+          <p className="font-medium">Filing attempt {attempt.id} is unconfirmed.</p>
           <p>
             {attempt.note && <>“{attempt.note}”. </>}Search DataQs for inspection{' '}
             <span className="font-mono text-xs">{c.event.inspection_id}</span>. If the request is
@@ -499,7 +499,7 @@ function AttemptHistory({ attempts }: { attempts: DataQsAttempt[] }) {
       <ul className="mt-1 divide-y divide-slate-100">
         {[...attempts].reverse().map((a) => (
           <li key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
-            <span className="text-slate-900">#{a.id}</span>
+            <span className="text-slate-900">Attempt {a.id}</span>
             <StatusBadge label={a.status.toLowerCase()} tone={ATTEMPT_TONE[a.status]} />
             <span className="text-xs text-slate-500">
               v{a.package_version} · started {formatDateTime(a.started_at)}

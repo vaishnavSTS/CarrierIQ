@@ -85,16 +85,23 @@ export function DataQsStaffQueue() {
           <table className={tableClass}>
             <thead className={headClass}>
               <tr>
-                <th className={cellClass}>Case</th>
-                <th className={cellClass}>Company · carrier</th>
-                <th className={cellClass}>Inspection</th>
-                <th className={cellClass}>Status</th>
-                <th className={cellClass}>Owner</th>
-                <th className={cellClass}>Next deadline</th>
-                <th className={`${cellClass} text-right`}>Window</th>
-                <th className={`${cellClass} text-right`}>Evidence gaps</th>
-                <th className={cellClass}>Tasks</th>
-                <th className={cellClass}>Updated</th>
+                <th className={head}>Case</th>
+                <th className={head}>Company · carrier</th>
+                <th className={head}>Inspection</th>
+                <th className={head}>Status</th>
+                <th className={head}>Owner</th>
+                <th className={head}>Next deadline</th>
+                <th
+                  className={head}
+                  title="Time left to file in DataQs (3 years from the inspection)"
+                >
+                  Filing window
+                </th>
+                <th className={head} title="Issues with no evidence attached">
+                  Missing evidence
+                </th>
+                <th className={head}>Tasks</th>
+                <th className={head}>Updated</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -144,15 +151,17 @@ export function DataQsStaffQueue() {
                       <span className="text-slate-500">—</span>
                     )}
                   </td>
-                  <td className={`${cellClass} text-right tabular-nums`}>
-                    {c.window_days_left === null
-                      ? '—'
-                      : c.window_days_left < 0
-                        ? 'Passed'
-                        : `${c.window_days_left} d`}
+                  <td className={`${cellClass} whitespace-nowrap tabular-nums`}>
+                    <FilingWindow dataqsCase={c} />
                   </td>
-                  <td className={`${cellClass} text-right tabular-nums`}>
-                    {c.evidence_gaps || '—'}
+                  <td className={`${cellClass} whitespace-nowrap`}>
+                    {c.evidence_gaps ? (
+                      <span className="font-medium text-amber-700">
+                        {c.evidence_gaps} {c.evidence_gaps === 1 ? 'issue' : 'issues'}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">None</span>
+                    )}
                   </td>
                   <td className={cellClass}>
                     {c.open_task_count || '—'}
@@ -172,5 +181,23 @@ export function DataQsStaffQueue() {
         </div>
       )}
     </div>
+  )
+}
+
+const head = `${cellClass} whitespace-nowrap`
+
+/** Days left to file: amber within 30 days, red within 7 or once passed. Filed cases are done
+ * with it. */
+function FilingWindow({ dataqsCase: c }: { dataqsCase: DataQsCaseSummary }) {
+  const left = c.window_days_left
+  if (c.gov_request_id) return <span className="text-slate-400">Filed</span>
+  if (left === null) return <span className="text-slate-400">Unknown</span>
+  if (left < 0) return <span className="font-medium text-red-700">Passed</span>
+  const tone =
+    left <= 7 ? 'font-medium text-red-700' : left <= 30 ? 'font-medium text-amber-700' : ''
+  return (
+    <span className={tone}>
+      {left} {left === 1 ? 'day' : 'days'} left
+    </span>
   )
 }

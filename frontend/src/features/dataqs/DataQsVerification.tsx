@@ -155,10 +155,13 @@ function IssueProgress({
                 ` (last checked ${formatDateTime(c.verification_checked_at)})`}
               {issue.verification_note && <>. {issue.verification_note}</>}
             </>
-          ) : (
+          ) : staff ? (
             <>
               Awaiting STS verification{issue.verification_note && <>: {issue.verification_note}</>}
             </>
+          ) : (
+            // STS's note says what to check: an instruction for STS, not news for the carrier.
+            'STS is confirming this correction in FMCSA’s records.'
           )}
         </Step>
         <Step done={issue.shown_at !== null} title="Shown in CarrierSafetyScan">

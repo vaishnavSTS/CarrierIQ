@@ -142,6 +142,9 @@ def test_changes_needing_a_person_and_driver_details(
     assert "out of service changed from yes to no" in brakes["verification_note"]
     hand = [e for e in DataQsSupervisorService(db).overview().exceptions if e.case_id == case["id"]]
     assert sum(e.kind == "VERIFY_BY_HAND" for e in hand) == 2
+    # What STS still has to confirm is STS's to-do, not the carrier's news.
+    waiting = carrier_view(api, case["id"])["issues"]
+    assert [i["verification_note"] for i in waiting] == [None, None]
 
     for issue in (lamp, brakes):
         confirmed = api.post(

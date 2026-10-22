@@ -49,6 +49,7 @@ from app.models.enums import (
     DataQsEventType,
     DataQsOutcome,
     DataQsReason,
+    DataQsVerificationStatus,
     DataQsWorkStatus,
     UserRole,
 )
@@ -89,6 +90,7 @@ from app.services.dataqs_assessment_service import (
     ASSESS_TARGET,
     ASSESSABLE,
     ASSESSMENT_CHECKS,
+    CARRIER_OUTCOME_LABELS,
     OUTCOME_LABELS,
 )
 from app.services.dataqs_checklist import (
@@ -330,7 +332,7 @@ class DataQsCaseService:
             if _overlaps(new_keys, self.repository.issues([case.id])):
                 if case.organization_id == organization_id:
                     raise DataQsDuplicateCaseError(
-                        f"DataQs case #{case.id} already covers this inspection and violation"
+                        f"DataQs case {case.id} already covers this inspection and violation"
                     )
                 raise DataQsDuplicateCaseError(
                     "An open DataQs request already covers this inspection and violation"
@@ -453,7 +455,7 @@ class DataQsCaseService:
             DataQsTask(
                 case_id=case.id,
                 kind="ASSESS_CASE",
-                title=f"Assess DataQs case #{case.id}",
+                title=f"Assess DataQs case {case.id}",
                 action_owner=DataQsActionOwner.STS,
                 due_at=now + ASSESS_TARGET,
             )
@@ -650,7 +652,7 @@ class DataQsCaseService:
                 DataQsAssessmentOut(
                     id=a.id,
                     outcome=a.outcome,
-                    outcome_label=OUTCOME_LABELS[a.outcome],
+                    outcome_label=(OUTCOME_LABELS if staff else CARRIER_OUTCOME_LABELS)[a.outcome],
                     assessor_name=names.get(a.assessor_id),
                     created_at=a.created_at,
                     checks={k: DataQsCheckIn.model_validate(v) for k, v in a.checks.items()},
@@ -743,7 +745,7 @@ class DataQsCaseService:
                 for m in correspondence
             ],
             timeline=self._timeline(
-                case, authorizations, packages, attempts, correspondence, cycles, assessments
+                case, authorizations, packages, attempts, correspondence, cycles, assessments, staff
             ),
             messages=self._messages(case.id, staff),
             emails=self._emails(case.id) if staff else None,
@@ -860,8 +862,10 @@ class DataQsCaseService:
         correspondence: list[Any],
         cycles: list[Any],
         assessments: list[Any],
+        staff: bool,
     ) -> list[DataQsTimelineEventOut]:
-        """What happened on the case, newest first, in words both portals can show."""
+        """What happened on the case, newest first, in words both portals can show (the
+        assessment in the carrier's own words)."""
         events = [DataQsTimelineEventOut(at=case.created_at, title="Request opened", detail=None)]
         for a in authorizations:
             title = (
@@ -876,7 +880,11 @@ class DataQsCaseService:
             events.append(
                 DataQsTimelineEventOut(
                     at=a.created_at,
-                    title=f"STS assessment: {OUTCOME_LABELS[a.outcome].lower()}",
+                    title=(
+                        f"STS assessment: {OUTCOME_LABELS[a.outcome].lower()}"
+                        if staff
+                        else CARRIER_OUTCOME_LABELS[a.outcome]
+                    ),
                     detail=a.carrier_message,
                 )
             )
@@ -959,8 +967,18 @@ class DataQsCaseService:
             checklist=CHECKLIST[issue.reason],
             decided_at=issue.resolved_at,
             verification_status=issue.verification_status,
-            # STS's proof (e.g. a PSP report) stays internal; what the check saw is shown to all.
-            verification_note=issue.verification_note if staff or not by_sts else None,
+            # Clients see what the check saw; STS's proof (e.g. a PSP report) and what STS still
+            # has to confirm stay internal.
+            verification_note=(
+                issue.verification_note
+                if staff
+                or (
+                    not by_sts
+                    and issue.verification_status
+                    in (DataQsVerificationStatus.WAITING, DataQsVerificationStatus.VERIFIED)
+                )
+                else None
+            ),
             verified_at=issue.verified_at,
             verified_by_name=(
                 names.get(issue.verified_by_id, "STS") if issue.verified_by_id is not None else None

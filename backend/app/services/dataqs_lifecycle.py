@@ -366,7 +366,7 @@ class DataQsLifecycleService:
         reasons: str | None,
         final: bool,
     ) -> None:
-        request = case.gov_request_id or f"case #{case.id}"
+        request = case.gov_request_id or f"case {case.id}"
         result = {
             DataQsOutcome.FULL_CORRECTION: "the record will be corrected",
             DataQsOutcome.PARTIAL_CORRECTION: "part of the record will be corrected",
@@ -398,7 +398,7 @@ class DataQsLifecycleService:
             body += f"\n\nReasons given: {reasons}"
         body += f"\n\n{after}"
         kind, subject = (
-            ("FILE_CLOSED", f"Your DataQs file #{case.id} is closed")
+            ("FILE_CLOSED", f"Your DataQs file {case.id} is closed")
             if final and case.work_status == DataQsWorkStatus.CLOSED
             else ("DECISION", f"Decision on your DataQs request {request}")
         )
@@ -557,7 +557,7 @@ class DataQsLifecycleService:
         self.notifications.to_carrier(
             case,
             "FILE_CLOSED",
-            f"Your DataQs file #{case.id} is closed",
+            f"Your DataQs file {case.id} is closed",
             f"STS has closed your DataQs file for inspection {case.source_event_id}"
             + (f" (DataQs request {case.gov_request_id})" if case.gov_request_id else "")
             + f".\n\n{outcome}\n\n{body.note.strip()}",

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 
 import { StatusBadge } from '../../components/StatusBadge'
 import { useEmailDataQsCarrier } from '../../hooks/useDataQs'
+import { usePortalMode } from '../../hooks/usePortalMode'
 import type { DataQsCase, DataQsMessage } from '../../types/dataqs'
 import { formatDateTime } from '../../utils/format'
 import { inputClass, labelClass } from './intake/intakeState'
@@ -35,11 +36,13 @@ export function DataQsMessages({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
 
 function MessageRow({ message: m }: { message: DataQsMessage }) {
   const delivery = DELIVERY[m.delivery]
+  // Whether the email went out is STS's concern; the carrier sees the message itself.
+  const staff = usePortalMode() === 'internal'
   return (
     <li className="space-y-1 py-3 text-sm">
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium text-slate-900">{m.subject}</span>
-        <StatusBadge label={delivery.label} tone={delivery.tone} />
+        {staff && <StatusBadge label={delivery.label} tone={delivery.tone} />}
       </div>
       <p className="text-xs text-slate-500">
         {formatDateTime(m.created_at)} · from {m.author_name ? `${m.author_name}, STS` : 'STS'}

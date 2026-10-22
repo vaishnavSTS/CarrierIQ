@@ -79,6 +79,16 @@ OUTCOME_LABELS = {
     DataQsAssessmentOutcome.SPECIALIST_REVIEW: "Specialist review",
     DataQsAssessmentOutcome.INSUFFICIENT_BASIS: "Insufficient basis",
 }
+# The same outcomes in the carrier's portal: what it means for their request.
+CARRIER_OUTCOME_LABELS = {
+    DataQsAssessmentOutcome.READY_TO_PREPARE: "STS reviewed your request and is preparing it",
+    DataQsAssessmentOutcome.EVIDENCE_NEEDED: "STS needs more evidence from you",
+    DataQsAssessmentOutcome.PENDING_EXTERNAL: (
+        "STS is waiting on an outside event, such as a court date"
+    ),
+    DataQsAssessmentOutcome.SPECIALIST_REVIEW: "A senior STS specialist is reviewing your request",
+    DataQsAssessmentOutcome.INSUFFICIENT_BASIS: "STS won't file this request",
+}
 
 # STS's own targets (never shown as government rules).
 ASSESS_TARGET = timedelta(days=3)
@@ -181,7 +191,7 @@ class DataQsAssessmentService:
             DataQsNotifications(self.db).to_carrier(
                 case,
                 "EVIDENCE_NEEDED",
-                f"STS needs more information for DataQs case #{case.id}",
+                f"STS needs more information for DataQs case {case.id}",
                 f'{carrier_message}\n\nPlease upload it on the case, then choose "Send back '
                 'to STS".',
             )
@@ -199,7 +209,7 @@ class DataQsAssessmentService:
             notifications.to_carrier(
                 case,
                 "FILE_CLOSED",
-                f"Your DataQs file #{case.id} is closed",
+                f"Your DataQs file {case.id} is closed",
                 f"STS reviewed your request for inspection {case.source_event_id} and won't file "
                 f"it with FMCSA.\n\n{carrier_message}",
             )
@@ -256,7 +266,7 @@ class DataQsAssessmentService:
         self.repository.add_task(
             case,
             "ASSESS_CASE",
-            f"Reassess DataQs case #{case.id} with the new evidence",
+            f"Reassess DataQs case {case.id} with the new evidence",
             DataQsActionOwner.STS,
             assignee_id=case.owner_id,
         ).due_at = at + ASSESS_TARGET

@@ -206,7 +206,7 @@ function StepRecord({ check }: { check: DataQsCheck }) {
             <span key={c.id}>
               {i > 0 && ', '}
               <Link to={casePath(c.id)} className="font-medium text-accent-strong hover:underline">
-                #{c.id}
+                case {c.id}
               </Link>
             </span>
           ))}

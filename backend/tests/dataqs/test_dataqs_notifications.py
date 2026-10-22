@@ -130,7 +130,7 @@ def test_closing_the_file_emails_the_carrier_and_cancels_reminders(
     message = body["messages"][0]
     assert (message["kind"], message["subject"]) == (
         "FILE_CLOSED",
-        f"Your DataQs file #{case['id']} is closed",
+        f"Your DataQs file {case['id']} is closed",
     )
     assert "We will watch the next SMS update." in message["body"]
     statuses = {row.kind: row.status for row in _outbox(db, case["id"])}

@@ -95,7 +95,7 @@ export function DataQsStartRequest() {
                         to={`/portal/dataqs/cases/${c.id}`}
                         className="whitespace-nowrap text-xs font-medium text-accent-strong hover:underline"
                       >
-                        Case #{c.id}
+                        Open case {c.id}
                       </Link>
                     ))}
                     <RequestDataReviewButton

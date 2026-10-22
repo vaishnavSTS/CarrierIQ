@@ -44,10 +44,15 @@ const STEPS: Step[] = [
   },
 ]
 
-export function DataQsIntro({ audience }: { audience: Audience }) {
-  return (
-    <section className="rounded-2xl border border-slate-200 bg-surface p-5">
-      <h2 className="text-sm font-semibold text-slate-900">How it works</h2>
+export function DataQsIntro({
+  audience,
+  folded = false,
+}: {
+  audience: Audience
+  folded?: boolean
+}) {
+  const steps = (
+    <>
       <ol className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {STEPS.map((step, i) => (
           <li key={step.title} className="flex gap-3">
@@ -67,6 +72,22 @@ export function DataQsIntro({ audience }: { audience: Audience }) {
         A state agency reviews each request and decides it; filing a request does not guarantee a
         record will be changed or removed.
       </p>
+    </>
+  )
+  if (folded) {
+    return (
+      <details className="rounded-2xl border border-slate-200 bg-surface p-5">
+        <summary className="cursor-pointer text-sm font-semibold text-slate-900">
+          How DataQs requests work
+        </summary>
+        {steps}
+      </details>
+    )
+  }
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-surface p-5">
+      <h2 className="text-sm font-semibold text-slate-900">How it works</h2>
+      {steps}
     </section>
   )
 }

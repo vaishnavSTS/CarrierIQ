@@ -85,7 +85,7 @@ def test_a_second_case_on_the_same_violation_is_refused(
     )
     assert response.status_code == 409
     assert response.json()["error"]["code"] == "dataqs_duplicate_case"
-    assert f"#{first['id']}" in response.json()["error"]["message"]
+    assert f"case {first['id']}" in response.json()["error"]["message"]
 
     # A different violation on the same inspection is a separate request.
     other_violation = {**ISSUE, "violation_index": 0}
