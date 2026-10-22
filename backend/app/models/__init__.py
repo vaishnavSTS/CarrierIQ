@@ -9,6 +9,7 @@ from app.models.carrier_snapshot import CarrierSnapshot
 from app.models.crash import Crash
 from app.models.dataqs_assessment import DataQsAssessment
 from app.models.dataqs_audit_event import DataQsAuditEvent
+from app.models.dataqs_carrier_contact import DataQsCarrierContact
 from app.models.dataqs_case import DataQsCase, DataQsIssue, DataQsVerificationCheck
 from app.models.dataqs_clock import DataQsClock, DataQsClockPause
 from app.models.dataqs_correspondence import DataQsCorrespondence
@@ -53,6 +54,7 @@ __all__ = [
     "Crash",
     "DataQsAssessment",
     "DataQsAuditEvent",
+    "DataQsCarrierContact",
     "DataQsAuthorization",
     "DataQsCase",
     "DataQsClock",

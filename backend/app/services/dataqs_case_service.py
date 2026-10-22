@@ -102,6 +102,7 @@ from app.services.dataqs_checklist import (
 )
 from app.services.dataqs_clock_service import LABELS as CLOCK_LABELS
 from app.services.dataqs_clock_service import DataQsClockService, state
+from app.services.dataqs_contact_service import DataQsContactService
 from app.services.dataqs_lifecycle import LEVEL_LABEL, NEXT_LEVEL, proposed_cycle
 from app.services.dataqs_package_service import (
     BUILDABLE,
@@ -774,6 +775,7 @@ class DataQsCaseService:
                 for c in reversed(checks)
                 if c.changes is not None
             ],
+            carrier_contact=DataQsContactService(self.db).for_case(case) if staff else None,
             can_verify=(
                 staff
                 and case.work_status != DataQsWorkStatus.CLOSED

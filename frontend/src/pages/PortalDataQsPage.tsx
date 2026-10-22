@@ -1,6 +1,7 @@
 import { FilePlus2 } from 'lucide-react'
 
 import { DataQsCaseList } from '../features/dataqs/DataQsCaseList'
+import { DataQsContactButton } from '../features/dataqs/DataQsContactButton'
 import { DataQsIntro } from '../features/dataqs/DataQsIntro'
 import { DataQsStartRequest } from '../features/dataqs/DataQsStartRequest'
 import { primaryButton } from '../features/dataqs/ui'
@@ -21,10 +22,13 @@ export function PortalDataQsPage() {
             DataQs request with FMCSA on your behalf and track it to a decision.
           </p>
         </div>
-        <a href="#start-request" className={`${primaryButton} inline-flex items-center gap-1.5`}>
-          <FilePlus2 className="size-4" aria-hidden />
-          Start a request
-        </a>
+        <div className="flex flex-wrap gap-2">
+          <DataQsContactButton />
+          <a href="#start-request" className={`${primaryButton} inline-flex items-center gap-1.5`}>
+            <FilePlus2 className="size-4" aria-hidden />
+            Start a request
+          </a>
+        </div>
       </div>
       <section className="space-y-2">
         <h2 className="text-base font-semibold text-slate-900">Your requests</h2>

@@ -6,6 +6,8 @@ import {
   assignDataQsOwner,
   buildDataQsPackage,
   checkDataQsCorrection,
+  fetchDataQsContacts,
+  saveDataQsContact,
   closeDataQsFile,
   confirmDataQsCorrection,
   confirmDataQsFiling,
@@ -31,6 +33,7 @@ import type {
   DataQsApprovalInput,
   DataQsAssessmentInput,
   DataQsAttemptStartInput,
+  DataQsCarrierContactInput,
   DataQsCase,
   DataQsCaseCreateInput,
   DataQsConfirmInput,
@@ -49,6 +52,20 @@ export function useDataQsBase(): DataQsBase {
 export function useDataQsCasePath(): (caseId: number) => string {
   const internal = usePortalMode() === 'internal'
   return (caseId) => (internal ? `/dataqs/cases/${caseId}` : `/portal/dataqs/cases/${caseId}`)
+}
+
+/** Client portal: how STS reaches each of the company's verified carriers. */
+export function useDataQsContacts(enabled = true) {
+  return useQuery({ queryKey: ['dataqs', 'contacts'], queryFn: fetchDataQsContacts, enabled })
+}
+
+export function useSaveDataQsContact() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: ({ usdot, input }: { usdot: number; input: DataQsCarrierContactInput }) =>
+      saveDataQsContact(usdot, input),
+    onSuccess: (list) => client.setQueryData(['dataqs', 'contacts'], list),
+  })
 }
 
 /** STS admins: the supervisor view, refreshed every minute. */

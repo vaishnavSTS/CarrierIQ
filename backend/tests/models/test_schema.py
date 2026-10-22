@@ -64,6 +64,7 @@ TABLES = {
     "dataqs_outbox",
     "dataqs_messages",
     "dataqs_verification_checks",
+    "dataqs_carrier_contacts",
 }
 
 # Rows in these tables always come from a source record (Engineering Principle 5).

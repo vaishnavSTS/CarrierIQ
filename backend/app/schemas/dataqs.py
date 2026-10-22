@@ -614,6 +614,7 @@ class DataQsCaseOut(DataQsCaseSummaryOut):
     verification_error: str | None = None  # STS staff only: the last look failed
     verification_checks: list[DataQsVerificationCheckOut] = []
     can_verify: bool = False  # staff: check now, confirm by hand
+    carrier_contact: "DataQsCarrierContactOut | None" = None  # staff: how to reach the carrier
 
 
 class DataQsCaseListOut(BaseModel):
@@ -656,3 +657,32 @@ class DataQsSupervisorOut(BaseModel):
 
 
 DataQsCheckOut.model_rebuild()
+
+
+# --- How STS reaches each carrier ----------------------------------------------------------------
+
+
+class DataQsCarrierContactIn(BaseModel):
+    """The company's account owner keeps a carrier's contact details up to date."""
+
+    email: str = Field(max_length=254, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    phone: str = Field(min_length=7, max_length=30, pattern=r"^\+?[0-9 ().-]{7,30}$")
+    best_time: str | None = Field(default=None, max_length=100)
+
+
+class DataQsCarrierContactOut(BaseModel):
+    usdot_number: int
+    carrier_name: str | None
+    email: str | None  # None: not given yet
+    phone: str | None
+    best_time: str | None
+    updated_at: datetime | None
+    updated_by_name: str | None
+
+
+class DataQsCarrierContactListOut(BaseModel):
+    can_edit: bool  # the company's account owner
+    carriers: list[DataQsCarrierContactOut]  # each carrier STS verified for the company
+
+
+DataQsCaseOut.model_rebuild()  # carrier_contact refers to a model defined after it

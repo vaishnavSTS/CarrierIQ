@@ -1,4 +1,4 @@
-import { ArrowRight, Download, FileImage, FileText, FileVideo } from 'lucide-react'
+import { ArrowRight, Download, FileImage, FileText, FileVideo, Mail, Phone } from 'lucide-react'
 import { Children, type ReactNode } from 'react'
 
 import { dataQsEvidenceUrl } from '../../api/dataqs'
@@ -307,6 +307,7 @@ function CaseSummary({ dataqsCase: c, staff }: { dataqsCase: DataQsCase; staff: 
           {c.owner_name ?? <span className="text-slate-600">Not assigned yet</span>}
         </Fact>
       </dl>
+      {staff && <ContactLine dataqsCase={c} />}
       <div className="mt-5 flex items-start gap-3 rounded-xl bg-accent-soft px-4 py-3">
         <ArrowRight className="mt-0.5 size-4 shrink-0 text-accent-strong" aria-hidden />
         <div>
@@ -322,6 +323,43 @@ function CaseSummary({ dataqsCase: c, staff }: { dataqsCase: DataQsCase; staff: 
         </div>
       </div>
     </section>
+  )
+}
+
+/** STS: how to reach the carrier, as its account owner gave it in the client portal. */
+function ContactLine({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
+  const contact = c.carrier_contact
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-slate-100 pt-3 text-sm">
+      <span className="text-xs font-medium uppercase tracking-wide text-slate-600">
+        Carrier contact
+      </span>
+      {contact?.email ? (
+        <>
+          <a
+            href={`tel:${contact.phone ?? ''}`}
+            className="inline-flex items-center gap-1.5 font-medium text-accent-strong hover:underline"
+          >
+            <Phone className="size-3.5" aria-hidden />
+            {contact.phone}
+          </a>
+          <a
+            href={`mailto:${contact.email}`}
+            className="inline-flex items-center gap-1.5 text-accent-strong hover:underline"
+          >
+            <Mail className="size-3.5" aria-hidden />
+            {contact.email}
+          </a>
+          {contact.best_time && (
+            <span className="text-slate-600">Best time: {contact.best_time}</span>
+          )}
+        </>
+      ) : (
+        <span className="text-slate-600">
+          Not given yet: the carrier’s account owner adds it under DataQs → FMCSA contact.
+        </span>
+      )}
+    </div>
   )
 }
 

@@ -279,6 +279,32 @@ export interface DataQsCase extends DataQsCaseSummary {
   verification_checks: DataQsVerificationCheck[]
   /** Staff: check FMCSA now, confirm a correction by hand */
   can_verify: boolean
+  /** STS staff only: how to reach the carrier (null: not given yet) */
+  carrier_contact: DataQsCarrierContact | null
+}
+
+/** How STS reaches a carrier about its DataQs requests */
+export interface DataQsCarrierContact {
+  usdot_number: number
+  carrier_name: string | null
+  /** The email on the carrier's FMCSA account; null until given */
+  email: string | null
+  phone: string | null
+  best_time: string | null
+  updated_at: string | null
+  updated_by_name: string | null
+}
+
+export interface DataQsCarrierContactList {
+  /** The company's account owner */
+  can_edit: boolean
+  carriers: DataQsCarrierContact[]
+}
+
+export interface DataQsCarrierContactInput {
+  email: string
+  phone: string
+  best_time: string | null
 }
 
 export type DataQsAssessmentOutcome =
