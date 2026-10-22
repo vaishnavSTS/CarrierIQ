@@ -13,7 +13,7 @@ from app.api.v1.router import api_router
 from app.core.config import DEV_AUTH_SECRET_KEY, get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
-from app.services.dataqs_notifications import run_dispatcher
+from app.services.dataqs_notifications import run_dispatcher, wake_dispatcher
 from app.workers.worker import Worker
 
 logger = logging.getLogger(__name__)
@@ -37,6 +37,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     finally:
         stop.set()
         if dispatcher is not None:
+            wake_dispatcher()  # stop waiting now
             dispatcher.join(timeout=10)
 
 

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.models import DataQsOutbox, User
 from app.models.enums import DataQsOutboxStatus
+from app.services import dataqs_notifications
 from app.services.dataqs_email import EmailError
 from app.services.dataqs_notifications import DataQsNotifications
 from tests.dataqs.helpers import (
@@ -265,3 +266,23 @@ def test_test_routing_sends_carrier_and_staff_emails_to_set_addresses(
     [reminder] = sender.sent
     assert reminder["to"] == ["staff-test@sts.test"]
     assert "meant for analyst@sts.test" in reminder["text"]
+
+
+def test_a_committed_carrier_email_wakes_the_dispatcher(
+    api: TestClient, world: dict[str, User], db: Session
+) -> None:
+    case_id = submitted_case(api)["id"]
+    log_in(api, "analyst@sts.test")
+    dataqs_notifications._wake.clear()
+    sent = api.post(
+        f"/api/v1/dataqs/cases/{case_id}/messages",
+        json={"subject": "Hello", "body": "Sent straight away"},
+    )
+    assert sent.status_code == 200, sent.text
+    assert dataqs_notifications._wake.is_set()  # sent now, not at the next 30-second round
+
+    dataqs_notifications._wake.clear()
+    db.info[dataqs_notifications._QUEUED] = True
+    db.rollback()  # nothing was saved: no wake, and the flag is forgotten
+    db.commit()
+    assert not dataqs_notifications._wake.is_set()

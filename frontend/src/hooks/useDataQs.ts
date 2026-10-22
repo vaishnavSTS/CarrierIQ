@@ -58,7 +58,20 @@ export function useDataQsCase(caseId: number) {
   return useQuery({
     queryKey: ['dataqs', base, 'case', caseId],
     queryFn: () => fetchDataQsCase(base, caseId),
+    // While a new email is going out, look again so it shows as sent without a reload.
+    refetchInterval: (query) =>
+      query.state.data && emailGoingOut(query.state.data) ? 3_000 : false,
   })
+}
+
+/** An email to the carrier from the last two minutes still waiting, with email set up. Older
+ * waiting emails are being retried later (minutes apart), so the page stops checking. */
+function emailGoingOut(c: DataQsCase): boolean {
+  const since = Date.now() - 2 * 60_000
+  return (
+    c.email_enabled &&
+    c.messages.some((m) => m.delivery === 'WAITING' && new Date(m.created_at).getTime() > since)
+  )
 }
 
 export function useDataQsCheck(usdotNumber: number, inspectionId: string) {

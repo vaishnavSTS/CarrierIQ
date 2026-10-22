@@ -17,7 +17,8 @@ Emails go through an outbox (dataqs_outbox): a row is written in the same transa
 change that causes it, with a stable event id, and a dispatcher sends it (now, or at
 next_attempt_at for a reminder), retries transient failures and keeps the result. A failed email
 never blocks the case. Email is a prompt to look at the case, not a record that something was
-filed.
+filed. When a transaction that queued a carrier email commits, the dispatcher is woken, so the
+email goes out within seconds rather than at its next 30-second round.
 """
 
 import html
@@ -27,7 +28,7 @@ from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import event, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -38,6 +39,28 @@ from app.services.dataqs_email import EmailError, EmailSender
 logger = logging.getLogger(__name__)
 
 MAX_ATTEMPTS = 5
+
+# Set when a carrier email is committed (or to stop): the dispatcher sends now, not in 30 seconds.
+_wake = threading.Event()
+_QUEUED = "dataqs_email_queued"
+
+
+def wake_dispatcher() -> None:
+    _wake.set()
+
+
+@event.listens_for(Session, "after_commit")
+def _wake_after_commit(session: Session) -> None:
+    # After the commit, so the dispatcher's own session can see the new rows.
+    if session.info.pop(_QUEUED, False):
+        wake_dispatcher()
+
+
+@event.listens_for(Session, "after_rollback")
+def _forget_after_rollback(session: Session) -> None:
+    session.info.pop(_QUEUED, None)
+
+
 REMINDER_PREFIX = "REMINDER_"
 
 
@@ -153,6 +176,7 @@ class DataQsNotifications:
                 )
             )
         self.db.flush()
+        self.db.info[_QUEUED] = True
         return message
 
     # --- Staff reminders --------------------------------------------------------------------------
@@ -289,7 +313,8 @@ class DataQsNotifications:
 
 
 def run_dispatcher(stop: threading.Event, interval_seconds: float = 30.0) -> None:
-    """Send due DataQs emails until `stop` is set (a thread of the API process)."""
+    """Send due DataQs emails until `stop` is set (a thread of the API process): every
+    `interval_seconds`, and as soon as a carrier email is committed (wake_dispatcher)."""
     from app.db.session import SessionLocal
     from app.services.dataqs_email import get_email_sender
 
@@ -301,4 +326,7 @@ def run_dispatcher(stop: threading.Event, interval_seconds: float = 30.0) -> Non
                     DataQsNotifications(db).deliver_due(sender)
             except Exception:  # keep the dispatcher alive; the next round retries
                 logger.exception("DataQs email dispatch failed")
-        stop.wait(interval_seconds)
+        # Cleared after waking and before the next round: an email committed meanwhile is
+        # either seen by that round or wakes the wait after it.
+        _wake.wait(interval_seconds)
+        _wake.clear()
