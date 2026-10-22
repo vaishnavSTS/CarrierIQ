@@ -8,6 +8,7 @@ import type { DataQsCaseSummary } from '../../../types/dataqs'
 import { formatDate, formatDateTime } from '../../../utils/format'
 import { cellClass, headClass, tableClass } from '../../carrier-profile/styles'
 import { WORK_STATUS } from '../labels'
+import { useRowLink } from '../rowLink'
 
 type Filter = 'sts' | 'mine' | 'unassigned' | 'carrier' | 'closed' | 'all'
 
@@ -41,6 +42,7 @@ export function DataQsStaffQueue() {
   const [filter, setFilter] = useState<Filter>('sts')
   const { data: me } = useMe()
   const { data, isPending, error } = useDataQsCases()
+  const rowLink = useRowLink()
 
   if (isPending) return <p className="text-sm text-slate-500">Loading cases…</p>
   if (error) return <p className="text-sm text-red-700">Could not load cases: {error.message}</p>
@@ -97,7 +99,7 @@ export function DataQsStaffQueue() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {rows.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50">
+                <tr key={c.id} {...rowLink(`/dataqs/cases/${c.id}`)}>
                   <td className={cellClass}>
                     <Link
                       to={`/dataqs/cases/${c.id}`}
@@ -107,7 +109,12 @@ export function DataQsStaffQueue() {
                     </Link>
                   </td>
                   <td className={cellClass}>
-                    <div>{c.organization_name ?? '—'}</div>
+                    <Link
+                      to={`/dataqs/cases/${c.id}`}
+                      className="font-medium text-slate-900 hover:text-accent-strong hover:underline"
+                    >
+                      {c.organization_name ?? 'Case'}
+                    </Link>
                     <div className="text-xs text-slate-500">
                       {c.carrier_name ?? '—'} · USDOT{' '}
                       <span className="font-mono">{c.usdot_number}</span>

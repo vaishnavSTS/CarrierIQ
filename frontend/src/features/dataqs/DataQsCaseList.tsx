@@ -5,11 +5,13 @@ import { useDataQsCasePath, useDataQsCases } from '../../hooks/useDataQs'
 import { formatDate, formatDateTime } from '../../utils/format'
 import { cellClass, headClass, tableClass } from '../carrier-profile/styles'
 import { WORK_STATUS } from './labels'
+import { useRowLink } from './rowLink'
 
 /** DataQs cases the user may see, newest first. Staff also see each case's company. */
 export function DataQsCaseList({ showCompany, empty }: { showCompany: boolean; empty: string }) {
   const { data, isPending, error } = useDataQsCases()
   const casePath = useDataQsCasePath()
+  const rowLink = useRowLink()
 
   if (isPending) return <p className="text-sm text-slate-500">Loading cases…</p>
   if (error) return <p className="text-sm text-red-700">Could not load cases: {error.message}</p>
@@ -36,7 +38,7 @@ export function DataQsCaseList({ showCompany, empty }: { showCompany: boolean; e
         </thead>
         <tbody className="divide-y divide-slate-100">
           {data.cases.map((c) => (
-            <tr key={c.id} className="hover:bg-slate-50">
+            <tr key={c.id} {...rowLink(casePath(c.id))}>
               <td className={cellClass}>
                 <Link
                   to={casePath(c.id)}
@@ -47,7 +49,12 @@ export function DataQsCaseList({ showCompany, empty }: { showCompany: boolean; e
               </td>
               {showCompany && <td className={cellClass}>{c.organization_name ?? '—'}</td>}
               <td className={cellClass}>
-                <div>{c.carrier_name ?? '—'}</div>
+                <Link
+                  to={casePath(c.id)}
+                  className="font-medium text-slate-900 hover:text-accent-strong hover:underline"
+                >
+                  {c.carrier_name ?? 'Case'}
+                </Link>
                 <div className="text-xs text-slate-500">
                   USDOT <span className="font-mono">{c.usdot_number}</span>
                 </div>
