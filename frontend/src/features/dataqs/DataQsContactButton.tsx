@@ -22,7 +22,7 @@ export function DataQsContactButton() {
         className={`${secondaryButton} inline-flex items-center gap-1.5`}
       >
         <Phone className="size-4" aria-hidden />
-        FMCSA contact
+        FMCSA Credentials
       </button>
       {open && <ContactDialog onClose={() => setOpen(false)} />}
     </>
@@ -56,7 +56,7 @@ function ContactDialog({ onClose }: { onClose: () => void }) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 id="contact-title" className="text-lg font-semibold text-slate-950">
-              FMCSA contact
+              FMCSA Credentials
             </h2>
             <p className="mt-0.5 text-sm text-slate-600">
               How STS reaches you about your DataQs requests.

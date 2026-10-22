@@ -353,7 +353,7 @@ function ContactLine({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
         </>
       ) : (
         <span className="text-slate-600">
-          Not given yet: the carrier’s account owner adds it under DataQs → FMCSA contact.
+          Not given yet: the carrier’s account owner adds it under DataQs → FMCSA Credentials.
         </span>
       )}
     </div>
