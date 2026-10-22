@@ -16,6 +16,7 @@ from app.schemas.dataqs import (
     DataQsCarrierContactListOut,
     DataQsCarrierContactOut,
 )
+from app.services.dataqs_credential_encryption import encrypt_dataqs_password
 
 
 class DataQsContactService:
@@ -32,7 +33,11 @@ class DataQsContactService:
         )
 
     def _out(
-        self, usdot_number: int, contact: DataQsCarrierContact | None, names: dict[int, str]
+        self,
+        usdot_number: int,
+        contact: DataQsCarrierContact | None,
+        names: dict[int, str],
+        can_view_password_status: bool = False,
     ) -> DataQsCarrierContactOut:
         carrier = self.repository.carrier(usdot_number)
         return DataQsCarrierContactOut(
@@ -40,6 +45,9 @@ class DataQsContactService:
             carrier_name=carrier.legal_name if carrier else None,
             email=contact.email if contact else None,
             phone=contact.phone if contact else None,
+            password_saved=(
+                bool(contact and contact.password_encrypted) if can_view_password_status else None
+            ),
             updated_at=contact.updated_at if contact else None,
             updated_by_name=names.get(contact.updated_by_id) if contact else None,
         )
@@ -57,7 +65,15 @@ class DataQsContactService:
         names = self.repository.user_names([c.updated_by_id for c in contacts.values()])
         return DataQsCarrierContactListOut(
             can_edit=user.role == UserRole.CLIENT_ADMIN,
-            carriers=[self._out(u, contacts.get(u), names) for u in usdots],
+            carriers=[
+                self._out(
+                    u,
+                    contacts.get(u),
+                    names,
+                    can_view_password_status=user.role == UserRole.CLIENT_ADMIN,
+                )
+                for u in usdots
+            ],
         )
 
     def save(
@@ -69,6 +85,9 @@ class DataQsContactService:
             )
         if usdot_number not in self.repository.verified_usdots(user.organization_id):
             raise DataQsMissingAuthorityError("STS hasn't verified this carrier for your company")
+        encrypted_password = (
+            encrypt_dataqs_password(body.password) if body.password is not None else None
+        )
         contact = self._contact(user.organization_id, usdot_number)
         if contact is None:
             contact = DataQsCarrierContact(
@@ -77,6 +96,10 @@ class DataQsContactService:
             self.db.add(contact)
         contact.email = body.email.strip()
         contact.phone = body.phone.strip()
+        if body.clear_password:
+            contact.password_encrypted = None
+        elif encrypted_password is not None:
+            contact.password_encrypted = encrypted_password
         contact.updated_by_id = user.id
         self.db.commit()
         return self.for_company(user)

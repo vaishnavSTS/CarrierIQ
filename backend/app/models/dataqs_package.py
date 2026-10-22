@@ -9,7 +9,8 @@ approval to file one exact package (bound to its `package_hash`).
 
 Filing is manual (no government API): a submission attempt is CONFIRMED only once the
 acknowledgement is recorded. A timed-out attempt stays UNCONFIRMED and blocks a retry until
-reconciled. Only the filing account's identity is stored, never a password or MFA secret.
+reconciled. Filing attempts store only the account identity; carrier passwords are stored
+separately as encrypted contact data, and MFA secrets are never stored.
 """
 
 from datetime import datetime

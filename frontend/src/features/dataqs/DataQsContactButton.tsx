@@ -125,13 +125,23 @@ function ContactForm({
 }) {
   const [email, setEmail] = useState(c.email ?? '')
   const [phone, setPhone] = useState(c.phone ?? '')
+  const [password, setPassword] = useState('')
+  const [clearPassword, setClearPassword] = useState(false)
   const save = useSaveDataQsContact()
   const ready = /^\S+@\S+\.\S+$/.test(email.trim()) && phone.replace(/\D/g, '').length >= 7
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
     save.mutate(
-      { usdot: c.usdot_number, input: { email: email.trim(), phone: phone.trim() } },
+      {
+        usdot: c.usdot_number,
+        input: {
+          email: email.trim(),
+          phone: phone.trim(),
+          ...(password ? { password } : {}),
+          ...(clearPassword ? { clear_password: true } : {}),
+        },
+      },
       { onSuccess: onDone },
     )
   }
@@ -168,6 +178,39 @@ function ContactForm({
           className={inputClass}
         />
       </div>
+      <div>
+        <label htmlFor="contact-password" className={labelClass}>
+          FMCSA account password
+        </label>
+        <input
+          id="contact-password"
+          type="password"
+          autoComplete="new-password"
+          value={password}
+          maxLength={200}
+          onChange={(e) => {
+            setPassword(e.target.value)
+            if (e.target.value) setClearPassword(false)
+          }}
+          className={inputClass}
+        />
+        <p className="mt-1 text-xs text-slate-600">
+          Encrypted before storage. Leave blank to keep the saved password.
+        </p>
+      </div>
+      {c.password_saved && (
+        <label className="flex items-center gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            checked={clearPassword}
+            onChange={(e) => {
+              setClearPassword(e.target.checked)
+              if (e.target.checked) setPassword('')
+            }}
+          />
+          Remove the saved password
+        </label>
+      )}
       {save.isError && (
         <p className="text-red-700" role="alert">
           Could not save: {save.error.message}

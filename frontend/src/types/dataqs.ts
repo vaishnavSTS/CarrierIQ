@@ -290,6 +290,8 @@ export interface DataQsCarrierContact {
   /** The email on the carrier's FMCSA account; null until given */
   email: string | null
   phone: string | null
+  /** Only the account owner can see whether an encrypted password is saved */
+  password_saved: boolean | null
   updated_at: string | null
   updated_by_name: string | null
 }
@@ -303,6 +305,8 @@ export interface DataQsCarrierContactList {
 export interface DataQsCarrierContactInput {
   email: string
   phone: string
+  password?: string
+  clear_password?: boolean
 }
 
 export type DataQsAssessmentOutcome =

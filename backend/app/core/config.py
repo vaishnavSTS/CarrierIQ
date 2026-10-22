@@ -3,6 +3,7 @@
 from datetime import date
 from functools import lru_cache
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Default session key for local development only; create_app refuses it anywhere else.
@@ -125,9 +126,9 @@ class Settings(BaseSettings):
     # (HTTPS, so it works where SMTP ports are blocked, e.g. Render's free plan; the token comes
     # from `python -m app.workers.gmail_authorize`), else over SMTP when SMTP_HOST is set (e.g.
     # smtp.gmail.com, 587, a mailbox + its App Password), else through Resend's API
-    # (RESEND_API_KEY). Secrets, tokens and passwords: environment only. While none is set
-    # nothing is sent; emails wait in dataqs_outbox. DATAQS_EMAIL_FROM must be an address the
-    # mailbox may send as (for Google: the mailbox itself or one of its aliases).
+    # (RESEND_API_KEY). Email service secrets, tokens and passwords: environment only. While
+    # none is set nothing is sent; emails wait in dataqs_outbox. DATAQS_EMAIL_FROM must be an
+    # address the mailbox may send as (for Google: the mailbox itself or one of its aliases).
     gmail_client_id: str | None = None
     gmail_client_secret: str | None = None
     gmail_refresh_token: str | None = None
@@ -139,6 +140,7 @@ class Settings(BaseSettings):
     resend_api_key: str | None = None
     dataqs_email_from: str = "Sky Transport Solutions <dataqs@skytransportsolutions.com>"
     dataqs_email_reply_to: str = "vaishnav@skytransportsolutions.com"  # carriers' replies go here
+    dataqs_credential_encryption_key: SecretStr | None = None
     # While testing, send every DataQs email for carriers / for STS staff to these addresses
     # instead (comma-separated). Clear them to email the real carrier users and staff.
     dataqs_email_carrier_override: str | None = None

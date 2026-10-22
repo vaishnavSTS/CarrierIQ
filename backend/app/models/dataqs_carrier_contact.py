@@ -1,9 +1,10 @@
-"""How STS reaches a carrier about its DataQs requests: the email on the carrier's FMCSA account
-and a phone number. The company's account owner keeps it up to date in the client portal (one
-per carrier the company holds); STS staff see it on that carrier's cases.
+"""How STS reaches a carrier about DataQs requests, plus its encrypted FMCSA login password.
+
+The company's account owner maintains this per-carrier contact in the client portal. Only the
+encrypted password is persisted; API responses never contain it.
 """
 
-from sqlalchemy import BigInteger, ForeignKey, String, UniqueConstraint
+from sqlalchemy import BigInteger, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -24,4 +25,5 @@ class DataQsCarrierContact(IdMixin, UpdatedAtMixin, Base):
     usdot_number: Mapped[int] = mapped_column(BigInteger)
     email: Mapped[str] = mapped_column(String(254))  # the email on the carrier's FMCSA account
     phone: Mapped[str] = mapped_column(String(30))
+    password_encrypted: Mapped[str | None] = mapped_column(Text)
     updated_by_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"))

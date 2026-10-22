@@ -42,7 +42,13 @@ Sign authorization           ←   Carrier approves the exact package
 
 - **No government API.** There is no public DataQs filing or status API. Filing is **manual** by an
   STS specialist. Never invent endpoints.
-- **Never store** Login.gov passwords, MFA secrets or government portal sessions.
+- **Credential storage.** The carrier's account owner may save an FMCSA password with its
+  contact details. It is encrypted with Fernet before it reaches the database, never returned by
+  the API, and its saved/not-saved status is visible only to that owner. Set
+  `DATAQS_CREDENTIAL_ENCRYPTION_KEY` to a securely managed Fernet key before accepting password
+  saves; generate one with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`.
+  Keep the key outside the database and back it up securely: replacing it makes existing encrypted
+  passwords unrecoverable. MFA secrets and government portal sessions are never stored.
 - **No promises.** Say "Potentially eligible for review", never "this will be removed".
 - **Tenant isolation.** A client sees only its own organization's cases, files, receipts and
   download links, including in background jobs.
