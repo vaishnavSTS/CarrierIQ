@@ -38,7 +38,7 @@ export function StepPriorActivity({
           <option value="Roadside inspection report" />
           <option value="CarrierSafetyScan" />
         </datalist>
-        <p className="mt-1 text-xs text-slate-500">DataQs asks this when the request is filed.</p>
+        <p className="mt-1 text-xs text-slate-600">DataQs asks this when the request is filed.</p>
       </div>
       <label className="flex items-start gap-2">
         <input

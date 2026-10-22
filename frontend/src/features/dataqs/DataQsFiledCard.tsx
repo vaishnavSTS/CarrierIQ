@@ -17,28 +17,28 @@ export function DataQsFiledCard({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
   return (
     <dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
       <div>
-        <dt className="text-xs text-slate-500">DataQs request ID</dt>
+        <dt className="text-xs text-slate-600">DataQs request ID</dt>
         <dd className="font-mono">{c.gov_request_id}</dd>
       </div>
       <div>
-        <dt className="text-xs text-slate-500">Filed</dt>
+        <dt className="text-xs text-slate-600">Filed</dt>
         <dd>
           {formatDateTime(filed?.filed_at ?? null)}
           {filed?.filed_by_name && (
-            <span className="block text-xs text-slate-500">by {filed.filed_by_name}, STS</span>
+            <span className="block text-xs text-slate-600">by {filed.filed_by_name}, STS</span>
           )}
         </dd>
       </div>
       <div>
-        <dt className="text-xs text-slate-500">Reviewing agency</dt>
+        <dt className="text-xs text-slate-600">Reviewing agency</dt>
         <dd>{filed?.assigned_agency ?? '—'}</dd>
       </div>
       <div>
-        <dt className="text-xs text-slate-500">Review stage</dt>
+        <dt className="text-xs text-slate-600">Review stage</dt>
         <dd>
           {cycle ? LEVEL_LABEL[cycle.level] : '—'}
           {c.government_raw_status && (
-            <span className="block text-xs text-slate-500">
+            <span className="block text-xs text-slate-600">
               DataQs shows: {c.government_raw_status}
             </span>
           )}

@@ -31,7 +31,7 @@ export function DataQsVerification({ dataqsCase: c }: { dataqsCase: DataQsCase }
         inspection file every day. FMCSA recalculates CSA (SMS) scores in its monthly update, so
         scores can take up to a month to follow.
       </p>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-600">
         Last checked FMCSA:{' '}
         {c.verification_checked_at ? formatDateTime(c.verification_checked_at) : 'not yet'}
       </p>
@@ -56,7 +56,7 @@ export function DataQsVerification({ dataqsCase: c }: { dataqsCase: DataQsCase }
           <ol className="mt-2 space-y-2">
             {c.verification_checks.map((check) => (
               <li key={check.at} className="flex gap-3">
-                <span className="w-40 shrink-0 text-xs text-slate-500">
+                <span className="w-40 shrink-0 text-xs text-slate-600">
                   {formatDateTime(check.at)}
                 </span>
                 <span className="text-slate-700">
@@ -104,7 +104,7 @@ function Step({ done, title, children }: { done: boolean; title: string; childre
       />
       <div>
         <div className={done ? 'font-medium text-slate-900' : 'text-slate-600'}>{title}</div>
-        <div className="text-xs text-slate-500">{children}</div>
+        <div className="text-xs text-slate-600">{children}</div>
       </div>
     </li>
   )

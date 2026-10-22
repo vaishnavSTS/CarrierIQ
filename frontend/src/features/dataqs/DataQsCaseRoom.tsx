@@ -1,5 +1,5 @@
-import { Download, FileImage, FileText, FileVideo } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { ArrowRight, Download, FileImage, FileText, FileVideo } from 'lucide-react'
+import { Children, type ReactNode } from 'react'
 
 import { dataQsEvidenceUrl } from '../../api/dataqs'
 import { StatusBadge } from '../../components/StatusBadge'
@@ -33,19 +33,30 @@ import { primaryButton, secondaryButton } from './ui'
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-surface p-5">
-      <h2 className="mb-3 text-sm font-semibold text-slate-900">{title}</h2>
+      <h3 className="mb-3 text-base font-semibold text-slate-900">{title}</h3>
       {children}
     </section>
   )
 }
 
-/** A card whose body opens on demand: staff tools that aren't the next step right now. */
+/** A card whose body opens on demand: tools and records that aren't the next step right now. */
 function FoldCard({ title, children }: { title: string; children: ReactNode }) {
   return (
     <details className="group rounded-2xl border border-slate-200 bg-surface p-5">
-      <summary className="cursor-pointer text-sm font-semibold text-slate-900">{title}</summary>
+      <summary className="cursor-pointer text-base font-semibold text-slate-900">{title}</summary>
       <div className="mt-3">{children}</div>
     </details>
+  )
+}
+
+/** A labelled group of cards; left out when none of its cards apply. */
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  if (Children.toArray(children).length === 0) return null
+  return (
+    <section className="space-y-3">
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-600">{title}</h2>
+      {children}
+    </section>
   )
 }
 
@@ -64,202 +75,274 @@ export function DataQsCaseRoom({ caseId }: { caseId: number }) {
   return <Room dataqsCase={data} />
 }
 
+/**
+ * The case, top to bottom: a summary with the next step; what to do now; where the request
+ * stands; the request itself; messages and history; then (STS only) the tools and records that
+ * aren't the next step.
+ */
 function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
-  const status = WORK_STATUS[c.work_status]
   const staff = usePortalMode() === 'internal'
   const filing = c.can_file || c.attempts.some((a) => a.status !== 'CONFIRMED')
+  const assessDue =
+    c.can_assess &&
+    (c.assessments.length === 0 || c.tasks.some((t) => ASSESS_TASKS.includes(t.kind)))
+  const packageDue =
+    c.can_build_package &&
+    (c.packages.length === 0 || c.tasks.some((t) => PACKAGE_TASKS.includes(t.kind)))
+  const agencyDue = c.can_record_correspondence && c.work_status === 'MONITORING'
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-semibold tracking-tight">DataQs case {c.id}</h1>
-        <StatusBadge {...status} />
-        {c.organization_name && (
-          <span className="text-sm text-slate-500">{c.organization_name}</span>
-        )}
-        {c.owner_name && (
-          <span className="text-sm text-slate-500">· STS specialist {c.owner_name}</span>
-        )}
-      </div>
-      <p className="text-sm text-slate-700">
-        <span className="font-medium">Next step:</span> {c.next_action}
-      </p>
+    <div className="space-y-8">
+      <CaseSummary dataqsCase={c} staff={staff} />
 
-      {c.missing_items.length > 0 && (
-        <Card title="Still needed">
-          <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">
-            {c.missing_items.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </Card>
-      )}
-
-      {c.can_resubmit && <ResubmitCard dataqsCase={c} />}
-
-      {c.tasks.length > 0 && (
-        <Card title="Open tasks">
-          <DataQsTaskList tasks={c.tasks} />
-        </Card>
-      )}
-
-      {c.issues.some((i) => i.verification_status !== null) && (
-        <Card title="Correction check">
-          <DataQsVerification dataqsCase={c} />
-        </Card>
-      )}
-      {c.gov_request_id && (
-        <Card title="Filed with DataQs">
-          <DataQsFiledCard dataqsCase={c} />
-        </Card>
-      )}
-      {c.clocks.length > 0 && (
-        <Card title="Deadlines">
-          <DataQsDeadlines dataqsCase={c} />
-        </Card>
-      )}
-      {c.can_record_correspondence &&
-        (c.work_status === 'MONITORING' ? (
-          <Card title="Record an agency event">
-            <DataQsCorrespondencePanel key={c.row_version} dataqsCase={c} />
+      <Section title={staff ? 'To do now' : 'Your next steps'}>
+        {c.missing_items.length > 0 && (
+          <Card title="Still needed">
+            <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">
+              {c.missing_items.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
           </Card>
-        ) : (
-          <FoldCard title="Record an agency event">
-            <DataQsCorrespondencePanel key={c.row_version} dataqsCase={c} />
-          </FoldCard>
-        ))}
-      {c.can_propose_review && (
-        <Card title="Appeal">
-          <DataQsAppealPanel key={c.row_version} dataqsCase={c} />
-        </Card>
-      )}
-      {c.review_cycles.length > 0 && (
-        <Card title="Review stages">
-          <DataQsReviewStages dataqsCase={c} />
-        </Card>
-      )}
-      {staff && filing && (
-        <Card title="File with DataQs">
-          <DataQsSubmissionConsole dataqsCase={c} />
-        </Card>
-      )}
-
-      <PackageCard dataqsCase={c} />
-
-      {c.can_assign && (
-        <Card title="Case specialist">
-          <DataQsOwnerPanel key={c.row_version} dataqsCase={c} />
-        </Card>
-      )}
-      {c.can_assess &&
-        (c.assessments.length === 0 || c.tasks.some((t) => ASSESS_TASKS.includes(t.kind)) ? (
+        )}
+        {c.can_resubmit && <ResubmitCard dataqsCase={c} />}
+        {c.can_approve && <PackageCard dataqsCase={c} />}
+        {c.tasks.length > 0 && (
+          <Card title="Open tasks">
+            <DataQsTaskList tasks={c.tasks} />
+          </Card>
+        )}
+        {assessDue && (
           <Card title="Assess the case">
             <DataQsAssessmentPanel dataqsCase={c} />
           </Card>
-        ) : (
-          <FoldCard title="Reassess the case">
-            <DataQsAssessmentPanel dataqsCase={c} />
-          </FoldCard>
-        ))}
-      {c.can_build_package &&
-        (c.packages.length === 0 || c.tasks.some((t) => PACKAGE_TASKS.includes(t.kind)) ? (
+        )}
+        {packageDue && (
           <Card title={c.packages.length ? 'Revise the package' : 'Build the filing package'}>
             <DataQsPackageBuilder key={c.packages[0]?.id ?? 0} dataqsCase={c} />
           </Card>
-        ) : (
-          <FoldCard title="Revise the package">
-            <DataQsPackageBuilder key={c.packages[0]?.id ?? 0} dataqsCase={c} />
-          </FoldCard>
-        ))}
-      {c.assessments.length > 0 && (
-        <Card title="STS assessment">
-          <DataQsAssessmentHistory assessments={c.assessments} />
+        )}
+        {staff && filing && (
+          <Card title="File with DataQs">
+            <DataQsSubmissionConsole dataqsCase={c} />
+          </Card>
+        )}
+        {agencyDue && (
+          <Card title="Record an agency event">
+            <DataQsCorrespondencePanel key={c.row_version} dataqsCase={c} />
+          </Card>
+        )}
+        {c.can_propose_review && (
+          <Card title="Appeal">
+            <DataQsAppealPanel key={c.row_version} dataqsCase={c} />
+          </Card>
+        )}
+      </Section>
+
+      <Section title="Where it stands">
+        {c.issues.some((i) => i.verification_status !== null) && (
+          <Card title="Correction check">
+            <DataQsVerification dataqsCase={c} />
+          </Card>
+        )}
+        {c.gov_request_id && (
+          <Card title="Filed with DataQs">
+            <DataQsFiledCard dataqsCase={c} />
+          </Card>
+        )}
+        {c.clocks.length > 0 && (
+          <Card title="Deadlines">
+            <DataQsDeadlines dataqsCase={c} />
+          </Card>
+        )}
+        {c.review_cycles.length > 0 && (
+          <Card title="Review stages">
+            <DataQsReviewStages dataqsCase={c} />
+          </Card>
+        )}
+        {c.assessments.length > 0 && (
+          <Card title="STS assessment">
+            <DataQsAssessmentHistory assessments={c.assessments} />
+          </Card>
+        )}
+      </Section>
+
+      <Section title="The request">
+        <Card title={`What’s wrong (${c.issues.length})`}>
+          <div className="space-y-4">
+            {c.issues.map((issue) => (
+              <IssueBlock key={issue.id} dataqsCase={c} issue={issue} />
+            ))}
+          </div>
         </Card>
+        {c.can_submit && (
+          <Card title="Authorize and submit">
+            <DataQsSubmitPanel dataqsCase={c} />
+          </Card>
+        )}
+        <Card title="The inspection">
+          <DataQsEventSummary
+            event={c.event}
+            eligibility={c.eligibility}
+            carrierName={c.carrier_name}
+            usdotNumber={c.usdot_number}
+          />
+        </Card>
+        {!c.can_approve && <PackageCard dataqsCase={c} />}
+        {c.authorizations.length > 0 && (
+          <Card title="Authorization">
+            <ul className="space-y-1 text-sm text-slate-700">
+              {c.authorizations.map((a) => (
+                <li key={`${a.kind}-${a.approved_at}`}>
+                  <span className="font-medium text-slate-900">
+                    {a.kind === 'SERVICE_CONSENT'
+                      ? 'Authorized STS to act on this request'
+                      : 'Approved the request package'}
+                  </span>
+                  {' · '}
+                  {a.signer_name}
+                  {a.signer_title && `, ${a.signer_title}`} on {formatDateTime(a.approved_at)}
+                  {/* Which wording was agreed to: STS's record */}
+                  {staff && (
+                    <span className="text-xs text-slate-600">
+                      {' '}
+                      (text version {a.terms_version})
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
+      </Section>
+
+      <Section title="Messages and history">
+        {(c.can_message || c.messages.length > 0) && (
+          <Card title={staff ? 'Messages to the carrier' : 'Messages from STS'}>
+            <DataQsMessages dataqsCase={c} />
+          </Card>
+        )}
+        <Card title="Timeline">
+          <DataQsTimeline events={c.timeline} />
+        </Card>
+      </Section>
+
+      {staff && (
+        <Section title="STS tools and records">
+          {c.can_assign && (
+            <Card title="Case specialist">
+              <DataQsOwnerPanel key={c.row_version} dataqsCase={c} />
+            </Card>
+          )}
+          {c.can_assess && !assessDue && (
+            <FoldCard title="Reassess the case">
+              <DataQsAssessmentPanel dataqsCase={c} />
+            </FoldCard>
+          )}
+          {c.can_build_package && !packageDue && (
+            <FoldCard title="Revise the package">
+              <DataQsPackageBuilder key={c.packages[0]?.id ?? 0} dataqsCase={c} />
+            </FoldCard>
+          )}
+          {c.can_record_correspondence && !agencyDue && (
+            <FoldCard title="Record an agency event">
+              <DataQsCorrespondencePanel key={c.row_version} dataqsCase={c} />
+            </FoldCard>
+          )}
+          {c.emails && c.emails.length > 0 && (
+            <FoldCard title={`Emails (${c.emails.length})`}>
+              <DataQsEmailLog emails={c.emails} />
+            </FoldCard>
+          )}
+          {c.audit && c.audit.length > 0 && (
+            <FoldCard title={`Audit trail (${c.audit.length})`}>
+              <ol className="space-y-1 text-sm">
+                {c.audit.map((event, i) => (
+                  <li key={i} className="flex gap-3">
+                    <span className="w-40 shrink-0 text-xs text-slate-600">
+                      {formatDateTime(event.at)}
+                    </span>
+                    <span className="text-slate-800" title={event.action}>
+                      {auditLabel(event.action)}
+                    </span>
+                    <span className="text-slate-600">{event.actor_name ?? 'Automatic'}</span>
+                  </li>
+                ))}
+              </ol>
+            </FoldCard>
+          )}
+          {c.can_close && (
+            <FoldCard title="Close the file">
+              <DataQsCloseFile key={c.row_version} dataqsCase={c} />
+            </FoldCard>
+          )}
+        </Section>
       )}
+    </div>
+  )
+}
 
-      <Card title="The inspection">
-        <DataQsEventSummary
-          event={c.event}
-          eligibility={c.eligibility}
-          carrierName={c.carrier_name}
-          usdotNumber={c.usdot_number}
-        />
-      </Card>
-
-      <Card title={`What’s wrong (${c.issues.length})`}>
-        <div className="space-y-4">
-          {c.issues.map((issue) => (
-            <IssueBlock key={issue.id} dataqsCase={c} issue={issue} />
-          ))}
+/** The case at a glance: who, which inspection, where it is, who handles it, and what's next. */
+function CaseSummary({ dataqsCase: c, staff }: { dataqsCase: DataQsCase; staff: boolean }) {
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-surface p-5">
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight">DataQs case {c.id}</h1>
+        <StatusBadge {...WORK_STATUS[c.work_status]} />
+        {staff && c.organization_name && (
+          <span className="text-sm text-slate-600">for {c.organization_name}</span>
+        )}
+      </div>
+      <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Fact label="Carrier" sub={`USDOT ${c.usdot_number}`}>
+          {c.carrier_name ?? '—'}
+        </Fact>
+        <Fact label="Inspection" sub={c.source_event_id}>
+          {c.event_date ? formatDate(c.event_date) : 'Date unknown'}
+          {c.event_state && ` · ${c.event_state}`}
+        </Fact>
+        <Fact label="DataQs request" mono={!!c.gov_request_id}>
+          {c.gov_request_id ?? <span className="text-slate-600">Not filed yet</span>}
+        </Fact>
+        <Fact label="STS specialist">
+          {c.owner_name ?? <span className="text-slate-600">Not assigned yet</span>}
+        </Fact>
+      </dl>
+      <div className="mt-5 flex items-start gap-3 rounded-xl bg-accent-soft px-4 py-3">
+        <ArrowRight className="mt-0.5 size-4 shrink-0 text-accent-strong" aria-hidden />
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-accent-strong">
+            Next step
+          </div>
+          <p className="text-sm font-medium text-slate-900">{c.next_action}</p>
+          {c.next_deadline_at && (
+            <p className="mt-0.5 text-xs text-slate-700">
+              {c.next_deadline_label ?? 'Due'}: {formatDateTime(c.next_deadline_at)}
+            </p>
+          )}
         </div>
-      </Card>
+      </div>
+    </section>
+  )
+}
 
-      {c.can_submit && (
-        <Card title="Authorize and submit">
-          <DataQsSubmitPanel dataqsCase={c} />
-        </Card>
-      )}
-
-      {c.authorizations.length > 0 && (
-        <Card title="Authorization">
-          <ul className="space-y-1 text-sm text-slate-700">
-            {c.authorizations.map((a) => (
-              <li key={`${a.kind}-${a.approved_at}`}>
-                <span className="font-medium text-slate-900">
-                  {a.kind === 'SERVICE_CONSENT'
-                    ? 'Authorized STS to act on this request'
-                    : 'Approved the request package'}
-                </span>
-                {' · '}
-                {a.signer_name}
-                {a.signer_title && `, ${a.signer_title}`} on {formatDateTime(a.approved_at)}
-                {/* Which wording was agreed to: STS's record */}
-                {staff && (
-                  <span className="text-xs text-slate-500"> (text version {a.terms_version})</span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
-
-      {(c.can_message || c.messages.length > 0) && (
-        <Card title={staff ? 'Messages to the carrier' : 'Messages from STS'}>
-          <DataQsMessages dataqsCase={c} />
-        </Card>
-      )}
-
-      <Card title="Timeline">
-        <DataQsTimeline events={c.timeline} />
-      </Card>
-
-      {c.emails && c.emails.length > 0 && (
-        <FoldCard title={`Emails (${c.emails.length})`}>
-          <DataQsEmailLog emails={c.emails} />
-        </FoldCard>
-      )}
-      {c.can_close && (
-        <FoldCard title="Close the file">
-          <DataQsCloseFile key={c.row_version} dataqsCase={c} />
-        </FoldCard>
-      )}
-
-      {c.audit && (
-        <Card title="Audit trail (STS only)">
-          <ol className="space-y-1 text-sm">
-            {c.audit.map((event, i) => (
-              <li key={i} className="flex gap-3">
-                <span className="w-40 shrink-0 text-xs text-slate-500">
-                  {formatDateTime(event.at)}
-                </span>
-                <span className="text-slate-800" title={event.action}>
-                  {auditLabel(event.action)}
-                </span>
-                <span className="text-slate-500">{event.actor_name ?? 'Automatic'}</span>
-              </li>
-            ))}
-          </ol>
-        </Card>
-      )}
+function Fact({
+  label,
+  sub,
+  mono = false,
+  children,
+}: {
+  label: string
+  sub?: string
+  mono?: boolean
+  children: ReactNode
+}) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-xs font-medium uppercase tracking-wide text-slate-600">{label}</dt>
+      <dd className={`mt-0.5 truncate text-sm text-slate-900 ${mono ? 'font-mono' : ''}`}>
+        {children}
+      </dd>
+      {sub && <dd className="truncate font-mono text-xs text-slate-600">{sub}</dd>}
     </div>
   )
 }
@@ -270,7 +353,7 @@ function IssueBlock({ dataqsCase: c, issue }: { dataqsCase: DataQsCase; issue: D
   const upload = (
     <>
       <DataQsEvidenceUpload caseId={c.id} issueId={issue.id} titles={c.document_titles} />
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-slate-600">
         Suggested: {issue.checklist.join('; ')}. These are suggestions, not a government standard.
       </p>
     </>
@@ -290,9 +373,9 @@ function IssueBlock({ dataqsCase: c, issue }: { dataqsCase: DataQsCase; issue: D
             'The whole inspection'
           )}
         </div>
-        <div className="text-xs text-slate-500">{issue.reason_label}</div>
+        <div className="text-xs text-slate-600">{issue.reason_label}</div>
         {staffView && issue.dataqs_reason_label && (
-          <div className="text-xs text-slate-500">DataQs: {issue.dataqs_reason_label}</div>
+          <div className="text-xs text-slate-600">DataQs: {issue.dataqs_reason_label}</div>
         )}
         {issue.outcome && (
           <div className="mt-1">
@@ -306,11 +389,11 @@ function IssueBlock({ dataqsCase: c, issue }: { dataqsCase: DataQsCase; issue: D
       {(issue.recorded_value || issue.requested_value) && (
         <dl className="grid gap-2 text-sm sm:grid-cols-2">
           <div>
-            <dt className="text-xs text-slate-500">The record says</dt>
+            <dt className="text-xs text-slate-600">The record says</dt>
             <dd>{issue.recorded_value ?? '—'}</dd>
           </div>
           <div>
-            <dt className="text-xs text-slate-500">It should say</dt>
+            <dt className="text-xs text-slate-600">It should say</dt>
             <dd>{issue.requested_value ?? '—'}</dd>
           </div>
         </dl>
@@ -380,13 +463,13 @@ function EvidenceRow({
         >
           {file.title ?? file.file_name}
         </a>
-        {file.title && <div className="truncate text-xs text-slate-500">{file.file_name}</div>}
+        {file.title && <div className="truncate text-xs text-slate-600">{file.file_name}</div>}
         {relevance && (
           <p className="mt-2 rounded-md border-l-2 border-accent bg-surface px-2.5 py-1.5 text-slate-700">
             {relevance}
           </p>
         )}
-        <div className="mt-2 text-xs text-slate-500">
+        <div className="mt-2 text-xs text-slate-600">
           {fileSize(file.size_bytes)}
           {file.document_date && ` · dated ${formatDate(file.document_date)}`}
           {file.uploaded_by_name && ` · uploaded by ${file.uploaded_by_name}`}

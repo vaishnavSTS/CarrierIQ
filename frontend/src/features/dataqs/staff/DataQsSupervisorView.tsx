@@ -41,7 +41,7 @@ export function DataQsSupervisorView() {
       <section className="space-y-3 rounded-2xl border border-slate-200 bg-surface p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-sm font-semibold text-slate-900">Needs attention</h2>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-600">
             Updated {formatDateTime(data.generated_at)} · refreshes every minute
           </p>
         </div>
@@ -60,7 +60,7 @@ export function DataQsSupervisorView() {
               }`}
             >
               {f === 'all' ? 'All' : SEVERITY[f].label}{' '}
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-slate-600">
                 {f === 'all' ? data.exceptions.length : counts[f]}
               </span>
             </button>
@@ -122,11 +122,11 @@ function ExceptionTable({ rows }: { rows: DataQsException[] }) {
                 >
                   Case {e.case_id}
                 </Link>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-slate-600">
                   {e.organization_name ?? '—'} · USDOT{' '}
                   <span className="font-mono">{e.usdot_number}</span>
                 </div>
-                <div className="text-xs text-slate-500">{WORK_STATUS[e.work_status].label}</div>
+                <div className="text-xs text-slate-600">{WORK_STATUS[e.work_status].label}</div>
               </td>
               <td className={cellClass}>
                 {e.owner_name ?? <span className="text-amber-700">Unassigned</span>}

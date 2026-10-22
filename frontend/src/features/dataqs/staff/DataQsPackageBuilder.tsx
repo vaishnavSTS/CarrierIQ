@@ -140,7 +140,7 @@ export function DataQsPackageBuilder({ dataqsCase }: { dataqsCase: DataQsCase })
             />
             {e.title ?? e.file_name}
             {e.scan_status !== 'CLEAN' && (
-              <span className="text-xs text-slate-500">(scan {e.scan_status.toLowerCase()})</span>
+              <span className="text-xs text-slate-600">(scan {e.scan_status.toLowerCase()})</span>
             )}
           </label>
         ))}
@@ -158,7 +158,7 @@ export function DataQsPackageBuilder({ dataqsCase }: { dataqsCase: DataQsCase })
         />
       </div>
       {current && (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-600">
           Changing anything makes a new package version and cancels any approval of v
           {current.package_version}; the carrier must approve again. Sending it unchanged keeps v
           {current.package_version}.

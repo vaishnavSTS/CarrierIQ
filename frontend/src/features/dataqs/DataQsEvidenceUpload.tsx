@@ -117,7 +117,7 @@ export function DataQsEvidenceUpload({
               setDragging(false)
               choose(e.dataTransfer.files[0] ?? null)
             }}
-            className={`mt-1 flex cursor-pointer flex-wrap items-center gap-3 rounded-md border-2 border-dashed px-3 py-3 text-sm ${
+            className={`relative mt-1 flex cursor-pointer flex-wrap items-center gap-3 rounded-md border-2 border-dashed px-3 py-3 text-sm ${
               dragging
                 ? 'border-accent bg-accent-soft'
                 : 'border-slate-300 bg-surface hover:border-accent'
@@ -144,7 +144,7 @@ export function DataQsEvidenceUpload({
               DataQs doesn’t accept this type of file. Choose one of the types below.
             </p>
           )}
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-slate-600">
             PDF, Word, Excel, TIF, TXT, WordPerfect, JPEG, PNG, GIF, MP4, AVI, MKV, MPEG or WMV: the
             types DataQs accepts. Save ELD exports as PDF, Excel or TXT.
           </p>
@@ -208,7 +208,7 @@ export function DataQsEvidenceUpload({
         >
           {upload.isPending ? 'Uploading…' : 'Upload'}
         </button>
-        {missing && <span className="text-xs text-slate-500">{missing}</span>}
+        {missing && <span className="text-xs text-slate-600">{missing}</span>}
         {upload.isSuccess && !file && (
           <span className="text-xs text-emerald-700">Uploaded. You can add another file.</span>
         )}

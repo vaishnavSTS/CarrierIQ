@@ -23,7 +23,7 @@ export function DataQsEventSummary({
         <dt className="text-slate-500">Carrier</dt>
         <dd>
           {carrierName ?? '—'}{' '}
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-slate-600">
             USDOT <span className="font-mono">{usdotNumber}</span>
           </span>
         </dd>
@@ -59,7 +59,7 @@ export function DataQsEventSummary({
             {note}
           </p>
         ))}
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-600">
           Timing only: it doesn’t mean the record is wrong. FMCSA data as of{' '}
           {formatDateTime(event.source_observed_at)}.
         </p>

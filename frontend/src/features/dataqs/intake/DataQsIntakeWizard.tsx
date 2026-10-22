@@ -252,7 +252,7 @@ function StepReview({
                   ? `${v.description ?? 'Violation'} (${v.code}, ${unitLabel(v.applies_to, v.unit_number)})`
                   : 'The whole inspection'}
               </div>
-              <div className="text-xs text-slate-500">{label(issue.reason)}</div>
+              <div className="text-xs text-slate-600">{label(issue.reason)}</div>
               <p className="mt-1 whitespace-pre-line text-slate-700">{issue.factual_basis}</p>
             </li>
           )

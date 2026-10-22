@@ -38,7 +38,7 @@ export function DataQsEmailLog({ emails }: { emails: DataQsEmail[] }) {
           <li key={e.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
             <span className="text-slate-900">{KIND[e.kind] ?? e.kind}</span>
             <StatusBadge label={status.label} tone={status.tone} />
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-slate-600">
               {e.to.length > 0 && `to ${e.to.join(', ')} · `}
               {e.sent_at
                 ? `sent ${formatDateTime(e.sent_at)}`

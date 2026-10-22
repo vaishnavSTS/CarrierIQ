@@ -15,8 +15,11 @@ export function PublicLayout() {
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-canvas/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">
           <Brand to="/" />
-          <nav className="ml-auto flex items-center gap-2 text-sm">
-            <ThemeToggle />
+          <nav className="ml-auto flex items-center gap-2 whitespace-nowrap text-sm">
+            {/* Phones: room for the buttons; the theme follows the device there. */}
+            <span className="hidden sm:block">
+              <ThemeToggle />
+            </span>
             {user ? (
               <Link
                 to={homeFor(user.portal)}
@@ -36,7 +39,8 @@ export function PublicLayout() {
                   to="/register"
                   className="rounded-lg bg-cta px-3 py-1.5 font-medium text-cta-ink transition-colors hover:bg-cta-hover active:bg-cta-active"
                 >
-                  Create account
+                  <span className="sm:hidden">Sign up</span>
+                  <span className="hidden sm:inline">Create account</span>
                 </Link>
               </>
             )}

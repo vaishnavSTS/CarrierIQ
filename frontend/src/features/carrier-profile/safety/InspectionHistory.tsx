@@ -101,7 +101,7 @@ export function InspectionHistory({
       {isPending && <p className="text-sm text-slate-500">Loading inspections…</p>}
 
       {data && data.total > 0 && (
-        <div className={`overflow-x-auto ${isPlaceholderData ? 'opacity-60' : ''}`}>
+        <div className={`relative overflow-x-auto ${isPlaceholderData ? 'opacity-60' : ''}`}>
           <table className={tableClass}>
             <thead className={headClass}>
               <tr>

@@ -13,7 +13,7 @@ export function DataQsTaskList({ tasks }: { tasks: DataQsTask[] }) {
         const overdue = task.due_at !== null && new Date(task.due_at).getTime() < now
         return (
           <li key={task.id} className="flex flex-wrap items-start gap-x-3 gap-y-1 py-2">
-            <span className="w-16 shrink-0 text-xs text-slate-500">
+            <span className="w-16 shrink-0 text-xs text-slate-600">
               {OWNER_LABEL[task.action_owner]}
             </span>
             <span className="flex-1">
@@ -22,7 +22,7 @@ export function DataQsTaskList({ tasks }: { tasks: DataQsTask[] }) {
                 <span className="block whitespace-pre-line text-slate-600">{task.detail}</span>
               )}
             </span>
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-slate-600">
               {task.assignee_name && `${task.assignee_name} · `}
               {task.due_at ? `due ${formatDateTime(task.due_at)}` : 'no due date'}
             </span>
@@ -42,7 +42,7 @@ export function DataQsAssessmentHistory({ assessments }: { assessments: DataQsAs
         <li key={a.id} className="space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium text-slate-900">{a.outcome_label}</span>
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-slate-600">
               {a.assessor_name ?? 'STS'} · {formatDateTime(a.created_at)}
             </span>
           </div>

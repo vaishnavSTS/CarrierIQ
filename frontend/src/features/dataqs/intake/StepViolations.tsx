@@ -45,8 +45,8 @@ export function StepViolations({
           />
           <span className="flex-1">
             <span className="text-slate-900">{v.description ?? 'No description'}</span>{' '}
-            <span className="font-mono text-xs text-slate-500">{v.code}</span>
-            <span className="block text-xs text-slate-500">
+            <span className="font-mono text-xs text-slate-600">{v.code}</span>
+            <span className="block text-xs text-slate-600">
               {unitLabel(v.applies_to, v.unit_number)}
               {v.citation_number && ` · Citation ${v.citation_number}`}
             </span>
@@ -63,7 +63,7 @@ export function StepViolations({
         />
         <span>
           <span className="text-slate-900">The whole inspection</span>
-          <span className="block text-xs text-slate-500">
+          <span className="block text-xs text-slate-600">
             For example: not our vehicle, driver or company, or a duplicate inspection.
           </span>
         </span>

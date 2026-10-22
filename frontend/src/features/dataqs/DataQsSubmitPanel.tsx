@@ -83,7 +83,7 @@ export function DataQsSubmitPanel({ dataqsCase }: { dataqsCase: DataQsCase }) {
       >
         {submit.isPending ? 'Submitting…' : 'Authorize and submit to STS'}
       </button>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-600">
         Authorization text version {dataqsCase.consent.terms_version}.
       </p>
     </form>

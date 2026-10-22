@@ -8,6 +8,8 @@ import { formatDateTime } from '../../utils/format'
 import { inputClass, labelClass } from './intake/intakeState'
 import { primaryButton } from './ui'
 
+const SHOWN = 3
+
 const DELIVERY = {
   SENT: { label: 'Emailed', tone: 'ok' },
   WAITING: { label: 'Waiting to send', tone: 'pending' },
@@ -18,6 +20,9 @@ const DELIVERY = {
 /** Emails between STS and the carrier about the case, newest first. Staff can write one; the
  * carrier replies by email (the reply goes to the STS inbox). */
 export function DataQsMessages({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
+  // The newest few; older ones on request, so a long case stays readable.
+  const [all, setAll] = useState(false)
+  const shown = all ? c.messages : c.messages.slice(0, SHOWN)
   return (
     <div className="space-y-4">
       {c.can_message && <Compose dataqsCase={c} />}
@@ -25,10 +30,19 @@ export function DataQsMessages({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
         <p className="text-sm text-slate-500">No messages yet.</p>
       ) : (
         <ul className="divide-y divide-slate-100">
-          {c.messages.map((m) => (
+          {shown.map((m) => (
             <MessageRow key={m.id} message={m} />
           ))}
         </ul>
+      )}
+      {c.messages.length > SHOWN && (
+        <button
+          type="button"
+          onClick={() => setAll((v) => !v)}
+          className="text-sm font-medium text-accent-strong hover:underline"
+        >
+          {all ? 'Show fewer' : `Show all ${c.messages.length} messages`}
+        </button>
       )}
     </div>
   )
@@ -44,7 +58,7 @@ function MessageRow({ message: m }: { message: DataQsMessage }) {
         <span className="font-medium text-slate-900">{m.subject}</span>
         {staff && <StatusBadge label={delivery.label} tone={delivery.tone} />}
       </div>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-600">
         {formatDateTime(m.created_at)} · from {m.author_name ? `${m.author_name}, STS` : 'STS'}
         {m.recipients.length > 0 && ` · to ${m.recipients.join(', ')}`}
       </p>

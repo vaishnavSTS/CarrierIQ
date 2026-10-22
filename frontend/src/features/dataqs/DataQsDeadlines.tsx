@@ -58,7 +58,7 @@ function ClockRow({ dataqsCase: c, clock }: { dataqsCase: DataQsCase; clock: Dat
           </button>
         )}
       </div>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-600">
         {clock.budget_days} calendar days from {formatDateTime(clock.base_at)}
         {clock.authority_source && ` · ${clock.authority_source}`}
         {clock.override_reason && ` · set by hand: ${clock.override_reason}`}

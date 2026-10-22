@@ -87,7 +87,7 @@ export function DataQsAssessmentPanel({ dataqsCase }: { dataqsCase: DataQsCase }
             <tr key={check.key} className="align-top">
               <td className="py-2 pr-3">
                 <div className="font-medium text-slate-900">{check.label}</div>
-                <div className="text-xs text-slate-500">{check.hint}</div>
+                <div className="text-xs text-slate-600">{check.hint}</div>
               </td>
               <td className="whitespace-nowrap py-2 pr-3">
                 {RESULTS.map((r) => (
@@ -138,7 +138,7 @@ export function DataQsAssessmentPanel({ dataqsCase }: { dataqsCase: DataQsCase }
             ))}
           </select>
           {outcome && (
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-slate-600">
               {OUTCOMES.find((o) => o.value === outcome)?.hint}
             </p>
           )}

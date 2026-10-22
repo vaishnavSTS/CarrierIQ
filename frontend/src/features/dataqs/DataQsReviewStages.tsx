@@ -46,7 +46,7 @@ export function DataQsReviewStages({ dataqsCase: c }: { dataqsCase: DataQsCase }
                 <StatusBadge label="Being prepared" tone="neutral" />
               )}
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-600">
               {cycle.opened_reason}
               {cycle.submitted_at && ` · filed ${formatDateTime(cycle.submitted_at)}`}
               {cycle.decision_issued_at && ` · decided ${formatDateTime(cycle.decision_issued_at)}`}
@@ -81,7 +81,7 @@ export function DataQsReviewStages({ dataqsCase: c }: { dataqsCase: DataQsCase }
               </p>
             )}
             {cycle.level === 'FINAL' && cycle.outcome && cycle.outcome !== 'FULL_CORRECTION' && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-600">
                 The final review closes the normal DataQs escalation route; FMCSA is not an
                 automatic further appeal.
               </p>

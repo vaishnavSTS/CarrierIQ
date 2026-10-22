@@ -68,7 +68,7 @@ export function DataQsIntro({
           </li>
         ))}
       </ol>
-      <p className="mt-5 border-t border-slate-100 pt-4 text-xs text-slate-500">
+      <p className="mt-5 border-t border-slate-100 pt-4 text-xs text-slate-600">
         A state agency reviews each request and decides it; filing a request does not guarantee a
         record will be changed or removed.
       </p>

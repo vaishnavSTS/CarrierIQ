@@ -117,7 +117,7 @@ export function StepExplain({
                 onChange={(e) => set({ factual_basis: e.target.value })}
                 className={inputClass}
               />
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-slate-600">
                 Stick to facts you can support with records. A repair made after the inspection
                 doesn’t by itself show the problem wasn’t there at the time.
               </p>

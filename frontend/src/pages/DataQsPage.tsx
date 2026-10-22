@@ -14,7 +14,7 @@ export function DataQsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">DataQs</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">DataQs requests</h1>
         <p className="mt-1 text-sm text-slate-600">
           Carriers’ requests to correct FMCSA safety records: assessment, filing, agency
           correspondence and decisions.

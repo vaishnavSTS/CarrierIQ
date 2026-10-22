@@ -228,7 +228,7 @@ export function CarrierSnapshot({ usdotNumber }: { usdotNumber: number }) {
               Details ›
             </Link>
           </div>
-          <ul className="mt-3 grid gap-x-6 gap-y-2.5 md:grid-cols-2">
+          <ul className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2.5 md:grid-cols-2">
             {network.data.registration_checks.map((c, i) => {
               const { icon: Icon, className } = CHECK_ICON[c.status]
               return (
@@ -243,7 +243,7 @@ export function CarrierSnapshot({ usdotNumber }: { usdotNumber: number }) {
                   <Icon className={`mt-0.5 size-4 shrink-0 ${className}`} aria-hidden />
                   <span className="min-w-0">
                     <span className="font-medium text-slate-900">{c.label}</span>
-                    <span className="block truncate text-xs text-slate-500">{c.detail}</span>
+                    <span className="block text-xs text-slate-500 md:truncate">{c.detail}</span>
                   </span>
                 </motion.li>
               )

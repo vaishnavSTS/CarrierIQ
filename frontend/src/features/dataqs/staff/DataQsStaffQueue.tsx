@@ -70,7 +70,7 @@ export function DataQsStaffQueue() {
                   : 'text-slate-600 hover:bg-slate-50'
               }`}
             >
-              {f.label} <span className="text-xs text-slate-500">{count}</span>
+              {f.label} <span className="text-xs text-slate-600">{count}</span>
             </button>
           )
         })}
@@ -122,7 +122,7 @@ export function DataQsStaffQueue() {
                     >
                       {c.organization_name ?? 'Case'}
                     </Link>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-slate-600">
                       {c.carrier_name ?? '—'} · USDOT{' '}
                       <span className="font-mono">{c.usdot_number}</span>
                     </div>
@@ -133,9 +133,9 @@ export function DataQsStaffQueue() {
                   </td>
                   <td className={cellClass}>
                     <StatusBadge {...WORK_STATUS[c.work_status]} />
-                    <div className="mt-0.5 text-xs text-slate-500">{c.next_action}</div>
+                    <div className="mt-0.5 text-xs text-slate-600">{c.next_action}</div>
                     {c.gov_request_id && (
-                      <div className="font-mono text-xs text-slate-500">{c.gov_request_id}</div>
+                      <div className="font-mono text-xs text-slate-600">{c.gov_request_id}</div>
                     )}
                   </td>
                   <td className={cellClass}>
@@ -145,7 +145,7 @@ export function DataQsStaffQueue() {
                     {c.next_deadline_at ? (
                       <>
                         {formatDateTime(c.next_deadline_at)}
-                        <div className="text-xs text-slate-500">{c.next_deadline_label}</div>
+                        <div className="text-xs text-slate-600">{c.next_deadline_label}</div>
                       </>
                     ) : (
                       <span className="text-slate-500">—</span>

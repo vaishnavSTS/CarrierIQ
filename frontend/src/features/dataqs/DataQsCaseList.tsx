@@ -55,7 +55,7 @@ export function DataQsCaseList({ showCompany, empty }: { showCompany: boolean; e
                 >
                   {c.carrier_name ?? 'Case'}
                 </Link>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-slate-600">
                   USDOT <span className="font-mono">{c.usdot_number}</span>
                 </div>
               </td>
@@ -64,7 +64,7 @@ export function DataQsCaseList({ showCompany, empty }: { showCompany: boolean; e
                   {formatDate(c.event_date)}
                   {c.event_state && ` · ${c.event_state}`}
                 </div>
-                <div className="font-mono text-xs text-slate-500">{c.source_event_id}</div>
+                <div className="font-mono text-xs text-slate-600">{c.source_event_id}</div>
               </td>
               <td className={cellClass}>
                 <StatusBadge {...WORK_STATUS[c.work_status]} />

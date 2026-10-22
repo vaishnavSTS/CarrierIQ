@@ -16,7 +16,7 @@ export function DataQsPackageView({ pkg }: { pkg: DataQsPackage }) {
         <span className="font-medium text-slate-900">Package v{pkg.package_version}</span>
         {pkg.approved && <StatusBadge label="Approved by carrier" tone="ok" />}
         {pkg.invalidated_at && <StatusBadge label="Replaced" tone="neutral" />}
-        <span className="text-xs text-slate-500" title={staff ? pkg.manifest_hash : undefined}>
+        <span className="text-xs text-slate-600" title={staff ? pkg.manifest_hash : undefined}>
           {staff && (
             <>
               Fingerprint <span className="font-mono">{shortHash(pkg.manifest_hash)}</span> ·{' '}
@@ -65,7 +65,7 @@ export function DataQsPackageView({ pkg }: { pkg: DataQsPackage }) {
               {issue.violation_code ? (
                 <>
                   {issue.description ?? 'Violation'}{' '}
-                  <span className="font-mono text-xs text-slate-500">{issue.violation_code}</span>
+                  <span className="font-mono text-xs text-slate-600">{issue.violation_code}</span>
                 </>
               ) : (
                 'The whole inspection'
@@ -89,13 +89,13 @@ export function DataQsPackageView({ pkg }: { pkg: DataQsPackage }) {
             {m.evidence.map((e) => (
               <li key={e.evidence_id} className="flex flex-wrap gap-x-3 py-1.5">
                 <span className="font-medium text-slate-900">{e.title ?? e.file_name}</span>
-                {e.title && <span className="text-xs text-slate-500">{e.file_name}</span>}
-                <span className="text-xs text-slate-500">
+                {e.title && <span className="text-xs text-slate-600">{e.file_name}</span>}
+                <span className="text-xs text-slate-600">
                   {fileSize(e.size_bytes)}
                   {e.document_date && ` · dated ${formatDate(e.document_date)}`}
                 </span>
                 {staff && (
-                  <span className="font-mono text-xs text-slate-500" title={e.sha256}>
+                  <span className="font-mono text-xs text-slate-600" title={e.sha256}>
                     SHA-256 {shortHash(e.sha256)}
                   </span>
                 )}
@@ -116,7 +116,7 @@ export function DataQsPackageView({ pkg }: { pkg: DataQsPackage }) {
         </div>
       )}
 
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-slate-600">
         Filed by {m.representative.company}
         {m.representative.specialist && ` (${m.representative.specialist})`} for{' '}
         {m.carrier.legal_name ?? `USDOT ${m.carrier.usdot_number}`}, inspection{' '}

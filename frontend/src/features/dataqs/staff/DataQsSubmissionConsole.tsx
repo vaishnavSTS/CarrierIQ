@@ -162,14 +162,14 @@ function OpenAttempt({
 function Value({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="w-40 shrink-0 text-xs text-slate-500">{label}</span>
+      <span className="w-40 shrink-0 text-xs text-slate-600">{label}</span>
       {value ? (
         <>
           <span className="font-mono text-xs text-slate-900">{value}</span>
           <CopyButton text={value} label="Copy" />
         </>
       ) : (
-        <span className="text-xs text-slate-500">not in our data (not needed)</span>
+        <span className="text-xs text-slate-600">not in our data (not needed)</span>
       )}
     </div>
   )
@@ -206,7 +206,7 @@ function FilingGuide({ dataqsCase: c, pkg }: { dataqsCase: DataQsCase; pkg: Data
             <Download className="size-3.5" aria-hidden />
             {e.file_name}
           </a>
-          <span className="text-xs text-slate-500">title:</span>
+          <span className="text-xs text-slate-600">title:</span>
           <span className="text-xs text-slate-900">{e.title ?? e.file_name}</span>
           <CopyButton text={e.title ?? e.file_name} label="Copy title" />
         </li>
@@ -216,7 +216,7 @@ function FilingGuide({ dataqsCase: c, pkg }: { dataqsCase: DataQsCase; pkg: Data
   const narrative = (
     <>
       <div className="flex items-center gap-2">
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-slate-600">
           {appeal
             ? 'Comments (the approved grounds)'
             : '“What information should be reviewed and why?”'}
@@ -268,7 +268,7 @@ function FilingGuide({ dataqsCase: c, pkg }: { dataqsCase: DataQsCase; pkg: Data
         <Value label="USDOT#" value={String(c.usdot_number)} />
         <Value label="Report Date" value={formatDate(c.event.inspection_date)} />
         <Value label="Plate State / Plate#" value={null} />
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-600">
           Pick the result whose report number matches, then Next.
         </p>
       </Screen>
@@ -278,7 +278,7 @@ function FilingGuide({ dataqsCase: c, pkg }: { dataqsCase: DataQsCase; pkg: Data
       <Screen n={4} title="Complete request details">
         <Value label="Where did you view the data" value={m.viewed_in} />
         {narrative}
-        <div className="text-xs text-slate-500">
+        <div className="text-xs text-slate-600">
           Attach Supporting Document(s): for each file enter the title, add the file, then Add File.
         </div>
         {files}
@@ -501,7 +501,7 @@ function AttemptHistory({ attempts }: { attempts: DataQsAttempt[] }) {
           <li key={a.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
             <span className="text-slate-900">Attempt {a.id}</span>
             <StatusBadge label={a.status.toLowerCase()} tone={ATTEMPT_TONE[a.status]} />
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-slate-600">
               v{a.package_version} · started {formatDateTime(a.started_at)}
               {a.filed_by_name && ` by ${a.filed_by_name}`}
               {a.filing_account && ` · ${a.filing_account}`}

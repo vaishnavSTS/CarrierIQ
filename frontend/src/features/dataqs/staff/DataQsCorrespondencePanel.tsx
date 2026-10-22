@@ -135,7 +135,7 @@ export function DataQsCorrespondencePanel({ dataqsCase: c }: { dataqsCase: DataQ
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-slate-500">{KINDS.find((k) => k.value === kind)?.hint}</p>
+          <p className="mt-1 text-xs text-slate-600">{KINDS.find((k) => k.value === kind)?.hint}</p>
         </div>
         <div>
           <label htmlFor="event-at" className={labelClass}>
