@@ -1,4 +1,4 @@
-import { Download } from 'lucide-react'
+import { Download, FileImage, FileText, FileVideo } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { dataQsEvidenceUrl } from '../../api/dataqs'
@@ -28,7 +28,7 @@ import { DataQsEmailLog } from './staff/DataQsEmailLog'
 import { DataQsOwnerPanel } from './staff/DataQsOwnerPanel'
 import { DataQsPackageBuilder } from './staff/DataQsPackageBuilder'
 import { DataQsSubmissionConsole } from './staff/DataQsSubmissionConsole'
-import { primaryButton } from './ui'
+import { primaryButton, secondaryButton } from './ui'
 
 function Card({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -313,7 +313,7 @@ function IssueBlock({ dataqsCase: c, issue }: { dataqsCase: DataQsCase; issue: D
         {files.length === 0 ? (
           <p className="mt-1 text-sm text-slate-500">No files yet.</p>
         ) : (
-          <ul className="mt-1 divide-y divide-slate-100">
+          <ul className="mt-2 space-y-2">
             {files.map((file) => (
               <EvidenceRow key={file.id} caseId={c.id} file={file} issueId={issue.id} />
             ))}
@@ -351,22 +351,45 @@ function EvidenceRow({
 }) {
   const base = useDataQsBase()
   const relevance = file.links.find((link) => link.issue_id === issueId)?.relevance
+  const url = dataQsEvidenceUrl(base, caseId, file.id)
+  const Icon = file.mime_type.startsWith('image/')
+    ? FileImage
+    : file.mime_type.startsWith('video/')
+      ? FileVideo
+      : FileText
   return (
-    <li className="flex items-start gap-3 py-2 text-sm">
-      <a
-        href={dataQsEvidenceUrl(base, caseId, file.id)}
-        className="flex items-center gap-1.5 font-medium text-accent-strong hover:underline"
-      >
-        <Download className="size-3.5" aria-hidden />
-        {file.title ?? file.file_name}
-      </a>
-      {file.title && <span className="text-xs text-slate-500">{file.file_name}</span>}
-      <span className="flex-1 text-slate-600">{relevance}</span>
-      <span className="whitespace-nowrap text-xs text-slate-500">
-        {fileSize(file.size_bytes)}
-        {file.document_date && ` · dated ${formatDate(file.document_date)}`}
-        {file.uploaded_by_name && ` · ${file.uploaded_by_name}`}
+    <li className="flex flex-wrap items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-sm sm:flex-nowrap">
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-strong">
+        <Icon className="size-5" aria-hidden />
       </span>
+      <div className="min-w-0 flex-1">
+        <a
+          href={url}
+          className="font-medium text-slate-900 hover:text-accent-strong hover:underline"
+        >
+          {file.title ?? file.file_name}
+        </a>
+        {file.title && <div className="truncate text-xs text-slate-500">{file.file_name}</div>}
+        {relevance && (
+          <p className="mt-2 rounded-md border-l-2 border-accent bg-surface px-2.5 py-1.5 text-slate-700">
+            {relevance}
+          </p>
+        )}
+        <div className="mt-2 text-xs text-slate-500">
+          {fileSize(file.size_bytes)}
+          {file.document_date && ` · dated ${formatDate(file.document_date)}`}
+          {file.uploaded_by_name && ` · uploaded by ${file.uploaded_by_name}`}
+          {` · ${formatDate(file.uploaded_at.slice(0, 10))}`}
+        </div>
+      </div>
+      <a
+        href={url}
+        className={`${secondaryButton} inline-flex shrink-0 items-center gap-1.5`}
+        aria-label={`Download ${file.title ?? file.file_name}`}
+      >
+        <Download className="size-4" aria-hidden />
+        Download
+      </a>
     </li>
   )
 }
