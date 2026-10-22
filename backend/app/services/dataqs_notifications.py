@@ -9,6 +9,10 @@ The workflow STS chose:
   (dataqs_messages) so both sides can see it.
 - STS staff get reminders to check the request in DataQs 7 and 21 days after each filing
   (DATAQS_REMINDER_DAYS): to the case specialist, or to STS admins while nobody owns the case.
+- And before STS's own deadlines: 7, 3 and 1 days before an answer to an agency information
+  request is due (14 days), and 14, 7, 3 and 1 days before the last day to appeal (30 days).
+  Each is checked again when it is due: it moves with the deadline (an override), waits while
+  the deadline is paused, and is dropped once the deadline is met, stopped or already past.
 - When staff close the file, the carrier is told.
 - While testing, DATAQS_EMAIL_CARRIER_OVERRIDE / DATAQS_EMAIL_STAFF_OVERRIDE send every
   carrier / staff email to set addresses instead; each says who it was meant for.
@@ -32,8 +36,14 @@ from sqlalchemy import event, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.models import DataQsCase, DataQsMessage, DataQsOutbox, User
-from app.models.enums import DataQsOutboxStatus, DataQsWorkStatus, UserRole, UserStatus
+from app.models import DataQsCase, DataQsClock, DataQsMessage, DataQsOutbox, User
+from app.models.enums import (
+    DataQsClockType,
+    DataQsOutboxStatus,
+    DataQsWorkStatus,
+    UserRole,
+    UserStatus,
+)
 from app.services.dataqs_email import EmailError, EmailSender
 
 logger = logging.getLogger(__name__)
@@ -62,10 +72,19 @@ def _forget_after_rollback(session: Session) -> None:
 
 
 REMINDER_PREFIX = "REMINDER_"
+# Reminders before STS's deadlines: days before the due date, and the name used in the kind.
+DEADLINE_REMINDERS: dict[DataQsClockType, tuple[str, tuple[int, ...]]] = {
+    DataQsClockType.REQUESTER_INFO: ("ANSWER", (7, 3, 1)),
+    DataQsClockType.APPEAL: ("APPEAL", (14, 7, 3, 1)),
+}
 
 
 def _now() -> datetime:
     return datetime.now(UTC)
+
+
+def _day(at: datetime) -> str:
+    return f"{at:%b} {at.day}, {at.year}"
 
 
 def carrier_link(case: DataQsCase) -> str:
@@ -202,6 +221,35 @@ class DataQsNotifications:
             )
         self.db.flush()
 
+    def schedule_deadline_reminders(self, case: DataQsCase, clock: DataQsClock) -> None:
+        """Reminders to STS before an answer to the agency or an appeal is due. Ones whose time has
+        already passed when the deadline starts (e.g. a decision recorded late) are skipped."""
+        plan = DEADLINE_REMINDERS.get(clock.clock_type)
+        if plan is None or clock.due_at is None:
+            return
+        staff = self.staff_for(case)
+        if not staff:
+            logger.warning("DataQs case %s: no STS staff to remind", case.id)
+            return
+        name, days_before = plan
+        now = _now()
+        for days in days_before:
+            at = clock.due_at - timedelta(days=days)
+            if at <= now:
+                continue
+            self.db.add(
+                DataQsOutbox(
+                    event_id=f"dataqs-clock-{clock.id}-reminder-{days}d-left",
+                    case_id=case.id,
+                    recipient_id=staff[0].id,  # re-chosen when sent: the owner may change
+                    channel="EMAIL",
+                    kind=f"{REMINDER_PREFIX}{name}_{days}_DAYS_LEFT",
+                    payload={"clock_id": clock.id, "days_before": days},
+                    next_attempt_at=at,
+                )
+            )
+        self.db.flush()
+
     def cancel_pending(self, case: DataQsCase, kinds: Iterable[str] | None = None) -> int:
         """Reminders no longer needed (the case closed). Carrier emails already queued still go."""
         count = 0
@@ -217,13 +265,18 @@ class DataQsNotifications:
                 count += 1
         return count
 
-    def _reminder(self, row: DataQsOutbox, case: DataQsCase) -> dict[str, Any] | None:
-        """The reminder as it should read now, or None when it is no longer needed."""
+    def _reminder(
+        self, row: DataQsOutbox, case: DataQsCase, now: datetime
+    ) -> dict[str, Any] | datetime | None:
+        """The reminder as it should read now; None when it is no longer needed; or, for a
+        deadline that moved, when it should go instead."""
         if case.work_status == DataQsWorkStatus.CLOSED:
             return None
         staff = self.staff_for(case)
         if not staff:
             return None
+        if "clock_id" in row.payload:
+            return self._deadline_reminder(row, case, staff, now)
         days = int(row.payload.get("days", 0))
         request = case.gov_request_id or f"case #{case.id}"
         carrier = case.source_snapshot.get("carrier_name") or f"USDOT {case.usdot_number}"
@@ -248,6 +301,59 @@ class DataQsNotifications:
             "subject": f"Check DataQs request {request} ({days} days since filing)",
             "text": f"{body}\n\nOpen the case: {staff_link(case)}",
             "html": render_html(body, staff_link(case), "Open the case"),
+        }
+
+    def _deadline_reminder(
+        self, row: DataQsOutbox, case: DataQsCase, staff: list[User], now: datetime
+    ) -> dict[str, Any] | datetime | None:
+        clock = self.db.get(DataQsClock, int(row.payload["clock_id"]))
+        if clock is None or not clock.is_active:
+            return None  # answered, appealed, or stopped
+        if clock.due_at is None:
+            return now + timedelta(days=1)  # paused: look again tomorrow
+        days_before = int(row.payload["days_before"])
+        planned = clock.due_at - timedelta(days=days_before)
+        if planned > now + timedelta(minutes=5):
+            return planned  # the deadline moved later
+        if clock.due_at <= now:
+            return None  # already past; the supervisor view shows it
+        closer = [d for d in DEADLINE_REMINDERS[clock.clock_type][1] if d < days_before]
+        if any(clock.due_at - timedelta(days=d) <= now for d in closer):
+            return None  # a more urgent reminder is due too (e.g. after downtime): send only that
+        left = clock.due_at - now
+        when = (
+            "today"
+            if left < timedelta(days=1)
+            else f"in {left.days + (1 if left.seconds else 0)} days"
+        )
+        request = case.gov_request_id or f"case #{case.id}"
+        carrier = case.source_snapshot.get("carrier_name") or f"USDOT {case.usdot_number}"
+        due = _day(clock.due_at)
+        if clock.clock_type == DataQsClockType.REQUESTER_INFO:
+            subject = f"Answer the agency by {due}: DataQs request {request}"
+            what = (
+                f"The agency asked for more information on DataQs request {request} for "
+                f"{carrier} on {_day(clock.base_at)}. The answer is due {when}, by {due} "
+                "(14 days).\n\nAnswer in DataQs with Add Response / Documents, then record it on "
+                "the case (Record an agency event) so the agency's review time starts again."
+            )
+        else:
+            subject = f"Appeal deadline {due}: DataQs request {request}"
+            what = (
+                f"The decision on DataQs request {request} for {carrier} was issued on "
+                f"{_day(clock.base_at)}. The last day to ask for it to be reviewed again "
+                f"(Re-open Request in DataQs) is {due}, {when}.\n\nIf STS will not appeal, close "
+                "the file so the carrier is told."
+            )
+        override = get_settings().dataqs_staff_override_list
+        if override:
+            meant = ", ".join(u.email for u in staff)
+            what = f"[Test routing: meant for {meant}]\n\n{what}"
+        return {
+            "to": override or [u.email for u in staff],
+            "subject": subject,
+            "text": f"{what}\n\nOpen the case: {staff_link(case)}",
+            "html": render_html(what, staff_link(case), "Open the case"),
         }
 
     # --- Delivery ---------------------------------------------------------------------------------
@@ -278,11 +384,13 @@ class DataQsNotifications:
 
     def _deliver(self, row: DataQsOutbox, sender: EmailSender, now: datetime) -> bool:
         case = self.db.get(DataQsCase, row.case_id)
-        email = (
-            self._reminder(row, case)
-            if row.kind.startswith(REMINDER_PREFIX) and case
-            else row.payload
-        )
+        email: dict[str, Any] | None = row.payload
+        if case is not None and row.kind.startswith(REMINDER_PREFIX):
+            built = self._reminder(row, case, now)
+            if isinstance(built, datetime):
+                row.next_attempt_at = built  # not yet: the deadline moved or is paused
+                return False
+            email = built
         if case is None or email is None or not email.get("to"):
             row.status = DataQsOutboxStatus.CANCELLED
             return False

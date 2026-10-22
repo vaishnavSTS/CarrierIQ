@@ -11,6 +11,13 @@ const KIND: Record<string, string> = {
   FILE_CLOSED: 'File closed (carrier)',
   REMINDER_7_DAYS: 'Reminder: 7 days since filing (STS)',
   REMINDER_21_DAYS: 'Reminder: 21 days since filing (STS)',
+  REMINDER_ANSWER_7_DAYS_LEFT: 'Reminder: answer the agency, 7 days left (STS)',
+  REMINDER_ANSWER_3_DAYS_LEFT: 'Reminder: answer the agency, 3 days left (STS)',
+  REMINDER_ANSWER_1_DAYS_LEFT: 'Reminder: answer the agency, 1 day left (STS)',
+  REMINDER_APPEAL_14_DAYS_LEFT: 'Reminder: appeal deadline, 14 days left (STS)',
+  REMINDER_APPEAL_7_DAYS_LEFT: 'Reminder: appeal deadline, 7 days left (STS)',
+  REMINDER_APPEAL_3_DAYS_LEFT: 'Reminder: appeal deadline, 3 days left (STS)',
+  REMINDER_APPEAL_1_DAYS_LEFT: 'Reminder: appeal deadline, 1 day left (STS)',
 }
 const STATUS = {
   PENDING: { label: 'Waiting', tone: 'pending' },

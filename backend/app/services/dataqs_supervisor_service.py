@@ -62,6 +62,14 @@ EMAIL_KINDS = {
     "FILE_CLOSED": "File closed (carrier)",
     "REMINDER_7_DAYS": "Reminder: 7 days since filing (STS)",
     "REMINDER_21_DAYS": "Reminder: 21 days since filing (STS)",
+    **{
+        f"REMINDER_ANSWER_{d}_DAYS_LEFT": f"Reminder: answer the agency, {d} days left (STS)"
+        for d in (7, 3, 1)
+    },
+    **{
+        f"REMINDER_APPEAL_{d}_DAYS_LEFT": f"Reminder: appeal deadline, {d} days left (STS)"
+        for d in (14, 7, 3, 1)
+    },
 }
 # Deadlines STS must meet (the agency's own review date is a follow-up, not STS's deadline).
 STS_DEADLINES = {

@@ -3,7 +3,7 @@
 How we will add DataQs (challenging wrong FMCSA safety records) to CarrierSafetyScan, phase by
 phase. Edit freely as decisions are made; record each decision in the log at the bottom.
 
-**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules. Phase 2 built (2026-10-21): carrier intake wizard, evidence uploads, submit to STS. Phase 3 built (2026-10-21): staff queue, assessment, filing package, carrier approval (migration 0025). Phase 4 built (2026-10-21): manual filing console, receipts, unconfirmed attempts and reconciling (migration 0026). Requests are started from the client DataQs tab. Phase 5 built (2026-10-21): agency correspondence, decisions, appeals, reopenings, deadline clocks with pauses (migration 0027). 2026-10-21: matched to the real DataQs portal (from STS's screen recordings) and emails added (Gmail SMTP, Resend as fallback; migration 0028), see section 7. Phase 6 in progress: emails and filing reminders built; supervisor view built (2026-10-21); outcome verification and deadline reminders to come.
+**Status:** Phase 0 built (2026-10-21): DataQs tab and pages. Phase 1 built (2026-10-21): tables (migration 0024) and access rules. Phase 2 built (2026-10-21): carrier intake wizard, evidence uploads, submit to STS. Phase 3 built (2026-10-21): staff queue, assessment, filing package, carrier approval (migration 0025). Phase 4 built (2026-10-21): manual filing console, receipts, unconfirmed attempts and reconciling (migration 0026). Requests are started from the client DataQs tab. Phase 5 built (2026-10-21): agency correspondence, decisions, appeals, reopenings, deadline clocks with pauses (migration 0027). 2026-10-21: matched to the real DataQs portal (from STS's screen recordings) and emails added (Gmail SMTP, Resend as fallback; migration 0028), see section 7. Phase 6 in progress: emails and filing reminders built; supervisor view and deadline reminders built (2026-10-21); outcome verification to come.
 **Created:** 2026-10-21
 **Source:** `../../Sky_DataQs_Developer_Integration.docx` (Sky DataQs Developer Integration Specification v1.0)
 **Related:** `client-internal-portal-plan.md`, `../CHECKPOINT.md`
@@ -443,6 +443,11 @@ reopening all pass their tests.
 - **Tasks and reminders:** in-app tasks immediately; reminders 7/3/1 days before evidence
   deadlines and 14/7/3/1 before appeal deadlines; escalate missing acknowledgements, late
   decisions, uncertain dates and unassigned cases.
+  *Built 2026-10-21:* emails to the case owner (or STS admins) 7/3/1 days before an answer to an
+  agency information request is due and 14/7/3/1 days before the last day to appeal, rechecked
+  when sent (they follow an overridden date, wait while paused, are dropped once the deadline is
+  met, stopped or past, and only the most urgent goes after downtime). The escalations are shown
+  in the supervisor view rather than emailed.
 - **Notifications** via the `dataqs_outbox` and the existing job worker: stable ids, retries,
   no duplicates, delivery status kept.
 - **Carrier view** shows the last verified government update time and "awaiting staff

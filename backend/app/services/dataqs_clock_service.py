@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import DataQsInvalidTransitionError, NotFoundError
 from app.models import DataQsCase, DataQsClock, DataQsClockPause, DataQsReviewCycle, User
 from app.models.enums import Confidence, DataQsClockType, DataQsReviewLevel
+from app.services.dataqs_notifications import DataQsNotifications
 
 POLICY_VERSION = "2026-10-21"
 AGENCY_BUDGET_DAYS = {
@@ -183,21 +184,25 @@ class DataQsClockService:
         )
 
     def start_requester_info(self, case: DataQsCase, issued_at: datetime) -> DataQsClock:
-        return self._add(
+        clock = self._add(
             case,
             DataQsClockType.REQUESTER_INFO,
             "info_request_issued",
             issued_at,
             REQUESTER_INFO_DAYS,
         )
+        DataQsNotifications(self.db).schedule_deadline_reminders(case, clock)
+        return clock
 
     def start_appeal(
         self, case: DataQsCase, cycle: DataQsReviewCycle, issued_at: datetime
     ) -> DataQsClock:
         self.stop(case, {DataQsClockType.APPEAL})
-        return self._add(
+        clock = self._add(
             case, DataQsClockType.APPEAL, "decision_issued", issued_at, APPEAL_DAYS, cycle
         )
+        DataQsNotifications(self.db).schedule_deadline_reminders(case, clock)
+        return clock
 
     def active(self, case: DataQsCase, clock_type: DataQsClockType) -> DataQsClock | None:
         return next((c for c in self.clocks([case.id]) if c.clock_type == clock_type), None)
