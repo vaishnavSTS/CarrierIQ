@@ -74,6 +74,10 @@ VIOLATION_FIELDS = {
     "description": "description",
     "citation_number": "citation",
 }
+MISSING_NOTE = (
+    "This inspection wasn't in FMCSA's data when the request was opened. Confirm the carrier's "
+    "record now lists it (e.g. its SMS or a PSP report)."
+)
 DRIVER_NOTE = (
     "Driver details aren't in FMCSA's public data. Confirm the correction with proof, e.g. a PSP "
     "report or the request's history in DataQs."
@@ -298,12 +302,24 @@ def assess(
 
 
 def start_verification(issue: DataQsIssue) -> None:
-    """An issue the agency just corrected: waiting to be seen in FMCSA's data."""
-    issue.verification_status = (
-        Status.MANUAL if issue.reason == DataQsReason.DRIVER_INCORRECT else Status.WAITING
-    )
-    issue.verification_note = DRIVER_NOTE if issue.verification_status == Status.MANUAL else None
+    """An issue the agency just corrected: waiting to be seen in FMCSA's data. A copy request
+    changes no record, so there is nothing to see; driver details and a missing inspection are
+    confirmed by STS."""
     issue.verified_at = issue.verified_by_id = issue.shown_at = None
+    if issue.reason == DataQsReason.COPY_REQUEST:
+        issue.verification_status = issue.verification_note = None
+    elif issue.reason == DataQsReason.MISSING_INSPECTION:
+        issue.verification_status, issue.verification_note = Status.MANUAL, MISSING_NOTE
+    elif issue.reason == DataQsReason.DRIVER_INCORRECT:
+        issue.verification_status, issue.verification_note = Status.MANUAL, DRIVER_NOTE
+    else:
+        issue.verification_status, issue.verification_note = Status.WAITING, None
+
+
+def fmcsa_checkable(case: DataQsCase) -> bool:
+    """The inspection is in FMCSA's data to look at (not one the carrier described because it
+    was missing)."""
+    return not case.source_snapshot.get("entered_by_carrier")
 
 
 def unverified(issues: Iterable[DataQsIssue]) -> list[DataQsIssue]:
@@ -362,7 +378,7 @@ class DataQsVerificationService:
             issues[issue.case_id].append(issue)
         due = []
         for case in cases:
-            if not self.to_check(issues[case.id]):
+            if not fmcsa_checkable(case) or not self.to_check(issues[case.id]):
                 continue
             last = self.db.scalar(
                 select(DataQsVerificationCheck)
@@ -584,6 +600,11 @@ class DataQsVerificationService:
         case = self._staff_case(user, case_id)
         if not self.to_check(self.repository.issues([case.id])):
             raise DataQsInvalidTransitionError("There is no approved correction to check")
+        if not fmcsa_checkable(case):
+            raise DataQsInvalidTransitionError(
+                "This inspection isn't in FMCSA's data to check: confirm it by hand once the "
+                "carrier's record shows it"
+            )
         self.check(case)
         return case
 

@@ -552,8 +552,8 @@ role → DataQs → Start A New Request:
 | DataQs step | What it asks | Where our app gets it |
 |---|---|---|
 | 1 Category | "Crash, Inspection, Investigation, or Audit" | fixed |
-| 2 Search for your report | State (required) + one of USDOT#, Report Number, Report Date, Plate | the inspection on the case |
-| 3 Reason (8 tiles) | one reason per request | `DataQsReason` = DataQs's tiles; the package's `dataqs_reason` |
+| 2 Search for your report | State (required) + one of USDOT#, Report Number, Report Date, Plate | the inspection on the case: the state's report number and unit 1's plate from FMCSA's file (2026-10-22, migrations 0033-0034) |
+| 3 Reason (8 tiles) | one reason per request | `DataQsReason` = all 8 tiles (2026-10-22: + "Did not receive a copy or lost the inspection", "Inspection missing from my report"); the package's `dataqs_reason`; the guide lists the violations to choose |
 | 4 Request details | "Where did you view the data", "What information should be reviewed and why", files each with a title (25 MB; DataQs's file types) | case `viewed_in`, package narrative, evidence `title` |
 | 5 Review | attestation (18 U.S.C. 1001), Submit | carrier's package approval + filer's confirmation carry the attestation |
 
@@ -602,4 +602,5 @@ once `GMAIL_REFRESH_TOKEN` (or `SMTP_HOST`, or `RESEND_API_KEY`) is set; retries
 | 2026-10-21 | While testing, every carrier email goes to wesley@ and every STS staff email to vaishnav@ (`DATAQS_EMAIL_CARRIER_OVERRIDE` / `DATAQS_EMAIL_STAFF_OVERRIDE`); clear them to email real recipients | User |
 | 2026-10-21 | Reasons, file types and file titles, filing guide, statuses, "Opened" event, appeals by Re-open Request and the attestation match DataQs as recorded | User |
 | 2026-10-21 | CSV, ZIP and ETHOS uploads refused (DataQs takes no CSV; ZIP/ETHOS wait for malware scanning) | Build |
+| 2026-10-22 | All 8 inspection reasons. A missing inspection is described by the carrier (state, report number, date) since it isn't in FMCSA's data; STS confirms its outcome by hand. A copy request changes no record (nothing to verify). Crash, Investigation and Audit wait for DataQs's screens | User |
 | 2026-10-22 | A correction is verified when FMCSA's inspection record changes (checked daily); the monthly CSA recalculation is not waited for. Escalate after 60 days unseen. Driver corrections are confirmed by STS with proof | User |

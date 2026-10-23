@@ -19,6 +19,8 @@ export type DataQsReason =
   | 'DRIVER_INCORRECT'
   | 'DUPLICATE_INSPECTION'
   | 'INCORRECT_INFORMATION'
+  | 'COPY_REQUEST'
+  | 'MISSING_INSPECTION'
   | 'UNSURE'
 
 export type EligibilityStatus = 'POTENTIALLY_ELIGIBLE' | 'STAFF_REVIEW' | 'MANUAL_ASSESSMENT'
@@ -51,6 +53,9 @@ export interface DataQsEvent {
   inspection_id: string
   /** The state's report number (null in older cases) */
   report_number: string | null
+  /** Unit 1's plate: DataQs can search by it */
+  plate: string | null
+  plate_state: string | null
   inspection_date: string | null
   level: number | null
   state: string | null
@@ -69,6 +74,8 @@ export interface ReasonOption {
   dataqs_label: string | null
   /** Suggested evidence, not a government standard */
   checklist: string[]
+  /** About the whole inspection, never one violation (e.g. a copy request) */
+  whole_inspection_only: boolean
 }
 
 export interface DataQsCaseSummary {
@@ -283,6 +290,8 @@ export interface DataQsCase extends DataQsCaseSummary {
   verification_checks: DataQsVerificationCheck[]
   /** Staff: check FMCSA now, confirm a correction by hand */
   can_verify: boolean
+  /** Staff: the inspection is in FMCSA's data to look at now */
+  can_check_fmcsa: boolean
   /** STS staff only: how to reach the carrier (null: not given yet) */
   carrier_contact: DataQsCarrierContact | null
 }
@@ -304,6 +313,16 @@ export interface DataQsCarrierContactList {
   /** The company's account owner */
   can_edit: boolean
   carriers: DataQsCarrierContact[]
+}
+
+/** An inspection missing from the carrier's record, described by the carrier */
+export interface DataQsMissingInspectionInput {
+  state: string
+  report_number: string
+  inspection_date: string
+  level: number | null
+  location: string | null
+  factual_basis: string
 }
 
 export interface DataQsCarrierContactInput {

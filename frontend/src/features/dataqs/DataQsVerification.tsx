@@ -40,7 +40,7 @@ export function DataQsVerification({ dataqsCase: c }: { dataqsCase: DataQsCase }
           The last check failed: {c.verification_error}. It is tried again within the hour.
         </p>
       )}
-      {staff && c.can_verify && <CheckNow caseId={c.id} />}
+      {staff && c.can_check_fmcsa && <CheckNow caseId={c.id} />}
 
       <div className="space-y-3">
         {corrected.map((issue) => (

@@ -20,6 +20,9 @@ class Inspection(IdMixin, UpdatedAtMixin, SourceTraceMixin, Base):
     inspection_id: Mapped[str] = mapped_column(String(50))  # FMCSA's unique inspection id
     # The reporting state's own report number: what DataQs searches by, with the state.
     report_number: Mapped[str | None] = mapped_column(String(50))
+    # The plate of unit 1 (the power unit): DataQs can also search by plate.
+    plate: Mapped[str | None] = mapped_column(String(20))
+    plate_state: Mapped[str | None] = mapped_column(String(10))
     carrier_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("carriers.id", ondelete="CASCADE"), index=True
     )

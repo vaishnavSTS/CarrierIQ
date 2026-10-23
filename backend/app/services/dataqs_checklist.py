@@ -1,9 +1,10 @@
 """DataQs reasons, as DataQs words them, and suggested evidence for each (docs/DataQ.md).
 
 `DATAQS_REASON` is the exact text of DataQs's step 3 ("Choose the reason for your request") for an
-inspection report, so the STS representative picks the same tile when filing. DataQs has two more
-tiles that aren't corrections of a record already on file: "Did not receive a copy or lost the
-inspection" and "Inspection missing from my report".
+inspection report, all eight tiles, so the STS representative picks the same tile when filing.
+Two aren't corrections of a record already on file: a copy request ("Did not receive a copy or
+lost the inspection") and "Inspection missing from my report", which the carrier describes
+because it isn't in FMCSA's data. Both are about the whole inspection (WHOLE_INSPECTION_ONLY).
 
 The checklists are STS suggestions [S3], not a government standard of what is sufficient. DataQs
 does not review a request until supporting documents are attached.
@@ -23,8 +24,13 @@ REASON_LABELS: dict[DataQsReason, str] = {
     DataQsReason.INCORRECT_INFORMATION: (
         "Other information on the report is wrong (e.g. inspection level or location)"
     ),
+    DataQsReason.COPY_REQUEST: "We didn't get a copy of the inspection report, or lost it",
+    DataQsReason.MISSING_INSPECTION: "An inspection is missing from our record",
     DataQsReason.UNSURE: "Not sure; please review",
 }
+
+# Reasons about the whole inspection, never one violation.
+WHOLE_INSPECTION_ONLY = {DataQsReason.COPY_REQUEST, DataQsReason.MISSING_INSPECTION}
 
 # Exactly as DataQs shows it (step 3), for the representative filing the request.
 DATAQS_REASON: dict[DataQsReason, str] = {
@@ -41,6 +47,8 @@ DATAQS_REASON: dict[DataQsReason, str] = {
     ),
     DataQsReason.DUPLICATE_INSPECTION: "Duplicate (same inspection listed multiple times)",
     DataQsReason.INCORRECT_INFORMATION: "Inspection report contains incorrect information / Other",
+    DataQsReason.COPY_REQUEST: "Did not receive a copy or lost the inspection",
+    DataQsReason.MISSING_INSPECTION: "Inspection missing from my report",
 }
 
 FULL_REPORT = "The full roadside inspection report"
@@ -75,6 +83,15 @@ CHECKLIST: dict[DataQsReason, list[str]] = {
     DataQsReason.INCORRECT_INFORMATION: [
         FULL_REPORT,
         "A document showing the correct value (e.g. the paper inspection report, registration)",
+    ],
+    DataQsReason.COPY_REQUEST: [
+        "Anything that identifies the inspection: the date, state and location, the report number "
+        "if you have it, and the vehicle or driver inspected",
+    ],
+    DataQsReason.MISSING_INSPECTION: [
+        "Your copy of the inspection report (from the officer, or a photo of it)",
+        "Records showing the vehicle and driver ran for your company that day: bill of lading, "
+        "dispatch or trip records, ELD logs",
     ],
     DataQsReason.UNSURE: [
         FULL_REPORT,

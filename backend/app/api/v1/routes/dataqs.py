@@ -39,6 +39,7 @@ from app.schemas.dataqs import (
     DataQsCorrespondenceIn,
     DataQsEvidenceLinkOut,
     DataQsMessageIn,
+    DataQsMissingInspectionIn,
     DataQsNoteIn,
     DataQsOwnerIn,
     DataQsPackageIn,
@@ -184,6 +185,24 @@ def create_case(
     """Open a DRAFT case on an inspection (wizard steps 1-5). Send an Idempotency-Key header: a
     repeated request with the same key answers the first case."""
     case = service.create(user, usdot_number, body, idempotency_key)
+    return service.detail(user, case.id)
+
+
+@portal_router.post(
+    "/carriers/{usdot_number}/missing-inspections",
+    response_model=DataQsCaseOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_missing_inspection_case(
+    usdot_number: Usdot,
+    body: DataQsMissingInspectionIn,
+    user: Annotated[User, Depends(require_client)],
+    service: CaseService,
+    idempotency_key: Annotated[str | None, Header(max_length=100)] = None,
+) -> DataQsCaseOut:
+    """Open a DRAFT case for an inspection missing from the carrier's record, described by the
+    carrier (it isn't in FMCSA's data). Send an Idempotency-Key header."""
+    case = service.create_missing(user, usdot_number, body, idempotency_key)
     return service.detail(user, case.id)
 
 

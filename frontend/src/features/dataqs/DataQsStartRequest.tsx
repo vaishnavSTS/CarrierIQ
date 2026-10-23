@@ -5,6 +5,7 @@ import { useMe, usePortalOverview } from '../../hooks/useAuth'
 import { useDataQsCases } from '../../hooks/useDataQs'
 import type { InspectionDetail } from '../../types/carrierSafety'
 import { InspectionHistory } from '../carrier-profile/safety/InspectionHistory'
+import { DataQsMissingInspection } from './DataQsMissingInspection'
 import { inputClass, labelClass } from './intake/intakeState'
 import { RequestDataReviewButton } from './RequestDataReviewButton'
 
@@ -106,6 +107,9 @@ export function DataQsStartRequest() {
                 )
               }}
             />
+          )}
+          {usdot !== null && (
+            <DataQsMissingInspection key={`missing-${usdot}`} usdotNumber={usdot} />
           )}
         </>
       )}

@@ -19,6 +19,7 @@ from collections import defaultdict
 from datetime import UTC, datetime
 from typing import Any
 
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -73,6 +74,7 @@ from app.schemas.dataqs import (
     DataQsEvidenceOut,
     DataQsIssueOut,
     DataQsMessageOut,
+    DataQsMissingInspectionIn,
     DataQsPackageOut,
     DataQsPriorActivityIn,
     DataQsReviewCycleOut,
@@ -99,6 +101,7 @@ from app.services.dataqs_checklist import (
     DOCUMENT_TITLES,
     REASON_LABELS,
     VIEWED_IN_OPTIONS,
+    WHOLE_INSPECTION_ONLY,
 )
 from app.services.dataqs_clock_service import LABELS as CLOCK_LABELS
 from app.services.dataqs_clock_service import DataQsClockService, state
@@ -110,7 +113,7 @@ from app.services.dataqs_package_service import (
     PACKAGE_TERMS_VERSION,
     ready_to_prepare,
 )
-from app.services.dataqs_verification_service import DataQsVerificationService
+from app.services.dataqs_verification_service import DataQsVerificationService, fmcsa_checkable
 from app.services.safety_analysis import violations_of
 
 # The authorization text a carrier signs in step 6. Draft wording until STS's legal text is
@@ -178,6 +181,8 @@ def event_from_inspection(inspection: Inspection) -> DataQsEventOut:
         event_type=DataQsEventType.INSPECTION,
         inspection_id=inspection.inspection_id,
         report_number=inspection.report_number,
+        plate=inspection.plate,
+        plate_state=inspection.plate_state,
         inspection_date=inspection.inspection_date,
         level=inspection.inspection_level,
         state=inspection.state,
@@ -278,8 +283,11 @@ class DataQsCaseService:
                     label=REASON_LABELS[r],
                     dataqs_label=DATAQS_REASON.get(r),
                     checklist=CHECKLIST[r],
+                    whole_inspection_only=r in WHOLE_INSPECTION_ONLY,
                 )
                 for r in DataQsReason
+                # An inspection on the list isn't missing: that one starts from its own form.
+                if r != DataQsReason.MISSING_INSPECTION
             ],
         )
 
@@ -312,6 +320,16 @@ class DataQsCaseService:
         planned: list[tuple[DataQsViolationOut | None, Any]] = []
         seen: set[int | None] = set()
         for issue in body.issues:
+            if issue.reason == DataQsReason.MISSING_INSPECTION:
+                raise ValidationError(
+                    "This inspection is already on your record; 'An inspection is missing' is "
+                    "for one that isn't"
+                )
+            if issue.reason in WHOLE_INSPECTION_ONLY and issue.violation_index is not None:
+                raise ValidationError(
+                    f"'{REASON_LABELS[issue.reason]}' is about the whole inspection, not one "
+                    "violation"
+                )
             if issue.violation_index in seen:
                 raise ValidationError("Each violation can be listed only once")
             seen.add(issue.violation_index)
@@ -404,6 +422,122 @@ class DataQsCaseService:
             after={
                 "inspection_id": inspection.inspection_id,
                 "issues": len(planned),
+                "eligibility": eligibility.status,
+            },
+        )
+        self.db.commit()
+        return case
+
+    def create_missing(
+        self,
+        user: User,
+        usdot_number: int,
+        body: DataQsMissingInspectionIn,
+        idempotency_key: str | None,
+    ) -> DataQsCase:
+        """Open a DRAFT case for an inspection missing from the carrier's record (DataQs:
+        "Inspection missing from my report"). It isn't in FMCSA's data, so the carrier
+        describes it; the snapshot says so (`entered_by_carrier`) and STS confirms the outcome
+        by hand."""
+        if user.role != UserRole.CLIENT_ADMIN:
+            raise DataQsMissingAuthorityError(
+                "DataQs cases are opened by the carrier's account owner in the client portal"
+            )
+        organization_id = user.organization_id
+        source_event_id = f"MISSING-{body.state}-{body.report_number}"[:50]
+        if idempotency_key:
+            existing = self.repository.by_idempotency_key(organization_id, idempotency_key)
+            if existing is not None:
+                if existing.source_event_id != source_event_id:
+                    raise DataQsDuplicateCaseError("This request key was already used")
+                return existing
+        self.access.ensure_can_open_case(user, organization_id, usdot_number)
+        carrier = self.repository.carrier(usdot_number)
+        if carrier is not None and self.db.scalar(
+            select(Inspection.id).where(
+                Inspection.carrier_id == carrier.id,
+                Inspection.report_number == body.report_number,
+                Inspection.state == body.state,
+            )
+        ):
+            raise ValidationError(
+                "This inspection is already on your record: start a request from it in the list"
+            )
+        if self.repository.open_cases_for_event(usdot_number, source_event_id):
+            raise DataQsDuplicateCaseError("An open DataQs request already covers this inspection")
+
+        eligibility = dataqs_eligibility.assess(
+            body.inspection_date,
+            DataQsEventType.INSPECTION,
+            _now().date(),
+            get_settings().dataqs_internal_cutoff_days,
+        )
+        event = DataQsEventOut(
+            event_type=DataQsEventType.INSPECTION,
+            inspection_id="",  # not in FMCSA's data
+            report_number=body.report_number,
+            inspection_date=body.inspection_date,
+            level=body.level,
+            state=body.state,
+            location=(body.location or "").strip() or None,
+            vin=None,
+            vehicle_oos=False,
+            driver_oos=False,
+            violations=[],
+            source_observed_at=None,
+        )
+        case = DataQsCase(
+            organization_id=organization_id,
+            usdot_number=usdot_number,
+            event_type=DataQsEventType.INSPECTION,
+            source_event_id=source_event_id,
+            inspection_report_number=body.report_number,
+            event_date=body.inspection_date,
+            event_state=body.state,
+            source_snapshot={
+                "carrier_name": carrier.legal_name if carrier else None,
+                "event": event.model_dump(mode="json"),
+                "violation_data": None,
+                "eligibility": _eligibility_out(eligibility).model_dump(mode="json"),
+                "entered_by_carrier": True,
+            },
+            source_observed_at=None,
+            prior_activity=body.prior_activity.model_dump(mode="json"),
+            viewed_in=(body.viewed_in or "").strip() or None,
+            work_status=DataQsWorkStatus.DRAFT,
+            action_owner=DataQsActionOwner.CARRIER,
+            created_by_id=user.id,
+            idempotency_key=idempotency_key,
+        )
+        self.db.add(case)
+        try:
+            self.db.flush()
+        except IntegrityError:  # the same key, sent twice at once
+            self.db.rollback()
+            existing = (
+                self.repository.by_idempotency_key(organization_id, idempotency_key)
+                if idempotency_key
+                else None
+            )
+            if existing is None:
+                raise
+            return existing
+        self.db.add(
+            DataQsIssue(
+                case_id=case.id,
+                reason=DataQsReason.MISSING_INSPECTION,
+                requested_value="Add this inspection to the carrier's record",
+                factual_basis=body.factual_basis,
+            )
+        )
+        self.repository.audit(
+            case,
+            user,
+            "case.created",
+            after={
+                "missing_inspection": body.report_number,
+                "state": body.state,
+                "issues": 1,
                 "eligibility": eligibility.status,
             },
         )
@@ -777,6 +911,12 @@ class DataQsCaseService:
                 if c.changes is not None
             ],
             carrier_contact=DataQsContactService(self.db).for_case(case) if staff else None,
+            can_check_fmcsa=(
+                staff
+                and case.work_status != DataQsWorkStatus.CLOSED
+                and fmcsa_checkable(case)
+                and bool(verification.to_check(issues))
+            ),
             can_verify=(
                 staff
                 and case.work_status != DataQsWorkStatus.CLOSED

@@ -64,6 +64,9 @@ class InspectionValues:
     # The state's own report number, which DataQs searches by (with the state). Not
     # inspection_id, FMCSA's internal id.
     report_number: str | None = None
+    # The plate of unit 1 (the power unit): DataQs can also search by plate.
+    plate: str | None = None
+    plate_state: str | None = None
 
 
 def normalize_inspection(
@@ -77,6 +80,7 @@ def normalize_inspection(
         raise SourceDataError(f"Inspection {inspection_id} has no valid insp_date")
 
     counts: dict[str, Any] = {field: _int(header, field) or 0 for field in VIOLATION_COUNTS}
+    primary = _primary_unit(inspection_id, units)
     own = [v for v in violations if v.get("inspection_id") == inspection_id]
     own.sort(key=lambda v: (_int(v, "seq_no") or 0, v.get("insp_violation_id", "")))
     return InspectionValues(
@@ -86,6 +90,8 @@ def normalize_inspection(
         state=_text(header, "report_state"),
         location=_text(header, "location_desc"),
         vin=_primary_vin(inspection_id, units),
+        plate=_text(primary, "insp_unit_license") if primary else None,
+        plate_state=_text(primary, "insp_unit_license_state") if primary else None,
         vehicle_oos=counts["vehicle_oos_total"] > 0,
         driver_oos=counts["driver_oos_total"] > 0,
         violation_data={**counts, "violations": [_violation(v) for v in own]},
@@ -127,9 +133,13 @@ def normalize_vin(value: str | None) -> str | None:
     return vin if VIN_PATTERN.match(vin) else None
 
 
-def _primary_vin(inspection_id: str, units: Sequence[Row]) -> str | None:
+def _primary_unit(inspection_id: str, units: Sequence[Row]) -> Row | None:
     own = [u for u in units if u.get("inspection_id") == inspection_id]
-    primary = next((u for u in own if _int(u, "insp_unit_number") == 1), None)
+    return next((u for u in own if _int(u, "insp_unit_number") == 1), None)
+
+
+def _primary_vin(inspection_id: str, units: Sequence[Row]) -> str | None:
+    primary = _primary_unit(inspection_id, units)
     return normalize_vin(_text(primary, "insp_unit_vehicle_id_number")) if primary else None
 
 

@@ -49,6 +49,8 @@ class DataQsEventOut(BaseModel):
     event_type: DataQsEventType
     inspection_id: str  # FMCSA's unique id
     report_number: str | None = None  # the state's report number (older snapshots: None)
+    plate: str | None = None  # unit 1's plate (DataQs can search by it)
+    plate_state: str | None = None
     inspection_date: date | None
     level: int | None
     state: str | None
@@ -65,6 +67,7 @@ class ReasonOut(BaseModel):
     label: str
     dataqs_label: str | None  # exactly as DataQs words it (None: ours, e.g. "not sure")
     checklist: list[str]  # suggested evidence, not a government standard
+    whole_inspection_only: bool = False  # never for one violation (e.g. a copy request)
 
 
 class DataQsCheckOut(BaseModel):
@@ -109,6 +112,40 @@ class DataQsPriorActivityIn(BaseModel):
     prior_decision: str | None = Field(default=None, max_length=2000)
     pending_court: bool = False
     notes: str | None = Field(default=None, max_length=2000)
+
+
+class DataQsMissingInspectionIn(BaseModel):
+    """An inspection that should be on the carrier's record but isn't in FMCSA's data: the
+    carrier describes it (DataQs: "Inspection missing from my report")."""
+
+    state: str = Field(pattern=r"^[A-Z]{2}$")  # the state that inspected
+    report_number: str = Field(min_length=3, max_length=40, pattern=r"^[A-Z0-9-]+$")
+    inspection_date: date
+    level: int | None = Field(default=None, ge=1, le=8)
+    location: str | None = Field(default=None, max_length=100)
+    factual_basis: str = Field(min_length=20, max_length=5000)
+    prior_activity: DataQsPriorActivityIn = DataQsPriorActivityIn()
+    viewed_in: str | None = Field(default=None, max_length=100)
+
+    @field_validator("state", "report_number", mode="before")
+    @classmethod
+    def _upper(cls, value: object) -> object:
+        return value.strip().upper() if isinstance(value, str) else value
+
+    @field_validator("inspection_date")
+    @classmethod
+    def _not_in_future(cls, value: date) -> date:
+        if value > date.today():
+            raise ValueError("The inspection date can't be in the future")
+        return value
+
+    @field_validator("factual_basis")
+    @classmethod
+    def _strip_basis(cls, value: str) -> str:
+        value = value.strip()
+        if len(value) < 20:
+            raise ValueError("Say a little more (at least 20 characters)")
+        return value
 
 
 class DataQsCaseCreateIn(BaseModel):
@@ -616,6 +653,7 @@ class DataQsCaseOut(DataQsCaseSummaryOut):
     verification_error: str | None = None  # STS staff only: the last look failed
     verification_checks: list[DataQsVerificationCheckOut] = []
     can_verify: bool = False  # staff: check now, confirm by hand
+    can_check_fmcsa: bool = False  # staff: the inspection is in FMCSA's data to look at
     carrier_contact: "DataQsCarrierContactOut | None" = None  # staff: how to reach the carrier
 
 

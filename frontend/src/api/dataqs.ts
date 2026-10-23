@@ -5,6 +5,7 @@ import type {
   DataQsCarrierContactList,
   DataQsCase,
   DataQsCaseCreateInput,
+  DataQsMissingInspectionInput,
   DataQsCaseSummary,
   DataQsAttemptStartInput,
   DataQsCheck,
@@ -45,6 +46,19 @@ export function createDataQsCase(
   idempotencyKey: string,
 ): Promise<DataQsCase> {
   return apiRequest(`/portal/dataqs/carriers/${usdotNumber}/cases`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
+    body: JSON.stringify(input),
+  })
+}
+
+/** Open a DRAFT case for an inspection missing from the carrier's record. */
+export function createDataQsMissingInspection(
+  usdotNumber: number,
+  input: DataQsMissingInspectionInput,
+  idempotencyKey: string,
+): Promise<DataQsCase> {
+  return apiRequest(`/portal/dataqs/carriers/${usdotNumber}/missing-inspections`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
     body: JSON.stringify(input),

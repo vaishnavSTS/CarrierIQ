@@ -12,6 +12,7 @@ import {
   confirmDataQsCorrection,
   confirmDataQsFiling,
   createDataQsCase,
+  createDataQsMissingInspection,
   emailDataQsCarrier,
   fetchDataQsCase,
   fetchDataQsCases,
@@ -38,6 +39,7 @@ import type {
   DataQsCaseCreateInput,
   DataQsConfirmInput,
   DataQsCorrespondenceInput,
+  DataQsMissingInspectionInput,
   DataQsPackageInput,
   DataQsSubmitInput,
 } from '../types/dataqs'
@@ -128,6 +130,15 @@ export function useCreateDataQsCase(usdotNumber: number) {
   return useMutation({
     mutationFn: ({ input, key }: { input: DataQsCaseCreateInput; key: string }) =>
       createDataQsCase(usdotNumber, input, key),
+    onSuccess: save,
+  })
+}
+
+export function useCreateDataQsMissingInspection(usdotNumber: number) {
+  const save = useSaveCase()
+  return useMutation({
+    mutationFn: ({ input, key }: { input: DataQsMissingInspectionInput; key: string }) =>
+      createDataQsMissingInspection(usdotNumber, input, key),
     onSuccess: save,
   })
 }

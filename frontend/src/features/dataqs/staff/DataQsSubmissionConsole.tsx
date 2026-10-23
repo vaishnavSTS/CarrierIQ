@@ -159,6 +159,36 @@ function OpenAttempt({
 }
 
 /** A value to type into DataQs, with a copy button. */
+/** The violations the request is about, for DataQs's violation choice and the details. */
+function ChallengedViolations({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
+  const violations = c.issues.filter((i) => i.violation_code)
+  if (violations.length === 0) {
+    return <p className="text-xs text-slate-600">About the whole inspection.</p>
+  }
+  return (
+    <div>
+      <div className="text-xs text-slate-600">If DataQs asks which violations, choose these:</div>
+      <ul className="mt-1 space-y-1">
+        {violations.map((i) => (
+          <li key={i.id} className="text-slate-800">
+            <span className="font-mono text-xs">{i.violation_code}</span>{' '}
+            {i.violation_description ?? 'Violation'}
+            <span className="text-xs text-slate-600">
+              {' · '}
+              {i.violation_unit === 'D'
+                ? 'driver'
+                : i.violation_unit
+                  ? `unit ${i.violation_unit}`
+                  : 'vehicle'}
+              {i.citation_number && ` · citation ${i.citation_number}`}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 function Value({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -267,16 +297,22 @@ function FilingGuide({ dataqsCase: c, pkg }: { dataqsCase: DataQsCase; pkg: Data
         <Value label="Report Number" value={c.inspection_report_number ?? c.event.report_number} />
         <Value label="USDOT#" value={String(c.usdot_number)} />
         <Value label="Report Date" value={formatDate(c.event.inspection_date)} />
-        <Value label="Plate State / Plate#" value={null} />
+        <Value
+          label="Plate State / Plate#"
+          value={c.event.plate ? `${c.event.plate_state ?? ''} ${c.event.plate}`.trim() : null}
+        />
         <p className="text-xs text-slate-600">
           Pick the result whose report number matches, then Next.
           {!(c.inspection_report_number ?? c.event.report_number) &&
             ' FMCSA’s data has no report number for this inspection: search by state, USDOT# and report date.'}{' '}
-          (FMCSA inspection ID {c.event.inspection_id}, for reference.)
+          {c.event.inspection_id
+            ? `(FMCSA inspection ID ${c.event.inspection_id}, for reference.)`
+            : 'This inspection isn’t in FMCSA’s data: the carrier described it as missing from their record. If DataQs doesn’t find it, follow DataQs’s steps for “Inspection missing from my report” and note what it asks (that path wasn’t recorded).'}
         </p>
       </Screen>
       <Screen n={3} title="Choose the reason for your request">
         <Value label="Choose" value={m.dataqs_reason_label} />
+        <ChallengedViolations dataqsCase={c} />
       </Screen>
       <Screen n={4} title="Complete request details">
         <Value label="Where did you view the data" value={m.viewed_in} />

@@ -57,11 +57,13 @@ export function StepExplain({
                 className={inputClass}
               >
                 <option value="">Choose a reason…</option>
-                {reasons.map((r) => (
-                  <option key={r.reason} value={r.reason}>
-                    {r.label}
-                  </option>
-                ))}
+                {reasons
+                  .filter((r) => !violation || !r.whole_inspection_only)
+                  .map((r) => (
+                    <option key={r.reason} value={r.reason}>
+                      {r.label}
+                    </option>
+                  ))}
               </select>
             </div>
 

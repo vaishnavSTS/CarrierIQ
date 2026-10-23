@@ -30,19 +30,26 @@ export function DataQsEventSummary({
         <dt className="text-slate-500">Report number</dt>
         <dd className="font-mono text-xs leading-5">{event.report_number ?? '—'}</dd>
         <dt className="text-slate-500">FMCSA inspection ID</dt>
-        <dd className="font-mono text-xs leading-5">{event.inspection_id}</dd>
+        <dd className="font-mono text-xs leading-5">
+          {event.inspection_id || 'Not in FMCSA’s data (described by the carrier)'}
+        </dd>
         <dt className="text-slate-500">Date</dt>
         <dd>{formatDate(event.inspection_date)}</dd>
         <dt className="text-slate-500">Where</dt>
         <dd>{[event.location, event.state].filter(Boolean).join(', ') || '—'}</dd>
         <dt className="text-slate-500">Level</dt>
         <dd>{levelLabel(event.level)}</dd>
-        <dt className="text-slate-500">Out of service</dt>
-        <dd>
-          {[event.vehicle_oos && 'Vehicle', event.driver_oos && 'Driver']
-            .filter(Boolean)
-            .join(', ') || 'No'}
-        </dd>
+        {/* Not known for an inspection the carrier described (it isn't in FMCSA's data) */}
+        {event.inspection_id && (
+          <>
+            <dt className="text-slate-500">Out of service</dt>
+            <dd>
+              {[event.vehicle_oos && 'Vehicle', event.driver_oos && 'Driver']
+                .filter(Boolean)
+                .join(', ') || 'No'}
+            </dd>
+          </>
+        )}
       </dl>
       <div className="space-y-2 text-sm">
         <StatusBadge label={window.label} tone={window.tone} />
@@ -62,8 +69,10 @@ export function DataQsEventSummary({
           </p>
         ))}
         <p className="text-xs text-slate-600">
-          Timing only: it doesn’t mean the record is wrong. FMCSA data as of{' '}
-          {formatDateTime(event.source_observed_at)}.
+          Timing only: it doesn’t mean the record is wrong.
+          {event.source_observed_at
+            ? ` FMCSA data as of ${formatDateTime(event.source_observed_at)}.`
+            : ' Dates as given by the carrier.'}
         </p>
       </div>
     </div>

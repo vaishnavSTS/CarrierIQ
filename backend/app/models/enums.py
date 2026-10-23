@@ -161,6 +161,8 @@ class DataQsReason(StrEnum):
     DRIVER_INCORRECT = "DRIVER_INCORRECT"  # driver name and/or license number listed incorrectly
     DUPLICATE_INSPECTION = "DUPLICATE_INSPECTION"  # the same inspection listed more than once
     INCORRECT_INFORMATION = "INCORRECT_INFORMATION"  # other report data (level, location, ...)
+    COPY_REQUEST = "COPY_REQUEST"  # did not receive a copy of the inspection, or lost it
+    MISSING_INSPECTION = "MISSING_INSPECTION"  # an inspection missing from the record
     UNSURE = "UNSURE"
 
 

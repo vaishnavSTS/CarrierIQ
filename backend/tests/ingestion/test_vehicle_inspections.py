@@ -88,6 +88,7 @@ def test_real_inspection_is_normalized() -> None:
     assert values.state == "WA"
     assert values.location == "PORT ANGELES WA"
     assert values.vin == "1FUBCXBS9DHFG2386"  # unit 1 (the trailer is unit 2)
+    assert (values.plate_state, values.plate) == ("WA", "C80099K")  # unit 1's, not the trailer's
     assert values.vehicle_oos is True
     assert values.driver_oos is False
     assert values.violation_data["viol_total"] == 3
