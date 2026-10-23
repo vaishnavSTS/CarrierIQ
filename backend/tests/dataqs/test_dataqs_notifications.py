@@ -257,9 +257,13 @@ def test_test_routing_sends_carrier_and_staff_emails_to_set_addresses(
     sender = FakeSender()
     notifications = DataQsNotifications(db)
     notifications.deliver_due(sender)
-    carrier_emails = [s for s in sender.sent if "days since filing" not in s["subject"]]
+    carrier_emails = [s for s in sender.sent if s["to"] != ["staff-test@sts.test"]]
     assert carrier_emails and all(s["to"] == ["carrier-test@sts.test"] for s in carrier_emails)
     assert "meant for owner@acme.test, viewer@acme.test" in carrier_emails[0]["text"]
+    # The carrier's approval told STS, through the staff test address too.
+    [approved] = [s for s in sender.sent if s["subject"].startswith("Approved: file")]
+    assert approved["to"] == ["staff-test@sts.test"]
+    assert "meant for analyst@sts.test" in approved["text"]
 
     sender = FakeSender()
     notifications.deliver_due(sender, now=datetime.now(UTC) + timedelta(days=8))

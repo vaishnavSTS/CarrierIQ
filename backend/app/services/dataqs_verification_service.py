@@ -512,7 +512,9 @@ class DataQsVerificationService:
             "scores can take up to a month to reflect it.",
         )
         if not unverified(self.repository.issues([case.id])):
-            self.repository.complete_tasks(case, {"VERIFY_CORRECTION"}, by, now)
+            self.repository.complete_tasks(
+                case, {"VERIFY_CORRECTION", "REVIEW_NEW_EVIDENCE"}, by, now
+            )
             if not any(t.kind == "CLOSE_VERIFIED" for t in self.repository.open_tasks([case.id])):
                 self.repository.add_task(
                     case,

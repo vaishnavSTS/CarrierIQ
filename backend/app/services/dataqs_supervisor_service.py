@@ -67,6 +67,10 @@ EMAIL_KINDS = {
     "DECISION": "Agency decision (carrier)",
     "FILE_CLOSED": "File closed (carrier)",
     "CORRECTION_VERIFIED": "Correction seen in FMCSA's data (carrier)",
+    "NOTICE_EVIDENCE_ADDED": "New evidence from the carrier (STS)",
+    "NOTICE_RESUBMITTED": "Carrier sent the case back (STS)",
+    "NOTICE_PACKAGE_APPROVED": "Carrier approved the package (STS)",
+    "NOTICE_CHANGES_REQUESTED": "Carrier asked for package changes (STS)",
     "REMINDER_7_DAYS": "Reminder: 7 days since filing (STS)",
     "REMINDER_21_DAYS": "Reminder: 21 days since filing (STS)",
     **{

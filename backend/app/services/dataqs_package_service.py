@@ -166,7 +166,16 @@ class DataQsPackageService:
     ) -> None:
         before = {"work_status": case.work_status.value}
         self.repository.complete_tasks(
-            case, {"PREPARE_PACKAGE", "REVISE_PACKAGE", "APPROVE_PACKAGE", "FILE_REQUEST"}, user, at
+            case,
+            {
+                "PREPARE_PACKAGE",
+                "REVISE_PACKAGE",
+                "APPROVE_PACKAGE",
+                "FILE_REQUEST",
+                "REVIEW_NEW_EVIDENCE",
+            },
+            user,
+            at,
         )
         case.work_status, case.action_owner = (
             DataQsWorkStatus.AWAITING_APPROVAL,
@@ -356,6 +365,13 @@ class DataQsPackageService:
                 "manifest_hash": current.manifest_hash,
             },
         )
+        DataQsNotifications(self.db).to_staff(
+            case,
+            "PACKAGE_APPROVED",
+            f"Approved: file DataQs case {case.id} (package v{current.package_version})",
+            f"{body.signer_name.strip()} approved package v{current.package_version}. It is "
+            "ready to file in DataQs exactly as approved.",
+        )
         self.db.commit()
         return case
 
@@ -380,6 +396,12 @@ class DataQsPackageService:
             "package.changes_requested",
             before={"work_status": DataQsWorkStatus.AWAITING_APPROVAL.value},
             after={"work_status": case.work_status.value, "message": message},
+        )
+        DataQsNotifications(self.db).to_staff(
+            case,
+            "CHANGES_REQUESTED",
+            f"The carrier asked for changes: DataQs case {case.id}",
+            f"{user.full_name} asked for changes to the request package:\n\n{message}",
         )
         self.db.commit()
         return case

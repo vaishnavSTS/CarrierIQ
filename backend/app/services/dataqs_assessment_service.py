@@ -173,7 +173,9 @@ class DataQsAssessmentService:
         before = {"work_status": case.work_status.value}
         if case.owner_id is None:
             case.owner_id = user.id  # whoever assesses an unowned case owns it
-        self.repository.complete_tasks(case, {"ASSESS_CASE", "SPECIALIST_REVIEW"}, user, at)
+        self.repository.complete_tasks(
+            case, {"ASSESS_CASE", "SPECIALIST_REVIEW", "REVIEW_NEW_EVIDENCE"}, user, at
+        )
 
         if outcome == DataQsAssessmentOutcome.EVIDENCE_NEEDED:
             case.work_status, case.action_owner = (
@@ -277,6 +279,13 @@ class DataQsAssessmentService:
             "case.resubmitted",
             before={"work_status": DataQsWorkStatus.EVIDENCE_NEEDED.value},
             after={"work_status": case.work_status.value},
+        )
+        DataQsNotifications(self.db).to_staff(
+            case,
+            "RESUBMITTED",
+            f"The carrier sent DataQs case {case.id} back to STS",
+            f"{user.full_name} added the evidence STS asked for and sent the case back. "
+            "Reassess it with the new files.",
         )
         self.db.commit()
         return case

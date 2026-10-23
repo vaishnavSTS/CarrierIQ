@@ -33,11 +33,12 @@ from app.core.exceptions import (
     ValidationError,
 )
 from app.models import DataQsEvidence, DataQsEvidenceLink, User
-from app.models.enums import DataQsWorkStatus
+from app.models.enums import DataQsActionOwner, DataQsWorkStatus
 from app.repositories.dataqs_case_repository import DataQsCaseRepository
 from app.services.dataqs_access import DataQsAccess
-from app.services.dataqs_case_service import CARRIER_UPLOAD_STATUSES
+from app.services.dataqs_case_service import CARRIER_UPLOAD_STATUSES, STS_HAS_CASE
 from app.services.dataqs_evidence_storage import EvidenceStorage
+from app.services.dataqs_notifications import DataQsNotifications
 
 EXTENSIONS = {
     "application/pdf": ".pdf",
@@ -203,6 +204,21 @@ class DataQsEvidenceService:
                 "issue_ids": sorted(issue_links),
             },
         )
+        if not user.role.is_staff and case.work_status in STS_HAS_CASE:
+            # STS has the case: a task to look at the file, and one email for a batch of files.
+            if not any(
+                t.kind == "REVIEW_NEW_EVIDENCE" for t in self.repository.open_tasks([case.id])
+            ):
+                self.repository.add_task(
+                    case,
+                    "REVIEW_NEW_EVIDENCE",
+                    "Review the new evidence from the carrier",
+                    DataQsActionOwner.STS,
+                    detail="If the request package needs it, revise the package and ask the "
+                    "carrier to approve it again.",
+                    assignee_id=case.owner_id,
+                )
+            DataQsNotifications(self.db).evidence_added(case, evidence.id)
         # Store the file last: if storage fails, the rows above roll back with the request.
         self.storage.put(key, data, mime_type)
         self.db.commit()

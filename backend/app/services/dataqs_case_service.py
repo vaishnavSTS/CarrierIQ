@@ -136,7 +136,17 @@ CARRIER_UPLOAD_STATUSES = {
     DataQsWorkStatus.DRAFT,
     DataQsWorkStatus.EVIDENCE_NEEDED,
     DataQsWorkStatus.STAFF_REVIEW,
+    # The package waits for approval or filing: a new file doesn't change the approved
+    # package; STS reviews it and revises the package if needed.
+    DataQsWorkStatus.AWAITING_APPROVAL,
+    DataQsWorkStatus.READY_TO_FILE,
     DataQsWorkStatus.MONITORING,  # e.g. records for an agency information request
+    DataQsWorkStatus.VERIFICATION,  # e.g. proof the record now shows the correction
+}
+# Stages where STS already has the case: a carrier's new file is news for STS.
+STS_HAS_CASE = CARRIER_UPLOAD_STATUSES - {
+    DataQsWorkStatus.DRAFT,
+    DataQsWorkStatus.EVIDENCE_NEEDED,
 }
 
 OUTCOME_LABEL = {

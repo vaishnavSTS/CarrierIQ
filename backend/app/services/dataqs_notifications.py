@@ -14,6 +14,9 @@ The workflow STS chose:
   Each is checked again when it is due: it moves with the deadline (an override), waits while
   the deadline is paused, and is dropped once the deadline is met, stopped or already past.
 - When staff close the file, the carrier is told.
+- STS is told when the carrier adds evidence (one email for a batch: EVIDENCE_BATCH after
+  the last upload), sends the case back, approves the package or asks for changes: to the
+  case specialist, or STS admins while nobody owns the case, decided when it is sent.
 - While testing, DATAQS_EMAIL_CARRIER_OVERRIDE / DATAQS_EMAIL_STAFF_OVERRIDE send every
   carrier / staff email to set addresses instead; each says who it was meant for.
 
@@ -27,6 +30,7 @@ email goes out within seconds rather than at its next 30-second round.
 
 import html
 import logging
+import secrets
 import threading
 from collections.abc import Iterable
 from datetime import UTC, datetime, timedelta
@@ -36,7 +40,14 @@ from sqlalchemy import event, select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.models import DataQsCase, DataQsClock, DataQsMessage, DataQsOutbox, User
+from app.models import (
+    DataQsCase,
+    DataQsClock,
+    DataQsEvidence,
+    DataQsMessage,
+    DataQsOutbox,
+    User,
+)
 from app.models.enums import (
     DataQsClockType,
     DataQsOutboxStatus,
@@ -72,6 +83,9 @@ def _forget_after_rollback(session: Session) -> None:
 
 
 REMINDER_PREFIX = "REMINDER_"
+# Emails to STS about something the carrier did; the recipients are chosen when sent.
+NOTICE_PREFIX = "NOTICE_"
+EVIDENCE_BATCH = timedelta(minutes=10)
 # Reminders before STS's deadlines: days before the due date, and the name used in the kind.
 DEADLINE_REMINDERS: dict[DataQsClockType, tuple[str, tuple[int, ...]]] = {
     DataQsClockType.REQUESTER_INFO: ("ANSWER", (7, 3, 1)),
@@ -197,6 +211,100 @@ class DataQsNotifications:
         self.db.flush()
         self.db.info[_QUEUED] = True
         return message
+
+    # --- Emails to STS about the carrier ----------------------------------------------------------
+
+    def to_staff(self, case: DataQsCase, kind: str, subject: str, body: str) -> None:
+        """Tell STS that the carrier did something (in the caller's transaction)."""
+        staff = self.staff_for(case)
+        if not staff:
+            logger.warning("DataQs case %s: no STS staff to tell", case.id)
+            return
+        self.db.add(
+            DataQsOutbox(
+                event_id=f"dataqs-case-{case.id}-{kind.lower()}-{secrets.token_hex(6)}",
+                case_id=case.id,
+                recipient_id=staff[0].id,  # re-chosen when sent: the owner may change
+                channel="EMAIL",
+                kind=f"{NOTICE_PREFIX}{kind}",
+                payload={"subject": subject[:200], "body": body},
+            )
+        )
+        self.db.flush()
+        self.db.info[_QUEUED] = True
+
+    def evidence_added(self, case: DataQsCase, evidence_id: int) -> None:
+        """The carrier added a file: one email to STS for the batch, EVIDENCE_BATCH after the
+        last upload, listing every carrier file from the batch's first one on."""
+        now = _now()
+        pending = self.db.scalar(
+            select(DataQsOutbox).where(
+                DataQsOutbox.case_id == case.id,
+                DataQsOutbox.kind == f"{NOTICE_PREFIX}EVIDENCE_ADDED",
+                DataQsOutbox.status == DataQsOutboxStatus.PENDING,
+            )
+        )
+        if pending is not None:
+            pending.next_attempt_at = now + EVIDENCE_BATCH
+            return
+        staff = self.staff_for(case)
+        if not staff:
+            logger.warning("DataQs case %s: no STS staff to tell", case.id)
+            return
+        self.db.add(
+            DataQsOutbox(
+                event_id=f"dataqs-case-{case.id}-evidence-added-{secrets.token_hex(6)}",
+                case_id=case.id,
+                recipient_id=staff[0].id,
+                channel="EMAIL",
+                kind=f"{NOTICE_PREFIX}EVIDENCE_ADDED",
+                payload={"first_evidence_id": evidence_id},
+                next_attempt_at=now + EVIDENCE_BATCH,
+            )
+        )
+        self.db.flush()
+
+    def _notice(self, row: DataQsOutbox, case: DataQsCase) -> dict[str, Any] | None:
+        """A notice as it should read now (None: nothing left to tell)."""
+        staff = self.staff_for(case)
+        if not staff:
+            return None
+        if row.kind == f"{NOTICE_PREFIX}EVIDENCE_ADDED":
+            if case.work_status == DataQsWorkStatus.CLOSED:
+                return None
+            first = int(row.payload["first_evidence_id"])
+            files = [
+                e
+                for e, role in self.db.execute(
+                    select(DataQsEvidence, User.role)
+                    .join(User, User.id == DataQsEvidence.uploaded_by_id)
+                    .where(DataQsEvidence.case_id == case.id, DataQsEvidence.id >= first)
+                    .order_by(DataQsEvidence.id)
+                ).all()
+                if not role.is_staff
+            ]
+            if not files:
+                return None
+            carrier = case.source_snapshot.get("carrier_name") or f"USDOT {case.usdot_number}"
+            names = "\n".join(f"- {e.title or e.file_name}" for e in files)
+            plural = "file" if len(files) == 1 else "files"
+            subject = f"New evidence from the carrier: DataQs case {case.id}"
+            body = (
+                f"{carrier} added {len(files)} {plural} to DataQs case {case.id}:\n\n{names}\n\n"
+                "Review them. If the request package needs them, revise the package and ask the "
+                "carrier to approve it again."
+            )
+        else:
+            subject, body = row.payload["subject"], row.payload["body"]
+        override = get_settings().dataqs_staff_override_list
+        if override:
+            body = f"[Test routing: meant for {', '.join(u.email for u in staff)}]\n\n{body}"
+        return {
+            "to": override or [u.email for u in staff],
+            "subject": subject,
+            "text": f"{body}\n\nOpen the case: {staff_link(case)}",
+            "html": render_html(body, staff_link(case), "Open the case"),
+        }
 
     # --- Staff reminders --------------------------------------------------------------------------
 
@@ -391,6 +499,8 @@ class DataQsNotifications:
                 row.next_attempt_at = built  # not yet: the deadline moved or is paused
                 return False
             email = built
+        elif case is not None and row.kind.startswith(NOTICE_PREFIX):
+            email = self._notice(row, case)
         if case is None or email is None or not email.get("to"):
             row.status = DataQsOutboxStatus.CANCELLED
             return False
@@ -412,7 +522,7 @@ class DataQsNotifications:
             logger.warning("DataQs email %s not sent: %s", row.event_id, exc)
             return False
         row.status, row.sent_at, row.last_error = DataQsOutboxStatus.SENT, now, None
-        if row.kind.startswith(REMINDER_PREFIX):
+        if row.kind.startswith((REMINDER_PREFIX, NOTICE_PREFIX)):
             row.payload = {**row.payload, "sent_to": email["to"]}
         return True
 

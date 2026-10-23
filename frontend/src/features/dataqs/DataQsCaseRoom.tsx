@@ -7,6 +7,7 @@ import { useDataQsBase, useDataQsCase, useResubmitDataQsCase } from '../../hooks
 import { usePortalMode } from '../../hooks/usePortalMode'
 import type { DataQsCase, DataQsEvidence, DataQsIssue } from '../../types/dataqs'
 import { formatDate, formatDateTime } from '../../utils/format'
+import { DataQsAddEvidence } from './DataQsAddEvidence'
 import { DataQsAssessmentHistory, DataQsTaskList } from './DataQsCaseActivity'
 import { DataQsDeadlines } from './DataQsDeadlines'
 import { DataQsEventSummary } from './DataQsEventSummary'
@@ -90,6 +91,9 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
     c.can_build_package &&
     (c.packages.length === 0 || c.tasks.some((t) => PACKAGE_TASKS.includes(t.kind)))
   const agencyDue = c.can_record_correspondence && c.work_status === 'MONITORING'
+  // The carrier adds files after submitting from one place in "Your next steps" (a draft's
+  // files go in with each issue below).
+  const addEvidence = !staff && c.can_upload && c.work_status !== 'DRAFT'
   return (
     <div className="space-y-8">
       <CaseSummary dataqsCase={c} staff={staff} />
@@ -104,8 +108,11 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
             </ul>
           </Card>
         )}
+        {/* STS asked for evidence: add it, then send the case back */}
+        {addEvidence && c.work_status === 'EVIDENCE_NEEDED' && <DataQsAddEvidence dataqsCase={c} />}
         {c.can_resubmit && <ResubmitCard dataqsCase={c} />}
         {c.can_approve && <PackageCard dataqsCase={c} />}
+        {addEvidence && c.work_status !== 'EVIDENCE_NEEDED' && <DataQsAddEvidence dataqsCase={c} />}
         {c.tasks.length > 0 && (
           <Card title="Open tasks">
             <DataQsTaskList tasks={c.tasks} />
