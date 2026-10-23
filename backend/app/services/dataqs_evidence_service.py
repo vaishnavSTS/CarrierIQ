@@ -218,7 +218,9 @@ class DataQsEvidenceService:
                     "carrier to approve it again.",
                     assignee_id=case.owner_id,
                 )
-            DataQsNotifications(self.db).evidence_added(case, evidence.id)
+            DataQsNotifications(self.db).evidence_added(
+                case, evidence, user, "; ".join(r.strip() for r in issue_links.values() if r)
+            )
         # Store the file last: if storage fails, the rows above roll back with the request.
         self.storage.put(key, data, mime_type)
         self.db.commit()

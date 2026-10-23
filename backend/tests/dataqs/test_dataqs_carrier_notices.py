@@ -1,15 +1,12 @@
-"""Carriers can add evidence while STS has the case, and STS is emailed about what the carrier
-did: new evidence (one email per batch), the case sent back, the package approved or questioned.
+"""Carriers can add evidence while STS has the case, and STS is emailed straight away about what
+the carrier did: each new file, the case sent back, the package approved or questioned.
 The email goes to the case specialist (STS admins while nobody owns the case)."""
-
-from datetime import UTC, datetime, timedelta
 
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import DataQsOutbox, User
-from app.models.enums import DataQsOutboxStatus
 from app.services.dataqs_notifications import DataQsNotifications
 from tests.dataqs.helpers import (
     approve,
@@ -51,7 +48,7 @@ def carrier_view(api: TestClient, case_id: int) -> dict:
     return api.get(f"/api/v1/portal/dataqs/cases/{case_id}").json()
 
 
-def test_new_evidence_while_the_package_waits_tells_sts_once_per_batch(
+def test_each_new_file_while_the_package_waits_tells_sts_straight_away(
     api: TestClient, world: dict[str, User], db: Session
 ) -> None:
     case_id, case = ready_package(api)  # AWAITING_APPROVAL, as STS staff see it
@@ -65,20 +62,18 @@ def test_new_evidence_while_the_package_waits_tells_sts_once_per_batch(
     assert upload(api, case, name="lease.pdf").status_code == 201
     assert upload(api, case, name="bill-of-lading.pdf").status_code == 201
 
-    [row] = notices(db, case_id)  # one email for the batch
-    assert row.kind == "NOTICE_EVIDENCE_ADDED" and row.status == DataQsOutboxStatus.PENDING
+    assert [n.kind for n in notices(db, case_id)] == ["NOTICE_EVIDENCE_ADDED"] * 2
     log_in(api, "analyst@sts.test")
     tasks = [t["kind"] for t in staff_case(api, case_id)["tasks"]]
     assert tasks.count("REVIEW_NEW_EVIDENCE") == 1
 
     sender = FakeSender()
-    DataQsNotifications(db).deliver_due(sender, now=datetime.now(UTC))
-    assert sender.to("analyst@sts.test") == []  # waits for the batch to finish
-    DataQsNotifications(db).deliver_due(sender, now=datetime.now(UTC) + timedelta(minutes=11))
-    [email] = sender.to("analyst@sts.test")  # the case specialist
-    assert email["subject"] == f"New evidence from the carrier: DataQs case {case_id}"
-    assert "lease.pdf" in email["text"] and "bill-of-lading.pdf" in email["text"]
-    assert "2 files" in email["text"]
+    DataQsNotifications(db).deliver_due(sender)  # no waiting: sent with the next round
+    lease, bill = sender.to("analyst@sts.test")  # the case specialist, one email per file
+    assert lease["subject"] == f"New evidence from the carrier: DataQs case {case_id}"
+    assert "lease.pdf" in lease["text"] and "bill-of-lading.pdf" in bill["text"]
+    assert "How it supports the issue: Adjustment record that day" in lease["text"]
+    assert "Owner (ACME HAULING LLC) added a file" in lease["text"]
 
 
 def test_a_draft_upload_is_not_news_for_sts(api: TestClient, world: dict[str, User], db: Session):
