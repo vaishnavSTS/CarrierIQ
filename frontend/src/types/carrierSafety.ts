@@ -219,7 +219,10 @@ export interface Violation {
 }
 
 export interface InspectionDetail {
+  /** FMCSA's unique id */
   inspection_id: string
+  /** The state's report number: what DataQs searches by, with the state */
+  report_number: string | null
   inspection_date: string
   level: number | null
   state: string | null
@@ -237,4 +240,6 @@ export interface InspectionPage {
   page_size: number
   total: number
   inspections: InspectionDetail[]
+  /** Every state the carrier was inspected in, for the filter */
+  states: string[]
 }

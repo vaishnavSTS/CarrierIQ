@@ -27,7 +27,9 @@ export function DataQsEventSummary({
             USDOT <span className="font-mono">{usdotNumber}</span>
           </span>
         </dd>
-        <dt className="text-slate-500">Inspection</dt>
+        <dt className="text-slate-500">Report number</dt>
+        <dd className="font-mono text-xs leading-5">{event.report_number ?? '—'}</dd>
+        <dt className="text-slate-500">FMCSA inspection ID</dt>
         <dd className="font-mono text-xs leading-5">{event.inspection_id}</dd>
         <dt className="text-slate-500">Date</dt>
         <dd>{formatDate(event.inspection_date)}</dd>

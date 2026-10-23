@@ -264,12 +264,15 @@ function FilingGuide({ dataqsCase: c, pkg }: { dataqsCase: DataQsCase; pkg: Data
       <Screen n={2} title="Search for your report">
         <Value label="State" value={state ? `${state}-${stateName(state)}` : null} />
         <Value label="Report type" value="Inspection" />
-        <Value label="Report Number" value={c.event.inspection_id} />
+        <Value label="Report Number" value={c.inspection_report_number ?? c.event.report_number} />
         <Value label="USDOT#" value={String(c.usdot_number)} />
         <Value label="Report Date" value={formatDate(c.event.inspection_date)} />
         <Value label="Plate State / Plate#" value={null} />
         <p className="text-xs text-slate-600">
           Pick the result whose report number matches, then Next.
+          {!(c.inspection_report_number ?? c.event.report_number) &&
+            ' FMCSA’s data has no report number for this inspection: search by state, USDOT# and report date.'}{' '}
+          (FMCSA inspection ID {c.event.inspection_id}, for reference.)
         </p>
       </Screen>
       <Screen n={3} title="Choose the reason for your request">

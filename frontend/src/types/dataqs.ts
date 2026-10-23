@@ -49,6 +49,8 @@ export interface DataQsViolation {
 export interface DataQsEvent {
   event_type: 'INSPECTION' | 'CRASH'
   inspection_id: string
+  /** The state's report number (null in older cases) */
+  report_number: string | null
   inspection_date: string | null
   level: number | null
   state: string | null
@@ -77,6 +79,8 @@ export interface DataQsCaseSummary {
   carrier_name: string | null
   event_type: 'INSPECTION' | 'CRASH'
   source_event_id: string
+  /** The state's report number: what DataQs searches by (null: not in FMCSA's data) */
+  inspection_report_number: string | null
   event_date: string | null
   event_state: string | null
   /** Where the carrier saw the record (DataQs step 4) */

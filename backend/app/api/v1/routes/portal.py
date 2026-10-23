@@ -83,8 +83,10 @@ def _add_carrier_routes(router: APIRouter, resolve: Callable[..., int]) -> None:
         page: Annotated[int, Query(ge=1)] = 1,
         page_size: Annotated[int, Query(ge=1, le=100)] = 25,
         oos_only: bool = False,
+        state: Annotated[str | None, Query(max_length=10)] = None,
+        q: Annotated[str | None, Query(max_length=50)] = None,
     ) -> InspectionPageOut:
-        return service.inspection_page(usdot_number, page, page_size, oos_only)
+        return service.inspection_page(usdot_number, page, page_size, oos_only, state, q)
 
     @router.get("/carriers/{usdot_number}/authority", response_model=CarrierAuthorityOut)
     def carrier_authority(

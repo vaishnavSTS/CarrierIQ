@@ -1,4 +1,4 @@
-import { Fragment, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useState, type ReactNode } from 'react'
 
 import { StatusBadge } from '../../../components/StatusBadge'
 import { useCarrierInspections } from '../../../hooks/useCarrierSafety'
@@ -63,12 +63,25 @@ export function InspectionHistory({
   const [page, setPage] = useState(1)
   const [oosOnly, setOosOnly] = useState(false)
   const [open, setOpen] = useState<string | null>(null)
+  const [state, setState] = useState('')
+  const [typed, setTyped] = useState('')
+  const [search, setSearch] = useState('')
+  // Search once typing pauses, not on every key.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(typed.trim())
+      setPage(1)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [typed])
   const { data, error, isPending, isPlaceholderData } = useCarrierInspections(
     usdotNumber,
     page,
     PAGE_SIZE,
     oosOnly,
+    { state, search },
   )
+  const filtered = oosOnly || state !== '' || search !== ''
 
   const pages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1
   const first = data && data.total > 0 ? (page - 1) * PAGE_SIZE + 1 : 0
@@ -77,21 +90,56 @@ export function InspectionHistory({
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <label className="flex items-center gap-2 text-sm text-slate-700">
-          <input
-            type="checkbox"
-            checked={oosOnly}
-            onChange={(event) => {
-              setOosOnly(event.target.checked)
-              setPage(1)
-            }}
-          />
-          Out-of-service inspections only
-        </label>
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="text-sm text-slate-700">
+            <span className="sr-only">Search by report number</span>
+            <input
+              type="search"
+              value={typed}
+              maxLength={50}
+              placeholder="Report number"
+              onChange={(event) => setTyped(event.target.value)}
+              className="w-40 rounded-md border border-slate-300 bg-surface px-2.5 py-1.5 text-sm"
+            />
+          </label>
+          {data && data.states.length > 1 && (
+            <label className="text-sm text-slate-700">
+              <span className="sr-only">State</span>
+              <select
+                value={state}
+                onChange={(event) => {
+                  setState(event.target.value)
+                  setPage(1)
+                }}
+                className="rounded-md border border-slate-300 bg-surface px-2.5 py-1.5 text-sm"
+              >
+                <option value="">All states</option>
+                {data.states.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={oosOnly}
+              onChange={(event) => {
+                setOosOnly(event.target.checked)
+                setPage(1)
+              }}
+            />
+            Out-of-service inspections only
+          </label>
+        </div>
         {data && (
           <span className="text-xs text-slate-500">
             {data.total === 0
-              ? 'No inspections'
+              ? filtered
+                ? 'No inspections match'
+                : 'No inspections'
               : `Showing ${first}–${lastShown} of ${data.total.toLocaleString()}`}
           </span>
         )}
@@ -106,6 +154,8 @@ export function InspectionHistory({
             <thead className={headClass}>
               <tr>
                 <th className={cellClass}>Date</th>
+                <th className={cellClass}>State</th>
+                <th className={cellClass}>Report number</th>
                 <th className={cellClass}>Level</th>
                 <th className={cellClass}>Location</th>
                 <th className={cellClass}>VIN</th>
@@ -134,8 +184,10 @@ export function InspectionHistory({
                       <td className={`${cellClass} whitespace-nowrap`}>
                         {formatDate(i.inspection_date)}
                       </td>
+                      <td className={cellClass}>{i.state ?? '—'}</td>
+                      <td className={`${cellClass} font-mono text-xs`}>{i.report_number ?? '—'}</td>
                       <td className={`${cellClass} whitespace-nowrap`}>{levelLabel(i.level)}</td>
-                      <td className={cellClass}>{i.location ?? i.state ?? '—'}</td>
+                      <td className={cellClass}>{i.location ?? '—'}</td>
                       <td className={`${cellClass} font-mono text-xs`}>{i.vin ?? '—'}</td>
                       <td className={`${cellClass} text-right tabular-nums`}>
                         {i.violation_count}
@@ -165,9 +217,10 @@ export function InspectionHistory({
                     </tr>
                     {expanded && (
                       <tr className="bg-slate-50">
-                        <td colSpan={rowAction ? 9 : 8} className="px-3 py-3">
+                        <td colSpan={rowAction ? 11 : 10} className="px-3 py-3">
                           <div className="mb-2 text-xs text-slate-500">
-                            Inspection {i.inspection_id}
+                            {i.report_number && `Report ${i.report_number} · `}FMCSA inspection ID{' '}
+                            {i.inspection_id}
                           </div>
                           <Violations inspection={i} />
                         </td>

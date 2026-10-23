@@ -169,8 +169,11 @@ def get_carrier_inspections(
     page: Annotated[int, Query(ge=1)] = 1,
     page_size: Annotated[int, Query(ge=1, le=100)] = 25,
     oos_only: bool = False,
+    state: Annotated[str | None, Query(max_length=10)] = None,
+    q: Annotated[str | None, Query(max_length=50)] = None,
 ) -> InspectionPageOut:
-    return service.inspection_page(usdot_number, page, page_size, oos_only)
+    """`state`: only inspections in that state; `q`: the start of a report number."""
+    return service.inspection_page(usdot_number, page, page_size, oos_only, state, q)
 
 
 def get_carrier_authority_service(

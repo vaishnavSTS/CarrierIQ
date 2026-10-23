@@ -17,7 +17,9 @@ class Inspection(IdMixin, UpdatedAtMixin, SourceTraceMixin, Base):
         UniqueConstraint("source", "inspection_id", name="uq_inspections_source_inspection_id"),
     )
 
-    inspection_id: Mapped[str] = mapped_column(String(50))  # source inspection report number
+    inspection_id: Mapped[str] = mapped_column(String(50))  # FMCSA's unique inspection id
+    # The reporting state's own report number: what DataQs searches by, with the state.
+    report_number: Mapped[str | None] = mapped_column(String(50))
     carrier_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("carriers.id", ondelete="CASCADE"), index=True
     )

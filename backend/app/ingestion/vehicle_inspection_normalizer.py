@@ -61,6 +61,9 @@ class InspectionValues:
     # The header's VIOLATION_COUNTS, plus "violations": one entry per violation row (see
     # _violation), in the source's sequence order.
     violation_data: dict[str, Any]
+    # The state's own report number, which DataQs searches by (with the state). Not
+    # inspection_id, FMCSA's internal id.
+    report_number: str | None = None
 
 
 def normalize_inspection(
@@ -86,6 +89,7 @@ def normalize_inspection(
         vehicle_oos=counts["vehicle_oos_total"] > 0,
         driver_oos=counts["driver_oos_total"] > 0,
         violation_data={**counts, "violations": [_violation(v) for v in own]},
+        report_number=_text(header, "report_number"),
     )
 
 

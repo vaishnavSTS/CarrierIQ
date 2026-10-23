@@ -77,6 +77,23 @@ def test_inspection_history_pages_newest_first_with_violations(api_client: TestC
     ]
 
 
+def test_inspection_history_filters_by_state_and_report_number(api_client: TestClient) -> None:
+    url = "/api/v1/carriers/295017/inspections"
+    every = api_client.get(url).json()
+    assert every["states"] == ["WA"]
+    assert {i["report_number"] for i in every["inspections"]} >= {"1142009529", "0859000097"}
+
+    assert api_client.get(url, params={"state": "wa"}).json()["total"] == 4
+    assert api_client.get(url, params={"state": "TX"}).json()["total"] == 0
+    # The start of the state's report number, or of FMCSA's inspection id.
+    [found] = api_client.get(url, params={"q": "1142"}).json()["inspections"]
+    assert found["inspection_id"] == "86137641"
+    [found] = api_client.get(url, params={"q": "8579"}).json()["inspections"]
+    assert found["report_number"] == "0001367187"
+    # Wildcards are searched for literally.
+    assert api_client.get(url, params={"q": "%"}).json()["total"] == 0
+
+
 def test_inspection_history_out_of_service_only(api_client: TestClient) -> None:
     body = api_client.get("/api/v1/carriers/295017/inspections", params={"oos_only": "true"}).json()
 

@@ -47,7 +47,8 @@ class DataQsViolationOut(BaseModel):
 
 class DataQsEventOut(BaseModel):
     event_type: DataQsEventType
-    inspection_id: str
+    inspection_id: str  # FMCSA's unique id
+    report_number: str | None = None  # the state's report number (older snapshots: None)
     inspection_date: date | None
     level: int | None
     state: str | None
@@ -470,6 +471,7 @@ class DataQsCaseSummaryOut(BaseModel):
     carrier_name: str | None
     event_type: DataQsEventType
     source_event_id: str
+    inspection_report_number: str | None  # the state's: what DataQs searches by
     event_date: date | None
     event_state: str | None
     viewed_in: str | None

@@ -296,7 +296,14 @@ function CaseSummary({ dataqsCase: c, staff }: { dataqsCase: DataQsCase; staff: 
         <Fact label="Carrier" sub={`USDOT ${c.usdot_number}`}>
           {c.carrier_name ?? '—'}
         </Fact>
-        <Fact label="Inspection" sub={c.source_event_id}>
+        <Fact
+          label="Inspection"
+          sub={
+            c.inspection_report_number
+              ? `Report ${c.inspection_report_number}`
+              : `FMCSA ID ${c.source_event_id}`
+          }
+        >
           {c.event_date ? formatDate(c.event_date) : 'Date unknown'}
           {c.event_state && ` · ${c.event_state}`}
         </Fact>

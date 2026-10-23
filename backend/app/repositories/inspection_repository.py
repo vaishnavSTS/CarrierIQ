@@ -114,12 +114,31 @@ class InspectionRepository:
         return [(y, n, v, d) for y, n, v, d in rows]
 
     def page(
-        self, carrier_id: int, *, offset: int, limit: int, oos_only: bool
+        self,
+        carrier_id: int,
+        *,
+        offset: int,
+        limit: int,
+        oos_only: bool,
+        state: str | None = None,
+        search: str | None = None,
     ) -> tuple[int, list[Inspection]]:
-        """Total matching inspections, and one page of them, newest first."""
+        """Total matching inspections, and one page of them, newest first. `state`: the
+        reporting state; `search`: the start of the state's report number or FMCSA's
+        inspection id."""
         conditions = [Inspection.carrier_id == carrier_id]
         if oos_only:
             conditions.append(or_(Inspection.vehicle_oos, Inspection.driver_oos))
+        if state:
+            conditions.append(Inspection.state == state.upper())
+        if search:
+            prefix = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+            conditions.append(
+                or_(
+                    Inspection.report_number.ilike(prefix, escape="\\"),
+                    Inspection.inspection_id.ilike(prefix, escape="\\"),
+                )
+            )
         total = self.db.scalar(select(func.count()).select_from(Inspection).where(*conditions))
         rows = self.db.scalars(
             select(Inspection)
@@ -129,6 +148,18 @@ class InspectionRepository:
             .limit(limit)
         )
         return total or 0, list(rows)
+
+    def states(self, carrier_id: int) -> list[str]:
+        """The states the carrier was inspected in, A-Z."""
+        return sorted(
+            s
+            for s in self.db.scalars(
+                select(Inspection.state)
+                .where(Inspection.carrier_id == carrier_id, Inspection.state.is_not(None))
+                .distinct()
+            )
+            if s
+        )
 
     def recent(self, carrier_id: int, limit: int) -> list[Inspection]:
         return list(

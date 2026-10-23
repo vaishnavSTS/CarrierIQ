@@ -17,11 +17,20 @@ export function useCarrierInspections(
   page: number,
   pageSize: number,
   oosOnly: boolean,
+  filters: { state?: string; search?: string } = {},
 ) {
   const base = useCarrierApiBase()
   return useQuery({
-    queryKey: ['carrier-inspections', usdotNumber, page, pageSize, oosOnly],
-    queryFn: () => fetchCarrierInspections(usdotNumber, page, pageSize, oosOnly, base),
+    queryKey: [
+      'carrier-inspections',
+      usdotNumber,
+      page,
+      pageSize,
+      oosOnly,
+      filters.state ?? '',
+      filters.search ?? '',
+    ],
+    queryFn: () => fetchCarrierInspections(usdotNumber, page, pageSize, oosOnly, base, filters),
     staleTime: 60_000,
     // Keep showing the current page while the next one loads (no layout jump).
     placeholderData: keepPreviousData,

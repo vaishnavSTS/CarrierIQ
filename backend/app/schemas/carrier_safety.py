@@ -221,7 +221,8 @@ class ViolationOut(BaseModel):
 
 
 class InspectionDetailOut(BaseModel):
-    inspection_id: str
+    inspection_id: str  # FMCSA's unique id
+    report_number: str | None  # the state's report number: what DataQs searches by
     inspection_date: date
     level: int | None
     state: str | None
@@ -239,3 +240,4 @@ class InspectionPageOut(BaseModel):
     page_size: int
     total: int  # inspections matching the filter
     inspections: list[InspectionDetailOut]  # newest first
+    states: list[str] = []  # every state the carrier was inspected in, for the filter

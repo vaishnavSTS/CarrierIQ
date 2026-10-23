@@ -18,6 +18,7 @@ from tests.factories import make_carrier, make_raw_record
 PASSWORD = "correct-horse-battery"
 USDOT = 7654321
 INSPECTION_ID = "TX1234567890"
+REPORT_NUMBER = "0855012345"  # the state's own number: what DataQs searches by
 PDF = b"%PDF-1.7\n1 0 obj\n<<>>\nendobj\n"
 
 
@@ -68,6 +69,7 @@ def build_world(db: Session) -> dict[str, User]:
             source="dot_socrata",
             raw_record_id=make_raw_record(db, INSPECTION_ID).id,
             inspection_id=INSPECTION_ID,
+            report_number=REPORT_NUMBER,
             carrier_id=carrier.id,
             inspection_date=date(2024, 9, 12),
             inspection_level=1,

@@ -64,7 +64,9 @@ export function DataQsCaseList({ showCompany, empty }: { showCompany: boolean; e
                   {formatDate(c.event_date)}
                   {c.event_state && ` · ${c.event_state}`}
                 </div>
-                <div className="font-mono text-xs text-slate-600">{c.source_event_id}</div>
+                <div className="font-mono text-xs text-slate-600">
+                  {c.inspection_report_number ?? c.source_event_id}
+                </div>
               </td>
               <td className={cellClass}>
                 <StatusBadge {...WORK_STATUS[c.work_status]} />

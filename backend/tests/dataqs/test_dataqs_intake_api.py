@@ -11,6 +11,7 @@ from tests.dataqs.helpers import (
     INSPECTION_ID,
     ISSUE,
     PDF,
+    REPORT_NUMBER,
     USDOT,
     MemoryStorage,
     create_case,
@@ -54,6 +55,8 @@ def test_owner_opens_a_draft_case_from_the_preserved_record(
     assert case["work_status"] == "DRAFT"
     assert case["action_owner"] == "CARRIER"
     assert case["event"]["inspection_id"] == INSPECTION_ID
+    # DataQs is searched by the state's report number, not FMCSA's inspection id.
+    assert case["inspection_report_number"] == case["event"]["report_number"] == REPORT_NUMBER
     [issue] = case["issues"]
     assert (issue["violation_code"], issue["violation_unit"]) == ("396.3A1BOS", "1")
     assert issue["citation_number"] == "C-555"

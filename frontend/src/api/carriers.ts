@@ -39,12 +39,15 @@ export function fetchCarrierInspections(
   pageSize: number,
   oosOnly: boolean,
   base: CarrierApiBase = '/carriers',
+  filters: { state?: string; search?: string } = {},
 ): Promise<InspectionPage> {
   const params = new URLSearchParams({
     page: String(page),
     page_size: String(pageSize),
     oos_only: String(oosOnly),
   })
+  if (filters.state) params.set('state', filters.state)
+  if (filters.search) params.set('q', filters.search)
   return apiGet<InspectionPage>(`${base}/${usdotNumber}/inspections?${params}`)
 }
 

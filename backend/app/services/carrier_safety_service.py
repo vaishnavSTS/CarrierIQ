@@ -82,20 +82,33 @@ class CarrierSafetyService:
         )
 
     def inspection_page(
-        self, usdot_number: int, page: int, page_size: int, oos_only: bool
+        self,
+        usdot_number: int,
+        page: int,
+        page_size: int,
+        oos_only: bool,
+        state: str | None = None,
+        search: str | None = None,
     ) -> InspectionPageOut:
         carrier = self._carrier(usdot_number)
         total, rows = self.inspections.page(
-            carrier.id, offset=(page - 1) * page_size, limit=page_size, oos_only=oos_only
+            carrier.id,
+            offset=(page - 1) * page_size,
+            limit=page_size,
+            oos_only=oos_only,
+            state=state,
+            search=(search or "").strip() or None,
         )
         return InspectionPageOut(
             usdot_number=carrier.usdot_number,
             page=page,
             page_size=page_size,
             total=total,
+            states=self.inspections.states(carrier.id),
             inspections=[
                 InspectionDetailOut(
                     inspection_id=i.inspection_id,
+                    report_number=i.report_number,
                     inspection_date=i.inspection_date,
                     level=i.inspection_level,
                     state=i.state,

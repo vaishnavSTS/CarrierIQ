@@ -82,6 +82,7 @@ def test_real_inspection_is_normalized() -> None:
     values = normalize_inspection(headers[0], units)
 
     assert values.inspection_id == "82915718"
+    assert values.report_number == "0859000097"  # the state's number, which DataQs searches by
     assert values.inspection_date == date(2024, 10, 14)
     assert values.inspection_level == 2
     assert values.state == "WA"
