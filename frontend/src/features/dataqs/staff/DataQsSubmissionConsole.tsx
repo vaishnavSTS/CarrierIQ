@@ -192,7 +192,7 @@ function ChallengedViolations({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
 function Value({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="w-40 shrink-0 text-xs text-slate-600">{label}</span>
+      <span className="w-full shrink-0 text-xs text-slate-600 sm:w-40">{label}</span>
       {value ? (
         <>
           <span className="font-mono text-xs text-slate-900">{value}</span>

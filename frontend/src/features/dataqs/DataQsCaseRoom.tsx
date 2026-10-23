@@ -264,8 +264,8 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
             <FoldCard title={`Audit trail (${c.audit.length})`}>
               <ol className="space-y-1 text-sm">
                 {c.audit.map((event, i) => (
-                  <li key={i} className="flex gap-3">
-                    <span className="w-40 shrink-0 text-xs text-slate-600">
+                  <li key={i} className="flex flex-wrap gap-x-3">
+                    <span className="w-full shrink-0 text-xs text-slate-600 sm:w-40">
                       {formatDateTime(event.at)}
                     </span>
                     <span className="text-slate-800" title={event.action}>
@@ -473,7 +473,7 @@ function IssueBlock({ dataqsCase: c, issue }: { dataqsCase: DataQsCase; issue: D
           </div>
         ) : (
           <details className="group">
-            <summary className="cursor-pointer text-sm font-medium text-accent-strong">
+            <summary className="cursor-pointer py-2.5 sm:py-0 text-sm font-medium text-accent-strong">
               Add a file
             </summary>
             <div className="mt-2">{upload}</div>
@@ -572,7 +572,7 @@ function PackageCard({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
       {c.can_approve && <DataQsPackageReview key={current.id} dataqsCase={c} pkg={current} />}
       {older.length > 0 && (
         <details className="mt-4 border-t border-slate-100 pt-3">
-          <summary className="cursor-pointer text-sm text-slate-600">
+          <summary className="cursor-pointer py-2.5 sm:py-0 text-sm text-slate-600">
             Earlier versions ({older.length})
           </summary>
           <div className="mt-3 space-y-6">

@@ -7,6 +7,7 @@ import { useDataQsCases } from '../../../hooks/useDataQs'
 import type { DataQsCaseSummary } from '../../../types/dataqs'
 import { formatDate, formatDateTime } from '../../../utils/format'
 import { cellClass, headClass, tableClass } from '../../carrier-profile/styles'
+import { DataQsCaseCard } from '../DataQsCaseCard'
 import { WORK_STATUS } from '../labels'
 import { useRowLink } from '../rowLink'
 
@@ -81,104 +82,159 @@ export function DataQsStaffQueue() {
           No cases here.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-surface">
-          <table className={tableClass}>
-            <thead className={headClass}>
-              <tr>
-                <th className={head}>Case</th>
-                <th className={head}>Company · carrier</th>
-                <th className={head}>Inspection</th>
-                <th className={head}>Status</th>
-                <th className={head}>Owner</th>
-                <th className={head}>Next deadline</th>
-                <th
-                  className={head}
-                  title="Time left to file in DataQs (3 years from the inspection)"
-                >
-                  Filing window
-                </th>
-                <th className={head} title="Issues with no evidence attached">
-                  Missing evidence
-                </th>
-                <th className={head}>Tasks</th>
-                <th className={head}>Updated</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {rows.map((c) => (
-                <tr key={c.id} {...rowLink(`/dataqs/cases/${c.id}`)}>
-                  <td className={cellClass}>
-                    <Link
-                      to={`/dataqs/cases/${c.id}`}
-                      className="font-medium text-accent-strong hover:underline"
-                    >
-                      {c.id}
-                    </Link>
-                  </td>
-                  <td className={cellClass}>
-                    <Link
-                      to={`/dataqs/cases/${c.id}`}
-                      className="font-medium text-slate-900 hover:text-accent-strong hover:underline"
-                    >
-                      {c.organization_name ?? 'Case'}
-                    </Link>
-                    <div className="text-xs text-slate-600">
-                      {c.carrier_name ?? '—'} · USDOT{' '}
-                      <span className="font-mono">{c.usdot_number}</span>
+        <>
+          <ul className="space-y-3 sm:hidden">
+            {rows.map((c) => (
+              <li key={c.id}>
+                <DataQsCaseCard dataqsCase={c} to={`/dataqs/cases/${c.id}`} showCompany>
+                  <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                    <div>
+                      <dt className="text-slate-600">Owner</dt>
+                      <dd className="text-sm text-slate-900">{c.owner_name ?? 'Unassigned'}</dd>
                     </div>
-                  </td>
-                  <td className={`${cellClass} whitespace-nowrap`}>
-                    {formatDate(c.event_date)}
-                    {c.event_state && ` · ${c.event_state}`}
-                  </td>
-                  <td className={cellClass}>
-                    <StatusBadge {...WORK_STATUS[c.work_status]} />
-                    <div className="mt-0.5 text-xs text-slate-600">{c.next_action}</div>
-                    {c.gov_request_id && (
-                      <div className="font-mono text-xs text-slate-600">{c.gov_request_id}</div>
+                    <div>
+                      <dt className="text-slate-600">Filing window</dt>
+                      <dd className="text-sm">
+                        <FilingWindow dataqsCase={c} />
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-600">Missing evidence</dt>
+                      <dd className="text-sm">
+                        {c.evidence_gaps ? (
+                          <span className="font-medium text-amber-700">
+                            {c.evidence_gaps} {c.evidence_gaps === 1 ? 'issue' : 'issues'}
+                          </span>
+                        ) : (
+                          <span className="text-slate-500">None</span>
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-600">Tasks</dt>
+                      <dd className="text-sm text-slate-900">
+                        {c.open_task_count || 'None'}
+                        {c.overdue_task_count > 0 && (
+                          <span className="ml-1 font-medium text-amber-700">
+                            ({c.overdue_task_count} overdue)
+                          </span>
+                        )}
+                      </dd>
+                    </div>
+                    {c.next_deadline_at && (
+                      <div className="col-span-2">
+                        <dt className="text-slate-600">
+                          {c.next_deadline_label ?? 'Next deadline'}
+                        </dt>
+                        <dd className="text-sm text-slate-900">
+                          {formatDateTime(c.next_deadline_at)}
+                        </dd>
+                      </div>
                     )}
-                  </td>
-                  <td className={cellClass}>
-                    {c.owner_name ?? <span className="text-slate-500">—</span>}
-                  </td>
-                  <td className={`${cellClass} whitespace-nowrap`}>
-                    {c.next_deadline_at ? (
-                      <>
-                        {formatDateTime(c.next_deadline_at)}
-                        <div className="text-xs text-slate-600">{c.next_deadline_label}</div>
-                      </>
-                    ) : (
-                      <span className="text-slate-500">—</span>
-                    )}
-                  </td>
-                  <td className={`${cellClass} whitespace-nowrap tabular-nums`}>
-                    <FilingWindow dataqsCase={c} />
-                  </td>
-                  <td className={`${cellClass} whitespace-nowrap`}>
-                    {c.evidence_gaps ? (
-                      <span className="font-medium text-amber-700">
-                        {c.evidence_gaps} {c.evidence_gaps === 1 ? 'issue' : 'issues'}
-                      </span>
-                    ) : (
-                      <span className="text-slate-400">None</span>
-                    )}
-                  </td>
-                  <td className={cellClass}>
-                    {c.open_task_count || '—'}
-                    {c.overdue_task_count > 0 && (
-                      <span className="ml-2">
-                        <StatusBadge label={`${c.overdue_task_count} overdue`} tone="warn" />
-                      </span>
-                    )}
-                  </td>
-                  <td className={`${cellClass} whitespace-nowrap text-slate-500`}>
-                    {formatDateTime(c.updated_at)}
-                  </td>
+                  </dl>
+                </DataQsCaseCard>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 bg-surface sm:block">
+            <table className={tableClass}>
+              <thead className={headClass}>
+                <tr>
+                  <th className={head}>Case</th>
+                  <th className={head}>Company · carrier</th>
+                  <th className={head}>Inspection</th>
+                  <th className={head}>Status</th>
+                  <th className={head}>Owner</th>
+                  <th className={head}>Next deadline</th>
+                  <th
+                    className={head}
+                    title="Time left to file in DataQs (3 years from the inspection)"
+                  >
+                    Filing window
+                  </th>
+                  <th className={head} title="Issues with no evidence attached">
+                    Missing evidence
+                  </th>
+                  <th className={head}>Tasks</th>
+                  <th className={head}>Updated</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {rows.map((c) => (
+                  <tr key={c.id} {...rowLink(`/dataqs/cases/${c.id}`)}>
+                    <td className={cellClass}>
+                      <Link
+                        to={`/dataqs/cases/${c.id}`}
+                        className="font-medium text-accent-strong hover:underline"
+                      >
+                        {c.id}
+                      </Link>
+                    </td>
+                    <td className={cellClass}>
+                      <Link
+                        to={`/dataqs/cases/${c.id}`}
+                        className="font-medium text-slate-900 hover:text-accent-strong hover:underline"
+                      >
+                        {c.organization_name ?? 'Case'}
+                      </Link>
+                      <div className="text-xs text-slate-600">
+                        {c.carrier_name ?? '—'} · USDOT{' '}
+                        <span className="font-mono">{c.usdot_number}</span>
+                      </div>
+                    </td>
+                    <td className={`${cellClass} whitespace-nowrap`}>
+                      {formatDate(c.event_date)}
+                      {c.event_state && ` · ${c.event_state}`}
+                    </td>
+                    <td className={cellClass}>
+                      <StatusBadge {...WORK_STATUS[c.work_status]} />
+                      <div className="mt-0.5 text-xs text-slate-600">{c.next_action}</div>
+                      {c.gov_request_id && (
+                        <div className="font-mono text-xs text-slate-600">{c.gov_request_id}</div>
+                      )}
+                    </td>
+                    <td className={cellClass}>
+                      {c.owner_name ?? <span className="text-slate-500">—</span>}
+                    </td>
+                    <td className={`${cellClass} whitespace-nowrap`}>
+                      {c.next_deadline_at ? (
+                        <>
+                          {formatDateTime(c.next_deadline_at)}
+                          <div className="text-xs text-slate-600">{c.next_deadline_label}</div>
+                        </>
+                      ) : (
+                        <span className="text-slate-500">—</span>
+                      )}
+                    </td>
+                    <td className={`${cellClass} whitespace-nowrap tabular-nums`}>
+                      <FilingWindow dataqsCase={c} />
+                    </td>
+                    <td className={`${cellClass} whitespace-nowrap`}>
+                      {c.evidence_gaps ? (
+                        <span className="font-medium text-amber-700">
+                          {c.evidence_gaps} {c.evidence_gaps === 1 ? 'issue' : 'issues'}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">None</span>
+                      )}
+                    </td>
+                    <td className={cellClass}>
+                      {c.open_task_count || '—'}
+                      {c.overdue_task_count > 0 && (
+                        <span className="ml-2">
+                          <StatusBadge label={`${c.overdue_task_count} overdue`} tone="warn" />
+                        </span>
+                      )}
+                    </td>
+                    <td className={`${cellClass} whitespace-nowrap text-slate-500`}>
+                      {formatDateTime(c.updated_at)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   )

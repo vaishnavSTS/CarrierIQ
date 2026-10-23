@@ -94,56 +94,86 @@ export function DataQsSupervisorView() {
 
 function ExceptionTable({ rows }: { rows: DataQsException[] }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200">
-      <table className={tableClass}>
-        <thead className={headClass}>
-          <tr>
-            <th className={cellClass}>Urgency</th>
-            <th className={cellClass}>What</th>
-            <th className={cellClass}>Case</th>
-            <th className={cellClass}>Owner</th>
-            <th className={cellClass}>When</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {rows.map((e, i) => (
-            <tr key={`${e.case_id}-${e.kind}-${i}`} className="align-top hover:bg-slate-50">
-              <td className={cellClass}>
-                <StatusBadge {...SEVERITY[e.severity]} />
-              </td>
-              <td className={cellClass}>
+    <>
+      {/* Phones: one card per item; wider screens: the table */}
+      <ul className="space-y-3 sm:hidden">
+        {rows.map((e, i) => (
+          <li key={`${e.case_id}-${e.kind}-${i}`}>
+            <Link
+              to={`/dataqs/cases/${e.case_id}`}
+              className="block rounded-xl border border-slate-200 bg-surface p-4 active:bg-slate-50"
+            >
+              <div className="flex items-start justify-between gap-3">
                 <div className="font-medium text-slate-900">{e.title}</div>
-                <div className="text-xs text-slate-600">{e.detail}</div>
-              </td>
-              <td className={`${cellClass} whitespace-nowrap`}>
-                <Link
-                  to={`/dataqs/cases/${e.case_id}`}
-                  className="font-medium text-accent-strong hover:underline"
-                >
-                  Case {e.case_id}
-                </Link>
-                <div className="text-xs text-slate-600">
-                  {e.organization_name ?? '—'} · USDOT{' '}
-                  <span className="font-mono">{e.usdot_number}</span>
-                </div>
-                <div className="text-xs text-slate-600">{WORK_STATUS[e.work_status].label}</div>
-              </td>
-              <td className={cellClass}>
-                {e.owner_name ?? <span className="text-amber-700">Unassigned</span>}
-              </td>
-              <td className={`${cellClass} whitespace-nowrap text-slate-600`}>
-                {/* A filing window ends on a day, not at a time */}
-                {!e.at
-                  ? '—'
-                  : e.kind.startsWith('WINDOW_')
-                    ? formatDate(e.at.slice(0, 10))
-                    : formatDateTime(e.at)}
-              </td>
+                <span className="shrink-0">
+                  <StatusBadge {...SEVERITY[e.severity]} />
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-slate-700">{e.detail}</p>
+              <div className="mt-2 text-xs text-slate-600">
+                Case {e.case_id} · {e.organization_name ?? '—'} · USDOT{' '}
+                <span className="font-mono">{e.usdot_number}</span>
+              </div>
+              <div className="text-xs text-slate-600">
+                {e.owner_name ?? 'Unassigned'} · {WORK_STATUS[e.work_status].label}
+                {e.at &&
+                  ` · ${e.kind.startsWith('WINDOW_') ? formatDate(e.at.slice(0, 10)) : formatDateTime(e.at)}`}
+              </div>
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <div className="hidden overflow-x-auto rounded-xl border border-slate-200 sm:block">
+        <table className={tableClass}>
+          <thead className={headClass}>
+            <tr>
+              <th className={cellClass}>Urgency</th>
+              <th className={cellClass}>What</th>
+              <th className={cellClass}>Case</th>
+              <th className={cellClass}>Owner</th>
+              <th className={cellClass}>When</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {rows.map((e, i) => (
+              <tr key={`${e.case_id}-${e.kind}-${i}`} className="align-top hover:bg-slate-50">
+                <td className={cellClass}>
+                  <StatusBadge {...SEVERITY[e.severity]} />
+                </td>
+                <td className={cellClass}>
+                  <div className="font-medium text-slate-900">{e.title}</div>
+                  <div className="text-xs text-slate-600">{e.detail}</div>
+                </td>
+                <td className={`${cellClass} whitespace-nowrap`}>
+                  <Link
+                    to={`/dataqs/cases/${e.case_id}`}
+                    className="font-medium text-accent-strong hover:underline"
+                  >
+                    Case {e.case_id}
+                  </Link>
+                  <div className="text-xs text-slate-600">
+                    {e.organization_name ?? '—'} · USDOT{' '}
+                    <span className="font-mono">{e.usdot_number}</span>
+                  </div>
+                  <div className="text-xs text-slate-600">{WORK_STATUS[e.work_status].label}</div>
+                </td>
+                <td className={cellClass}>
+                  {e.owner_name ?? <span className="text-amber-700">Unassigned</span>}
+                </td>
+                <td className={`${cellClass} whitespace-nowrap text-slate-600`}>
+                  {/* A filing window ends on a day, not at a time */}
+                  {!e.at
+                    ? '—'
+                    : e.kind.startsWith('WINDOW_')
+                      ? formatDate(e.at.slice(0, 10))
+                      : formatDateTime(e.at)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   )
 }
 
@@ -155,40 +185,72 @@ function WorkloadTable({ rows }: { rows: DataQsWorkload[] }) {
       <span className={warn ? 'font-medium text-red-700' : ''}>{n}</span>
     )
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200">
-      <table className={tableClass}>
-        <thead className={headClass}>
-          <tr>
-            <th className={cellClass}>Specialist</th>
-            <th className={`${cellClass} text-right`}>Open cases</th>
-            <th className={`${cellClass} text-right`}>Needs STS</th>
-            <th className={`${cellClass} text-right`}>Waiting on carrier</th>
-            <th className={`${cellClass} text-right`}>With the agency</th>
-            <th className={`${cellClass} text-right`}>Overdue tasks</th>
-            <th className={`${cellClass} text-right`}>Late deadlines</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100 tabular-nums">
-          {rows.map((w) => (
-            <tr key={w.owner_id ?? 'unassigned'}>
-              <td className={cellClass}>
-                {w.owner_id === null ? (
-                  <span className="font-medium text-amber-700">Unassigned</span>
-                ) : (
-                  (w.owner_name ?? `User ${w.owner_id}`)
-                )}
-              </td>
-              <td className={`${cellClass} text-right`}>{number(w.active_cases)}</td>
-              <td className={`${cellClass} text-right`}>{number(w.needs_sts)}</td>
-              <td className={`${cellClass} text-right`}>{number(w.waiting_carrier)}</td>
-              <td className={`${cellClass} text-right`}>{number(w.waiting_agency)}</td>
-              <td className={`${cellClass} text-right`}>{number(w.overdue_tasks, true)}</td>
-              <td className={`${cellClass} text-right`}>{number(w.overdue_deadlines, true)}</td>
+    <>
+      <ul className="space-y-3 sm:hidden">
+        {rows.map((w) => (
+          <li key={w.owner_id ?? 'unassigned'} className="rounded-xl border border-slate-200 p-4">
+            <div className="font-medium text-slate-900">
+              {w.owner_id === null ? (
+                <span className="text-amber-700">Unassigned</span>
+              ) : (
+                (w.owner_name ?? `User ${w.owner_id}`)
+              )}
+            </div>
+            <dl className="mt-2 grid grid-cols-3 gap-2 text-center text-xs text-slate-600">
+              {(
+                [
+                  ['Open', w.active_cases, false],
+                  ['Needs STS', w.needs_sts, false],
+                  ['Carrier', w.waiting_carrier, false],
+                  ['Agency', w.waiting_agency, false],
+                  ['Overdue tasks', w.overdue_tasks, true],
+                  ['Late deadlines', w.overdue_deadlines, true],
+                ] as const
+              ).map(([label, n, warn]) => (
+                <div key={label} className="rounded-lg bg-slate-50 px-2 py-1.5">
+                  <dd className="text-base tabular-nums">{number(n, warn)}</dd>
+                  <dt>{label}</dt>
+                </div>
+              ))}
+            </dl>
+          </li>
+        ))}
+      </ul>
+      <div className="hidden overflow-x-auto rounded-xl border border-slate-200 sm:block">
+        <table className={tableClass}>
+          <thead className={headClass}>
+            <tr>
+              <th className={cellClass}>Specialist</th>
+              <th className={`${cellClass} text-right`}>Open cases</th>
+              <th className={`${cellClass} text-right`}>Needs STS</th>
+              <th className={`${cellClass} text-right`}>Waiting on carrier</th>
+              <th className={`${cellClass} text-right`}>With the agency</th>
+              <th className={`${cellClass} text-right`}>Overdue tasks</th>
+              <th className={`${cellClass} text-right`}>Late deadlines</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody className="divide-y divide-slate-100 tabular-nums">
+            {rows.map((w) => (
+              <tr key={w.owner_id ?? 'unassigned'}>
+                <td className={cellClass}>
+                  {w.owner_id === null ? (
+                    <span className="font-medium text-amber-700">Unassigned</span>
+                  ) : (
+                    (w.owner_name ?? `User ${w.owner_id}`)
+                  )}
+                </td>
+                <td className={`${cellClass} text-right`}>{number(w.active_cases)}</td>
+                <td className={`${cellClass} text-right`}>{number(w.needs_sts)}</td>
+                <td className={`${cellClass} text-right`}>{number(w.waiting_carrier)}</td>
+                <td className={`${cellClass} text-right`}>{number(w.waiting_agency)}</td>
+                <td className={`${cellClass} text-right`}>{number(w.overdue_tasks, true)}</td>
+                <td className={`${cellClass} text-right`}>{number(w.overdue_deadlines, true)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   )
 }
 

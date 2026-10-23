@@ -94,7 +94,7 @@ export function DataQsStartRequest() {
                       <Link
                         key={c.id}
                         to={`/portal/dataqs/cases/${c.id}`}
-                        className="whitespace-nowrap text-xs font-medium text-accent-strong hover:underline"
+                        className="whitespace-nowrap py-2.5 sm:py-0 text-xs font-medium text-accent-strong hover:underline"
                       >
                         Open case {c.id}
                       </Link>

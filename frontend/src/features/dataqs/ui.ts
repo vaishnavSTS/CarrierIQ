@@ -1,6 +1,7 @@
 /** Shared DataQs form styles. */
+// Phones: at least 44px tall, a comfortable tap; wider screens: compact.
 const button =
-  'rounded-md px-3 py-1.5 text-sm font-medium ring-1 ring-inset disabled:cursor-not-allowed disabled:opacity-50'
+  'inline-flex min-h-11 items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium ring-1 ring-inset disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0'
 
 export const primaryButton = `${button} bg-cta text-cta-ink ring-cta hover:bg-cta-hover active:bg-cta-active`
 export const secondaryButton = `${button} bg-surface text-slate-900 ring-slate-300 hover:bg-slate-50`

@@ -50,13 +50,13 @@ export function DataQsVerification({ dataqsCase: c }: { dataqsCase: DataQsCase }
 
       {c.verification_checks.length > 0 && (
         <details>
-          <summary className="cursor-pointer text-slate-600">
+          <summary className="cursor-pointer py-2.5 sm:py-0 text-slate-600">
             What FMCSA’s record showed ({c.verification_checks.length})
           </summary>
           <ol className="mt-2 space-y-2">
             {c.verification_checks.map((check) => (
-              <li key={check.at} className="flex gap-3">
-                <span className="w-40 shrink-0 text-xs text-slate-600">
+              <li key={check.at} className="flex flex-wrap gap-x-3">
+                <span className="w-full shrink-0 text-xs text-slate-600 sm:w-40">
                   {formatDateTime(check.at)}
                 </span>
                 <span className="text-slate-700">
@@ -186,7 +186,9 @@ function ConfirmByHand({ caseId, issueId }: { caseId: number; issueId: number })
   }
   return (
     <details>
-      <summary className="cursor-pointer font-medium text-accent-strong">Confirm by hand</summary>
+      <summary className="cursor-pointer py-2.5 sm:py-0 font-medium text-accent-strong">
+        Confirm by hand
+      </summary>
       <form onSubmit={submit} className="mt-2 space-y-2">
         <div>
           <label htmlFor={`verify-note-${issueId}`} className={labelClass}>

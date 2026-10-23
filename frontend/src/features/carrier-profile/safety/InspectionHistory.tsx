@@ -148,8 +148,71 @@ export function InspectionHistory({
       {error && <p className="text-sm text-red-700">Could not load inspections: {error.message}</p>}
       {isPending && <p className="text-sm text-slate-500">Loading inspections…</p>}
 
+      {/* Phones: one card per inspection; wider screens: the table */}
       {data && data.total > 0 && (
-        <div className={`relative overflow-x-auto ${isPlaceholderData ? 'opacity-60' : ''}`}>
+        <ul className={`space-y-3 sm:hidden ${isPlaceholderData ? 'opacity-60' : ''}`}>
+          {data.inspections.map((i) => {
+            const expanded = open === i.inspection_id
+            return (
+              <li
+                key={i.inspection_id}
+                className="rounded-xl border border-slate-200 bg-surface p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-medium text-slate-900">
+                      {formatDate(i.inspection_date)}
+                      {i.state && ` · ${i.state}`}
+                    </div>
+                    <div className="text-xs text-slate-600">
+                      {levelLabel(i.level)}
+                      {i.location && ` · ${i.location}`}
+                    </div>
+                    <div className="font-mono text-xs text-slate-600">
+                      Report {i.report_number ?? '—'}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <div className="text-lg font-semibold tabular-nums text-slate-900">
+                      {i.violation_count}
+                    </div>
+                    <div className="text-xs text-slate-600">
+                      {i.violation_count === 1 ? 'violation' : 'violations'}
+                    </div>
+                  </div>
+                </div>
+                {(i.vehicle_oos || i.driver_oos) && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {i.vehicle_oos && <StatusBadge label="Vehicle out of service" tone="down" />}
+                    {i.driver_oos && <StatusBadge label="Driver out of service" tone="down" />}
+                  </div>
+                )}
+                {i.vin && <div className="mt-1 font-mono text-xs text-slate-600">VIN {i.vin}</div>}
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    aria-expanded={expanded}
+                    onClick={() => setOpen(expanded ? null : i.inspection_id)}
+                    className="min-h-11 rounded-lg px-1 text-sm font-medium text-accent-strong"
+                  >
+                    {expanded ? 'Hide violations' : 'Show violations'}
+                  </button>
+                  {rowAction && <div>{rowAction(i)}</div>}
+                </div>
+                {expanded && (
+                  <div className="mt-2 border-t border-slate-100 pt-3">
+                    <Violations inspection={i} />
+                  </div>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+      {data && data.total > 0 && (
+        <div
+          className={`relative hidden overflow-x-auto sm:block ${isPlaceholderData ? 'opacity-60' : ''}`}
+        >
           <table className={tableClass}>
             <thead className={headClass}>
               <tr>

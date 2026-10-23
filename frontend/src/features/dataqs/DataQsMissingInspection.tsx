@@ -54,7 +54,7 @@ export function DataQsMissingInspection({ usdotNumber }: { usdotNumber: number }
 
   return (
     <details className="border-t border-slate-100 pt-4">
-      <summary className="cursor-pointer text-sm font-semibold text-accent-strong">
+      <summary className="cursor-pointer py-2.5 sm:py-0 text-sm font-semibold text-accent-strong">
         An inspection is missing from my record
       </summary>
       <form onSubmit={submit} className="mt-3 space-y-4 text-sm">

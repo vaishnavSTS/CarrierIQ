@@ -35,6 +35,12 @@ const RESULTS: { value: CheckResult; label: string }[] = [
   { value: 'ISSUE', label: 'Issue' },
   { value: 'NA', label: 'N/A' },
 ]
+/** How a chosen answer looks: pass green, issue amber, N/A grey. */
+const RESULT_TONE: Record<CheckResult, string> = {
+  PASS: 'border-emerald-600 bg-emerald-50 font-medium text-emerald-800',
+  ISSUE: 'border-amber-600 bg-amber-50 font-medium text-amber-800',
+  NA: 'border-slate-500 bg-slate-100 font-medium text-slate-800',
+}
 const NEEDS_MESSAGE: DataQsAssessmentOutcome[] = ['EVIDENCE_NEEDED', 'INSUFFICIENT_BASIS']
 
 /** STS: answer every check, then choose the outcome. The carrier sees only the message. */
@@ -83,43 +89,54 @@ export function DataQsAssessmentPanel({ dataqsCase }: { dataqsCase: DataQsCase }
   return (
     <form onSubmit={submit} className="space-y-4 text-sm">
       <DataQsAssessmentBrief dataqsCase={dataqsCase} />
-      <table className="w-full">
-        <tbody className="divide-y divide-slate-100">
-          {dataqsCase.assessment_checks.map((check) => (
-            <tr key={check.key} className="align-top">
-              <td className="py-2 pr-3">
-                <div className="font-medium text-slate-900">{check.label}</div>
-                <div className="text-xs text-slate-600">{check.hint}</div>
-              </td>
-              <td className="whitespace-nowrap py-2 pr-3">
-                {RESULTS.map((r) => (
-                  <label key={r.value} className="mr-3 inline-flex items-center gap-1">
+      {/* Phones: each check stacked, with full-width choices; wider screens: one row each */}
+      <ul className="divide-y divide-slate-100">
+        {dataqsCase.assessment_checks.map((check) => (
+          <li
+            key={check.key}
+            className="grid gap-2 py-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,16rem)] sm:items-start sm:gap-3"
+          >
+            <div>
+              <div className="font-medium text-slate-900">{check.label}</div>
+              <div className="text-xs text-slate-600">{check.hint}</div>
+            </div>
+            <div role="radiogroup" aria-label={check.label} className="flex gap-2">
+              {RESULTS.map((r) => {
+                const selected = checks[check.key]?.result === r.value
+                return (
+                  <label
+                    key={r.value}
+                    className={`relative flex min-h-11 flex-1 cursor-pointer items-center justify-center rounded-lg border px-3 text-sm focus-within:ring-2 focus-within:ring-accent/40 sm:min-h-0 sm:flex-none sm:py-1.5 ${
+                      selected
+                        ? RESULT_TONE[r.value]
+                        : 'border-slate-300 bg-surface text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
                     <input
                       type="radio"
                       name={`check-${check.key}`}
                       aria-label={`${check.label}: ${r.label}`}
-                      checked={checks[check.key]?.result === r.value}
+                      checked={selected}
                       onChange={() => setCheck(check.key, { result: r.value })}
+                      className="sr-only"
                     />
                     {r.label}
                   </label>
-                ))}
-              </td>
-              <td className="w-1/3 py-2">
-                <input
-                  aria-label={`${check.label} note`}
-                  placeholder="Note (optional)"
-                  value={checks[check.key]?.note ?? ''}
-                  maxLength={2000}
-                  disabled={!checks[check.key]}
-                  onChange={(e) => setCheck(check.key, { note: e.target.value || null })}
-                  className={inputClass}
-                />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                )
+              })}
+            </div>
+            <input
+              aria-label={`${check.label} note`}
+              placeholder="Note (optional)"
+              value={checks[check.key]?.note ?? ''}
+              maxLength={2000}
+              disabled={!checks[check.key]}
+              onChange={(e) => setCheck(check.key, { note: e.target.value || null })}
+              className={inputClass}
+            />
+          </li>
+        ))}
+      </ul>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div>

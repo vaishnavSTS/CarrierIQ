@@ -39,7 +39,7 @@ export function DataQsMessages({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
         <button
           type="button"
           onClick={() => setAll((v) => !v)}
-          className="text-sm font-medium text-accent-strong hover:underline"
+          className="py-2.5 sm:py-0 text-sm font-medium text-accent-strong hover:underline"
         >
           {all ? 'Show fewer' : `Show all ${c.messages.length} messages`}
         </button>

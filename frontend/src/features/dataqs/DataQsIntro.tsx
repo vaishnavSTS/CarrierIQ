@@ -77,7 +77,7 @@ export function DataQsIntro({
   if (folded) {
     return (
       <details className="rounded-2xl border border-slate-200 bg-surface p-5">
-        <summary className="cursor-pointer text-sm font-semibold text-slate-900">
+        <summary className="cursor-pointer py-2.5 sm:py-0 text-sm font-semibold text-slate-900">
           How DataQs requests work
         </summary>
         {steps}

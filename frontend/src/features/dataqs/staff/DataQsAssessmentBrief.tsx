@@ -26,7 +26,7 @@ export function DataQsAssessmentBrief({ dataqsCase: c }: { dataqsCase: DataQsCas
 
   return (
     <details open={c.assessments.length === 0} className="rounded-xl bg-slate-50 p-4">
-      <summary className="cursor-pointer text-sm font-semibold text-slate-900">
+      <summary className="cursor-pointer py-2.5 sm:py-0 text-sm font-semibold text-slate-900">
         Client details to check
       </summary>
       <div className="mt-3 divide-y divide-slate-200 text-sm">
