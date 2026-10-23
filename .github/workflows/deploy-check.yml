@@ -4,11 +4,20 @@
 # (ci.yml) stay manual. "Run workflow" also checks both services by hand.
 name: Deploy check
 
+# Each deploy reads the same way for both services: "deploying" while Vercel or Render builds
+# (pending / in progress: not checked, so shown as skipped), "deployed" once live, "deploy failed".
+# Vercel's environments are "Production" and "Preview…"; anything else is Render.
 run-name: >-
   ${{ github.event_name == 'workflow_dispatch' && 'Live check (manual)'
-  || format('{0} deploy {1}: {2}',
-       github.event.deployment.environment == 'Production' && 'Frontend (Vercel)' || 'Backend (Render)',
-       github.event.deployment_status.state,
+  || format('{0}: {1} ({2})',
+       (github.event.deployment.environment == 'Production'
+        || startsWith(github.event.deployment.environment, 'Preview'))
+       && 'Frontend (Vercel)' || 'Backend (Render)',
+       (github.event.deployment_status.state == 'success' && 'deployed')
+       || ((github.event.deployment_status.state == 'failure'
+            || github.event.deployment_status.state == 'error') && 'deploy failed')
+       || (github.event.deployment_status.state == 'inactive' && 'replaced by a newer deploy')
+       || 'deploying',
        github.event.deployment.sha) }}
 
 on:
@@ -48,7 +57,8 @@ jobs:
         if: >-
           github.event_name == 'workflow_dispatch'
           || (github.event.deployment_status.state == 'success'
-              && github.event.deployment.environment != 'Production')
+              && github.event.deployment.environment != 'Production'
+              && !startsWith(github.event.deployment.environment, 'Preview'))
         run: |
           # The free instance sleeps when idle and takes about a minute to wake.
           for attempt in $(seq 1 12); do
