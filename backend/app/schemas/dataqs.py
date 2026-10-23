@@ -608,6 +608,27 @@ class DataQsAuditEventOut(BaseModel):
     detail: dict[str, object] | None
 
 
+class DataQsClientUserOut(BaseModel):
+    """Someone at the client company (STS staff only)."""
+
+    full_name: str
+    email: str
+    phone: str | None
+    role: str  # "Account owner" or "Viewer"
+
+
+class DataQsRelatedCaseOut(BaseModel):
+    """Another request on the same inspection, from any company (STS staff only)."""
+
+    id: int
+    same_company: bool
+    organization_name: str | None
+    work_status: DataQsWorkStatus
+    gov_request_id: str | None
+    issues: list[str]  # violation codes; "whole inspection"
+    created_at: datetime
+
+
 class DataQsCaseOut(DataQsCaseSummaryOut):
     event: DataQsEventOut
     eligibility: EligibilityOut  # as assessed when the case was opened
@@ -653,6 +674,11 @@ class DataQsCaseOut(DataQsCaseSummaryOut):
     verification_error: str | None = None  # STS staff only: the last look failed
     verification_checks: list[DataQsVerificationCheckOut] = []
     can_verify: bool = False  # staff: check now, confirm by hand
+    # STS staff only (None for clients): who the client is, whether STS verified the carrier
+    # for the company, and other requests on the same inspection.
+    client_users: list[DataQsClientUserOut] | None = None
+    carrier_verified: bool | None = None
+    related_cases: list[DataQsRelatedCaseOut] | None = None
     can_check_fmcsa: bool = False  # staff: the inspection is in FMCSA's data to look at
     carrier_contact: "DataQsCarrierContactOut | None" = None  # staff: how to reach the carrier
 

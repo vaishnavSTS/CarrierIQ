@@ -292,8 +292,32 @@ export interface DataQsCase extends DataQsCaseSummary {
   can_verify: boolean
   /** Staff: the inspection is in FMCSA's data to look at now */
   can_check_fmcsa: boolean
+  /** STS staff only (null for clients): who the client is */
+  client_users: DataQsClientUser[] | null
+  /** STS staff only: STS verified this carrier for the client company */
+  carrier_verified: boolean | null
+  /** STS staff only: other requests on the same inspection, any company */
+  related_cases: DataQsRelatedCase[] | null
   /** STS staff only: how to reach the carrier (null: not given yet) */
   carrier_contact: DataQsCarrierContact | null
+}
+
+export interface DataQsClientUser {
+  full_name: string
+  email: string
+  phone: string | null
+  role: string
+}
+
+export interface DataQsRelatedCase {
+  id: number
+  same_company: boolean
+  organization_name: string | null
+  work_status: DataQsWorkStatus
+  gov_request_id: string | null
+  /** Violation codes, or "whole inspection" */
+  issues: string[]
+  created_at: string
 }
 
 /** How STS reaches a carrier about its DataQs requests */

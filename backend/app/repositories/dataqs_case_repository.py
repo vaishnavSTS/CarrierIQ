@@ -137,6 +137,19 @@ class DataQsCaseRepository:
             )
         )
 
+    def cases_for_event(self, usdot_number: int, source_event_id: str) -> list[DataQsCase]:
+        """Every company's cases on the event, closed ones too, oldest first."""
+        return list(
+            self.db.scalars(
+                select(DataQsCase)
+                .where(
+                    DataQsCase.usdot_number == usdot_number,
+                    DataQsCase.source_event_id == source_event_id,
+                )
+                .order_by(DataQsCase.id)
+            )
+        )
+
     def by_idempotency_key(self, organization_id: int, key: str) -> DataQsCase | None:
         return self.db.scalar(
             select(DataQsCase).where(

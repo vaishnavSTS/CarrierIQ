@@ -9,6 +9,7 @@ import type {
 } from '../../../types/dataqs'
 import { inputClass, labelClass } from '../intake/intakeState'
 import { primaryButton } from '../ui'
+import { DataQsAssessmentBrief } from './DataQsAssessmentBrief'
 
 const OUTCOMES: { value: DataQsAssessmentOutcome; label: string; hint: string }[] = [
   { value: 'READY_TO_PREPARE', label: 'Ready to prepare', hint: 'Build the filing package next.' },
@@ -81,6 +82,7 @@ export function DataQsAssessmentPanel({ dataqsCase }: { dataqsCase: DataQsCase }
 
   return (
     <form onSubmit={submit} className="space-y-4 text-sm">
+      <DataQsAssessmentBrief dataqsCase={dataqsCase} />
       <table className="w-full">
         <tbody className="divide-y divide-slate-100">
           {dataqsCase.assessment_checks.map((check) => (

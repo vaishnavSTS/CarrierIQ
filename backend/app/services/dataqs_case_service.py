@@ -65,6 +65,7 @@ from app.schemas.dataqs import (
     DataQsCaseSummaryOut,
     DataQsCheckIn,
     DataQsCheckOut,
+    DataQsClientUserOut,
     DataQsClockOut,
     DataQsConsentOut,
     DataQsCorrespondenceOut,
@@ -77,6 +78,7 @@ from app.schemas.dataqs import (
     DataQsMissingInspectionIn,
     DataQsPackageOut,
     DataQsPriorActivityIn,
+    DataQsRelatedCaseOut,
     DataQsReviewCycleOut,
     DataQsSubmitIn,
     DataQsTaskOut,
@@ -107,6 +109,7 @@ from app.services.dataqs_clock_service import LABELS as CLOCK_LABELS
 from app.services.dataqs_clock_service import DataQsClockService, state
 from app.services.dataqs_contact_service import DataQsContactService
 from app.services.dataqs_lifecycle import LEVEL_LABEL, NEXT_LEVEL, proposed_cycle
+from app.services.dataqs_notifications import DataQsNotifications
 from app.services.dataqs_package_service import (
     BUILDABLE,
     PACKAGE_TERMS_TEXT,
@@ -921,6 +924,13 @@ class DataQsCaseService:
                 if c.changes is not None
             ],
             carrier_contact=DataQsContactService(self.db).for_case(case) if staff else None,
+            client_users=self._client_users(case) if staff else None,
+            carrier_verified=(
+                case.usdot_number in self.repository.verified_usdots(case.organization_id)
+                if staff
+                else None
+            ),
+            related_cases=self._related_cases(case) if staff else None,
             can_check_fmcsa=(
                 staff
                 and case.work_status != DataQsWorkStatus.CLOSED
@@ -933,6 +943,41 @@ class DataQsCaseService:
                 and bool(verification.to_check(issues))
             ),
         )
+
+    def _client_users(self, case: DataQsCase) -> list[DataQsClientUserOut]:
+        return [
+            DataQsClientUserOut(
+                full_name=u.full_name,
+                email=u.email,
+                phone=u.phone,
+                role="Account owner" if u.role == UserRole.CLIENT_ADMIN else "Viewer",
+            )
+            for u in DataQsNotifications(self.db).carrier_users(case)
+        ]
+
+    def _related_cases(self, case: DataQsCase) -> list[DataQsRelatedCaseOut]:
+        """Other requests on the same inspection (any company): the duplicates check."""
+        others = [
+            c
+            for c in self.repository.cases_for_event(case.usdot_number, case.source_event_id)
+            if c.id != case.id
+        ]
+        issues: dict[int, list[str]] = defaultdict(list)
+        for issue in self.repository.issues([c.id for c in others]):
+            issues[issue.case_id].append(issue.violation_code or "whole inspection")
+        names = self.repository.organization_names([c.organization_id for c in others])
+        return [
+            DataQsRelatedCaseOut(
+                id=c.id,
+                same_company=c.organization_id == case.organization_id,
+                organization_name=names.get(c.organization_id),
+                work_status=c.work_status,
+                gov_request_id=c.gov_request_id,
+                issues=issues[c.id],
+                created_at=c.created_at,
+            )
+            for c in others
+        ]
 
     def _messages(self, case_id: int, staff: bool) -> list[DataQsMessageOut]:
         messages = self.repository.messages(case_id)
