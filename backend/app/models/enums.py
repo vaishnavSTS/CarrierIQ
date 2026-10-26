@@ -252,6 +252,25 @@ class DataQsOtpStatus(StrEnum):
     FAILED = "FAILED"  # Twilio refused the text or call
 
 
+class ComplianceService(StrEnum):
+    """A compliance service STS offers clients (the carrier profile's Compliance tab)."""
+
+    DOT_MC_AUTHORITY = "DOT_MC_AUTHORITY"  # reactivating USDOT / MC authority (motus.dot.gov)
+    UCR = "UCR"  # Unified Carrier Registration filing (ucr.gov)
+    CA_MCP = "CA_MCP"  # California Motor Carrier Permit (CA DMV), California-based carriers
+    DRUG_ALCOHOL = "DRUG_ALCOHOL"  # enrolment in STS's drug and alcohol testing consortium
+    DRIVER_FILES = "DRIVER_FILES"  # driver qualification files for new hires
+    MVR = "MVR"  # motor vehicle record report
+    BACKGROUND_CHECK = "BACKGROUND_CHECK"  # criminal background check
+    GOOD_STANDING = "GOOD_STANDING"  # certificate of good standing for the corporation
+    CLEARINGHOUSE = "CLEARINGHOUSE"  # FMCSA Drug & Alcohol Clearinghouse registration
+
+
+class ComplianceRequestStatus(StrEnum):
+    OPEN = "OPEN"  # STS hasn't handled it yet
+    HANDLED = "HANDLED"  # an STS staff member followed up
+
+
 def enum_type(enum_cls: type[StrEnum], name: str, length: int = 20) -> Enum:
     """VARCHAR column restricted to the enum's values by a CHECK constraint named after `name`."""
     return Enum(

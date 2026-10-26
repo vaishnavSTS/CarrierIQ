@@ -12,6 +12,7 @@ from app.api.v1.routes import (
     admin,
     auth,
     carriers,
+    compliance,
     dashboard,
     dataqs,
     health,
@@ -39,3 +40,5 @@ api_router.include_router(dataqs.router)
 api_router.include_router(dataqs.portal_router)
 # Twilio calls these with the carrier's reply; each request's signature is checked.
 api_router.include_router(twilio_webhooks.router)
+# The Compliance tab and STS's service requests: each route checks the user's access.
+api_router.include_router(compliance.router)

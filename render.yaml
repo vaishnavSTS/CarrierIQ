@@ -86,6 +86,10 @@ services:
         sync: false # STS's Twilio number, e.g. +12095550123
       - key: PUBLIC_API_URL
         value: https://carrieriq-api.onrender.com # where Twilio sends replies (signature check)
+      # Compliance-tab service requests are emailed here (comma-separated). Unset: to
+      # DATAQS_EMAIL_REPLY_TO. While DATAQS_EMAIL_STAFF_OVERRIDE is set, they go there instead.
+      - key: COMPLIANCE_REQUEST_EMAIL
+        sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET

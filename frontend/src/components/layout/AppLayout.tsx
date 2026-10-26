@@ -1,4 +1,5 @@
 import {
+  ClipboardList,
   Columns3,
   FileSearch,
   LayoutDashboard,
@@ -79,6 +80,7 @@ function AppFrame() {
       <NavItem to="/search" icon={Search} label="Search" />
       <CompareNavItem />
       <NavItem to="/dataqs" icon={FileSearch} label="DataQs" />
+      <NavItem to="/service-requests" icon={ClipboardList} label="Service requests" />
       {me?.role === 'STS_ADMIN' && (
         <NavItem to="/accounts" icon={UserCheck} label="Accounts" badge={newAccounts} />
       )}

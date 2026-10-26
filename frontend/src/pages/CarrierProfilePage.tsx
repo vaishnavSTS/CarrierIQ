@@ -8,6 +8,7 @@ import { EquipmentSection } from '../features/carrier-profile/EquipmentSection'
 import { IdentitySection } from '../features/carrier-profile/IdentitySection'
 import { IntelligenceSection } from '../features/carrier-profile/intelligence/IntelligenceSection'
 import { NetworkSection } from '../features/carrier-profile/network/NetworkSection'
+import { ComplianceSection } from '../features/carrier-profile/compliance/ComplianceSection'
 import { PacketSection } from '../features/carrier-profile/packet/PacketSection'
 import { ProfileHeader } from '../features/carrier-profile/ProfileHeader'
 import { SafetySection } from '../features/carrier-profile/SafetySection'
@@ -25,6 +26,7 @@ const TABS = [
   ['network', 'Network'],
   ['chameleon', 'Chameleon check'],
   ['packet', 'Packet'],
+  ['compliance', 'Compliance'],
   ['intelligence', 'Intelligence'],
   ['timeline', 'Timeline'],
 ] as const
@@ -39,6 +41,7 @@ const CLIENT_TABS: readonly TabId[] = [
   'equipment',
   'network',
   'packet',
+  'compliance',
 ]
 /** Brokers also get the Chameleon check (they vet carriers before giving them loads). */
 const BROKER_TABS: readonly TabId[] = [...CLIENT_TABS, 'chameleon']
@@ -67,9 +70,16 @@ export function CarrierProfilePage() {
   // The open tab lives in the URL (?tab=safety) so a refresh or shared link keeps it.
   const [params, setParams] = useSearchParams()
   const requested = params.get('tab')
-  const tab: TabId = isTab(requested, allowed) ? requested : DEFAULT_TAB
-  const tabs = allowed
-    ? TABS.filter(([id]) => allowed.includes(id)).map(
+  // Compliance: STS staff for any carrier; clients for their own carriers only.
+  const visible =
+    allowed && portal === 'client' && !ownCarrier
+      ? allowed.filter((id) => id !== 'compliance')
+      : portal === 'broker'
+        ? (allowed?.filter((id) => id !== 'compliance') ?? null)
+        : allowed
+  const tab: TabId = isTab(requested, visible) ? requested : DEFAULT_TAB
+  const tabs = visible
+    ? TABS.filter(([id]) => visible.includes(id)).map(
         ([id, label]) => [id, (ownCarrier && CLIENT_LABELS[id]) || label] as const,
       )
     : TABS
@@ -140,6 +150,7 @@ export function CarrierProfilePage() {
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
         {tab === 'packet' && <PacketSection profile={profile} />}
+        {tab === 'compliance' && <ComplianceSection profile={profile} />}
         {tab === 'identity' && <IdentitySection profile={profile} />}
         {tab === 'authority' && (
           <AuthoritySection

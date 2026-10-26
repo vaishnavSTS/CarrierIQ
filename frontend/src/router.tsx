@@ -24,6 +24,7 @@ import { PortalDataQsPage } from './pages/PortalDataQsPage'
 import { PortalHomePage } from './pages/PortalHomePage'
 import { RegisterPage } from './pages/RegisterPage'
 import { SearchPage } from './pages/SearchPage'
+import { ServiceRequestsPage } from './pages/ServiceRequestsPage'
 
 /**
  * Public: landing, login, sign-up (clients at /register, brokers at /broker/register).
@@ -63,6 +64,7 @@ export const router = createBrowserRouter([
           { path: 'dataqs/new', element: <PortalDataQsIntakePage /> },
           { path: 'dataqs/cases/:caseId', element: <DataQsCasePage /> },
           { path: 'accounts', element: <AccountsPage /> },
+          { path: 'service-requests', element: <ServiceRequestsPage /> },
         ],
       },
     ],

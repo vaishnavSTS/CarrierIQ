@@ -158,7 +158,10 @@ class Settings(BaseSettings):
     twilio_auth_token: str | None = None
     twilio_from_number: str | None = None
     public_api_url: str = "http://localhost:8000"  # the API's public address, for Twilio
-    dataqs_otp_wipe_in_api: bool = True  # wipe expired login codes from a thread of the API
+    dataqs_otp_wipe_in_api: bool = True
+    # Compliance-tab service requests are emailed here (comma-separated); empty: to
+    # DATAQS_EMAIL_REPLY_TO. DATAQS_EMAIL_STAFF_OVERRIDE (testing) still wins.
+    compliance_request_email: str | None = None  # wipe expired login codes from a thread of the API
     dataqs_verification_check_hours: int = 24
     dataqs_verification_escalate_days: int = 60
     # Where the app's pages are, for links in emails (the frontend's address).
@@ -194,6 +197,14 @@ class Settings(BaseSettings):
     @property
     def dataqs_staff_override_list(self) -> list[str]:
         return _emails(self.dataqs_email_staff_override)
+
+    @property
+    def compliance_request_recipients(self) -> list[str]:
+        return (
+            self.dataqs_staff_override_list
+            or _emails(self.compliance_request_email)
+            or _emails(self.dataqs_email_reply_to)
+        )
 
     @property
     def dataqs_reminder_day_list(self) -> list[int]:

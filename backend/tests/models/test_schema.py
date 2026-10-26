@@ -65,6 +65,7 @@ TABLES = {
     "dataqs_messages",
     "dataqs_verification_checks",
     "dataqs_otp_requests",
+    "compliance_requests",
 }
 
 # Rows in these tables always come from a source record (Engineering Principle 5).
