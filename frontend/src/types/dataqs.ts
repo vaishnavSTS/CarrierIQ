@@ -344,6 +344,33 @@ export interface DataQsCase extends DataQsCaseSummary {
   otp_request: DataQsOtpRequest | null
   /** STS staff: Twilio is set up for texts and automated calls */
   otp_automation_ready: boolean
+  /** Calls with the STS specialist, newest first */
+  calls: DataQsCall[]
+  can_book_call: boolean
+}
+
+/** A call the carrier booked with their STS specialist about the case. */
+export interface DataQsCall {
+  id: number
+  status: 'BOOKED' | 'CANCELLED' | 'DONE'
+  starts_at: string
+  duration_minutes: number
+  time_zone: string
+  /** E.164, e.g. +15550102030 */
+  phone: string
+  topic: string | null
+  booked_by_name: string | null
+  created_at: string
+  cancelled_at: string | null
+  done_at: string | null
+  google_calendar_url: string
+}
+
+export interface DataQsCallInput {
+  starts_at: string
+  time_zone: string
+  phone: string
+  topic: string | null
 }
 
 export interface DataQsClientUser {

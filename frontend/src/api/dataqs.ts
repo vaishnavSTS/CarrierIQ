@@ -8,6 +8,7 @@ import type {
   DataQsCaseSummary,
   DataQsAttemptStartInput,
   DataQsCheck,
+  DataQsCallInput,
   DataQsConfirmInput,
   DataQsCorrespondenceInput,
   DataQsPackageInput,
@@ -135,6 +136,30 @@ function post<T>(path: string, body: unknown): Promise<T> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
+}
+
+/** Book a call with the STS specialist, or move the booked one. */
+export function bookDataQsCall(
+  base: DataQsBase,
+  caseId: number,
+  input: DataQsCallInput,
+): Promise<DataQsCase> {
+  return post(`${base}/cases/${caseId}/calls`, input)
+}
+
+/** `cancel`: the carrier or STS; `done` (STS only): the call was held. */
+export function settleDataQsCall(
+  base: DataQsBase,
+  caseId: number,
+  callId: number,
+  action: 'cancel' | 'done',
+): Promise<DataQsCase> {
+  return post(`${base}/cases/${caseId}/calls/${callId}/${action}`, {})
+}
+
+/** The call as a calendar file (a plain link; the browser downloads it). */
+export function dataQsCallCalendarUrl(base: DataQsBase, caseId: number, callId: number): string {
+  return `/api/v1${base}/cases/${caseId}/calls/${callId}/calendar.ics`
 }
 
 // --- Phase 3: assessment, package, approval ---------------------------------------------------

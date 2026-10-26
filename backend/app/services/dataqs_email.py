@@ -15,9 +15,10 @@ import smtplib
 import ssl
 import threading
 import time
+from collections.abc import Sequence
 from email.message import EmailMessage
 from email.utils import formatdate, make_msgid
-from typing import Protocol
+from typing import NamedTuple, Protocol
 
 import httpx
 
@@ -39,14 +40,36 @@ class EmailError(Exception):
         self.permanent = permanent
 
 
+class Attachment(NamedTuple):
+    """A file sent with the email, e.g. a calendar file (text/calendar)."""
+
+    filename: str
+    content_type: str  # e.g. "text/calendar"
+    data: bytes
+
+
 class EmailSender(Protocol):
     def send(
-        self, *, to: list[str], subject: str, text: str, html: str, idempotency_key: str
+        self,
+        *,
+        to: list[str],
+        subject: str,
+        text: str,
+        html: str,
+        idempotency_key: str,
+        attachments: Sequence[Attachment] = (),
     ) -> str: ...
 
 
 def build_message(
-    sender: str, reply_to: str, to: list[str], subject: str, text: str, html: str, key: str
+    sender: str,
+    reply_to: str,
+    to: list[str],
+    subject: str,
+    text: str,
+    html: str,
+    key: str,
+    attachments: Sequence[Attachment] = (),
 ) -> EmailMessage:
     """A text + HTML email. The outbox event id goes in the Message-ID, so a resend after a lost
     reply is recognisable."""
@@ -60,6 +83,11 @@ def build_message(
     message["Message-ID"] = make_msgid(idstring=key.replace("@", "-"), domain=domain)
     message.set_content(text)
     message.add_alternative(html, subtype="html")
+    for item in attachments:
+        maintype, _, subtype = item.content_type.partition("/")
+        message.add_attachment(
+            item.data, maintype=maintype, subtype=subtype, filename=item.filename
+        )
     return message
 
 
@@ -68,7 +96,14 @@ class ResendSender:
         self.api_key, self.sender, self.reply_to, self.timeout = api_key, sender, reply_to, timeout
 
     def send(
-        self, *, to: list[str], subject: str, text: str, html: str, idempotency_key: str
+        self,
+        *,
+        to: list[str],
+        subject: str,
+        text: str,
+        html: str,
+        idempotency_key: str,
+        attachments: Sequence[Attachment] = (),
     ) -> str:
         try:
             response = httpx.post(
@@ -85,6 +120,20 @@ class ResendSender:
                     "subject": subject,
                     "text": text,
                     "html": html,
+                    **(
+                        {
+                            "attachments": [
+                                {
+                                    "filename": a.filename,
+                                    "content": base64.b64encode(a.data).decode(),
+                                    "content_type": a.content_type,
+                                }
+                                for a in attachments
+                            ]
+                        }
+                        if attachments
+                        else {}
+                    ),
                 },
                 timeout=self.timeout,
             )
@@ -120,10 +169,17 @@ class SmtpSender:
         self.sender, self.reply_to = sender, reply_to
 
     def send(
-        self, *, to: list[str], subject: str, text: str, html: str, idempotency_key: str
+        self,
+        *,
+        to: list[str],
+        subject: str,
+        text: str,
+        html: str,
+        idempotency_key: str,
+        attachments: Sequence[Attachment] = (),
     ) -> str:
         message = build_message(
-            self.sender, self.reply_to, to, subject, text, html, idempotency_key
+            self.sender, self.reply_to, to, subject, text, html, idempotency_key, attachments
         )
         context = ssl.create_default_context()
         try:
@@ -214,10 +270,17 @@ class GmailApiSender:
         return token
 
     def send(
-        self, *, to: list[str], subject: str, text: str, html: str, idempotency_key: str
+        self,
+        *,
+        to: list[str],
+        subject: str,
+        text: str,
+        html: str,
+        idempotency_key: str,
+        attachments: Sequence[Attachment] = (),
     ) -> str:
         message = build_message(
-            self.sender, self.reply_to, to, subject, text, html, idempotency_key
+            self.sender, self.reply_to, to, subject, text, html, idempotency_key, attachments
         )
         raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
         try:

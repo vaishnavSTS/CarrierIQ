@@ -9,6 +9,7 @@ from app.models.enums import (
     DataQsActionOwner,
     DataQsAssessmentOutcome,
     DataQsAttemptStatus,
+    DataQsCallStatus,
     DataQsClockType,
     DataQsCorrespondenceKind,
     DataQsCorrespondenceSource,
@@ -685,6 +686,32 @@ class DataQsOtpRequestOut(BaseModel):
     error: str | None
 
 
+class DataQsCallIn(BaseModel):
+    """Book (or move) a call with the STS specialist."""
+
+    starts_at: datetime  # with its UTC offset
+    time_zone: str = Field(min_length=1, max_length=64)  # the browser's, e.g. "America/Chicago"
+    phone: str = Field(min_length=7, max_length=30)
+    topic: str | None = Field(default=None, max_length=1000)
+
+
+class DataQsCallOut(BaseModel):
+    """A call the carrier booked with STS about the case."""
+
+    id: int
+    status: DataQsCallStatus
+    starts_at: datetime
+    duration_minutes: int
+    time_zone: str
+    phone: str  # E.164
+    topic: str | None
+    booked_by_name: str | None
+    created_at: datetime
+    cancelled_at: datetime | None
+    done_at: datetime | None
+    google_calendar_url: str  # "Add to Google Calendar"
+
+
 class DataQsCaseOut(DataQsCaseSummaryOut):
     event: DataQsEventOut
     eligibility: EligibilityOut  # as assessed when the case was opened
@@ -742,6 +769,9 @@ class DataQsCaseOut(DataQsCaseSummaryOut):
     can_set_otp_preference: bool = False
     otp_request: DataQsOtpRequestOut | None = None
     otp_automation_ready: bool = False
+    # Calls with the STS specialist, newest first, and whether this user may book one.
+    calls: list[DataQsCallOut] = []
+    can_book_call: bool = False
 
 
 class DataQsCaseListOut(BaseModel):

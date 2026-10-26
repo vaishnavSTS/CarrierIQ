@@ -143,6 +143,9 @@ class Settings(BaseSettings):
     # instead (comma-separated). Clear them to email the real carrier users and staff.
     dataqs_email_carrier_override: str | None = None
     dataqs_email_staff_override: str | None = None
+    # While testing, send every DataQs text message for carriers to this number instead
+    # (E.164, e.g. +12095550123). Clear it to text the carrier's own number.
+    dataqs_sms_override: str | None = None
     # Reminders to STS staff to check a filed request in DataQs, in days after filing.
     dataqs_reminder_days: str = "7,21"
     # Send the waiting emails from a thread of the API process (every 30 seconds).

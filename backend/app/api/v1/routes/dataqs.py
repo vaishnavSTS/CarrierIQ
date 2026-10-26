@@ -26,6 +26,7 @@ from app.schemas.dataqs import (
     DataQsApprovalIn,
     DataQsAssessmentIn,
     DataQsAttemptStartIn,
+    DataQsCallIn,
     DataQsCaseCreateIn,
     DataQsCaseListOut,
     DataQsCaseOut,
@@ -50,6 +51,7 @@ from app.schemas.dataqs import (
     DataQsVersionIn,
 )
 from app.services.dataqs_assessment_service import DataQsAssessmentService
+from app.services.dataqs_call_service import DataQsCallService
 from app.services.dataqs_case_service import DataQsCaseService
 from app.services.dataqs_evidence_service import DataQsEvidenceService
 from app.services.dataqs_evidence_storage import EvidenceStorage, get_evidence_storage
@@ -182,6 +184,45 @@ def _add_case_routes(router: APIRouter, who: Callable[..., User]) -> None:
             headers={
                 "Content-Disposition": f"attachment; filename*=UTF-8''{quote(file.file_name)}",
                 "X-Content-Type-Options": "nosniff",
+                "Cache-Control": "private, no-store",
+            },
+        )
+
+    @router.post("/cases/{case_id}/calls", response_model=DataQsCaseOut)
+    def book_call(
+        case_id: int,
+        body: DataQsCallIn,
+        user: UserDep,
+        db: Annotated[Session, Depends(get_db)],
+        cases: CaseService,
+    ) -> DataQsCaseOut:
+        """Book a call with the STS specialist (or move the booked one): an email with the
+        calendar file, a text now and 1 hour before."""
+        DataQsCallService(db).book(user, case_id, body)
+        return cases.detail(user, case_id)
+
+    @router.post("/cases/{case_id}/calls/{call_id}/cancel", response_model=DataQsCaseOut)
+    def cancel_call(
+        case_id: int,
+        call_id: int,
+        user: UserDep,
+        db: Annotated[Session, Depends(get_db)],
+        cases: CaseService,
+    ) -> DataQsCaseOut:
+        DataQsCallService(db).cancel(user, case_id, call_id)
+        return cases.detail(user, case_id)
+
+    @router.get("/cases/{case_id}/calls/{call_id}/calendar.ics")
+    def call_calendar_file(
+        case_id: int, call_id: int, user: UserDep, db: Annotated[Session, Depends(get_db)]
+    ) -> Response:
+        """The call as a calendar file (Outlook, Apple Calendar, Google), reminder included."""
+        name, data = DataQsCallService(db).calendar_file(user, case_id, call_id)
+        return Response(
+            content=data,
+            media_type="text/calendar",
+            headers={
+                "Content-Disposition": f"attachment; filename*=UTF-8''{quote(name)}",
                 "Cache-Control": "private, no-store",
             },
         )
@@ -535,6 +576,19 @@ def upload_filing_proof(
     limit = get_settings().dataqs_max_upload_mb * 1024 * 1024
     data = file.file.read(limit + 1)  # one byte over the limit is enough to refuse it
     proofs.upload(user, case_id, attempt_id, data=data, file_name=file.filename or "proof")
+    return cases.detail(user, case_id)
+
+
+@router.post("/cases/{case_id}/calls/{call_id}/done", response_model=DataQsCaseOut)
+def call_done(
+    case_id: int,
+    call_id: int,
+    user: StaffUser,
+    db: Annotated[Session, Depends(get_db)],
+    cases: CaseService,
+) -> DataQsCaseOut:
+    """STS: the call was held."""
+    DataQsCallService(db).done(user, case_id, call_id)
     return cases.detail(user, case_id)
 
 

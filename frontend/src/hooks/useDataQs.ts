@@ -25,7 +25,9 @@ import {
   recordDataQsCorrespondence,
   requestDataQsPackageChanges,
   resubmitDataQsCase,
+  settleDataQsCall,
   settleDataQsFiling,
+  bookDataQsCall,
   uploadDataQsFilingProof,
   startDataQsFiling,
   submitDataQsCase,
@@ -36,6 +38,7 @@ import type {
   DataQsApprovalInput,
   DataQsAssessmentInput,
   DataQsAttemptStartInput,
+  DataQsCallInput,
   DataQsCase,
   DataQsCaseCreateInput,
   DataQsOtpPreferenceInput,
@@ -102,6 +105,25 @@ function waitingForCode(c: DataQsCase): boolean {
   return (
     !!r && r.status === 'SENT' && !!r.expires_at && new Date(r.expires_at).getTime() > Date.now()
   )
+}
+
+export function useBookDataQsCall(caseId: number) {
+  const save = useSaveCase()
+  const base = useDataQsBase()
+  return useMutation({
+    mutationFn: (input: DataQsCallInput) => bookDataQsCall(base, caseId, input),
+    onSuccess: save,
+  })
+}
+
+export function useSettleDataQsCall(caseId: number) {
+  const save = useSaveCase()
+  const base = useDataQsBase()
+  return useMutation({
+    mutationFn: ({ callId, action }: { callId: number; action: 'cancel' | 'done' }) =>
+      settleDataQsCall(base, caseId, callId, action),
+    onSuccess: save,
+  })
 }
 
 export function useSetDataQsOtpPreference(caseId: number) {

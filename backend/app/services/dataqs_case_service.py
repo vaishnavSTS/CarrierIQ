@@ -65,6 +65,7 @@ from app.schemas.dataqs import (
     DataQsAttemptOut,
     DataQsAuditEventOut,
     DataQsAuthorizationOut,
+    DataQsCallOut,
     DataQsCaseCreateIn,
     DataQsCaseOut,
     DataQsCaseSummaryOut,
@@ -96,7 +97,7 @@ from app.schemas.dataqs import (
     EligibilityOut,
     ReasonOut,
 )
-from app.services import dataqs_eligibility
+from app.services import dataqs_calendar, dataqs_eligibility
 from app.services.dataqs_access import DataQsAccess, may_act
 from app.services.dataqs_assessment_service import (
     ASSESS_TARGET,
@@ -105,6 +106,7 @@ from app.services.dataqs_assessment_service import (
     CARRIER_OUTCOME_LABELS,
     OUTCOME_LABELS,
 )
+from app.services.dataqs_call_service import DataQsCallService
 from app.services.dataqs_checklist import (
     CHECKLIST,
     DATAQS_REASON,
@@ -116,7 +118,7 @@ from app.services.dataqs_checklist import (
 from app.services.dataqs_clock_service import LABELS as CLOCK_LABELS
 from app.services.dataqs_clock_service import DataQsClockService, state
 from app.services.dataqs_lifecycle import LEVEL_LABEL, NEXT_LEVEL, proposed_cycle
-from app.services.dataqs_notifications import DataQsNotifications
+from app.services.dataqs_notifications import DataQsNotifications, carrier_link, staff_link
 from app.services.dataqs_otp_service import DataQsOtpService, display_phone
 from app.services.dataqs_package_service import (
     BUILDABLE,
@@ -804,6 +806,9 @@ class DataQsCaseService:
             else case.work_status in CARRIER_UPLOAD_STATUSES
         )
         otp = DataQsOtpService(self.db, twilio=None)
+        calls = DataQsCallService(self.db).calls(case.id)
+        call_names = self.repository.user_names([c.booked_by_id for c in calls])
+        call_link = staff_link(case) if staff else carrier_link(case)
         otp_request = otp.latest_request(case.id) if staff else None
         return DataQsCaseOut(
             **summary.model_dump(),
@@ -818,6 +823,24 @@ class DataQsCaseService:
                 else None
             ),
             can_set_otp_preference=can_act and case.work_status != DataQsWorkStatus.CLOSED,
+            calls=[
+                DataQsCallOut(
+                    id=c.id,
+                    status=c.status,
+                    starts_at=c.starts_at,
+                    duration_minutes=c.duration_minutes,
+                    time_zone=c.time_zone,
+                    phone=c.phone,
+                    topic=c.topic,
+                    booked_by_name=call_names.get(c.booked_by_id),
+                    created_at=c.created_at,
+                    cancelled_at=c.cancelled_at,
+                    done_at=c.done_at,
+                    google_calendar_url=dataqs_calendar.google_link(c, case, call_link),
+                )
+                for c in calls
+            ],
+            can_book_call=can_act and case.work_status != DataQsWorkStatus.CLOSED,
             otp_request=(
                 DataQsOtpRequestOut(
                     id=otp_request.id,

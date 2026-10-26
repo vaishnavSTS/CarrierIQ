@@ -56,6 +56,7 @@ TABLES = {
     "dataqs_authorizations",
     "dataqs_submission_attempts",
     "dataqs_filing_proofs",
+    "dataqs_calls",
     "dataqs_review_cycles",
     "dataqs_correspondence",
     "dataqs_clocks",
