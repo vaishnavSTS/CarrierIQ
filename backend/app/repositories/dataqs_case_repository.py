@@ -20,6 +20,7 @@ from app.models import (
     DataQsCorrespondence,
     DataQsEvidence,
     DataQsEvidenceLink,
+    DataQsFilingProof,
     DataQsIssue,
     DataQsMessage,
     DataQsOutbox,
@@ -369,6 +370,15 @@ class DataQsCaseRepository:
                 select(DataQsSubmissionAttempt)
                 .where(DataQsSubmissionAttempt.case_id == case_id)
                 .order_by(DataQsSubmissionAttempt.id)
+            )
+        )
+
+    def filing_proofs(self, case_id: int) -> list[DataQsFilingProof]:
+        return list(
+            self.db.scalars(
+                select(DataQsFilingProof)
+                .where(DataQsFilingProof.case_id == case_id)
+                .order_by(DataQsFilingProof.id)
             )
         )
 

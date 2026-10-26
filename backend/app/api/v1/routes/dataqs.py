@@ -54,6 +54,7 @@ from app.services.dataqs_case_service import DataQsCaseService
 from app.services.dataqs_evidence_service import DataQsEvidenceService
 from app.services.dataqs_evidence_storage import EvidenceStorage, get_evidence_storage
 from app.services.dataqs_filing_adapter import ManualFilingAdapter
+from app.services.dataqs_filing_proof_service import DataQsFilingProofService
 from app.services.dataqs_lifecycle import DataQsLifecycleService
 from app.services.dataqs_otp_service import DataQsOtpService
 from app.services.dataqs_package_service import DataQsPackageService
@@ -83,7 +84,15 @@ def get_evidence_service(
     return DataQsEvidenceService(db, storage)
 
 
+def get_proof_service(
+    db: Annotated[Session, Depends(get_db)],
+    storage: Annotated[EvidenceStorage, Depends(get_evidence_storage)],
+) -> DataQsFilingProofService:
+    return DataQsFilingProofService(db, storage)
+
+
 CaseService = Annotated[DataQsCaseService, Depends(get_case_service)]
+ProofService = Annotated[DataQsFilingProofService, Depends(get_proof_service)]
 EvidenceService = Annotated[DataQsEvidenceService, Depends(get_evidence_service)]
 
 
@@ -167,6 +176,22 @@ def _add_case_routes(router: APIRouter, who: Callable[..., User]) -> None:
     ) -> Response:
         """The original file, as an attachment; every download is in the case's audit trail."""
         file = evidence.download(user, case_id, evidence_id)
+        return Response(
+            content=file.data,
+            media_type=file.mime_type,
+            headers={
+                "Content-Disposition": f"attachment; filename*=UTF-8''{quote(file.file_name)}",
+                "X-Content-Type-Options": "nosniff",
+                "Cache-Control": "private, no-store",
+            },
+        )
+
+    @router.get("/cases/{case_id}/filing-proofs/{proof_id}")
+    def download_filing_proof(
+        case_id: int, proof_id: int, user: UserDep, proofs: ProofService
+    ) -> Response:
+        """The DataQs confirmation STS uploaded (carriers: confirmed filings only)."""
+        file = proofs.download(user, case_id, proof_id)
         return Response(
             content=file.data,
             media_type=file.mime_type,
@@ -489,6 +514,27 @@ def abandon_filing(
 ) -> DataQsCaseOut:
     """Nothing was submitted, or DataQs shows no such request: ready to file again."""
     filing.abandon(user, case_id, attempt_id, body.note)
+    return cases.detail(user, case_id)
+
+
+@router.post(
+    "/cases/{case_id}/submission-attempts/{attempt_id}/proofs",
+    response_model=DataQsCaseOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def upload_filing_proof(
+    case_id: int,
+    attempt_id: int,
+    user: StaffUser,
+    proofs: ProofService,
+    cases: CaseService,
+    file: Annotated[UploadFile, File()],
+) -> DataQsCaseOut:
+    """The confirmation DataQs gave (PDF, PNG or JPEG). On a confirmed filing the carrier is
+    emailed that it is on the case page."""
+    limit = get_settings().dataqs_max_upload_mb * 1024 * 1024
+    data = file.file.read(limit + 1)  # one byte over the limit is enough to refuse it
+    proofs.upload(user, case_id, attempt_id, data=data, file_name=file.filename or "proof")
     return cases.detail(user, case_id)
 
 

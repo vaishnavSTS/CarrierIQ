@@ -64,6 +64,7 @@ EMAIL_KINDS = {
     "EVIDENCE_NEEDED": "Evidence needed (carrier)",
     "PACKAGE_READY": "Package ready to approve (carrier)",
     "FILED": "Filed with DataQs (carrier)",
+    "FILING_PROOF": "Filing confirmation ready (carrier)",
     "DECISION": "Agency decision (carrier)",
     "FILE_CLOSED": "File closed (carrier)",
     "CORRECTION_VERIFIED": "Correction seen in FMCSA's data (carrier)",

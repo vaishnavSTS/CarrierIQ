@@ -92,3 +92,23 @@ class DataQsSubmissionAttempt(IdMixin, UpdatedAtMixin, Base):
     confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # Why an attempt was left unconfirmed or abandoned, e.g. "portal timed out after Submit".
     note: Mapped[str | None] = mapped_column(Text)
+
+
+class DataQsFilingProof(IdMixin, Base):
+    """The confirmation DataQs gave when STS filed (a PDF or a screenshot), uploaded by STS staff
+    on the filing attempt. The carrier sees the proofs of confirmed filings on their case."""
+
+    __tablename__ = "dataqs_filing_proofs"
+
+    case_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("dataqs_cases.id", ondelete="CASCADE"), index=True
+    )
+    attempt_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("dataqs_submission_attempts.id", ondelete="CASCADE"), index=True
+    )
+    object_key: Mapped[str] = mapped_column(String(500), unique=True)
+    sha256: Mapped[str] = mapped_column(String(64))
+    file_name: Mapped[str] = mapped_column(String(255))
+    mime_type: Mapped[str] = mapped_column(String(100))
+    size_bytes: Mapped[int] = mapped_column(BigInteger)
+    uploaded_by_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"))

@@ -256,6 +256,11 @@ class ManualFilingAdapter:
             DataQsReviewLevel.RECONSIDERATION: "request for reconsideration",
             DataQsReviewLevel.FINAL: "request for final review",
         }[cycle.level]
+        proof = (
+            "\n\nThe confirmation DataQs gave is on the case page, under Proof of filing."
+            if any(p.attempt_id == attempt.id for p in self.repository.filing_proofs(case.id))
+            else ""
+        )
         notifications.to_carrier(
             case,
             "FILED",
@@ -263,7 +268,7 @@ class ManualFilingAdapter:
             f"STS filed your DataQs {stage} for inspection {case.source_event_id} with FMCSA. "
             f"The DataQs request ID is {body.gov_request_id}.\n\nThe reviewing agency decides "
             "it; agencies usually open a request within 7 days and decide an initial review within "
-            "21 days. STS watches it and will email you if anything is needed.",
+            "21 days. STS watches it and will email you if anything is needed." + proof,
         )
         self.repository.audit(
             case,

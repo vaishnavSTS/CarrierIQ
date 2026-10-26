@@ -1,17 +1,19 @@
 import { Copy, Download } from 'lucide-react'
 import { useState, type FormEvent, type ReactNode } from 'react'
 
-import { dataQsEvidenceUrl } from '../../../api/dataqs'
+import { dataQsEvidenceUrl, dataQsFilingProofUrl } from '../../../api/dataqs'
 import { StatusBadge } from '../../../components/StatusBadge'
 import { useMe } from '../../../hooks/useAuth'
 import {
   useConfirmDataQsFiling,
   useSettleDataQsFiling,
   useStartDataQsFiling,
+  useUploadDataQsFilingProof,
 } from '../../../hooks/useDataQs'
 import type { DataQsAttempt, DataQsCase, DataQsPackage } from '../../../types/dataqs'
 import { formatDate, formatDateTime } from '../../../utils/format'
 import { stateName } from '../../carrier-profile/safety/usStates'
+import { ProofDropBox } from '../DataQsFilingProofs'
 import { inputClass, labelClass } from '../intake/intakeState'
 import { DATAQS_STATUSES, primaryButton, secondaryButton } from '../ui'
 
@@ -41,7 +43,7 @@ export function DataQsSubmissionConsole({ dataqsCase: c }: { dataqsCase: DataQsC
     <div className="space-y-5 text-sm">
       {c.can_file && pkg && <StartFiling dataqsCase={c} pkg={pkg} />}
       {open && pkg && <OpenAttempt dataqsCase={c} pkg={pkg} attempt={open} />}
-      {c.attempts.length > 0 && <AttemptHistory attempts={c.attempts} />}
+      {c.attempts.length > 0 && <AttemptHistory caseId={c.id} attempts={c.attempts} />}
     </div>
   )
 }
@@ -347,10 +349,21 @@ function ConfirmForm({
   const [ack, setAck] = useState('')
   const [portalStatus, setPortalStatus] = useState('Submitted')
   const [sure, setSure] = useState(false)
+  const [proof, setProof] = useState<File | null>(null)
   const confirm = useConfirmDataQsFiling(c.id)
+  const upload = useUploadDataQsFilingProof(c.id)
+  const saving = upload.isPending || confirm.isPending
 
-  const submit = (event: FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault()
+    // The proof first, so the client's "filed" email can say it's on the case page.
+    if (proof && !upload.isSuccess) {
+      try {
+        await upload.mutateAsync({ attemptId: attempt.id, file: proof })
+      } catch {
+        return // shown below; nothing is confirmed
+      }
+    }
     confirm.mutate({
       attemptId: attempt.id,
       input: {
@@ -445,6 +458,19 @@ function ConfirmForm({
           className={inputClass}
         />
       </div>
+      <div>
+        <span className={labelClass}>
+          Proof of filing (optional): the confirmation PDF or a screenshot from DataQs. If it comes
+          later, add it once filed; the client sees it on their case.
+        </span>
+        {upload.isSuccess ? (
+          <p className="text-emerald-700">
+            Uploaded {proof?.name}. You can add more files after confirming.
+          </p>
+        ) : (
+          <ProofDropBox id={`confirm-proof-${attempt.id}`} file={proof} onChange={setProof} />
+        )}
+      </div>
       <label className="flex items-start gap-2">
         <input
           type="checkbox"
@@ -458,6 +484,12 @@ function ConfirmForm({
           best of my knowledge (18 U.S.C. 1001).
         </span>
       </label>
+      {upload.isError && (
+        <p className="text-red-700" role="alert">
+          Could not upload the proof: {upload.error.message}. Nothing was confirmed; choose another
+          file or remove it.
+        </p>
+      )}
       {confirm.isError && (
         <p className="text-red-700" role="alert">
           Could not record it: {confirm.error.message}
@@ -466,9 +498,13 @@ function ConfirmForm({
       <button
         type="submit"
         className={primaryButton}
-        disabled={!sure || !requestId.trim() || ack.trim().length < 3 || confirm.isPending}
+        disabled={!sure || !requestId.trim() || ack.trim().length < 3 || saving}
       >
-        {confirm.isPending ? 'Saving…' : 'Confirm submission'}
+        {upload.isPending
+          ? 'Uploading the proof…'
+          : confirm.isPending
+            ? 'Saving…'
+            : 'Confirm submission'}
       </button>
     </form>
   )
@@ -529,7 +565,7 @@ function SettleForm({ caseId, attempt }: { caseId: number; attempt: DataQsAttemp
   )
 }
 
-function AttemptHistory({ attempts }: { attempts: DataQsAttempt[] }) {
+function AttemptHistory({ caseId, attempts }: { caseId: number; attempts: DataQsAttempt[] }) {
   return (
     <div>
       <h3 className="text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -547,6 +583,22 @@ function AttemptHistory({ attempts }: { attempts: DataQsAttempt[] }) {
             </span>
             {a.gov_request_id && (
               <span className="font-mono text-xs text-slate-700">{a.gov_request_id}</span>
+            )}
+            {a.proofs.length > 0 && (
+              <span className="text-xs text-slate-600">
+                proof:{' '}
+                {a.proofs.map((p, i) => (
+                  <span key={p.id}>
+                    {i > 0 && ', '}
+                    <a
+                      href={dataQsFilingProofUrl('/dataqs', caseId, p.id)}
+                      className="text-accent-strong hover:underline"
+                    >
+                      {p.file_name}
+                    </a>
+                  </span>
+                ))}
+              </span>
             )}
             {a.note && <span className="w-full text-xs text-slate-600">{a.note}</span>}
           </li>

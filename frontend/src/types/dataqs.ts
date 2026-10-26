@@ -504,6 +504,16 @@ export interface DataQsApprovalInput {
 
 export type DataQsAttemptStatus = 'STARTED' | 'UNCONFIRMED' | 'CONFIRMED' | 'ABANDONED'
 
+/** The confirmation DataQs gave when STS filed (a PDF or screenshot). */
+export interface DataQsFilingProof {
+  id: number
+  file_name: string
+  mime_type: string
+  size_bytes: number
+  uploaded_by_name: string | null
+  uploaded_at: string
+}
+
 export interface DataQsAttempt {
   id: number
   status: DataQsAttemptStatus
@@ -520,6 +530,8 @@ export interface DataQsAttempt {
   confirmed_at: string | null
   /** STS only: why it was left unconfirmed or abandoned */
   note: string | null
+  /** Proof of filing, oldest first (clients see confirmed filings only) */
+  proofs: DataQsFilingProof[]
 }
 
 export type DataQsReviewLevel = 'INITIAL' | 'RECONSIDERATION' | 'FINAL'

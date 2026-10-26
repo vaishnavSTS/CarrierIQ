@@ -214,6 +214,26 @@ export function confirmDataQsFiling(
   return post(`/dataqs/cases/${caseId}/submission-attempts/${attemptId}/confirm`, input)
 }
 
+/** STS: the confirmation DataQs gave (PDF, PNG or JPEG). On a confirmed filing the client is
+ * emailed that it is on the case page. */
+export function uploadDataQsFilingProof(
+  caseId: number,
+  attemptId: number,
+  file: File,
+): Promise<DataQsCase> {
+  const form = new FormData()
+  form.append('file', file)
+  return apiRequest(`/dataqs/cases/${caseId}/submission-attempts/${attemptId}/proofs`, {
+    method: 'POST',
+    body: form,
+  })
+}
+
+/** A plain link, like evidence: the API logs each download. */
+export function dataQsFilingProofUrl(base: DataQsBase, caseId: number, proofId: number): string {
+  return `/api/v1${base}/cases/${caseId}/filing-proofs/${proofId}`
+}
+
 /** `unconfirmed`: the portal timed out; `abandon`: nothing was submitted / not found in DataQs. */
 export function settleDataQsFiling(
   caseId: number,

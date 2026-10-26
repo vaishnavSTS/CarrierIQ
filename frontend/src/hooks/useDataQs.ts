@@ -26,6 +26,7 @@ import {
   requestDataQsPackageChanges,
   resubmitDataQsCase,
   settleDataQsFiling,
+  uploadDataQsFilingProof,
   startDataQsFiling,
   submitDataQsCase,
   uploadDataQsEvidence,
@@ -238,6 +239,12 @@ export function useStartDataQsFiling(caseId: number) {
 export function useConfirmDataQsFiling(caseId: number) {
   return useCaseAction(({ attemptId, input }: { attemptId: number; input: DataQsConfirmInput }) =>
     confirmDataQsFiling(caseId, attemptId, input),
+  )
+}
+
+export function useUploadDataQsFilingProof(caseId: number) {
+  return useCaseAction(({ attemptId, file }: { attemptId: number; file: File }) =>
+    uploadDataQsFilingProof(caseId, attemptId, file),
   )
 }
 

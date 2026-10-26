@@ -334,6 +334,17 @@ class DataQsNoteIn(BaseModel):
     note: str = Field(min_length=5, max_length=2000)
 
 
+class DataQsFilingProofOut(BaseModel):
+    """The confirmation DataQs gave when STS filed (a PDF or screenshot)."""
+
+    id: int
+    file_name: str
+    mime_type: str
+    size_bytes: int
+    uploaded_by_name: str | None
+    uploaded_at: datetime
+
+
 class DataQsAttemptOut(BaseModel):
     id: int
     status: DataQsAttemptStatus
@@ -347,6 +358,7 @@ class DataQsAttemptOut(BaseModel):
     acknowledgement: str | None
     confirmed_at: datetime | None
     note: str | None
+    proofs: list[DataQsFilingProofOut] = []  # proof of filing, oldest first
 
 
 class DataQsReviewCycleOut(BaseModel):

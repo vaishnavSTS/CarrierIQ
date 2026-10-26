@@ -52,6 +52,8 @@ const AUDIT_ACTIONS: Record<string, string> = {
   'package.changes_requested': 'Carrier asked for changes to the package',
   'filing.started': 'Filing started',
   'filing.confirmed': 'Filing confirmed',
+  'filing_proof.uploaded': 'Proof of filing added',
+  'filing_proof.downloaded': 'Proof of filing downloaded',
   'filing.unconfirmed': 'Filing marked unconfirmed',
   'filing.abandoned': 'Filing attempt abandoned',
   'agency.acknowledgement': 'Agency acknowledgement recorded',

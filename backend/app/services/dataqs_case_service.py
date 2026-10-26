@@ -40,6 +40,7 @@ from app.models import (
     DataQsAuthorization,
     DataQsCase,
     DataQsEvidence,
+    DataQsFilingProof,
     DataQsIssue,
     DataQsTask,
     Inspection,
@@ -77,6 +78,7 @@ from app.schemas.dataqs import (
     DataQsEventOut,
     DataQsEvidenceLinkOut,
     DataQsEvidenceOut,
+    DataQsFilingProofOut,
     DataQsIssueOut,
     DataQsMessageOut,
     DataQsMissingInspectionIn,
@@ -718,6 +720,9 @@ class DataQsCaseService:
             for a in self.repository.attempts(case.id)
             if staff or a.status == DataQsAttemptStatus.CONFIRMED
         ]
+        proofs: dict[int, list[DataQsFilingProof]] = defaultdict(list)
+        for proof in self.repository.filing_proofs(case.id):
+            proofs[proof.attempt_id].append(proof)
         open_attempt = self.repository.open_attempt(case.id)
         cycles = self.repository.review_cycles(case.id)
         package_versions = {p.id: p.package_version for p in packages}
@@ -733,6 +738,7 @@ class DataQsCaseService:
             + [p.created_by_id for p in packages]
             + [t.assignee_id for t in tasks if t.assignee_id is not None]
             + [a.filed_by_id for a in attempts]
+            + [p.uploaded_by_id for a in attempts for p in proofs[a.id]]
             + [i.verified_by_id for i in issues if i.verified_by_id is not None]
         )
 
@@ -958,6 +964,17 @@ class DataQsCaseService:
                     acknowledgement=(a.receipt or {}).get("acknowledgement") if staff else None,
                     confirmed_at=a.confirmed_at,
                     note=a.note if staff else None,
+                    proofs=[
+                        DataQsFilingProofOut(
+                            id=p.id,
+                            file_name=p.file_name,
+                            mime_type=p.mime_type,
+                            size_bytes=p.size_bytes,
+                            uploaded_by_name=names.get(p.uploaded_by_id),
+                            uploaded_at=p.created_at,
+                        )
+                        for p in proofs[a.id]
+                    ],
                 )
                 for a in attempts
             ],

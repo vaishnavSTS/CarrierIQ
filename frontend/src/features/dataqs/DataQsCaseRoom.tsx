@@ -12,6 +12,7 @@ import { DataQsAssessmentHistory, DataQsTaskList } from './DataQsCaseActivity'
 import { DataQsDeadlines } from './DataQsDeadlines'
 import { DataQsEventSummary } from './DataQsEventSummary'
 import { DataQsFiledCard } from './DataQsFiledCard'
+import { DataQsFilingProofs } from './DataQsFilingProofs'
 import { DataQsMessages } from './DataQsMessages'
 import { DataQsEvidenceUpload } from './DataQsEvidenceUpload'
 import { DataQsPackageReview } from './DataQsPackageReview'
@@ -166,6 +167,11 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
         {c.gov_request_id && (
           <Card title="Filed with DataQs">
             <DataQsFiledCard dataqsCase={c} />
+          </Card>
+        )}
+        {c.attempts.some((a) => a.status === 'CONFIRMED') && (
+          <Card title="Proof of filing">
+            <DataQsFilingProofs dataqsCase={c} />
           </Card>
         )}
         {c.clocks.length > 0 && (

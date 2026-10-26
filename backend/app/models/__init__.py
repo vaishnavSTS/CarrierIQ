@@ -17,7 +17,12 @@ from app.models.dataqs_evidence import DataQsEvidence, DataQsEvidenceLink
 from app.models.dataqs_message import DataQsMessage
 from app.models.dataqs_otp_request import DataQsOtpRequest
 from app.models.dataqs_outbox import DataQsOutbox
-from app.models.dataqs_package import DataQsAuthorization, DataQsPackage, DataQsSubmissionAttempt
+from app.models.dataqs_package import (
+    DataQsAuthorization,
+    DataQsFilingProof,
+    DataQsPackage,
+    DataQsSubmissionAttempt,
+)
 from app.models.dataqs_review_cycle import DataQsReviewCycle
 from app.models.dataqs_task import DataQsTask
 from app.models.domain import Domain
@@ -69,6 +74,7 @@ __all__ = [
     "DataQsOutbox",
     "DataQsPackage",
     "DataQsReviewCycle",
+    "DataQsFilingProof",
     "DataQsSubmissionAttempt",
     "DataQsTask",
     "DataQsVerificationCheck",
