@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import type { DataQsCase } from '../../types/dataqs'
+import { DataQsAgentAccessCard } from './DataQsAgentAccess'
 import { DataQsOtpChoiceDialog } from './DataQsOtpChoiceDialog'
 import { otpChoiceText } from './labels'
 import { secondaryButton } from './ui'
@@ -16,15 +17,16 @@ export function DataQsOtpCard({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
     <div className="space-y-3 text-sm">
       {choice ? (
         <p className="text-slate-700">
-          STS gets the code by: <span className="font-medium">{otpChoiceText(choice)}</span>.
+          Your choice: <span className="font-medium">{otpChoiceText(choice)}</span>.
         </p>
       ) : (
         <p className="text-slate-700">
-          To file your request, STS logs in to FMCSA, which sends a one-time code to you. Choose how
-          you’d like to pass it to us.
+          To file your request, STS signs in to FMCSA. Choose how: authorize STS as an agent in the
+          FMCSA Portal, or pass STS the one-time code FMCSA sends you.
         </p>
       )}
-      {c.can_set_otp_preference && (
+      {c.agent && <DataQsAgentAccessCard dataqsCase={c} />}
+      {c.can_set_otp_preference && c.agent?.status !== 'GRANTED' && (
         <button type="button" onClick={() => setOpen(true)} className={secondaryButton}>
           {choice ? 'Change' : 'Choose how'}
         </button>

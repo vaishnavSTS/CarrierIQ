@@ -54,6 +54,12 @@ const AUDIT_ACTIONS: Record<string, string> = {
   'filing.confirmed': 'Filing confirmed',
   'filing_proof.uploaded': 'Proof of filing added',
   'call.booked': 'Call with STS booked',
+  'otp.preference_set': 'Chose how STS signs in to file',
+  'agent_access.requested_by_carrier': 'Asked STS to request FMCSA Portal access',
+  'agent_access.request_sent': 'STS requested FMCSA Portal access',
+  'agent_access.reminded': 'Reminded to approve STS’s access',
+  'agent_access.granted': 'FMCSA Portal access approved',
+  'agent_access.withdrawn': 'Access request withdrawn (another way chosen)',
   'call.moved': 'Call with STS moved',
   'call.cancelled': 'Call with STS cancelled',
   'call.done': 'Call with STS held',
@@ -84,11 +90,15 @@ export const OTP_METHOD_LABEL: Record<DataQsOtpMethod, string> = {
   TEXT: 'Text message',
   AI_CALL: 'Automated call',
   SCHEDULED_CALL: 'A call at a set time',
+  AUTHORIZED_AGENT: 'Authorize STS as an agent',
 }
 
 export function otpChoiceText(p: DataQsOtpPreference): string {
   if (p.method === 'SCHEDULED_CALL' && p.call_at) {
     return `A call to ${p.phone} within 5 minutes of ${formatDateTime(p.call_at)}`
+  }
+  if (p.method === 'AUTHORIZED_AGENT') {
+    return 'Authorizing STS as an agent in the FMCSA Portal (no login code needed)'
   }
   return `${OTP_METHOD_LABEL[p.method]} to ${p.phone}`
 }

@@ -79,7 +79,22 @@ export interface ReasonOption {
 }
 
 /** How the carrier gives STS the FMCSA login code */
-export type DataQsOtpMethod = 'TEXT' | 'AI_CALL' | 'SCHEDULED_CALL'
+export type DataQsOtpMethod = 'TEXT' | 'AI_CALL' | 'SCHEDULED_CALL' | 'AUTHORIZED_AGENT'
+
+/** STS's access to the carrier in the FMCSA Portal (AUTHORIZED_AGENT). */
+export type DataQsAgentAccessStatus = 'REQUESTED' | 'SENT' | 'GRANTED'
+
+export interface DataQsAgentAccess {
+  status: DataQsAgentAccessStatus
+  asked_at: string | null
+  sent_at: string | null
+  sent_by_name: string | null
+  reminders: number
+  reminded_at: string | null
+  granted_at: string | null
+  /** What the carrier's Company Official does in the FMCSA Portal */
+  approve_steps: string
+}
 
 export interface DataQsOtpPreference {
   method: DataQsOtpMethod
@@ -124,6 +139,8 @@ export interface DataQsCaseSummary {
   source_event_id: string
   /** The state's report number: what DataQs searches by (null: not in FMCSA's data) */
   inspection_report_number: string | null
+  /** The carrier chose to authorize STS as an agent: where STS's access request stands */
+  agent_access: DataQsAgentAccessStatus | null
   event_date: string | null
   event_state: string | null
   /** Where the carrier saw the record (DataQs step 4) */
@@ -346,6 +363,7 @@ export interface DataQsCase extends DataQsCaseSummary {
   otp_automation_ready: boolean
   /** Calls with the STS specialist, newest first */
   calls: DataQsCall[]
+  agent: DataQsAgentAccess | null
   can_book_call: boolean
 }
 

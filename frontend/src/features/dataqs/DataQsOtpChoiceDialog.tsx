@@ -1,4 +1,4 @@
-import { MessageSquareText, CalendarClock, X } from 'lucide-react'
+import { MessageSquareText, CalendarClock, UserCheck, X } from 'lucide-react'
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 
 import { useMe } from '../../hooks/useAuth'
@@ -20,6 +20,12 @@ const OPTIONS: { method: DataQsOtpMethod; icon: ReactNode; title: string; body: 
     icon: <CalendarClock className="size-5" aria-hidden />,
     title: 'A call at a time you choose',
     body: 'Pick a time. An STS specialist calls you within 5 minutes of it to get the code.',
+  },
+  {
+    method: 'AUTHORIZED_AGENT',
+    icon: <UserCheck className="size-5" aria-hidden />,
+    title: 'Authorize STS as an agent',
+    body: 'STS requests access to your company in the FMCSA Portal and you approve it once. After that STS files with its own login, so no codes are needed.',
   },
 ]
 
@@ -95,11 +101,12 @@ export function DataQsOtpChoiceDialog({
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 id="otp-title" className="text-lg font-semibold text-slate-950">
-              How should STS get your FMCSA login code?
+              How should STS sign in to FMCSA to file?
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              To file this request, STS logs in to FMCSA, which sends a one-time code to you. Choose
-              how you’d like to pass it to us. STS will never ask for your password.
+              STS can request access to your company in the FMCSA Portal (you approve it once), or
+              log in and get the one-time code FMCSA sends you. STS will never ask for your
+              password.
             </p>
           </div>
           <button

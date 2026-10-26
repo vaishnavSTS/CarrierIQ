@@ -138,6 +138,15 @@ function post<T>(path: string, body: unknown): Promise<T> {
   })
 }
 
+/** STS: `sent` (requested in the FMCSA Portal) or `remind`; either side: `granted`. */
+export function updateDataQsAgentAccess(
+  base: DataQsBase,
+  caseId: number,
+  action: 'sent' | 'remind' | 'granted',
+): Promise<DataQsCase> {
+  return post(`${base}/cases/${caseId}/agent-access/${action}`, {})
+}
+
 /** Book a call with the STS specialist, or move the booked one. */
 export function bookDataQsCall(
   base: DataQsBase,

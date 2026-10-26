@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from app.models.enums import (
     DataQsActionOwner,
+    DataQsAgentAccess,
     DataQsAssessmentOutcome,
     DataQsAttemptStatus,
     DataQsCallStatus,
@@ -554,6 +555,8 @@ class DataQsCaseSummaryOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     row_version: int
+    # STS's FMCSA Portal access, when the carrier chose to authorize STS as an agent.
+    agent_access: DataQsAgentAccess | None = None
 
 
 class DataQsEvidenceLinkOut(BaseModel):
@@ -670,6 +673,19 @@ class DataQsOtpPreferenceOut(BaseModel):
     set_at: datetime | None
 
 
+class DataQsAgentAccessOut(BaseModel):
+    """STS's request for access to the carrier in the FMCSA Portal (AUTHORIZED_AGENT)."""
+
+    status: DataQsAgentAccess
+    asked_at: datetime | None  # when the carrier chose it
+    sent_at: datetime | None
+    sent_by_name: str | None
+    reminders: int
+    reminded_at: datetime | None
+    granted_at: datetime | None
+    approve_steps: str  # what the carrier's Company Official does
+
+
 class DataQsOtpRequestOut(BaseModel):
     """STS staff: the latest text or call asking the carrier for the code."""
 
@@ -771,6 +787,7 @@ class DataQsCaseOut(DataQsCaseSummaryOut):
     otp_automation_ready: bool = False
     # Calls with the STS specialist, newest first, and whether this user may book one.
     calls: list[DataQsCallOut] = []
+    agent: DataQsAgentAccessOut | None = None
     can_book_call: bool = False
 
 

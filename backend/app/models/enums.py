@@ -250,6 +250,17 @@ class DataQsOtpMethod(StrEnum):
     TEXT = "TEXT"  # STS texts the carrier; the carrier replies with the code
     AI_CALL = "AI_CALL"  # an automated call asks the carrier to key in or say the code
     SCHEDULED_CALL = "SCHEDULED_CALL"  # an STS staff member calls at a time the carrier chose
+    # The carrier approves STS as an associate of their company in the FMCSA Portal
+    # (Account Management > Pending Account Requests); STS then uses its own login, no code.
+    AUTHORIZED_AGENT = "AUTHORIZED_AGENT"
+
+
+class DataQsAgentAccess(StrEnum):
+    """STS's access to the carrier's company in the FMCSA Portal (AUTHORIZED_AGENT)."""
+
+    REQUESTED = "REQUESTED"  # the carrier asked STS to request access
+    SENT = "SENT"  # STS requested it in the FMCSA Portal; the carrier must approve it
+    GRANTED = "GRANTED"  # the carrier approved it
 
 
 class DataQsOtpStatus(StrEnum):

@@ -61,6 +61,7 @@ from app.models.enums import (
 )
 from app.repositories.dataqs_case_repository import DataQsCaseRepository
 from app.schemas.dataqs import (
+    DataQsAgentAccessOut,
     DataQsAssessmentOut,
     DataQsAttemptOut,
     DataQsAuditEventOut,
@@ -99,6 +100,7 @@ from app.schemas.dataqs import (
 )
 from app.services import dataqs_calendar, dataqs_eligibility
 from app.services.dataqs_access import DataQsAccess, may_act
+from app.services.dataqs_agent_access_service import approve_steps
 from app.services.dataqs_assessment_service import (
     ASSESS_TARGET,
     ASSESSABLE,
@@ -841,6 +843,26 @@ class DataQsCaseService:
                 for c in calls
             ],
             can_book_call=can_act and case.work_status != DataQsWorkStatus.CLOSED,
+            agent=(
+                DataQsAgentAccessOut(
+                    status=case.agent_access,
+                    asked_at=case.otp_preference_set_at,
+                    sent_at=case.agent_request_sent_at,
+                    sent_by_name=(
+                        self.repository.user_names([case.agent_request_sent_by_id]).get(
+                            case.agent_request_sent_by_id
+                        )
+                        if case.agent_request_sent_by_id
+                        else None
+                    ),
+                    reminders=case.agent_reminders,
+                    reminded_at=case.agent_reminded_at,
+                    granted_at=case.agent_granted_at,
+                    approve_steps=approve_steps(case),
+                )
+                if case.agent_access
+                else None
+            ),
             otp_request=(
                 DataQsOtpRequestOut(
                     id=otp_request.id,
@@ -1375,6 +1397,7 @@ class DataQsCaseService:
                 event_type=c.event_type,
                 source_event_id=c.source_event_id,
                 inspection_report_number=c.inspection_report_number,
+                agent_access=c.agent_access,
                 event_date=c.event_date,
                 event_state=c.event_state,
                 viewed_in=c.viewed_in,

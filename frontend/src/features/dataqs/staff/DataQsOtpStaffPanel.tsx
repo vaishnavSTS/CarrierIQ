@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useMarkDataQsOtpUsed, useRequestDataQsOtp } from '../../../hooks/useDataQs'
 import type { DataQsCase } from '../../../types/dataqs'
 import { formatDateTime } from '../../../utils/format'
+import { DataQsAgentAccessStaff } from '../DataQsAgentAccess'
 import { DataQsOtpChoiceDialog } from '../DataQsOtpChoiceDialog'
 import { otpChoiceText } from '../labels'
 import { primaryButton, secondaryButton } from '../ui'
@@ -37,7 +38,7 @@ export function DataQsOtpStaffPanel({ dataqsCase: c }: { dataqsCase: DataQsCase 
   const choice = c.otp_preference
   const r = c.otp_request
   const left = useSecondsLeft(r?.expires_at ?? null)
-  const automated = choice && choice.method !== 'SCHEDULED_CALL'
+  const automated = choice && (choice.method === 'TEXT' || choice.method === 'AI_CALL')
   const showCode = r?.status === 'RECEIVED' && r.code && left > 0
 
   return (
@@ -49,6 +50,8 @@ export function DataQsOtpStaffPanel({ dataqsCase: c }: { dataqsCase: DataQsCase 
       ) : (
         <p className="text-slate-600">The carrier hasn’t chosen how to share the code yet.</p>
       )}
+
+      {c.agent && <DataQsAgentAccessStaff dataqsCase={c} />}
 
       {choice?.method === 'SCHEDULED_CALL' && (
         <p className="text-slate-600">

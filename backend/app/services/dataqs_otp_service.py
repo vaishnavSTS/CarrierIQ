@@ -37,6 +37,7 @@ from app.models.enums import (
 )
 from app.repositories.dataqs_case_repository import DataQsCaseRepository
 from app.services.dataqs_access import DataQsAccess
+from app.services.dataqs_agent_access_service import DataQsAgentAccessService
 from app.services.twilio_client import TwilioClient, TwilioError
 
 logger = logging.getLogger(__name__)
@@ -162,6 +163,11 @@ class DataQsOtpService:
         case.otp_preference_set_at = now
         for task in self._open_call_tasks(case.id):
             task.completed_at, task.completed_by_id = now, user.id
+        agent = DataQsAgentAccessService(self.db)
+        if method == DataQsOtpMethod.AUTHORIZED_AGENT:
+            agent.carrier_chose(case, user)
+        else:
+            agent.carrier_chose_other(case, user)
         if call_at is not None:
             self.db.add(
                 DataQsTask(

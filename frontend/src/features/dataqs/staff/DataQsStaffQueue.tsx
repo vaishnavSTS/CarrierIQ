@@ -7,6 +7,7 @@ import { useDataQsCases } from '../../../hooks/useDataQs'
 import type { DataQsCaseSummary } from '../../../types/dataqs'
 import { formatDate, formatDateTime } from '../../../utils/format'
 import { cellClass, headClass, tableClass } from '../../carrier-profile/styles'
+import { AgentAccessBadge } from '../DataQsAgentAccess'
 import { DataQsCaseCard } from '../DataQsCaseCard'
 import { WORK_STATUS } from '../labels'
 import { useRowLink } from '../rowLink'
@@ -18,7 +19,12 @@ const FILTERS: {
   label: string
   test: (c: DataQsCaseSummary, me?: number) => boolean
 }[] = [
-  { id: 'sts', label: 'Needs STS', test: (c) => c.action_owner === 'STS' },
+  {
+    id: 'sts',
+    label: 'Needs STS',
+    // Also a client waiting for STS to request FMCSA Portal access, whatever the stage.
+    test: (c) => c.action_owner === 'STS' || c.agent_access === 'REQUESTED',
+  },
   { id: 'mine', label: 'Mine', test: (c, me) => c.owner_id === me && c.work_status !== 'CLOSED' },
   {
     id: 'unassigned',
@@ -87,6 +93,7 @@ export function DataQsStaffQueue() {
             {rows.map((c) => (
               <li key={c.id}>
                 <DataQsCaseCard dataqsCase={c} to={`/dataqs/cases/${c.id}`} showCompany>
+                  <AgentAccessBadge status={c.agent_access} />
                   <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
                     <div>
                       <dt className="text-slate-600">Owner</dt>
@@ -188,6 +195,7 @@ export function DataQsStaffQueue() {
                     </td>
                     <td className={cellClass}>
                       <StatusBadge {...WORK_STATUS[c.work_status]} />
+                      <AgentAccessBadge status={c.agent_access} />
                       <div className="mt-0.5 text-xs text-slate-600">{c.next_action}</div>
                       {c.gov_request_id && (
                         <div className="font-mono text-xs text-slate-600">{c.gov_request_id}</div>

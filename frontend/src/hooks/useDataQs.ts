@@ -28,6 +28,7 @@ import {
   settleDataQsCall,
   settleDataQsFiling,
   bookDataQsCall,
+  updateDataQsAgentAccess,
   uploadDataQsFilingProof,
   startDataQsFiling,
   submitDataQsCase,
@@ -105,6 +106,16 @@ function waitingForCode(c: DataQsCase): boolean {
   return (
     !!r && r.status === 'SENT' && !!r.expires_at && new Date(r.expires_at).getTime() > Date.now()
   )
+}
+
+export function useDataQsAgentAccess(caseId: number) {
+  const save = useSaveCase()
+  const base = useDataQsBase()
+  return useMutation({
+    mutationFn: (action: 'sent' | 'remind' | 'granted') =>
+      updateDataQsAgentAccess(base, caseId, action),
+    onSuccess: save,
+  })
 }
 
 export function useBookDataQsCall(caseId: number) {

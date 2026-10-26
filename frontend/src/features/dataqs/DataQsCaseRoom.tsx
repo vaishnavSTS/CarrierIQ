@@ -123,7 +123,13 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
         {c.can_approve && <PackageCard dataqsCase={c} />}
         {addEvidence && c.work_status !== 'EVIDENCE_NEEDED' && <DataQsAddEvidence dataqsCase={c} />}
         {otpCard && (
-          <Card title="FMCSA login code">
+          <Card
+            title={
+              c.otp_preference?.method === 'AUTHORIZED_AGENT'
+                ? 'FMCSA Portal access for STS'
+                : 'FMCSA login code'
+            }
+          >
             {staff ? <DataQsOtpStaffPanel dataqsCase={c} /> : <DataQsOtpCard dataqsCase={c} />}
           </Card>
         )}

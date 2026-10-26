@@ -50,6 +50,7 @@ from app.schemas.dataqs import (
     DataQsVerifyIssueIn,
     DataQsVersionIn,
 )
+from app.services.dataqs_agent_access_service import DataQsAgentAccessService
 from app.services.dataqs_assessment_service import DataQsAssessmentService
 from app.services.dataqs_call_service import DataQsCallService
 from app.services.dataqs_case_service import DataQsCaseService
@@ -187,6 +188,17 @@ def _add_case_routes(router: APIRouter, who: Callable[..., User]) -> None:
                 "Cache-Control": "private, no-store",
             },
         )
+
+    @router.post("/cases/{case_id}/agent-access/granted", response_model=DataQsCaseOut)
+    def agent_access_granted(
+        case_id: int,
+        user: UserDep,
+        db: Annotated[Session, Depends(get_db)],
+        cases: CaseService,
+    ) -> DataQsCaseOut:
+        """The carrier approved STS's FMCSA Portal access (or STS saw it there)."""
+        DataQsAgentAccessService(db).granted(user, case_id)
+        return cases.detail(user, case_id)
 
     @router.post("/cases/{case_id}/calls", response_model=DataQsCaseOut)
     def book_call(
@@ -589,6 +601,32 @@ def call_done(
 ) -> DataQsCaseOut:
     """STS: the call was held."""
     DataQsCallService(db).done(user, case_id, call_id)
+    return cases.detail(user, case_id)
+
+
+def get_agent_access(db: Annotated[Session, Depends(get_db)]) -> DataQsAgentAccessService:
+    return DataQsAgentAccessService(db)
+
+
+AgentAccess = Annotated[DataQsAgentAccessService, Depends(get_agent_access)]
+
+
+@router.post("/cases/{case_id}/agent-access/sent", response_model=DataQsCaseOut)
+def agent_request_sent(
+    case_id: int, user: StaffUser, agent: AgentAccess, cases: CaseService
+) -> DataQsCaseOut:
+    """STS requested associate access to the carrier in the FMCSA Portal: the carrier is
+    emailed how to approve it."""
+    agent.request_sent(user, case_id)
+    return cases.detail(user, case_id)
+
+
+@router.post("/cases/{case_id}/agent-access/remind", response_model=DataQsCaseOut)
+def agent_request_reminder(
+    case_id: int, user: StaffUser, agent: AgentAccess, cases: CaseService
+) -> DataQsCaseOut:
+    """Email the carrier again to approve STS's access request."""
+    agent.remind(user, case_id)
     return cases.detail(user, case_id)
 
 

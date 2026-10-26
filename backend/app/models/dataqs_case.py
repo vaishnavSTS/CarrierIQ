@@ -31,6 +31,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 from app.models.enums import (
     DataQsActionOwner,
+    DataQsAgentAccess,
     DataQsEventType,
     DataQsOtpMethod,
     DataQsOutcome,
@@ -117,6 +118,15 @@ class DataQsCase(IdMixin, UpdatedAtMixin, Base):
         DateTime(timezone=True)
     )
     otp_preference_set_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # AUTHORIZED_AGENT: STS's request for access to the company in the FMCSA Portal.
+    agent_access: Mapped[DataQsAgentAccess | None] = mapped_column(
+        enum_type(DataQsAgentAccess, "dataqs_agent_access")
+    )
+    agent_request_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    agent_request_sent_by_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("users.id"))
+    agent_reminders: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    agent_reminded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    agent_granted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     row_version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
 
     __mapper_args__ = {"version_id_col": row_version}
