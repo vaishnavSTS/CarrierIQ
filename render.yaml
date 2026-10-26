@@ -26,8 +26,6 @@ services:
         value: "false"
       - key: AUTH_SECRET_KEY
         generateValue: true
-      - key: DATAQS_CREDENTIAL_ENCRYPTION_KEY
-        generateValue: true
       # Set these in the Render dashboard; they are never stored in the repo.
       - key: DATABASE_URL
         sync: false # Supabase session-pooler URL, as in backend/.env

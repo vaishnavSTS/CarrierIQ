@@ -26,8 +26,6 @@ from app.schemas.dataqs import (
     DataQsApprovalIn,
     DataQsAssessmentIn,
     DataQsAttemptStartIn,
-    DataQsCarrierContactIn,
-    DataQsCarrierContactListOut,
     DataQsCaseCreateIn,
     DataQsCaseListOut,
     DataQsCaseOut,
@@ -52,7 +50,6 @@ from app.schemas.dataqs import (
 )
 from app.services.dataqs_assessment_service import DataQsAssessmentService
 from app.services.dataqs_case_service import DataQsCaseService
-from app.services.dataqs_contact_service import DataQsContactService
 from app.services.dataqs_evidence_service import DataQsEvidenceService
 from app.services.dataqs_evidence_storage import EvidenceStorage, get_evidence_storage
 from app.services.dataqs_filing_adapter import ManualFilingAdapter
@@ -216,25 +213,6 @@ def submit_case(
     """Sign the authorization and submit the case for STS review (wizard steps 6-7)."""
     service.submit(user, case_id, body)
     return service.detail(user, case_id)
-
-
-@portal_router.get("/contacts", response_model=DataQsCarrierContactListOut)
-def list_contacts(
-    user: Annotated[User, Depends(require_client)], db: Annotated[Session, Depends(get_db)]
-) -> DataQsCarrierContactListOut:
-    """How STS reaches each of the company's verified carriers about its DataQs requests."""
-    return DataQsContactService(db).for_company(user)
-
-
-@portal_router.put("/contacts/{usdot_number}", response_model=DataQsCarrierContactListOut)
-def save_contact(
-    usdot_number: Usdot,
-    body: DataQsCarrierContactIn,
-    user: Annotated[User, Depends(require_client)],
-    db: Annotated[Session, Depends(get_db)],
-) -> DataQsCarrierContactListOut:
-    """The company's account owner sets a carrier's email and phone number."""
-    return DataQsContactService(db).save(user, usdot_number, body)
 
 
 # --- Phase 3: assessment, package, approval -------------------------------------------------------

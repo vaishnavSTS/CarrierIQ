@@ -3,7 +3,6 @@
 from datetime import date
 from functools import lru_cache
 
-from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Default session key for local development only; create_app refuses it anywhere else.
@@ -140,7 +139,6 @@ class Settings(BaseSettings):
     resend_api_key: str | None = None
     dataqs_email_from: str = "Sky Transport Solutions <dataqs@skytransportsolutions.com>"
     dataqs_email_reply_to: str = "vaishnav@skytransportsolutions.com"  # carriers' replies go here
-    dataqs_credential_encryption_key: SecretStr | None = None
     # While testing, send every DataQs email for carriers / for STS staff to these addresses
     # instead (comma-separated). Clear them to email the real carrier users and staff.
     dataqs_email_carrier_override: str | None = None

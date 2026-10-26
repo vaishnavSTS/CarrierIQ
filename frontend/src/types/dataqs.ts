@@ -298,8 +298,6 @@ export interface DataQsCase extends DataQsCaseSummary {
   carrier_verified: boolean | null
   /** STS staff only: other requests on the same inspection, any company */
   related_cases: DataQsRelatedCase[] | null
-  /** STS staff only: how to reach the carrier (null: not given yet) */
-  carrier_contact: DataQsCarrierContact | null
 }
 
 export interface DataQsClientUser {
@@ -320,25 +318,6 @@ export interface DataQsRelatedCase {
   created_at: string
 }
 
-/** How STS reaches a carrier about its DataQs requests */
-export interface DataQsCarrierContact {
-  usdot_number: number
-  carrier_name: string | null
-  /** The email on the carrier's FMCSA account; null until given */
-  email: string | null
-  phone: string | null
-  /** Only the account owner can see whether an encrypted password is saved */
-  password_saved: boolean | null
-  updated_at: string | null
-  updated_by_name: string | null
-}
-
-export interface DataQsCarrierContactList {
-  /** The company's account owner */
-  can_edit: boolean
-  carriers: DataQsCarrierContact[]
-}
-
 /** An inspection missing from the carrier's record, described by the carrier */
 export interface DataQsMissingInspectionInput {
   state: string
@@ -347,13 +326,6 @@ export interface DataQsMissingInspectionInput {
   level: number | null
   location: string | null
   factual_basis: string
-}
-
-export interface DataQsCarrierContactInput {
-  email: string
-  phone: string
-  password?: string
-  clear_password?: boolean
 }
 
 export type DataQsAssessmentOutcome =

@@ -1,7 +1,6 @@
 import { FilePlus2 } from 'lucide-react'
 
 import { DataQsCaseList } from '../features/dataqs/DataQsCaseList'
-import { DataQsContactButton } from '../features/dataqs/DataQsContactButton'
 import { DataQsIntro } from '../features/dataqs/DataQsIntro'
 import { DataQsStartRequest } from '../features/dataqs/DataQsStartRequest'
 import { primaryButton } from '../features/dataqs/ui'
@@ -23,7 +22,6 @@ export function PortalDataQsPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <DataQsContactButton />
           <a href="#start-request" className={`${primaryButton} inline-flex items-center gap-1.5`}>
             <FilePlus2 className="size-4" aria-hidden />
             Start a request

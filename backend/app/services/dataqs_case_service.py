@@ -107,7 +107,6 @@ from app.services.dataqs_checklist import (
 )
 from app.services.dataqs_clock_service import LABELS as CLOCK_LABELS
 from app.services.dataqs_clock_service import DataQsClockService, state
-from app.services.dataqs_contact_service import DataQsContactService
 from app.services.dataqs_lifecycle import LEVEL_LABEL, NEXT_LEVEL, proposed_cycle
 from app.services.dataqs_notifications import DataQsNotifications
 from app.services.dataqs_package_service import (
@@ -923,7 +922,6 @@ class DataQsCaseService:
                 for c in reversed(checks)
                 if c.changes is not None
             ],
-            carrier_contact=DataQsContactService(self.db).for_case(case) if staff else None,
             client_users=self._client_users(case) if staff else None,
             carrier_verified=(
                 case.usdot_number in self.repository.verified_usdots(case.organization_id)

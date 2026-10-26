@@ -42,13 +42,9 @@ Sign authorization           ←   Carrier approves the exact package
 
 - **No government API.** There is no public DataQs filing or status API. Filing is **manual** by an
   STS specialist. Never invent endpoints.
-- **Credential storage.** The carrier's account owner may save an FMCSA password with its
-  contact details. It is encrypted with Fernet before it reaches the database, never returned by
-  the API, and its saved/not-saved status is visible only to that owner. Set
-  `DATAQS_CREDENTIAL_ENCRYPTION_KEY` to a securely managed Fernet key before accepting password
-  saves; generate one with `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`.
-  Keep the key outside the database and back it up securely: replacing it makes existing encrypted
-  passwords unrecoverable. MFA secrets and government portal sessions are never stored.
+- **No credential storage.** CarrierIQ never asks for or stores a carrier's FMCSA password,
+  MFA secrets or government portal sessions. (The FMCSA Credentials pop-up and its
+  `dataqs_carrier_contacts` table were removed on 2026-10-26, migration 0035.)
 - **No promises.** Say "Potentially eligible for review", never "this will be removed".
 - **Tenant isolation.** A client sees only its own organization's cases, files, receipts and
   download links, including in background jobs.
@@ -606,3 +602,4 @@ once `GMAIL_REFRESH_TOKEN` (or `SMTP_HOST`, or `RESEND_API_KEY`) is set; retries
 | 2026-10-23 | Carriers add evidence after submitting (also while the package waits for approval or filing, and during verification) from an "Add more evidence" card; STS gets a review task and an email for each new file straight away (2026-10-23: not batched), and is emailed when the carrier sends the case back, approves the package or asks for changes | User |
 | 2026-10-22 | All 8 inspection reasons. A missing inspection is described by the carrier (state, report number, date) since it isn't in FMCSA's data; STS confirms its outcome by hand. A copy request changes no record (nothing to verify). Crash, Investigation and Audit wait for DataQs's screens | User |
 | 2026-10-22 | A correction is verified when FMCSA's inspection record changes (checked daily); the monthly CSA recalculation is not waited for. Escalate after 60 days unseen. Driver corrections are confirmed by STS with proof | User |
+| 2026-10-26 | FMCSA Credentials removed: the client pop-up, the staff "Carrier contact" / "FMCSA account" lines, the contacts API, the password encryption and the `dataqs_carrier_contacts` table (dropped with its data, migration 0035) | User |

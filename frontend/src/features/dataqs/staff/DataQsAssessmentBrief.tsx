@@ -22,7 +22,6 @@ export function DataQsAssessmentBrief({ dataqsCase: c }: { dataqsCase: DataQsCas
   const openOthers = (c.related_cases ?? []).filter((r) => r.work_status !== 'CLOSED')
   const daysLeft = c.eligibility.days_left
   const prior = c.prior_activity
-  const contact = c.carrier_contact
 
   return (
     <details open={c.assessments.length === 0} className="rounded-xl bg-slate-50 p-4">
@@ -74,26 +73,6 @@ export function DataQsAssessmentBrief({ dataqsCase: c }: { dataqsCase: DataQsCas
                   </li>
                 ))}
               </ul>
-            )}
-          </Row>
-          <Row label="FMCSA account">
-            {contact?.email ? (
-              <>
-                <a href={`mailto:${contact.email}`} className="text-accent-strong hover:underline">
-                  {contact.email}
-                </a>
-                {contact.phone && (
-                  <>
-                    {' '}
-                    ·{' '}
-                    <a href={`tel:${contact.phone}`} className="text-accent-strong hover:underline">
-                      {contact.phone}
-                    </a>
-                  </>
-                )}
-              </>
-            ) : (
-              <span className="text-slate-600">Not given (FMCSA Credentials in the portal)</span>
             )}
           </Row>
         </Part>

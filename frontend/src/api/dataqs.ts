@@ -1,8 +1,6 @@
 import type {
   DataQsApprovalInput,
   DataQsAssessmentInput,
-  DataQsCarrierContactInput,
-  DataQsCarrierContactList,
   DataQsCase,
   DataQsCaseCreateInput,
   DataQsMissingInspectionInput,
@@ -104,22 +102,6 @@ export function dataQsAuditExportUrl(since: string, until: string): string {
 /** A plain link: the browser downloads it with the session cookie; the API logs each download. */
 export function dataQsEvidenceUrl(base: DataQsBase, caseId: number, evidenceId: number): string {
   return `/api/v1${base}/cases/${caseId}/evidence/${evidenceId}`
-}
-
-/** Client portal: how STS reaches each of the company's verified carriers. */
-export function fetchDataQsContacts(): Promise<DataQsCarrierContactList> {
-  return apiGet('/portal/dataqs/contacts')
-}
-
-export function saveDataQsContact(
-  usdotNumber: number,
-  input: DataQsCarrierContactInput,
-): Promise<DataQsCarrierContactList> {
-  return apiRequest(`/portal/dataqs/contacts/${usdotNumber}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  })
 }
 
 function post<T>(path: string, body: unknown): Promise<T> {

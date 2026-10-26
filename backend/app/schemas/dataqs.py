@@ -3,7 +3,7 @@
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.models.enums import (
     DataQsActionOwner,
@@ -680,7 +680,6 @@ class DataQsCaseOut(DataQsCaseSummaryOut):
     carrier_verified: bool | None = None
     related_cases: list[DataQsRelatedCaseOut] | None = None
     can_check_fmcsa: bool = False  # staff: the inspection is in FMCSA's data to look at
-    carrier_contact: "DataQsCarrierContactOut | None" = None  # staff: how to reach the carrier
 
 
 class DataQsCaseListOut(BaseModel):
@@ -723,39 +722,3 @@ class DataQsSupervisorOut(BaseModel):
 
 
 DataQsCheckOut.model_rebuild()
-
-
-# --- How STS reaches each carrier ----------------------------------------------------------------
-
-
-class DataQsCarrierContactIn(BaseModel):
-    """The company's account owner keeps a carrier's DataQs contact and credentials up to date."""
-
-    email: str = Field(max_length=254, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-    phone: str = Field(min_length=7, max_length=30, pattern=r"^\+?[0-9 ().-]{7,30}$")
-    password: str | None = Field(default=None, min_length=1, max_length=200)
-    clear_password: bool = False
-
-    @model_validator(mode="after")
-    def password_is_not_set_and_cleared_together(self) -> "DataQsCarrierContactIn":
-        if self.password is not None and self.clear_password:
-            raise ValueError("Set a password or clear the saved password, not both")
-        return self
-
-
-class DataQsCarrierContactOut(BaseModel):
-    usdot_number: int
-    carrier_name: str | None
-    email: str | None  # None: not given yet
-    phone: str | None
-    password_saved: bool | None  # Only the account owner can see whether one is saved
-    updated_at: datetime | None
-    updated_by_name: str | None
-
-
-class DataQsCarrierContactListOut(BaseModel):
-    can_edit: bool  # the company's account owner
-    carriers: list[DataQsCarrierContactOut]  # each carrier STS verified for the company
-
-
-DataQsCaseOut.model_rebuild()  # carrier_contact refers to a model defined after it
