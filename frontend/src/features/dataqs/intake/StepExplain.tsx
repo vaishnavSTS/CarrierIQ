@@ -79,47 +79,25 @@ export function StepExplain({
               </div>
             )}
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label htmlFor={`recorded-${key}`} className={labelClass}>
-                  What the record says (optional)
-                </label>
-                <input
-                  id={`recorded-${key}`}
-                  value={issue.recorded_value}
-                  maxLength={2000}
-                  onChange={(e) => set({ recorded_value: e.target.value })}
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label htmlFor={`requested-${key}`} className={labelClass}>
-                  What it should say (optional)
-                </label>
-                <input
-                  id={`requested-${key}`}
-                  value={issue.requested_value}
-                  maxLength={2000}
-                  placeholder="e.g. remove the violation"
-                  onChange={(e) => set({ requested_value: e.target.value })}
-                  className={inputClass}
-                />
-              </div>
-            </div>
-
             <div>
               <label htmlFor={`basis-${key}`} className={labelClass}>
-                What happened, and how do you know? (at least {MIN_BASIS} characters)
+                Explain the dispute in simple words (at least {MIN_BASIS} characters)
               </label>
+              <p id={`basis-help-${key}`} className="mt-1 text-xs text-slate-600">
+                Tell us what the record got wrong, what actually happened, and which documents
+                show it.
+              </p>
               <textarea
                 id={`basis-${key}`}
                 rows={4}
                 value={issue.factual_basis}
                 maxLength={5000}
+                placeholder="e.g. The violation says our driver had no valid medical card, but the driver had a valid card on the inspection date. We have a copy of the card showing it was issued before the inspection."
+                aria-describedby={`basis-help-${key} basis-note-${key}`}
                 onChange={(e) => set({ factual_basis: e.target.value })}
                 className={inputClass}
               />
-              <p className="mt-1 text-xs text-slate-600">
+              <p id={`basis-note-${key}`} className="mt-1 text-xs text-slate-600">
                 Stick to facts you can support with records. A repair made after the inspection
                 doesn’t by itself show the problem wasn’t there at the time.
               </p>
