@@ -137,7 +137,7 @@ export function ComplianceSection({ profile }: { profile: CarrierProfile }) {
     {
       service: 'DRIVER_FILES',
       icon: FolderOpen,
-      title: 'Hiring new drivers',
+      title: 'Driver Files',
       badge: null,
       description: 'STS keeps your drivers’ qualification files and paperwork in order.',
       button: 'Driver files',
@@ -153,7 +153,7 @@ export function ComplianceSection({ profile }: { profile: CarrierProfile }) {
     {
       service: 'BACKGROUND_CHECK',
       icon: ClipboardCheck,
-      title: 'Need a criminal background check?',
+      title: 'Criminal background check?',
       badge: null,
       description: 'STS can run a criminal background check for you.',
       button: 'Background check',
