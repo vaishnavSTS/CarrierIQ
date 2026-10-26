@@ -30,7 +30,10 @@ export function DataQsCaseCard({
         <div className="min-w-0">
           <div className="text-xs text-slate-600">
             Case {c.id}
-            {showCompany && c.organization_name && ` · ${c.organization_name}`}
+            {showCompany &&
+              (c.held_by_sts
+                ? ' · Held by STS'
+                : c.organization_name && ` · ${c.organization_name}`)}
           </div>
           <div className="truncate font-medium text-slate-900">{c.carrier_name ?? 'Carrier'}</div>
           <div className="text-xs text-slate-600">

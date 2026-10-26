@@ -185,6 +185,25 @@ def create_case(
     return service.detail(user, case.id)
 
 
+@router.post(
+    "/carriers/{usdot_number}/cases",
+    response_model=DataQsCaseOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_case_for_carrier(
+    usdot_number: Usdot,
+    body: DataQsCaseCreateIn,
+    user: Annotated[User, Depends(require_staff)],
+    service: CaseService,
+    idempotency_key: Annotated[str | None, Header(max_length=100)] = None,
+) -> DataQsCaseOut:
+    """STS staff open a DRAFT case on any carrier's inspection. It belongs to the client company
+    STS verified the carrier for (its owner signs and submits it), or STS holds it until there is
+    one. Send an Idempotency-Key header."""
+    case = service.create(user, usdot_number, body, idempotency_key)
+    return service.detail(user, case.id)
+
+
 @portal_router.post(
     "/carriers/{usdot_number}/missing-inspections",
     response_model=DataQsCaseOut,

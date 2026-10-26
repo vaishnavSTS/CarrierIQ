@@ -79,6 +79,10 @@ class DataQsCheckOut(BaseModel):
     cannot_open_reason: str | None
     existing_cases: list["DataQsCaseSummaryOut"]  # open cases on this event the user may see
     reasons: list[ReasonOut]
+    # STS staff only: the client company the case will belong to (its owner signs), or None
+    # with held_by_sts when the carrier has no client company yet.
+    opens_for: str | None = None
+    held_by_sts: bool = False
 
 
 # --- Creating a case ------------------------------------------------------------------------------
@@ -504,6 +508,9 @@ class DataQsCaseSummaryOut(BaseModel):
     id: int
     organization_id: int
     organization_name: str | None
+    # Opened by STS staff for a carrier with no client company yet; it moves to the carrier's
+    # company when STS verifies the USDOT for one.
+    held_by_sts: bool = False
     usdot_number: int
     carrier_name: str | None
     event_type: DataQsEventType

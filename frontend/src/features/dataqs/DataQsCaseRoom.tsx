@@ -295,10 +295,17 @@ function CaseSummary({ dataqsCase: c, staff }: { dataqsCase: DataQsCase; staff: 
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">DataQs case {c.id}</h1>
         <StatusBadge {...WORK_STATUS[c.work_status]} />
-        {staff && c.organization_name && (
+        {staff && c.organization_name && !c.held_by_sts && (
           <span className="text-sm text-slate-600">for {c.organization_name}</span>
         )}
       </div>
+      {staff && c.work_status === 'DRAFT' && (
+        <p className="mt-3 rounded-md bg-sky-50 p-3 text-sm text-sky-900">
+          {c.held_by_sts
+            ? `Held by STS: USDOT ${c.usdot_number} has no client account in CarrierIQ yet. This draft moves to the carrier’s company, and its account owner is emailed to sign it, once an STS admin verifies USDOT ${c.usdot_number} for a client account on the Accounts page.`
+            : `Waiting for ${c.organization_name ?? 'the carrier'}’s account owner to add evidence, sign the authorization and submit it to STS.`}
+        </p>
+      )}
       <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Fact label="Carrier" sub={`USDOT ${c.usdot_number}`}>
           {c.carrier_name ?? '—'}

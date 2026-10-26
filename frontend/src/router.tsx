@@ -60,6 +60,7 @@ export const router = createBrowserRouter([
           { path: 'compare', element: <ComparePage /> },
           { path: 'carriers/:usdot', element: <CarrierProfilePage /> },
           { path: 'dataqs', element: <DataQsPage /> },
+          { path: 'dataqs/new', element: <PortalDataQsIntakePage /> },
           { path: 'dataqs/cases/:caseId', element: <DataQsCasePage /> },
           { path: 'accounts', element: <AccountsPage /> },
         ],

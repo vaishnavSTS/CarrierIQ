@@ -110,9 +110,10 @@ function useSaveCase() {
 
 export function useCreateDataQsCase(usdotNumber: number) {
   const save = useSaveCase()
+  const base = useDataQsBase()
   return useMutation({
     mutationFn: ({ input, key }: { input: DataQsCaseCreateInput; key: string }) =>
-      createDataQsCase(usdotNumber, input, key),
+      createDataQsCase(base, usdotNumber, input, key),
     onSuccess: save,
   })
 }

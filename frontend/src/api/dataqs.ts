@@ -39,11 +39,12 @@ export function fetchDataQsCheck(
 
 /** Clients only. The key makes a repeated submit return the first case. */
 export function createDataQsCase(
+  base: DataQsBase,
   usdotNumber: number,
   input: DataQsCaseCreateInput,
   idempotencyKey: string,
 ): Promise<DataQsCase> {
-  return apiRequest(`/portal/dataqs/carriers/${usdotNumber}/cases`, {
+  return apiRequest(`${base}/carriers/${usdotNumber}/cases`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },
     body: JSON.stringify(input),

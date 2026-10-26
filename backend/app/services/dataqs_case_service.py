@@ -7,6 +7,10 @@ Flow (the spec's intake wizard):
      creates a DRAFT case. The inspection is read from CarrierSafetyScan's own copy of the FMCSA
      record and preserved in the case, never taken from the request.
    - Evidence is uploaded to the DRAFT case (dataqs_evidence_service.py).
+   - STS staff can also open the draft, for any carrier. It belongs to the client company STS
+     verified the carrier for, whose owner signs and submits it as usual. A carrier with no
+     client company yet: STS holds the draft until an admin verifies the USDOT for one
+     (`hand_over_held_cases`).
 6-7. The owner signs the service authorization and submits: the case goes to STAFF_REVIEW, owned
      by STS, with a task to assess it. Nothing is filed with the government at this stage.
 
@@ -269,8 +273,17 @@ class DataQsCaseService:
             get_settings().dataqs_internal_cutoff_days,
         )
         reason: str | None = None
+        opens_for: str | None = None
+        held = False
         if user.role.is_staff:
-            reason = "Cases are opened by the carrier's account owner in the client portal"
+            try:
+                organization_id, held = self._opening_organization(user, usdot_number)
+                if not held:
+                    opens_for = self.repository.organization_names([organization_id]).get(
+                        organization_id
+                    )
+            except ValidationError as exc:
+                reason = exc.message
         else:
             try:
                 self.access.ensure_can_open_case(user, user.organization_id, usdot_number)
@@ -288,6 +301,8 @@ class DataQsCaseService:
             eligibility=_eligibility_out(eligibility),
             can_open=reason is None,
             cannot_open_reason=reason,
+            opens_for=opens_for,
+            held_by_sts=held,
             existing_cases=self._summaries(visible),
             reasons=[
                 ReasonOut(
@@ -312,18 +327,19 @@ class DataQsCaseService:
         body: DataQsCaseCreateIn,
         idempotency_key: str | None,
     ) -> DataQsCase:
-        if user.role != UserRole.CLIENT_ADMIN:
+        if user.role != UserRole.CLIENT_ADMIN and not user.role.is_staff:
             raise DataQsMissingAuthorityError(
                 "DataQs cases are opened by the carrier's account owner in the client portal"
             )
-        organization_id = user.organization_id
+        organization_id, held = self._opening_organization(user, usdot_number)
         if idempotency_key:
             existing = self.repository.by_idempotency_key(organization_id, idempotency_key)
             if existing is not None:
                 if existing.source_event_id != body.inspection_id:
                     raise DataQsDuplicateCaseError("This request key was already used")
                 return existing
-        self.access.ensure_can_open_case(user, organization_id, usdot_number)
+        if not held:
+            self.access.ensure_can_open_case(user, organization_id, usdot_number)
 
         carrier_name, inspection = self._event(usdot_number, body.inspection_id)
         event = event_from_inspection(inspection)
@@ -435,10 +451,65 @@ class DataQsCaseService:
                 "inspection_id": inspection.inspection_id,
                 "issues": len(planned),
                 "eligibility": eligibility.status,
+                "opened_by_sts": user.role.is_staff,
+                "held_by_sts": held,
             },
         )
+        if user.role.is_staff and not held:
+            self._tell_owner(case, user)
         self.db.commit()
         return case
+
+    def _opening_organization(self, user: User, usdot_number: int) -> tuple[int, bool]:
+        """The organization a new case belongs to, and whether STS holds it. A client opens
+        cases for its own company. Staff open them for the client company STS verified the
+        carrier for, or, when there is none yet, hold them in STS's own organization."""
+        if not user.role.is_staff:
+            return user.organization_id, False
+        companies = self.repository.client_organizations_for_carrier(usdot_number)
+        if len(companies) > 1:
+            names = ", ".join(name for _, name in companies)
+            raise ValidationError(
+                f"USDOT {usdot_number} is verified for more than one client company ({names}). "
+                "Remove it from all but one on the Accounts page first"
+            )
+        if companies:
+            return companies[0][0], False
+        return user.organization_id, True
+
+    def _tell_owner(self, case: DataQsCase, user: User | None) -> None:
+        """Email the carrier's company that STS opened a draft request it needs to sign."""
+        DataQsNotifications(self.db).to_carrier(
+            case,
+            "CASE_OPENED_BY_STS",
+            f"STS opened DataQs request {case.id} for you",
+            "STS opened a draft DataQs request for inspection "
+            f"{case.inspection_report_number or case.source_event_id}. Please review it, add any "
+            "evidence, then sign the authorization and submit it to STS. Nothing is filed with "
+            "FMCSA until you approve the exact request.",
+            author=user,
+        )
+
+    def hand_over_held_cases(
+        self, usdot_number: int, organization_id: int, user: User | None
+    ) -> int:
+        """STS verified the carrier for a client company: drafts STS opened for it while it had
+        no company move to that company, whose owner then signs them. In the caller's
+        transaction; answers how many moved."""
+        held = self.repository.held_drafts(usdot_number)
+        for case in held:
+            before = {"organization_id": case.organization_id}
+            case.organization_id = organization_id
+            self.repository.audit(
+                case,
+                user,
+                "case.handed_to_carrier",
+                before=before,
+                after={"organization_id": organization_id},
+            )
+            self.db.flush()
+            self._tell_owner(case, user)
+        return len(held)
 
     def create_missing(
         self,
@@ -1193,6 +1264,7 @@ class DataQsCaseService:
         for e in evidence:
             evidence_counts[e.case_id] += 1
         org_names = self.repository.organization_names([c.organization_id for c in cases])
+        sts_orgs = self.repository.sts_organization_ids([c.organization_id for c in cases])
         linked_issues = {
             link.issue_id for link in self.repository.evidence_links([e.id for e in evidence])
         }
@@ -1221,6 +1293,7 @@ class DataQsCaseService:
                 id=c.id,
                 organization_id=c.organization_id,
                 organization_name=org_names.get(c.organization_id),
+                held_by_sts=c.organization_id in sts_orgs,
                 usdot_number=c.usdot_number,
                 carrier_name=c.source_snapshot.get("carrier_name"),
                 event_type=c.event_type,

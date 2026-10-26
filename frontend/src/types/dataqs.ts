@@ -82,6 +82,8 @@ export interface DataQsCaseSummary {
   id: number
   organization_id: number
   organization_name: string | null
+  /** Opened by STS staff for a carrier with no client company yet */
+  held_by_sts: boolean
   usdot_number: number
   carrier_name: string | null
   event_type: 'INSPECTION' | 'CRASH'
@@ -129,6 +131,10 @@ export interface DataQsCheck {
   cannot_open_reason: string | null
   existing_cases: DataQsCaseSummary[]
   reasons: ReasonOption[]
+  /** STS staff: the client company the case will belong to (its owner signs it) */
+  opens_for?: string | null
+  /** STS staff: the carrier has no client company yet, so STS holds the draft */
+  held_by_sts?: boolean
 }
 
 export interface DataQsIssueInput {

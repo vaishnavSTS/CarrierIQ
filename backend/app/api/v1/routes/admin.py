@@ -53,7 +53,7 @@ def disable_user(
 
 @router.post("/users/{user_id}/carriers", response_model=AdminUserOut)
 def add_carrier(
-    user_id: Annotated[int, Path(gt=0)], data: AddCarrierIn, _: StsAdmin, service: Service
+    user_id: Annotated[int, Path(gt=0)], data: AddCarrierIn, admin: StsAdmin, service: Service
 ) -> AdminUserOut:
     """Link a USDOT number to the client's organization, verified; it shows in their portal."""
-    return service.add_carrier(user_id, data.usdot_number)
+    return service.add_carrier(user_id, data.usdot_number, admin)

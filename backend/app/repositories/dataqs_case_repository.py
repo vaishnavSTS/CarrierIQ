@@ -208,6 +208,48 @@ class DataQsCaseRepository:
         rows = self.db.execute(select(User.id, User.full_name).where(User.id.in_(ids)))
         return {user_id: name for user_id, name in rows}
 
+    def client_organizations_for_carrier(self, usdot_number: int) -> list[tuple[int, str]]:
+        """Client companies STS verified this carrier for, as (id, name), oldest link first."""
+        rows = self.db.execute(
+            select(Organization.id, Organization.name)
+            .join(OrganizationCarrier, OrganizationCarrier.organization_id == Organization.id)
+            .where(
+                OrganizationCarrier.usdot_number == usdot_number,
+                OrganizationCarrier.verified.is_(True),
+                Organization.kind == OrganizationKind.CLIENT,
+            )
+            .order_by(OrganizationCarrier.id)
+        )
+        return [(organization_id, name) for organization_id, name in rows]
+
+    def sts_organization_ids(self, organization_ids: Collection[int]) -> set[int]:
+        """Which of these organizations are STS itself (cases STS holds for a carrier)."""
+        ids = list(set(organization_ids))
+        if not ids:
+            return set()
+        return set(
+            self.db.scalars(
+                select(Organization.id).where(
+                    Organization.id.in_(ids), Organization.kind == OrganizationKind.STS
+                )
+            )
+        )
+
+    def held_drafts(self, usdot_number: int) -> list[DataQsCase]:
+        """Draft cases STS staff opened for a carrier with no client company yet."""
+        return list(
+            self.db.scalars(
+                select(DataQsCase)
+                .join(Organization, Organization.id == DataQsCase.organization_id)
+                .where(
+                    DataQsCase.usdot_number == usdot_number,
+                    DataQsCase.work_status == DataQsWorkStatus.DRAFT,
+                    Organization.kind == OrganizationKind.STS,
+                )
+                .order_by(DataQsCase.id)
+            )
+        )
+
     def organization_names(self, organization_ids: Collection[int]) -> dict[int, str]:
         ids = list(set(organization_ids))
         if not ids:

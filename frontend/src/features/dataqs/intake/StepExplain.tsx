@@ -84,8 +84,8 @@ export function StepExplain({
                 Explain the dispute in simple words (at least {MIN_BASIS} characters)
               </label>
               <p id={`basis-help-${key}`} className="mt-1 text-xs text-slate-600">
-                Tell us what the record got wrong, what actually happened, and which documents
-                show it.
+                Tell us what the record got wrong, what actually happened, and which documents show
+                it.
               </p>
               <textarea
                 id={`basis-${key}`}

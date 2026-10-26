@@ -175,7 +175,7 @@ export function DataQsStaffQueue() {
                         to={`/dataqs/cases/${c.id}`}
                         className="font-medium text-slate-900 hover:text-accent-strong hover:underline"
                       >
-                        {c.organization_name ?? 'Case'}
+                        {c.held_by_sts ? 'Held by STS' : (c.organization_name ?? 'Case')}
                       </Link>
                       <div className="text-xs text-slate-600">
                         {c.carrier_name ?? '—'} · USDOT{' '}

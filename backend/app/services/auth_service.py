@@ -51,6 +51,7 @@ from app.schemas.auth import (
     UserOut,
 )
 from app.services.broker_authority import BrokerAuthority
+from app.services.dataqs_case_service import DataQsCaseService
 
 # Compared against when the email is unknown, so a wrong email takes as long as a wrong password.
 _DUMMY_HASH = hash_password("not-a-real-password")
@@ -275,8 +276,11 @@ class AuthService:
         self.db.commit()
         return self._admin_out(user)
 
-    def add_carrier(self, user_id: int, usdot_number: int) -> AdminUserOut:
-        """STS links a carrier to a client's organization, already verified (STS checked it)."""
+    def add_carrier(
+        self, user_id: int, usdot_number: int, admin: User | None = None
+    ) -> AdminUserOut:
+        """STS links a carrier to a client's organization, already verified (STS checked it).
+        DataQs drafts STS opened for the carrier before it had a company move to this one."""
         user = self._get(user_id)
         if user.role.is_staff:
             raise ValidationError("STS staff accounts have no carriers of their own")
@@ -292,6 +296,8 @@ class AuthService:
             )
         else:
             existing.verified = True
+        self.db.flush()
+        DataQsCaseService(self.db).hand_over_held_cases(usdot_number, user.organization_id, admin)
         self.db.commit()
         return self._admin_out(user)
 

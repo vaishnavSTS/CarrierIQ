@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { useCreateDataQsCase, useDataQsCasePath, useDataQsCheck } from '../../../hooks/useDataQs'
+import { usePortalMode } from '../../../hooks/usePortalMode'
 import type { DataQsCheck, DataQsIssueInput } from '../../../types/dataqs'
 import { DataQsEventSummary } from '../DataQsEventSummary'
 import { unitLabel } from '../labels'
@@ -213,12 +214,34 @@ function StepRecord({ check }: { check: DataQsCheck }) {
           . Start a new one only for different violations.
         </div>
       )}
+      {check.can_open && <StaffOpensFor check={check} />}
       {!check.can_open && (
         <p className="rounded-md bg-amber-50 p-3 text-sm text-amber-800" role="alert">
           {check.cannot_open_reason}
         </p>
       )}
     </div>
+  )
+}
+
+/** STS staff: whose case this becomes, and who signs it. */
+function StaffOpensFor({ check }: { check: DataQsCheck }) {
+  if (usePortalMode() !== 'internal') return null
+  return (
+    <p className="rounded-md bg-sky-50 p-3 text-sm text-sky-900">
+      {check.held_by_sts ? (
+        <>
+          USDOT {check.usdot_number} has no client account in CarrierIQ yet. STS holds this draft;
+          it moves to the carrier’s company, and its account owner is emailed to sign it, once an
+          STS admin verifies USDOT {check.usdot_number} for a client account on the Accounts page.
+        </>
+      ) : (
+        <>
+          This draft will belong to <span className="font-medium">{check.opens_for}</span>. Their
+          account owner is emailed to add evidence, sign the authorization and submit it to STS.
+        </>
+      )}
+    </p>
   )
 }
 
@@ -233,13 +256,15 @@ function StepReview({
   issues: Record<string, IssueDraft>
 }) {
   const label = (reason: string) => check.reasons.find((r) => r.reason === reason)?.label
+  const staff = usePortalMode() === 'internal'
   return (
     <div className="space-y-3 text-sm">
       <p className="text-slate-700">
         This opens a <span className="font-medium">draft case</span> for inspection{' '}
-        <span className="font-mono text-xs">{check.event.inspection_id}</span>. Next you’ll upload
-        evidence, sign the authorization and submit it to STS. Nothing is filed with FMCSA until you
-        approve the exact request later.
+        <span className="font-mono text-xs">{check.event.inspection_id}</span>.{' '}
+        {staff
+          ? 'You can add evidence to it next. The carrier’s account owner signs the authorization and submits it; nothing is filed with FMCSA until they approve the exact request.'
+          : 'Next you’ll upload evidence, sign the authorization and submit it to STS. Nothing is filed with FMCSA until you approve the exact request later.'}
       </p>
       <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200">
         {selection.map((index) => {
