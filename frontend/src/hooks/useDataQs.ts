@@ -16,6 +16,9 @@ import {
   fetchDataQsCases,
   fetchDataQsSupervisor,
   fetchDataQsCheck,
+  markDataQsOtpUsed,
+  requestDataQsOtp,
+  setDataQsOtpPreference,
   fetchDataQsStaff,
   overrideDataQsClock,
   proposeDataQsReview,
@@ -34,6 +37,7 @@ import type {
   DataQsAttemptStartInput,
   DataQsCase,
   DataQsCaseCreateInput,
+  DataQsOtpPreferenceInput,
   DataQsConfirmInput,
   DataQsCorrespondenceInput,
   DataQsMissingInspectionInput,
@@ -73,8 +77,11 @@ export function useDataQsCase(caseId: number) {
     queryKey: ['dataqs', base, 'case', caseId],
     queryFn: () => fetchDataQsCase(base, caseId),
     // While a new email is going out, look again so it shows as sent without a reload.
+    // And while STS waits for the carrier's login code, so it shows as soon as it arrives.
     refetchInterval: (query) =>
-      query.state.data && emailGoingOut(query.state.data) ? 3_000 : false,
+      query.state.data && (emailGoingOut(query.state.data) || waitingForCode(query.state.data))
+        ? 3_000
+        : false,
   })
 }
 
@@ -86,6 +93,36 @@ function emailGoingOut(c: DataQsCase): boolean {
     c.email_enabled &&
     c.messages.some((m) => m.delivery === 'WAITING' && new Date(m.created_at).getTime() > since)
   )
+}
+
+/** STS asked the carrier for the login code and it hasn't come back yet (or expired). */
+function waitingForCode(c: DataQsCase): boolean {
+  const r = c.otp_request
+  return (
+    !!r && r.status === 'SENT' && !!r.expires_at && new Date(r.expires_at).getTime() > Date.now()
+  )
+}
+
+export function useSetDataQsOtpPreference(caseId: number) {
+  const save = useSaveCase()
+  const base = useDataQsBase()
+  return useMutation({
+    mutationFn: (input: DataQsOtpPreferenceInput) => setDataQsOtpPreference(base, caseId, input),
+    onSuccess: save,
+  })
+}
+
+export function useRequestDataQsOtp(caseId: number) {
+  const save = useSaveCase()
+  return useMutation({ mutationFn: () => requestDataQsOtp(caseId), onSuccess: save })
+}
+
+export function useMarkDataQsOtpUsed(caseId: number) {
+  const save = useSaveCase()
+  return useMutation({
+    mutationFn: (requestId: number) => markDataQsOtpUsed(caseId, requestId),
+    onSuccess: save,
+  })
 }
 
 export function useDataQsCheck(usdotNumber: number, inspectionId: string) {

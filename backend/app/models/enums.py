@@ -236,6 +236,22 @@ class DataQsVerificationStatus(StrEnum):
     MANUAL = "MANUAL"  # not in FMCSA's public data (driver details): STS confirms with proof
 
 
+class DataQsOtpMethod(StrEnum):
+    """How the carrier wants to give STS the FMCSA login code (the one-time code FMCSA sends)."""
+
+    TEXT = "TEXT"  # STS texts the carrier; the carrier replies with the code
+    AI_CALL = "AI_CALL"  # an automated call asks the carrier to key in or say the code
+    SCHEDULED_CALL = "SCHEDULED_CALL"  # an STS staff member calls at a time the carrier chose
+
+
+class DataQsOtpStatus(StrEnum):
+    SENT = "SENT"  # text sent / call placed, waiting for the code
+    RECEIVED = "RECEIVED"  # the code arrived (visible to the staff member who asked)
+    USED = "USED"  # the staff member marked it used; the code is wiped
+    EXPIRED = "EXPIRED"  # no code in time, or the code's 10 minutes passed; wiped
+    FAILED = "FAILED"  # Twilio refused the text or call
+
+
 def enum_type(enum_cls: type[StrEnum], name: str, length: int = 20) -> Enum:
     """VARCHAR column restricted to the enum's values by a CHECK constraint named after `name`."""
     return Enum(

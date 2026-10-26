@@ -14,6 +14,7 @@ from app.models.dataqs_clock import DataQsClock, DataQsClockPause
 from app.models.dataqs_correspondence import DataQsCorrespondence
 from app.models.dataqs_evidence import DataQsEvidence, DataQsEvidenceLink
 from app.models.dataqs_message import DataQsMessage
+from app.models.dataqs_otp_request import DataQsOtpRequest
 from app.models.dataqs_outbox import DataQsOutbox
 from app.models.dataqs_package import DataQsAuthorization, DataQsPackage, DataQsSubmissionAttempt
 from app.models.dataqs_review_cycle import DataQsReviewCycle
@@ -62,6 +63,7 @@ __all__ = [
     "DataQsEvidenceLink",
     "DataQsIssue",
     "DataQsMessage",
+    "DataQsOtpRequest",
     "DataQsOutbox",
     "DataQsPackage",
     "DataQsReviewCycle",

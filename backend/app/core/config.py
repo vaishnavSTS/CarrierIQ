@@ -151,6 +151,14 @@ class Settings(BaseSettings):
     # each case at most once per this many hours; a correction still not seen this many days
     # after the decision shows in the supervisor view.
     dataqs_verification_in_api: bool = True
+    # FMCSA login codes by text and automated call (Twilio). Off until all three are set:
+    # TWILIO_FROM_NUMBER is STS's Twilio number (E.164, e.g. +12095550123). Twilio's webhooks
+    # (Messaging and Voice) point at PUBLIC_API_URL + /api/v1/webhooks/twilio/...
+    twilio_account_sid: str | None = None
+    twilio_auth_token: str | None = None
+    twilio_from_number: str | None = None
+    public_api_url: str = "http://localhost:8000"  # the API's public address, for Twilio
+    dataqs_otp_wipe_in_api: bool = True  # wipe expired login codes from a thread of the API
     dataqs_verification_check_hours: int = 24
     dataqs_verification_escalate_days: int = 60
     # Where the app's pages are, for links in emails (the frontend's address).
@@ -166,6 +174,10 @@ class Settings(BaseSettings):
     @property
     def google_enabled(self) -> bool:
         return bool(self.google_client_id and self.google_client_secret)
+
+    @property
+    def twilio_enabled(self) -> bool:
+        return bool(self.twilio_account_sid and self.twilio_auth_token and self.twilio_from_number)
 
     @property
     def gmail_api_enabled(self) -> bool:

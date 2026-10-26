@@ -26,7 +26,9 @@ import { DataQsAssessmentPanel } from './staff/DataQsAssessmentPanel'
 import { DataQsCloseFile } from './staff/DataQsCloseFile'
 import { DataQsCorrespondencePanel } from './staff/DataQsCorrespondencePanel'
 import { DataQsEmailLog } from './staff/DataQsEmailLog'
+import { DataQsOtpCard } from './DataQsOtpCard'
 import { DataQsOwnerPanel } from './staff/DataQsOwnerPanel'
+import { DataQsOtpStaffPanel } from './staff/DataQsOtpStaffPanel'
 import { DataQsPackageBuilder } from './staff/DataQsPackageBuilder'
 import { DataQsSubmissionConsole } from './staff/DataQsSubmissionConsole'
 import { primaryButton, secondaryButton } from './ui'
@@ -94,6 +96,11 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
   // The carrier adds files after submitting from one place in "Your next steps" (a draft's
   // files go in with each issue below).
   const addEvidence = !staff && c.can_upload && c.work_status !== 'DRAFT'
+  // How STS gets the FMCSA login code: asked of the carrier once the request is submitted.
+  const otpCard =
+    c.work_status !== 'DRAFT' &&
+    c.work_status !== 'CLOSED' &&
+    (c.can_set_otp_preference || c.otp_preference !== null)
   return (
     <div className="space-y-8">
       <CaseSummary dataqsCase={c} staff={staff} />
@@ -113,6 +120,11 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
         {c.can_resubmit && <ResubmitCard dataqsCase={c} />}
         {c.can_approve && <PackageCard dataqsCase={c} />}
         {addEvidence && c.work_status !== 'EVIDENCE_NEEDED' && <DataQsAddEvidence dataqsCase={c} />}
+        {otpCard && (
+          <Card title="FMCSA login code">
+            {staff ? <DataQsOtpStaffPanel dataqsCase={c} /> : <DataQsOtpCard dataqsCase={c} />}
+          </Card>
+        )}
         {c.tasks.length > 0 && (
           <Card title="Open tasks">
             <DataQsTaskList tasks={c.tasks} />

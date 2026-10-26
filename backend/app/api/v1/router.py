@@ -18,6 +18,7 @@ from app.api.v1.routes import (
     jobs,
     portal,
     signals,
+    twilio_webhooks,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -36,3 +37,5 @@ api_router.include_router(portal.broker_router)
 # DataQs: staff (/dataqs) and client (/portal/dataqs) routes check their own login per route.
 api_router.include_router(dataqs.router)
 api_router.include_router(dataqs.portal_router)
+# Twilio calls these with the carrier's reply; each request's signature is checked.
+api_router.include_router(twilio_webhooks.router)

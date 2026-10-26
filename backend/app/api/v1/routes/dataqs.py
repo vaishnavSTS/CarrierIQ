@@ -39,6 +39,7 @@ from app.schemas.dataqs import (
     DataQsMessageIn,
     DataQsMissingInspectionIn,
     DataQsNoteIn,
+    DataQsOtpPreferenceIn,
     DataQsOwnerIn,
     DataQsPackageIn,
     DataQsReviewRequestIn,
@@ -54,6 +55,7 @@ from app.services.dataqs_evidence_service import DataQsEvidenceService
 from app.services.dataqs_evidence_storage import EvidenceStorage, get_evidence_storage
 from app.services.dataqs_filing_adapter import ManualFilingAdapter
 from app.services.dataqs_lifecycle import DataQsLifecycleService
+from app.services.dataqs_otp_service import DataQsOtpService
 from app.services.dataqs_package_service import DataQsPackageService
 from app.services.dataqs_supervisor_service import DataQsSupervisorService
 from app.services.dataqs_verification_service import (
@@ -144,6 +146,19 @@ def _add_case_routes(router: APIRouter, who: Callable[..., User]) -> None:
             document_date=document_date,
             title=title,
         )
+        return cases.detail(user, case_id)
+
+    @router.put("/cases/{case_id}/otp-preference", response_model=DataQsCaseOut)
+    def set_otp_preference(
+        case_id: int,
+        body: DataQsOtpPreferenceIn,
+        user: UserDep,
+        db: Annotated[Session, Depends(get_db)],
+        cases: CaseService,
+    ) -> DataQsCaseOut:
+        """How the carrier wants to give STS the FMCSA login code (the carrier's owner, or STS
+        on their behalf)."""
+        DataQsOtpService(db).set_preference(user, case_id, body.method, body.phone, body.call_at)
         return cases.detail(user, case_id)
 
     @router.get("/cases/{case_id}/evidence/{evidence_id}")
@@ -296,6 +311,29 @@ def list_staff(_: StaffUser, db: Annotated[Session, Depends(get_db)]) -> list[Da
         DataQsStaffUserOut(id=u.id, full_name=u.full_name, role=u.role.value)
         for u in DataQsCaseRepository(db).staff_users()
     ]
+
+
+@router.post("/cases/{case_id}/otp-requests", response_model=DataQsCaseOut)
+def request_otp(
+    case_id: int, user: StaffUser, db: Annotated[Session, Depends(get_db)], cases: CaseService
+) -> DataQsCaseOut:
+    """Text or call the carrier for the FMCSA login code, as they chose. Use it right after
+    starting the FMCSA login."""
+    DataQsOtpService(db).request_code(user, case_id)
+    return cases.detail(user, case_id)
+
+
+@router.post("/cases/{case_id}/otp-requests/{request_id}/used", response_model=DataQsCaseOut)
+def mark_otp_used(
+    case_id: int,
+    request_id: int,
+    user: StaffUser,
+    db: Annotated[Session, Depends(get_db)],
+    cases: CaseService,
+) -> DataQsCaseOut:
+    """The code was used (or isn't needed): wipe it now."""
+    DataQsOtpService(db).mark_used(user, case_id, request_id)
+    return cases.detail(user, case_id)
 
 
 @router.post("/cases/{case_id}/owner", response_model=DataQsCaseOut)

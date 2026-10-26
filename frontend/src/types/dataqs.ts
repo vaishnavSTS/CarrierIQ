@@ -78,6 +78,40 @@ export interface ReasonOption {
   whole_inspection_only: boolean
 }
 
+/** How the carrier gives STS the FMCSA login code */
+export type DataQsOtpMethod = 'TEXT' | 'AI_CALL' | 'SCHEDULED_CALL'
+
+export interface DataQsOtpPreference {
+  method: DataQsOtpMethod
+  /** e.g. (209) 555-0123 */
+  phone: string
+  /** SCHEDULED_CALL: STS calls within 5 minutes of it */
+  call_at: string | null
+  set_at: string | null
+}
+
+export interface DataQsOtpPreferenceInput {
+  method: DataQsOtpMethod
+  phone: string
+  call_at: string | null
+}
+
+/** STS staff: the latest text or call asking the carrier for the code */
+export interface DataQsOtpRequest {
+  id: number
+  method: DataQsOtpMethod
+  status: 'SENT' | 'RECEIVED' | 'USED' | 'EXPIRED' | 'FAILED'
+  phone: string
+  requested_by_name: string | null
+  requested_by_me: boolean
+  sent_at: string | null
+  received_at: string | null
+  expires_at: string | null
+  /** Only for the staff member who asked, until it expires */
+  code: string | null
+  error: string | null
+}
+
 export interface DataQsCaseSummary {
   id: number
   organization_id: number
@@ -304,6 +338,12 @@ export interface DataQsCase extends DataQsCaseSummary {
   carrier_verified: boolean | null
   /** STS staff only: other requests on the same inspection, any company */
   related_cases: DataQsRelatedCase[] | null
+  otp_preference: DataQsOtpPreference | null
+  can_set_otp_preference: boolean
+  /** STS staff only */
+  otp_request: DataQsOtpRequest | null
+  /** STS staff: Twilio is set up for texts and automated calls */
+  otp_automation_ready: boolean
 }
 
 export interface DataQsClientUser {

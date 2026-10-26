@@ -14,6 +14,7 @@ from app.core.config import DEV_AUTH_SECRET_KEY, get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
 from app.services.dataqs_notifications import run_dispatcher, wake_dispatcher
+from app.services.dataqs_otp_service import run_otp_wiper
 from app.services.dataqs_verification_service import run_verifier
 from app.workers.worker import Worker
 
@@ -33,6 +34,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         )
         dispatcher.start()
         logger.info("DataQs email dispatcher started")
+    otp_wiper = None
+    if settings.twilio_enabled and settings.dataqs_otp_wipe_in_api:
+        otp_wiper = threading.Thread(
+            target=run_otp_wiper, args=(stop,), name="dataqs-otp-wipe", daemon=True
+        )
+        otp_wiper.start()
     verifier = None
     if settings.dataqs_verification_in_api:
         verifier = threading.Thread(
@@ -50,6 +57,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             dispatcher.join(timeout=10)
         if verifier is not None:
             verifier.join(timeout=10)
+        if otp_wiper is not None:
+            otp_wiper.join(timeout=10)
 
 
 @asynccontextmanager

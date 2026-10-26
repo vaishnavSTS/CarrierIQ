@@ -44,6 +44,11 @@ def no_worker_in_api(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(get_settings(), "dataqs_email_dispatch_in_api", False)
     # Nor the FMCSA correction checks (they would call the real FMCSA API).
     monkeypatch.setattr(get_settings(), "dataqs_verification_in_api", False)
+    # Nor the login-code wiper (it would use the configured database), nor real Twilio.
+    monkeypatch.setattr(get_settings(), "dataqs_otp_wipe_in_api", False)
+    monkeypatch.setattr(get_settings(), "twilio_account_sid", None)
+    monkeypatch.setattr(get_settings(), "twilio_auth_token", None)
+    monkeypatch.setattr(get_settings(), "twilio_from_number", None)
     # Tests check the real recipients, whatever test routing backend/.env sets.
     monkeypatch.setattr(get_settings(), "dataqs_email_carrier_override", None)
     monkeypatch.setattr(get_settings(), "dataqs_email_staff_override", None)

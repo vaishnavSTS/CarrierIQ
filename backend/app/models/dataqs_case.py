@@ -32,6 +32,7 @@ from app.db.base import Base
 from app.models.enums import (
     DataQsActionOwner,
     DataQsEventType,
+    DataQsOtpMethod,
     DataQsOutcome,
     DataQsReason,
     DataQsReviewLevel,
@@ -107,6 +108,15 @@ class DataQsCase(IdMixin, UpdatedAtMixin, Base):
     created_by_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"))
     idempotency_key: Mapped[str | None] = mapped_column(String(100))
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # How the carrier wants to give STS the FMCSA login code, chosen after submitting.
+    otp_method: Mapped[DataQsOtpMethod | None] = mapped_column(
+        enum_type(DataQsOtpMethod, "dataqs_otp_method")
+    )
+    otp_phone: Mapped[str | None] = mapped_column(String(20))  # E.164
+    otp_call_at: Mapped[datetime | None] = mapped_column(  # SCHEDULED_CALL: call within 5 min
+        DateTime(timezone=True)
+    )
+    otp_preference_set_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     row_version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
 
     __mapper_args__ = {"version_id_col": row_version}

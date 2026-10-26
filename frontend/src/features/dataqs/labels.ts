@@ -1,4 +1,10 @@
-import type { DataQsWorkStatus, EligibilityStatus } from '../../types/dataqs'
+import type {
+  DataQsOtpMethod,
+  DataQsOtpPreference,
+  DataQsWorkStatus,
+  EligibilityStatus,
+} from '../../types/dataqs'
+import { formatDateTime } from '../../utils/format'
 import type { Tone } from '../../utils/status'
 
 export const WORK_STATUS: Record<DataQsWorkStatus, { label: string; tone: Tone }> = {
@@ -65,4 +71,18 @@ const AUDIT_ACTIONS: Record<string, string> = {
 export function auditLabel(action: string): string {
   const words = action.replace(/[._]/g, ' ')
   return AUDIT_ACTIONS[action] ?? words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+/** How the carrier gives STS the FMCSA login code. */
+export const OTP_METHOD_LABEL: Record<DataQsOtpMethod, string> = {
+  TEXT: 'Text message',
+  AI_CALL: 'Automated call',
+  SCHEDULED_CALL: 'A call at a set time',
+}
+
+export function otpChoiceText(p: DataQsOtpPreference): string {
+  if (p.method === 'SCHEDULED_CALL' && p.call_at) {
+    return `A call to ${p.phone} within 5 minutes of ${formatDateTime(p.call_at)}`
+  }
+  return `${OTP_METHOD_LABEL[p.method]} to ${p.phone}`
 }

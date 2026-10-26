@@ -80,6 +80,8 @@ from app.schemas.dataqs import (
     DataQsIssueOut,
     DataQsMessageOut,
     DataQsMissingInspectionIn,
+    DataQsOtpPreferenceOut,
+    DataQsOtpRequestOut,
     DataQsPackageOut,
     DataQsPriorActivityIn,
     DataQsRelatedCaseOut,
@@ -113,6 +115,7 @@ from app.services.dataqs_clock_service import LABELS as CLOCK_LABELS
 from app.services.dataqs_clock_service import DataQsClockService, state
 from app.services.dataqs_lifecycle import LEVEL_LABEL, NEXT_LEVEL, proposed_cycle
 from app.services.dataqs_notifications import DataQsNotifications
+from app.services.dataqs_otp_service import DataQsOtpService, display_phone
 from app.services.dataqs_package_service import (
     BUILDABLE,
     PACKAGE_TERMS_TEXT,
@@ -794,8 +797,41 @@ class DataQsCaseService:
             if user.role.is_staff
             else case.work_status in CARRIER_UPLOAD_STATUSES
         )
+        otp = DataQsOtpService(self.db, twilio=None)
+        otp_request = otp.latest_request(case.id) if staff else None
         return DataQsCaseOut(
             **summary.model_dump(),
+            otp_preference=(
+                DataQsOtpPreferenceOut(
+                    method=case.otp_method,
+                    phone=display_phone(case.otp_phone),
+                    call_at=case.otp_call_at,
+                    set_at=case.otp_preference_set_at,
+                )
+                if case.otp_method and case.otp_phone
+                else None
+            ),
+            can_set_otp_preference=can_act and case.work_status != DataQsWorkStatus.CLOSED,
+            otp_request=(
+                DataQsOtpRequestOut(
+                    id=otp_request.id,
+                    method=otp_request.method,
+                    status=otp_request.status,
+                    phone=display_phone(otp_request.phone),
+                    requested_by_name=self.repository.user_names([otp_request.requested_by_id]).get(
+                        otp_request.requested_by_id
+                    ),
+                    requested_by_me=otp_request.requested_by_id == user.id,
+                    sent_at=otp_request.sent_at,
+                    received_at=otp_request.received_at,
+                    expires_at=otp_request.expires_at,
+                    code=otp.visible_code(user, otp_request),
+                    error=otp_request.error,
+                )
+                if otp_request is not None
+                else None
+            ),
+            otp_automation_ready=staff and get_settings().twilio_enabled,
             event=DataQsEventOut.model_validate(snapshot["event"]),
             eligibility=EligibilityOut.model_validate(snapshot["eligibility"]),
             prior_activity=(

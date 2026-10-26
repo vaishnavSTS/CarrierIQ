@@ -45,6 +45,12 @@ Sign authorization           ←   Carrier approves the exact package
 - **No credential storage.** CarrierIQ never asks for or stores a carrier's FMCSA password,
   MFA secrets or government portal sessions. (The FMCSA Credentials pop-up and its
   `dataqs_carrier_contacts` table were removed on 2026-10-26, migration 0035.)
+- **FMCSA login code (OTP).** After submitting, the carrier chooses how STS gets the one-time
+  code FMCSA sends when STS logs in: a text (Twilio; they reply with it), an automated call
+  (Twilio; they key in or say it) or a call from STS within 5 minutes of a time they pick (a
+  task). A code that comes back is shown only to the staff member who asked, for 10 minutes, then
+  wiped; never logged, emailed or audited. Twilio webhooks are refused without a valid signature.
+  Off until TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM_NUMBER are set.
 - **No promises.** Say "Potentially eligible for review", never "this will be removed".
 - **Tenant isolation.** A client sees only its own organization's cases, files, receipts and
   download links, including in background jobs.
@@ -604,3 +610,4 @@ once `GMAIL_REFRESH_TOKEN` (or `SMTP_HOST`, or `RESEND_API_KEY`) is set; retries
 | 2026-10-22 | A correction is verified when FMCSA's inspection record changes (checked daily); the monthly CSA recalculation is not waited for. Escalate after 60 days unseen. Driver corrections are confirmed by STS with proof | User |
 | 2026-10-26 | FMCSA Credentials removed: the client pop-up, the staff "Carrier contact" / "FMCSA account" lines, the contacts API, the password encryption and the `dataqs_carrier_contacts` table (dropped with its data, migration 0035) | User |
 | 2026-10-26 | STS staff can start a request for any carrier (DataQs → Start a request: search a USDOT, pick the inspection, same wizard). The draft belongs to the client company STS verified the carrier for, whose owner is emailed and signs and submits it; with no client company yet, STS holds it and it moves to the company (owner emailed) when an admin verifies the USDOT for a client account. A carrier verified for two companies is refused | User |
+| 2026-10-26 | After submitting, a pop-up asks the carrier how STS gets the FMCSA login code: text message, automated call (both Twilio, off until configured) or a call from STS within 5 minutes of a time they choose (a staff task). Code shown only to the staff member who asked, wiped after 10 minutes (migration 0036) | User |

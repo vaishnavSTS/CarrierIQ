@@ -4,6 +4,7 @@ import type {
   DataQsCase,
   DataQsCaseCreateInput,
   DataQsMissingInspectionInput,
+  DataQsOtpPreferenceInput,
   DataQsCaseSummary,
   DataQsAttemptStartInput,
   DataQsCheck,
@@ -103,6 +104,29 @@ export function dataQsAuditExportUrl(since: string, until: string): string {
 /** A plain link: the browser downloads it with the session cookie; the API logs each download. */
 export function dataQsEvidenceUrl(base: DataQsBase, caseId: number, evidenceId: number): string {
   return `/api/v1${base}/cases/${caseId}/evidence/${evidenceId}`
+}
+
+/** How the carrier gives STS the FMCSA login code (the carrier's owner, or STS for them). */
+export function setDataQsOtpPreference(
+  base: DataQsBase,
+  caseId: number,
+  input: DataQsOtpPreferenceInput,
+): Promise<DataQsCase> {
+  return apiRequest(`${base}/cases/${caseId}/otp-preference`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+/** STS: text or call the carrier for the code now, as they chose. */
+export function requestDataQsOtp(caseId: number): Promise<DataQsCase> {
+  return post(`/dataqs/cases/${caseId}/otp-requests`, {})
+}
+
+/** STS: the code was used; wipe it. */
+export function markDataQsOtpUsed(caseId: number, requestId: number): Promise<DataQsCase> {
+  return post(`/dataqs/cases/${caseId}/otp-requests/${requestId}/used`, {})
 }
 
 function post<T>(path: string, body: unknown): Promise<T> {

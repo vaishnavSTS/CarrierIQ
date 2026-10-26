@@ -13,6 +13,8 @@ from app.models.enums import (
     DataQsCorrespondenceKind,
     DataQsCorrespondenceSource,
     DataQsEventType,
+    DataQsOtpMethod,
+    DataQsOtpStatus,
     DataQsOutcome,
     DataQsReason,
     DataQsReviewLevel,
@@ -636,6 +638,41 @@ class DataQsRelatedCaseOut(BaseModel):
     created_at: datetime
 
 
+# --- The FMCSA login code -------------------------------------------------------------------------
+
+
+class DataQsOtpPreferenceIn(BaseModel):
+    """How the carrier wants to give STS the FMCSA login code. `call_at` (with a time zone) only
+    for SCHEDULED_CALL: STS calls within 5 minutes of it."""
+
+    method: DataQsOtpMethod
+    phone: str = Field(min_length=7, max_length=30, pattern=r"^\+?[0-9 ().-]{7,30}$")
+    call_at: datetime | None = None
+
+
+class DataQsOtpPreferenceOut(BaseModel):
+    method: DataQsOtpMethod
+    phone: str  # e.g. (209) 555-0123
+    call_at: datetime | None
+    set_at: datetime | None
+
+
+class DataQsOtpRequestOut(BaseModel):
+    """STS staff: the latest text or call asking the carrier for the code."""
+
+    id: int
+    method: DataQsOtpMethod
+    status: DataQsOtpStatus
+    phone: str
+    requested_by_name: str | None
+    requested_by_me: bool
+    sent_at: datetime | None
+    received_at: datetime | None
+    expires_at: datetime | None
+    code: str | None  # only for the staff member who asked, until it expires
+    error: str | None
+
+
 class DataQsCaseOut(DataQsCaseSummaryOut):
     event: DataQsEventOut
     eligibility: EligibilityOut  # as assessed when the case was opened
@@ -687,6 +724,12 @@ class DataQsCaseOut(DataQsCaseSummaryOut):
     carrier_verified: bool | None = None
     related_cases: list[DataQsRelatedCaseOut] | None = None
     can_check_fmcsa: bool = False  # staff: the inspection is in FMCSA's data to look at
+    # The FMCSA login code: how the carrier wants to give it, whether this user may change that,
+    # and (staff) the latest text or call asking for it and whether Twilio is set up.
+    otp_preference: DataQsOtpPreferenceOut | None = None
+    can_set_otp_preference: bool = False
+    otp_request: DataQsOtpRequestOut | None = None
+    otp_automation_ready: bool = False
 
 
 class DataQsCaseListOut(BaseModel):

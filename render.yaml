@@ -75,6 +75,17 @@ services:
         value: vaishnav@skytransportsolutions.com
       - key: PUBLIC_APP_URL
         sync: false # the frontend's address, for links in emails
+      # FMCSA login codes by text / automated call (Twilio). Off until all three are set. In
+      # Twilio, set the number's "A message comes in" webhook to
+      # https://carrieriq-api.onrender.com/api/v1/webhooks/twilio/sms (HTTP POST).
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_FROM_NUMBER
+        sync: false # STS's Twilio number, e.g. +12095550123
+      - key: PUBLIC_API_URL
+        value: https://carrieriq-api.onrender.com # where Twilio sends replies (signature check)
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET
