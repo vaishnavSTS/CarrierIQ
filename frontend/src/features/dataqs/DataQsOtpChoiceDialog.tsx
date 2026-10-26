@@ -1,4 +1,4 @@
-import { MessageSquareText, PhoneCall, CalendarClock, X } from 'lucide-react'
+import { MessageSquareText, CalendarClock, X } from 'lucide-react'
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 
 import { useMe } from '../../hooks/useAuth'
@@ -14,12 +14,7 @@ const OPTIONS: { method: DataQsOtpMethod; icon: ReactNode; title: string; body: 
     title: 'Text message',
     body: 'STS texts you when FMCSA sends the code. Reply to that text with the code.',
   },
-  {
-    method: 'AI_CALL',
-    icon: <PhoneCall className="size-5" aria-hidden />,
-    title: 'Automated call',
-    body: 'An automated call asks you to key in or say the code FMCSA sent you.',
-  },
+  // The automated call (AI_CALL) is not offered for now; the backend still accepts it.
   {
     method: 'SCHEDULED_CALL',
     icon: <CalendarClock className="size-5" aria-hidden />,
