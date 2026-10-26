@@ -28,6 +28,12 @@ import { formatLocalDate } from '../../../utils/format'
 import type { Tone } from '../../../utils/status'
 import { Section } from '../Section'
 import { PAYMENT_LINKS } from './paymentLinks'
+import { SERVICE_LINKS } from './serviceLinks'
+
+/** Each row's button on the right: one width, so the buttons line up down the list. */
+const mainButton =
+  'inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-md bg-cta px-3 py-1.5 text-sm font-medium text-cta-ink sm:min-h-0 sm:w-60 sm:flex-none'
+const active = 'hover:bg-cta-hover'
 
 /** What the client is asking for, as the request dialog names it. */
 const ASK_LABEL: Record<ComplianceServiceId, string> = {
@@ -184,7 +190,7 @@ export function ComplianceSection({ profile }: { profile: CarrierProfile }) {
           ? 'What the client sees, and any help they asked STS for. Requests are handled on the Service requests page.'
           : 'Need help with any of these? Choose a button and Sky Transport Solutions will contact you.'}
       </p>
-      <ul className="space-y-3">
+      <ul className="space-y-2">
         {rows.map((row) => (
           <ComplianceRow
             key={row.service}
@@ -264,6 +270,7 @@ function ComplianceRow({
   const [asking, setAsking] = useState(false)
   const Icon = row.icon
   const payment = PAYMENT_LINKS[row.service]
+  const link = SERVICE_LINKS[row.service]
   const tone = row.badge?.tone ?? 'neutral'
   const ring =
     tone === 'down'
@@ -272,66 +279,89 @@ function ComplianceRow({
         ? 'border-amber-200 bg-amber-50/40'
         : 'border-slate-200'
   return (
-    <li className={`flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center ${ring}`}>
-      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-strong">
-        <Icon className="size-5" aria-hidden />
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-900">
-            {row.title}
-          </h3>
-          {row.badge && <StatusBadge label={row.badge.label} tone={row.badge.tone} />}
-        </div>
-        <p className="mt-0.5 text-sm text-slate-600">{row.description}</p>
-        {row.link && (
-          <a
-            href={row.link.href}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-accent-strong hover:underline"
-          >
-            {row.link.label}
-            <ExternalLink className="size-3" aria-hidden />
-          </a>
-        )}
-        {openRequest && (
-          <p className="mt-1 text-xs font-medium text-emerald-700">
-            {staff ? (
+    <li
+      className={`flex flex-col gap-2 rounded-xl border px-4 py-2.5 sm:flex-row sm:items-center sm:gap-3 ${ring}`}
+    >
+      <div className="flex min-w-0 flex-1 items-center gap-3">
+        <span className="grid size-8 shrink-0 place-items-center rounded-full bg-accent-soft text-accent-strong">
+          <Icon className="size-4" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-900">
+              {row.title}
+            </h3>
+            {row.badge && <StatusBadge label={row.badge.label} tone={row.badge.tone} />}
+          </div>
+          <p className="text-sm text-slate-600">
+            {row.description}
+            {row.link && (
               <>
-                {openRequest.requested_by_name ?? 'The client'} asked for help on{' '}
-                {formatLocalDate(openRequest.created_at)} ·{' '}
-                <Link to="/service-requests" className="underline">
-                  Service requests
-                </Link>
+                {' '}
+                <a
+                  href={row.link.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-accent-strong hover:underline"
+                >
+                  {row.link.label}
+                  <ExternalLink className="size-3" aria-hidden />
+                </a>
               </>
-            ) : (
-              `Requested ${formatLocalDate(openRequest.created_at)}. STS will contact you.`
             )}
           </p>
-        )}
+          {openRequest && (
+            <p className="text-xs font-medium text-emerald-700">
+              {staff ? (
+                <>
+                  {openRequest.requested_by_name ?? 'The client'} asked for help on{' '}
+                  {formatLocalDate(openRequest.created_at)} ·{' '}
+                  <Link to="/service-requests" className="underline">
+                    Service requests
+                  </Link>
+                </>
+              ) : (
+                `Requested ${formatLocalDate(openRequest.created_at)}. STS will contact you.`
+              )}
+            </p>
+          )}
+        </div>
       </div>
-      {!staff && (
-        <div className="flex flex-wrap gap-2 sm:flex-col sm:items-stretch">
+      {/* Right side: the row's button (its link once STS adds it), then "Pay online" if set */}
+      <div className="flex flex-wrap gap-2 sm:shrink-0 sm:flex-nowrap">
+        {link ? (
+          <a href={link} target="_blank" rel="noreferrer" className={`${mainButton} ${active}`}>
+            {row.button}
+            <ExternalLink className="size-3.5" aria-hidden />
+          </a>
+        ) : staff ? (
+          <span
+            aria-disabled="true"
+            title="No link added for this button yet"
+            className={`${mainButton} cursor-not-allowed opacity-50`}
+          >
+            {row.button}
+          </span>
+        ) : (
           <button
             type="button"
             onClick={() => setAsking(true)}
-            className="inline-flex min-h-11 items-center justify-center rounded-md bg-cta px-3 py-1.5 text-sm font-medium text-cta-ink hover:bg-cta-hover sm:min-h-0 sm:min-w-56"
+            className={`${mainButton} ${active}`}
           >
             {openRequest ? 'Ask again' : row.button}
           </button>
-          {payment && (
-            <a
-              href={payment}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex min-h-11 items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:min-h-0"
-            >
-              Pay online
-            </a>
-          )}
-        </div>
-      )}
+        )}
+        {payment && (
+          <a
+            href={payment}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex min-h-11 flex-1 items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:min-h-0 sm:flex-none"
+          >
+            Pay online
+          </a>
+        )}
+      </div>
       {asking && (
         <AskDialog
           usdotNumber={usdotNumber}
