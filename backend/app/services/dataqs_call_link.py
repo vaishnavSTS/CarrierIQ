@@ -12,6 +12,7 @@ isn't written to request logs). Off until it is set.
 """
 
 import logging
+import re
 from typing import Any
 
 import httpx
@@ -82,7 +83,8 @@ class DataQsCallLinkService:
         if response.status_code == 200 and data.get("success") and data.get("url"):
             self.repository.audit(case, user, "call.booking_link", after={"reason": REASON_LABEL})
             self.db.commit()
-            return str(data["url"])
+            # The website answers http://; the page is served over https, so open that.
+            return re.sub(r"^http://", "https://", str(data["url"]))
 
         error = str(data.get("error") or f"HTTP {response.status_code}")
         logger.warning("STS schedule link refused (%s): %s", response.status_code, error)

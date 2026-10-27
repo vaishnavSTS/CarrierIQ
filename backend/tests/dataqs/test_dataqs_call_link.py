@@ -68,6 +68,15 @@ def test_the_client_gets_a_signed_booking_link(
     assert "call.booking_link" in actions
 
 
+def test_an_http_link_is_opened_over_https(
+    api: TestClient, world: dict[str, User], website: FakeWebsite
+) -> None:
+    case = submitted_case(api)
+    website.answer = (200, {"success": True, "url": LINK.replace("https://", "http://")})
+    log_in(api, "owner@acme.test")
+    assert link(api, case["id"]).json() == {"url": LINK}
+
+
 def test_staff_links_use_the_company_email_on_file(
     api: TestClient, world: dict[str, User], website: FakeWebsite
 ) -> None:
