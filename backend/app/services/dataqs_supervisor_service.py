@@ -44,6 +44,7 @@ from app.schemas.dataqs import (
 )
 from app.services import dataqs_eligibility
 from app.services.dataqs_clock_service import DataQsClockService
+from app.services.dataqs_notifications import TEXTS_NOT_SET_UP
 from app.services.dataqs_verification_service import DataQsVerificationService, unverified
 
 DUE_SOON_DAYS = 3
@@ -386,12 +387,23 @@ class DataQsSupervisorService:
             if case is None:
                 continue
             failed = row.status == DataQsOutboxStatus.FAILED
+            label = EMAIL_KINDS.get(row.kind, row.kind.replace("_", " ").capitalize())
+            if row.channel == "SMS" and row.last_error == TEXTS_NOT_SET_UP:
+                found.add(
+                    case,
+                    "TEXT_NOT_SET_UP",
+                    "LOW",
+                    f"Text not sent: {label}",
+                    "Text messages aren't set up yet, so no text was sent. Emails still go out.",
+                    row.updated_at,
+                )
+                continue
+            what = "Text" if row.channel == "SMS" else "Email"
             found.add(
                 case,
                 "EMAIL_FAILED" if failed else "EMAIL_RETRYING",
                 "MEDIUM" if failed else "LOW",
-                ("Email not sent: " if failed else "Email being retried: ")
-                + EMAIL_KINDS.get(row.kind, row.kind.replace("_", " ").capitalize()),
+                (f"{what} not sent: " if failed else f"{what} being retried: ") + label,
                 (row.last_error or "No error recorded")[:300].rstrip(".")
                 + (
                     ". The carrier has not been told; contact them another way."

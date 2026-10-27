@@ -66,6 +66,8 @@ from app.services.twilio_client import TwilioClient, TwilioError
 logger = logging.getLogger(__name__)
 
 MAX_ATTEMPTS = 5
+# A text that couldn't go because Twilio isn't configured (no STS number yet).
+TEXTS_NOT_SET_UP = "Text messages aren't set up yet (no Twilio number)"
 
 # Set when a carrier email is committed (or to stop): the dispatcher sends now, not in 30 seconds.
 _wake = threading.Event()
@@ -616,7 +618,7 @@ class DataQsNotifications:
                 return False
         if sms is None:
             row.status = DataQsOutboxStatus.FAILED
-            row.last_error = "Texts aren't set up (TWILIO_* settings)"
+            row.last_error = TEXTS_NOT_SET_UP
             return False
         row.attempts += 1
         try:

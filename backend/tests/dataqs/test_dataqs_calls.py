@@ -260,4 +260,19 @@ def test_texts_follow_the_test_routing_and_wait_for_twilio(
 
     DataQsNotifications(db).deliver_due(FakeSender(), sms=None)  # Twilio not set up
     db.refresh(text)
-    assert text.status == DataQsOutboxStatus.FAILED and "TWILIO" in (text.last_error or "")
+    assert text.status == DataQsOutboxStatus.FAILED and "set up yet" in (text.last_error or "")
+
+
+def test_supervisor_says_texts_are_not_set_up_yet(
+    api: TestClient, world: dict[str, User], db: Session
+) -> None:
+    case = owners_case(api)
+    book(api, case["id"], in_days(2))
+    DataQsNotifications(db).deliver_due(FakeSender(), sms=None)  # no Twilio number yet
+    db.commit()
+    log_in(api, "admin@sts.test")
+    found = api.get("/api/v1/dataqs/supervisor").json()["exceptions"]
+    [text] = [e for e in found if e["case_id"] == case["id"] and e["kind"] == "TEXT_NOT_SET_UP"]
+    assert text["title"].startswith("Text not sent:") and text["severity"] == "LOW"
+    assert "Text messages aren't set up yet" in text["detail"]
+    assert not [e for e in found if e["case_id"] == case["id"] and e["kind"] == "EMAIL_FAILED"]
