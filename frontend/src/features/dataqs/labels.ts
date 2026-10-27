@@ -53,6 +53,7 @@ const AUDIT_ACTIONS: Record<string, string> = {
   'filing.started': 'Filing started',
   'filing.confirmed': 'Filing confirmed',
   'filing_proof.uploaded': 'Proof of filing added',
+  'call.booking_link': 'Opened STS’s booking page for a call',
   'call.booked': 'Call with STS booked',
   'otp.preference_set': 'Chose how STS signs in to file',
   'agent_access.requested_by_carrier': 'Asked STS to request FMCSA Portal access',

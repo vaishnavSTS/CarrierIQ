@@ -11,7 +11,7 @@ import { DataQsAddEvidence } from './DataQsAddEvidence'
 import { DataQsAssessmentHistory, DataQsTaskList } from './DataQsCaseActivity'
 import { DataQsDeadlines } from './DataQsDeadlines'
 import { DataQsEventSummary } from './DataQsEventSummary'
-import { DataQsCalls } from './DataQsCalls'
+import { DataQsBookCall } from './DataQsBookCall'
 import { DataQsFiledCard } from './DataQsFiledCard'
 import { DataQsFilingProofs } from './DataQsFilingProofs'
 import { DataQsMessages } from './DataQsMessages'
@@ -248,9 +248,9 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
       </Section>
 
       <Section title="Messages and history">
-        {(c.can_book_call || c.calls.length > 0) && (
-          <Card title={staff ? 'Calls with the carrier' : 'Talk to your STS specialist'}>
-            <DataQsCalls dataqsCase={c} />
+        {c.can_book_call && (
+          <Card title={staff ? 'Book a call for the carrier' : 'Talk to your STS specialist'}>
+            <DataQsBookCall dataqsCase={c} />
           </Card>
         )}
         {(c.can_message || c.messages.length > 0) && (

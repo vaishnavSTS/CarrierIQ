@@ -103,6 +103,12 @@ class DataQsStorageUnavailableError(CarrierSafetyScanError):
     code = "dataqs_storage_unavailable"
 
 
+class BookingUnavailableError(CarrierSafetyScanError):
+    """STS's booking page (skytransportsolutions.com) isn't set up or can't be reached."""
+
+    status_code = 503
+
+
 class SourceFetchError(CarrierSafetyScanError):
     """An external data source (data.transportation.gov, NHTSA, ...) failed or returned bad data."""
 

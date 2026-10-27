@@ -17,11 +17,8 @@ The workflow STS chose:
 - STS is told straight away when the carrier adds a file, sends the case back, approves the
   package or asks for changes: to the case specialist, or STS admins while nobody owns the
   case, decided when it is sent.
-- A call the carrier books with STS (dataqs_call_service.py): an email with the calendar
-  file, a text now and a text 1 hour before (Twilio; channel SMS), and STS is told.
 - While testing, DATAQS_EMAIL_CARRIER_OVERRIDE / DATAQS_EMAIL_STAFF_OVERRIDE send every
-  carrier / staff email to set addresses instead, and DATAQS_SMS_OVERRIDE every text to
-  one number; each says who it was meant for.
+  carrier / staff email to set addresses instead; each says who it was meant for.
 
 Emails go through an outbox (dataqs_outbox): a row is written in the same transaction as the
 change that causes it, with a stable event id, and a dispatcher sends it (now, or at
@@ -44,7 +41,6 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.models import (
-    DataQsCall,
     DataQsCase,
     DataQsClock,
     DataQsEvidence,
@@ -53,21 +49,17 @@ from app.models import (
     User,
 )
 from app.models.enums import (
-    DataQsCallStatus,
     DataQsClockType,
     DataQsOutboxStatus,
     DataQsWorkStatus,
     UserRole,
     UserStatus,
 )
-from app.services.dataqs_email import Attachment, EmailError, EmailSender
-from app.services.twilio_client import TwilioClient, TwilioError
+from app.services.dataqs_email import EmailError, EmailSender
 
 logger = logging.getLogger(__name__)
 
 MAX_ATTEMPTS = 5
-# A text that couldn't go because Twilio isn't configured (no STS number yet).
-TEXTS_NOT_SET_UP = "Text messages aren't set up yet (no Twilio number)"
 
 # Set when a carrier email is committed (or to stop): the dispatcher sends now, not in 30 seconds.
 _wake = threading.Event()
@@ -235,7 +227,6 @@ class DataQsNotifications:
         kind: str,
         subject: str,
         body: str,
-        calendar: tuple[str, bytes] | None = None,
     ) -> None:
         """Tell STS that the carrier did something (in the caller's transaction)."""
         staff = self.staff_for(case)
@@ -249,78 +240,7 @@ class DataQsNotifications:
                 recipient_id=staff[0].id,  # re-chosen when sent: the owner may change
                 channel="EMAIL",
                 kind=f"{NOTICE_PREFIX}{kind}",
-                payload={"subject": subject[:200], "body": body, **_calendar(calendar)},
-            )
-        )
-        self.db.flush()
-        self.db.info[_QUEUED] = True
-
-    def to_people(
-        self,
-        case: DataQsCase,
-        people: list[User],
-        kind: str,
-        subject: str,
-        body: str,
-        calendar: tuple[str, bytes] | None = None,
-        first: tuple[str, str] | None = None,
-    ) -> None:
-        """An email to some of the carrier's users only (e.g. who booked a call), not kept as
-        a case message; with an optional calendar file (name, .ics bytes)."""
-        override = get_settings().dataqs_carrier_override_list
-        text = f"{body}\n\nOpen the case: {carrier_link(case)}"
-        targets = [(u.id, [u.email], f"u{u.id}") for u in people]
-        if override:
-            meant = ", ".join(u.email for u in people) or "no active users"
-            text = f"[Test routing: meant for {meant}]\n\n{text}"
-            body = f"[Test routing: meant for {meant}]\n\n{body}"
-            owner = people[0].id if people else case.created_by_id
-            targets = [(owner, override, "override")]
-        token = secrets.token_hex(6)
-        for recipient_id, to, suffix in targets:
-            self.db.add(
-                DataQsOutbox(
-                    event_id=f"dataqs-case-{case.id}-{kind.lower()}-{token}-{suffix}",
-                    case_id=case.id,
-                    recipient_id=recipient_id,
-                    channel="EMAIL",
-                    kind=kind,
-                    payload={
-                        "to": to,
-                        "subject": subject[:200],
-                        "text": text,
-                        "html": render_html(body, carrier_link(case), "Open the case", first),
-                        **_calendar(calendar),
-                    },
-                )
-            )
-        self.db.flush()
-        self.db.info[_QUEUED] = True
-
-    def text(
-        self,
-        case: DataQsCase,
-        recipient_id: int,
-        kind: str,
-        phone: str,
-        body: str,
-        *,
-        at: datetime | None = None,
-        extra: dict[str, Any] | None = None,
-    ) -> None:
-        """A text message to the carrier (Twilio), now or at `at`."""
-        override = get_settings().dataqs_sms_override
-        if override:
-            body = f"[Test: meant for {phone}] {body}"
-        self.db.add(
-            DataQsOutbox(
-                event_id=f"dataqs-case-{case.id}-{kind.lower()}-{secrets.token_hex(6)}",
-                case_id=case.id,
-                recipient_id=recipient_id,
-                channel="SMS",
-                kind=kind,
-                payload={"to": [override or phone], "body": body, **(extra or {})},
-                next_attempt_at=at,
+                payload={"subject": subject[:200], "body": body},
             )
         )
         self.db.flush()
@@ -358,7 +278,6 @@ class DataQsNotifications:
             "subject": subject,
             "text": f"{body}\n\nOpen the case: {staff_link(case)}",
             "html": render_html(body, staff_link(case), "Open the case"),
-            **{k: row.payload[k] for k in ("ics", "ics_name") if k in row.payload},
         }
 
     # --- Staff reminders --------------------------------------------------------------------------
@@ -526,7 +445,6 @@ class DataQsNotifications:
         sender: EmailSender,
         now: datetime | None = None,
         limit: int = 50,
-        sms: TwilioClient | None = None,
     ) -> int:
         """Send what is due. Rows are locked one at a time, so two dispatchers never send the
         same email. Returns how many were sent."""
@@ -546,16 +464,16 @@ class DataQsNotifications:
             )
             if row is None:
                 break
-            if row.channel == "SMS":
-                if self._deliver_text(row, sms, now):
-                    sent += 1
-            elif self._deliver(row, sender, now):
+            if self._deliver(row, sender, now):
                 sent += 1
             self.db.commit()
         return sent
 
     def _deliver(self, row: DataQsOutbox, sender: EmailSender, now: datetime) -> bool:
         case = self.db.get(DataQsCase, row.case_id)
+        if row.channel != "EMAIL":  # e.g. a text left from the old call booking: never emailed
+            row.status = DataQsOutboxStatus.CANCELLED
+            return False
         email: dict[str, Any] | None = row.payload
         if case is not None and row.kind.startswith(REMINDER_PREFIX):
             built = self._reminder(row, case, now)
@@ -569,20 +487,6 @@ class DataQsNotifications:
             row.status = DataQsOutboxStatus.CANCELLED
             return False
         row.attempts += 1
-        # Only emails with a file pass `attachments`, so senders without it still work.
-        files = (
-            {
-                "attachments": [
-                    Attachment(
-                        email.get("ics_name") or "call.ics",
-                        "text/calendar",
-                        str(email["ics"]).encode("utf-8"),
-                    )
-                ]
-            }
-            if email.get("ics")
-            else {}
-        )
         try:
             sender.send(
                 to=list(email["to"]),
@@ -590,7 +494,6 @@ class DataQsNotifications:
                 text=email["text"],
                 html=email["html"],
                 idempotency_key=row.event_id,
-                **files,
             )
         except EmailError as exc:
             row.last_error = str(exc)[:1000]
@@ -604,43 +507,6 @@ class DataQsNotifications:
         if row.kind.startswith((REMINDER_PREFIX, NOTICE_PREFIX)):
             row.payload = {**row.payload, "sent_to": email["to"]}
         return True
-
-    def _deliver_text(self, row: DataQsOutbox, sms: TwilioClient | None, now: datetime) -> bool:
-        """A text message. A call reminder is dropped if the call was moved or cancelled."""
-        if row.payload.get("call_id") is not None:
-            call = self.db.get(DataQsCall, row.payload["call_id"])
-            if (
-                call is None
-                or call.status != DataQsCallStatus.BOOKED
-                or call.starts_at.isoformat() != row.payload.get("starts_at")
-            ):
-                row.status = DataQsOutboxStatus.CANCELLED
-                return False
-        if sms is None:
-            row.status = DataQsOutboxStatus.FAILED
-            row.last_error = TEXTS_NOT_SET_UP
-            return False
-        row.attempts += 1
-        try:
-            sid = sms.send_sms(row.payload["to"][0], row.payload["body"])
-        except TwilioError as exc:
-            row.last_error = str(exc)[:1000]
-            if row.attempts >= MAX_ATTEMPTS:
-                row.status = DataQsOutboxStatus.FAILED
-            else:
-                row.next_attempt_at = now + timedelta(minutes=2**row.attempts)
-            logger.warning("DataQs text %s not sent: %s", row.event_id, exc)
-            return False
-        row.status, row.sent_at, row.last_error = DataQsOutboxStatus.SENT, now, None
-        row.payload = {**row.payload, "sid": sid}
-        return True
-
-
-def _calendar(calendar: tuple[str, bytes] | None) -> dict[str, str]:
-    """A calendar file kept on the outbox row (JSON), sent as an attachment."""
-    if calendar is None:
-        return {}
-    return {"ics_name": calendar[0], "ics": calendar[1].decode("utf-8")}
 
 
 # --- Dispatcher -----------------------------------------------------------------------------------
@@ -657,7 +523,7 @@ def run_dispatcher(stop: threading.Event, interval_seconds: float = 30.0) -> Non
         if sender is not None:
             try:
                 with SessionLocal() as db:
-                    DataQsNotifications(db).deliver_due(sender, sms=TwilioClient.from_settings())
+                    DataQsNotifications(db).deliver_due(sender)
             except Exception:  # keep the dispatcher alive; the next round retries
                 logger.exception("DataQs email dispatch failed")
         # Cleared after waking and before the next round: an email committed meanwhile is

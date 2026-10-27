@@ -236,14 +236,6 @@ class DataQsVerificationStatus(StrEnum):
     MANUAL = "MANUAL"  # not in FMCSA's public data (driver details): STS confirms with proof
 
 
-class DataQsCallStatus(StrEnum):
-    """A call the carrier booked with their STS specialist (about the case, not a login code)."""
-
-    BOOKED = "BOOKED"
-    CANCELLED = "CANCELLED"
-    DONE = "DONE"  # STS marked the call held
-
-
 class DataQsOtpMethod(StrEnum):
     """How the carrier wants to give STS the FMCSA login code (the one-time code FMCSA sends)."""
 

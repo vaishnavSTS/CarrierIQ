@@ -25,9 +25,8 @@ import {
   recordDataQsCorrespondence,
   requestDataQsPackageChanges,
   resubmitDataQsCase,
-  settleDataQsCall,
   settleDataQsFiling,
-  bookDataQsCall,
+  dataQsCallLink,
   updateDataQsAgentAccess,
   uploadDataQsFilingProof,
   startDataQsFiling,
@@ -39,7 +38,6 @@ import type {
   DataQsApprovalInput,
   DataQsAssessmentInput,
   DataQsAttemptStartInput,
-  DataQsCallInput,
   DataQsCase,
   DataQsCaseCreateInput,
   DataQsOtpPreferenceInput,
@@ -118,23 +116,10 @@ export function useDataQsAgentAccess(caseId: number) {
   })
 }
 
-export function useBookDataQsCall(caseId: number) {
-  const save = useSaveCase()
+/** A booking link on STS's website (nothing on the case changes, so no refetch). */
+export function useDataQsCallLink(caseId: number) {
   const base = useDataQsBase()
-  return useMutation({
-    mutationFn: (input: DataQsCallInput) => bookDataQsCall(base, caseId, input),
-    onSuccess: save,
-  })
-}
-
-export function useSettleDataQsCall(caseId: number) {
-  const save = useSaveCase()
-  const base = useDataQsBase()
-  return useMutation({
-    mutationFn: ({ callId, action }: { callId: number; action: 'cancel' | 'done' }) =>
-      settleDataQsCall(base, caseId, callId, action),
-    onSuccess: save,
-  })
+  return useMutation({ mutationFn: () => dataQsCallLink(base, caseId) })
 }
 
 export function useSetDataQsOtpPreference(caseId: number) {

@@ -44,7 +44,6 @@ from app.schemas.dataqs import (
 )
 from app.services import dataqs_eligibility
 from app.services.dataqs_clock_service import DataQsClockService
-from app.services.dataqs_notifications import TEXTS_NOT_SET_UP
 from app.services.dataqs_verification_service import DataQsVerificationService, unverified
 
 DUE_SOON_DAYS = 3
@@ -74,6 +73,7 @@ EMAIL_KINDS = {
     "NOTICE_CALL_BOOKED": "Carrier booked a call (STS)",
     "NOTICE_CALL_MOVED": "Carrier moved the call (STS)",
     "NOTICE_CALL_CANCELLED": "Carrier cancelled the call (STS)",
+    "NOTICE_BOOKING_NOT_SET_UP": "Company not set up for online booking (STS)",
     "AGENT_ACCESS_REQUESTED": "Approve STS's FMCSA Portal access (carrier)",
     "AGENT_ACCESS_REMINDER": "Reminder: approve STS's access (carrier)",
     "AGENT_ACCESS_GRANTED": "STS's FMCSA Portal access confirmed (carrier)",
@@ -388,16 +388,6 @@ class DataQsSupervisorService:
                 continue
             failed = row.status == DataQsOutboxStatus.FAILED
             label = EMAIL_KINDS.get(row.kind, row.kind.replace("_", " ").capitalize())
-            if row.channel == "SMS" and row.last_error == TEXTS_NOT_SET_UP:
-                found.add(
-                    case,
-                    "TEXT_NOT_SET_UP",
-                    "LOW",
-                    f"Text not sent: {label}",
-                    "Text messages aren't set up yet, so no text was sent. Emails still go out.",
-                    row.updated_at,
-                )
-                continue
             what = "Text" if row.channel == "SMS" else "Email"
             found.add(
                 case,
