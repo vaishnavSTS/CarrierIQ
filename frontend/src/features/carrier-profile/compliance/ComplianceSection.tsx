@@ -2,7 +2,6 @@ import {
   BadgeCheck,
   Car,
   ClipboardCheck,
-  Database,
   ExternalLink,
   FileText,
   FlaskConical,
@@ -165,14 +164,6 @@ export function ComplianceSection({ profile }: { profile: CarrierProfile }) {
       badge: null,
       description: 'Show that your corporation is in good standing with the state.',
       button: 'Certificate of good standing',
-    },
-    {
-      service: 'CLEARINGHOUSE',
-      icon: Database,
-      title: 'Clearinghouse registration',
-      badge: null,
-      description: 'Register with FMCSA’s Drug & Alcohol Clearinghouse.',
-      button: 'Clearinghouse registration',
     },
   ]
 
