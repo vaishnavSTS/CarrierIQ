@@ -109,8 +109,8 @@ class BookingUnavailableError(CarrierSafetyScanError):
     status_code = 503
 
 
-class InvoiceUnavailableError(CarrierSafetyScanError):
-    """STS's invoicing (skytransportsolutions.com) isn't set up or can't be reached."""
+class PaymentUnavailableError(CarrierSafetyScanError):
+    """Online payment (Stripe) isn't set up or can't be reached."""
 
     status_code = 503
 

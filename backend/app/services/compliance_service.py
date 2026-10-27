@@ -10,17 +10,28 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.core.exceptions import ForbiddenError, NotFoundError, ValidationError
+from app.core.exceptions import (
+    ForbiddenError,
+    NotFoundError,
+    PaymentUnavailableError,
+    ValidationError,
+)
 from app.models import (
     Address,
     Carrier,
     ComplianceRequest,
+    Invoice,
     Organization,
     OrganizationCarrier,
     Phone,
     User,
 )
-from app.models.enums import AddressType, ComplianceRequestStatus, ComplianceService
+from app.models.enums import (
+    AddressType,
+    ComplianceRequestStatus,
+    ComplianceService,
+    InvoiceStatus,
+)
 from app.schemas.compliance import (
     ComplianceCheckoutIn,
     CompliancePricesOut,
@@ -34,7 +45,8 @@ from app.schemas.compliance import (
 from app.services.compliance_pricing import PRICES, quote, suggest
 from app.services.dataqs_email import EmailSender, get_email_sender
 from app.services.dataqs_notifications import render_html
-from app.services.sts_invoice import Company, InvoiceLine, StsInvoiceClient
+from app.services.invoice_service import InvoiceService, NewLine
+from app.services.stripe_client import StripeClient
 from app.services.ucr_service import UcrService, required_years
 
 logger = logging.getLogger(__name__)
@@ -50,6 +62,22 @@ SERVICE_LABELS: dict[ComplianceService, str] = {
     ComplianceService.GOOD_STANDING: "Certificate of good standing",
     ComplianceService.CLEARINGHOUSE: "Clearinghouse registration",
 }
+
+
+# The invoice line's item, as on STS's invoices (the option is added in brackets).
+ITEM_NAMES: dict[ComplianceService, str] = {
+    ComplianceService.DOT_MC_AUTHORITY: "DOT / MC AUTHORITY",
+    ComplianceService.UCR: "UCR",
+    ComplianceService.CA_MCP: "CALIFORNIA MCP",
+    ComplianceService.DRIVER_FILES: "DRIVER QUALIFICATION FILES",
+    ComplianceService.MVR: "MVR REPORT",
+    ComplianceService.GOOD_STANDING: "CERTIFICATE OF GOOD STANDING",
+}
+
+
+def _pretty_phone(digits: str | None) -> str | None:
+    d = "".join(c for c in digits or "" if c.isdigit())[-10:]
+    return f"({d[:3]}) {d[3:6]}-{d[6:]}" if len(d) == 10 else (digits or None)
 
 
 def _option_label(request: ComplianceRequest) -> str | None:
@@ -169,9 +197,14 @@ class CarrierComplianceService:
                 select(Organization.id, Organization.name).where(Organization.id.in_(org_ids))
             ).all()
         )
+        invoice_ids = {r.invoice_id for r in requests if r.invoice_id}
+        invoices = {
+            i.id: i for i in self.db.scalars(select(Invoice).where(Invoice.id.in_(invoice_ids)))
+        }
         out = []
         for r in requests:
             by = users.get(r.requested_by_id)
+            invoice = invoices.get(r.invoice_id) if r.invoice_id else None
             handler = users.get(r.handled_by_id) if r.handled_by_id else None
             out.append(
                 ComplianceRequestOut(
@@ -192,8 +225,11 @@ class CarrierComplianceService:
                     option_label=_option_label(r),
                     quantity=r.quantity,
                     amount=r.amount,
-                    invoice_no=r.invoice_no,
-                    payment_url=r.payment_url,
+                    invoice_id=invoice.id if invoice else None,
+                    invoice_number=invoice.number if invoice else None,
+                    invoice_status=invoice.status if invoice else None,
+                    sts_invoice_no=r.sts_invoice_no,
+                    sts_payment_url=r.sts_payment_url,
                 )
             )
         return out
@@ -244,57 +280,84 @@ class CarrierComplianceService:
         user: User,
         usdot_number: int,
         body: ComplianceCheckoutIn,
-        invoices: StsInvoiceClient,
+        stripe: StripeClient,
     ) -> tuple[ComplianceRequest, str, bool]:
-        """Create the invoice on STS's website and save the request; answers its payment page and
-        whether the invoice is new.
-        The same open request (same option and drivers) reuses its invoice instead of a new one."""
+        """Create the invoice (CarrierSafetyScan's own) and save the request; answers a Stripe
+        Checkout URL and whether the invoice is new. The same open request (same option and
+        drivers) with its invoice still unpaid reuses that invoice instead of a new one."""
         if not user.role.is_client:
             raise ForbiddenError("Service requests come from clients")
         self.ensure_can_see(user, usdot_number)
+        if not get_settings().stripe_secret_key:  # before any invoice is made
+            raise PaymentUnavailableError("Online payment isn't set up yet. Please contact STS.")
         carrier = self._carrier(usdot_number)
-        state = self._state(carrier)
+        address = self._physical(carrier)
+        state = address.state.strip().upper() if address and address.state else None
         if body.service == ComplianceService.CA_MCP and state != "CA":
             raise ValidationError("The California MCP is for carriers based in California")
         q = quote(body.service, body.option, body.drivers)
         price = PRICES[body.service]
         quantity = q.quantity if price.per_driver else None
+        invoices = InvoiceService(self.db, self.now)
+        app_url = get_settings().public_app_url.rstrip("/")
+        cancel_url = f"{app_url}/portal/carriers/{usdot_number}?tab=compliance"
 
         existing = self.db.scalar(
             select(ComplianceRequest)
+            .join(Invoice, Invoice.id == ComplianceRequest.invoice_id)
             .where(
                 ComplianceRequest.organization_id == user.organization_id,
                 ComplianceRequest.usdot_number == usdot_number,
                 ComplianceRequest.service == body.service,
                 ComplianceRequest.status == ComplianceRequestStatus.OPEN,
                 ComplianceRequest.option_key == q.option.key,
-                ComplianceRequest.payment_url.is_not(None),
                 ComplianceRequest.quantity.is_(None)
                 if quantity is None
                 else ComplianceRequest.quantity == quantity,
+                Invoice.status == InvoiceStatus.UNPAID,
             )
             .order_by(ComplianceRequest.id.desc())
             .limit(1)
         )
-        if existing is not None and existing.payment_url:
-            return existing, existing.payment_url, False
+        if existing is not None and existing.invoice_id is not None:
+            invoice = self.db.get(Invoice, existing.invoice_id)
+            assert invoice is not None
+            return existing, invoices.checkout(invoice, user.email, stripe, cancel_url), False
 
-        label = SERVICE_LABELS[body.service]
-        description = f"{label}: {q.option.label}" + (
-            f" ({q.quantity} drivers)" if price.per_driver else ""
+        item = ITEM_NAMES[body.service] + (
+            f" ({q.option.label.upper()})" if len(price.options) > 1 else ""
         )
         invoice = invoices.create(
+            user=user,
+            organization_id=user.organization_id,
             usdot_number=usdot_number,
-            company=Company(
-                name=(carrier.legal_name if carrier else None) or f"USDOT {usdot_number}",
-                email=user.email,
-                phone=user.phone or self._carrier_phone(carrier) or "",
-                contact_name=user.full_name,
-                state=state,
-            ),
-            line=InvoiceLine(q.service_id, q.option.amount, q.quantity, description),
-            note=f"{description}, USDOT {usdot_number}",
-            internal_note=f"Compliance tab, requested by {user.full_name} <{user.email}>",
+            bill_to={
+                "name": (carrier.legal_name if carrier else None) or f"USDOT {usdot_number}",
+                "street": address.street if address else None,
+                "city_state_zip": " ".join(
+                    p
+                    for p in [
+                        f"{address.city}," if address and address.city else None,
+                        state,
+                        address.zip if address else None,
+                    ]
+                    if p
+                )
+                or None,
+                "phone": _pretty_phone(user.phone or self._carrier_phone(carrier)),
+                "emails": sorted(
+                    {e for e in [user.email, carrier.email if carrier else None] if e}
+                ),
+                "usdot_number": usdot_number,
+            },
+            lines=[
+                NewLine(
+                    item=item,
+                    description="Per driver" if price.per_driver else "Service",
+                    quantity=q.quantity,
+                    rate=q.option.amount,
+                )
+            ],
         )
         request = ComplianceRequest(
             organization_id=user.organization_id,
@@ -306,27 +369,29 @@ class CarrierComplianceService:
             option_key=q.option.key,
             quantity=quantity,
             amount=q.total,
-            invoice_id=invoice.invoice_id,
-            invoice_no=invoice.invoice_no,
-            payment_url=invoice.payment_url,
+            invoice_id=invoice.id,
         )
         self.db.add(request)
         self.db.commit()
-        return request, invoice.payment_url, True
+        return request, invoices.checkout(invoice, user.email, stripe, cancel_url), True
 
     def _carrier(self, usdot_number: int) -> Carrier | None:
         return self.db.scalar(select(Carrier).where(Carrier.usdot_number == usdot_number))
 
-    def _state(self, carrier: Carrier | None) -> str | None:
-        """The carrier's physical address state (FMCSA census), e.g. "CA"."""
+    def _physical(self, carrier: Carrier | None) -> Address | None:
+        """The carrier's physical address (FMCSA census)."""
         if carrier is None:
             return None
-        state = self.db.scalar(
-            select(Address.state).where(
-                Address.carrier_id == carrier.id, Address.address_type == AddressType.PHYSICAL
-            )
+        return self.db.scalar(
+            select(Address)
+            .where(Address.carrier_id == carrier.id, Address.address_type == AddressType.PHYSICAL)
+            .limit(1)
         )
-        return state.strip().upper() if state else None
+
+    def _state(self, carrier: Carrier | None) -> str | None:
+        """The carrier's physical address state, e.g. "CA"."""
+        address = self._physical(carrier)
+        return address.state.strip().upper() if address and address.state else None
 
     def _carrier_phone(self, carrier: Carrier | None) -> str | None:
         if carrier is None:
@@ -362,11 +427,12 @@ class CarrierComplianceService:
                 "Contact: "
                 + ", ".join(p for p in [out.requested_by_email, out.requested_by_phone] if p),
                 (
-                    f"Paid online: invoice {out.invoice_no or '(no number)'} for "
+                    f"Invoice {out.invoice_number} for "
                     f"{out.option_label or out.service_label}"
                     + (f", {out.quantity} drivers" if out.quantity else "")
-                    + f", ${out.amount:,.2f}. The client was sent to the payment page."
-                    if out.payment_url and out.amount is not None
+                    + f", ${out.amount:,.2f}. The client was sent to Stripe to pay; you'll get "
+                    "another email when it's paid."
+                    if out.invoice_number and out.amount is not None
                     else ""
                 ),
                 f"Note from the client: {out.note}" if out.note else "",

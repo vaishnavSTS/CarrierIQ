@@ -16,6 +16,7 @@ from app.api.v1.routes import (
     dashboard,
     dataqs,
     health,
+    invoices,
     jobs,
     portal,
     signals,
@@ -42,3 +43,5 @@ api_router.include_router(dataqs.portal_router)
 api_router.include_router(twilio_webhooks.router)
 # The Compliance tab and STS's service requests: each route checks the user's access.
 api_router.include_router(compliance.router)
+api_router.include_router(invoices.router)
+api_router.include_router(invoices.webhook_router)

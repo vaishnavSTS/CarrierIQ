@@ -59,15 +59,15 @@ export function ServiceRequestsPage() {
       ) : (
         <div className="overflow-x-auto rounded-xl border border-slate-200 bg-surface">
           <table className={tableClass}>
-            <thead>
+            <thead className={headClass}>
               <tr>
-                <th className={headClass}>Asked</th>
-                <th className={headClass}>Service</th>
-                <th className={headClass}>Carrier</th>
-                <th className={headClass}>Client</th>
-                <th className={headClass}>Note</th>
-                <th className={headClass}>Status</th>
-                <th className={headClass}>
+                <th className={cellClass}>Asked</th>
+                <th className={cellClass}>Service</th>
+                <th className={cellClass}>Carrier</th>
+                <th className={cellClass}>Client</th>
+                <th className={cellClass}>Note</th>
+                <th className={cellClass}>Status</th>
+                <th className={cellClass}>
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>
@@ -80,12 +80,24 @@ export function ServiceRequestsPage() {
                   </td>
                   <td className={cellClass}>
                     <div className="font-medium text-slate-900">{r.service_label}</div>
-                    {r.payment_url && (
+                    {r.invoice_id && (
                       <div className="text-xs text-slate-600">
-                        Paid online: invoice {r.invoice_no ?? '—'} · {r.option_label}
+                        <Link
+                          to={`/invoices/${r.invoice_id}`}
+                          className="text-accent-strong hover:underline"
+                        >
+                          Invoice {r.invoice_number}
+                        </Link>{' '}
+                        · {r.option_label}
                         {r.quantity ? ` (${r.quantity} drivers)` : ''} · ${r.amount} ·{' '}
+                        {r.invoice_status?.toLowerCase()}
+                      </div>
+                    )}
+                    {r.sts_payment_url && (
+                      <div className="text-xs text-slate-600">
+                        STS website invoice {r.sts_invoice_no ?? '—'} ·{' '}
                         <a
-                          href={r.payment_url}
+                          href={r.sts_payment_url}
                           target="_blank"
                           rel="noreferrer"
                           className="text-accent-strong hover:underline"

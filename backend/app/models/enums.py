@@ -282,6 +282,13 @@ class ComplianceRequestStatus(StrEnum):
     HANDLED = "HANDLED"  # an STS staff member followed up
 
 
+class InvoiceStatus(StrEnum):
+    UNPAID = "UNPAID"
+    PAID = "PAID"  # Stripe confirmed the payment
+    VOID = "VOID"  # cancelled by STS before it was paid
+    REFUNDED = "REFUNDED"  # refunded in Stripe after it was paid
+
+
 def enum_type(enum_cls: type[StrEnum], name: str, length: int = 20) -> Enum:
     """VARCHAR column restricted to the enum's values by a CHECK constraint named after `name`."""
     return Enum(

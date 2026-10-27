@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, Field
 
-from app.models.enums import ComplianceRequestStatus, ComplianceService
+from app.models.enums import ComplianceRequestStatus, ComplianceService, InvoiceStatus
 
 
 class UcrYearOut(BaseModel):
@@ -48,12 +48,16 @@ class ComplianceRequestOut(BaseModel):
     handled_by_name: str | None
     handled_at: datetime | None
     email_error: str | None  # the email to STS failed (staff)
-    # Paid online: what was chosen, and the invoice on STS's website.
+    # Paid online: what was chosen, and its CarrierSafetyScan invoice.
     option_label: str | None = None
     quantity: int | None = None
     amount: Decimal | None = None
-    invoice_no: int | None = None
-    payment_url: str | None = None
+    invoice_id: int | None = None
+    invoice_number: int | None = None
+    invoice_status: InvoiceStatus | None = None
+    # Requests from before (2026-10-27): the STS website's invoice.
+    sts_invoice_no: int | None = None
+    sts_payment_url: str | None = None
 
 
 class PriceOptionOut(BaseModel):
@@ -88,7 +92,7 @@ class ComplianceCheckoutIn(BaseModel):
 
 
 class ComplianceCheckoutOut(BaseModel):
-    payment_url: str
+    payment_url: str  # Stripe Checkout
     request: "ComplianceRequestOut"
 
 

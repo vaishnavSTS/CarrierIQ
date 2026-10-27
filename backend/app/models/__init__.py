@@ -31,6 +31,7 @@ from app.models.ingestion_run import IngestionRun
 from app.models.inspection import Inspection
 from app.models.insurance import Insurance
 from app.models.intelligence_signal import IntelligenceSignal
+from app.models.invoice import Invoice, InvoiceLine
 from app.models.iss_pull_in_rate import IssPullInRate
 from app.models.iss_reference import IssReference
 from app.models.iss_snapshot import IssSnapshot
@@ -83,6 +84,8 @@ __all__ = [
     "IngestionRun",
     "Insurance",
     "Inspection",
+    "Invoice",
+    "InvoiceLine",
     "IntelligenceSignal",
     "IssPullInRate",
     "IssReference",

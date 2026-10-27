@@ -1,5 +1,7 @@
 /** Mirrors backend/app/schemas/compliance.py */
 
+import type { InvoiceStatus } from './invoice'
+
 export type ComplianceServiceId =
   | 'DOT_MC_AUTHORITY'
   | 'UCR'
@@ -41,13 +43,17 @@ export interface ComplianceRequest {
   handled_at: string | null
   /** The email to STS failed (staff) */
   email_error: string | null
-  /** Paid online: what was chosen and the invoice on STS's website */
+  /** Paid online: what was chosen and its CarrierSafetyScan invoice */
   option_label: string | null
   quantity: number | null
   /** e.g. "277.00" */
   amount: string | null
-  invoice_no: number | null
-  payment_url: string | null
+  invoice_id: number | null
+  invoice_number: number | null
+  invoice_status: InvoiceStatus | null
+  /** Requests from before 2026-10-27: the STS website's invoice */
+  sts_invoice_no: number | null
+  sts_payment_url: string | null
 }
 
 export interface PriceOption {

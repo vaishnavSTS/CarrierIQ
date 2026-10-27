@@ -255,7 +255,7 @@ body {
 }
 
 /*
- * Printing the carrier packet ("Download / Save as PDF"): only the packet prints, on white with
+ * Printing the carrier packet or an invoice ("Download / Save as PDF"): only it prints, on white with
  * the standard light slate scale, whatever the screen theme. The selector also names the dark
  * theme so it outranks it, and every token the dark theme changes is reset here.
  */
@@ -319,10 +319,13 @@ body {
     visibility: hidden;
   }
   #carrier-packet,
-  #carrier-packet * {
+  #carrier-packet *,
+  #invoice-print,
+  #invoice-print * {
     visibility: visible;
   }
-  #carrier-packet {
+  #carrier-packet,
+  #invoice-print {
     /* Keep the safety-score dial and badges in colour: browsers drop colours when printing. */
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;

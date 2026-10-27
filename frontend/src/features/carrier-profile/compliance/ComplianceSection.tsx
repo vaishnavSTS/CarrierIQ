@@ -267,13 +267,14 @@ function ComplianceRow({
   usdotNumber: number
   openRequest: ComplianceRequest | undefined
   staff: boolean
-  /** Paid online (an invoice on STS's website); without it, the client asks STS */
+  /** Paid online (an invoice, paid through Stripe); without it, the client asks STS */
   price: ServicePrice | undefined
   preselect: string | null
 }) {
   const [asking, setAsking] = useState(false)
   const [paying, setPaying] = useState(false)
-  const invoice = openRequest?.payment_url ? openRequest : undefined
+  const invoice = openRequest?.invoice_id ? openRequest : undefined
+  const invoicePath = invoice ? `${staff ? '' : '/portal'}/invoices/${invoice.invoice_id}` : null
   const Icon = row.icon
   const link = SERVICE_LINKS[row.service]
   const tone = row.badge?.tone ?? 'neutral'
@@ -320,9 +321,14 @@ function ComplianceRow({
               {invoice ? (
                 <>
                   {staff ? `${invoice.requested_by_name ?? 'The client'}: invoice` : 'Invoice'}{' '}
-                  {invoice.invoice_no ?? ''} · {invoice.option_label}
+                  {invoice.invoice_number} · {invoice.option_label}
                   {invoice.quantity ? ` (${invoice.quantity} drivers)` : ''} · ${invoice.amount} ·{' '}
-                  {formatLocalDate(invoice.created_at)}
+                  {invoice.invoice_status === 'PAID'
+                    ? 'paid'
+                    : invoice.invoice_status === 'UNPAID'
+                      ? 'not paid yet'
+                      : invoice.invoice_status?.toLowerCase()}{' '}
+                  · {formatLocalDate(invoice.created_at)}
                   {staff && (
                     <>
                       {' '}
@@ -348,21 +354,14 @@ function ComplianceRow({
           )}
         </div>
       </div>
-      {/* Right side: pay online (priced services), its link, or ask STS; then an open invoice */}
+      {/* Right side (clients only; staff see the open invoice's page): pay online (priced
+          services), its link, or ask STS */}
       <div className="flex flex-wrap gap-2 sm:shrink-0 sm:flex-nowrap">
-        {link ? (
+        {staff ? null : link ? (
           <a href={link} target="_blank" rel="noreferrer" className={`${mainButton} ${active}`}>
             {row.button}
             <ExternalLink className="size-3.5" aria-hidden />
           </a>
-        ) : staff ? (
-          <span
-            aria-disabled="true"
-            title="No link added for this button yet"
-            className={`${mainButton} cursor-not-allowed opacity-50`}
-          >
-            {row.button}
-          </span>
         ) : price ? (
           <button
             type="button"
@@ -380,15 +379,13 @@ function ComplianceRow({
             {openRequest ? 'Ask again' : row.button}
           </button>
         )}
-        {invoice?.payment_url && (
-          <a
-            href={invoice.payment_url}
-            target="_blank"
-            rel="noreferrer"
+        {invoicePath && (
+          <Link
+            to={invoicePath}
             className="inline-flex min-h-11 flex-1 items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:min-h-0 sm:flex-none"
           >
-            {staff ? 'Payment page' : 'Pay invoice'}
-          </a>
+            {!staff && invoice?.invoice_status === 'UNPAID' ? 'Pay invoice' : 'View invoice'}
+          </Link>
         )}
       </div>
       {paying && price && (

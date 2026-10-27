@@ -24,7 +24,7 @@ from app.schemas.compliance import (
 )
 from app.services.compliance_service import CarrierComplianceService
 from app.services.dataqs_email import EmailSender, get_email_sender
-from app.services.sts_invoice import StsInvoiceClient
+from app.services.stripe_client import StripeClient
 from app.services.ucr_service import UcrService
 
 router = APIRouter(prefix="/compliance", tags=["compliance"])
@@ -81,9 +81,9 @@ def create_request(
     return service.for_carrier(user, usdot_number)[0]
 
 
-def get_invoice_client() -> StsInvoiceClient:
-    """STS's website invoicing (tests replace it with a fake website)."""
-    return StsInvoiceClient()
+def get_stripe_client() -> StripeClient:
+    """Stripe (tests replace it with a fake one)."""
+    return StripeClient()
 
 
 @router.get("/carriers/{usdot_number}/prices", response_model=CompliancePricesOut)
@@ -98,13 +98,13 @@ def checkout(
     body: ComplianceCheckoutIn,
     user: CurrentUser,
     db: Db,
-    invoices: Annotated[StsInvoiceClient, Depends(get_invoice_client)],
+    stripe: Annotated[StripeClient, Depends(get_stripe_client)],
     sender: Annotated[EmailSender | None, Depends(get_request_email_sender)],
 ) -> ComplianceCheckoutOut:
-    """A client pays for a service: the invoice is created on STS's website, the request saved
-    and STS emailed; answers the website's payment page."""
+    """A client pays for a service: the invoice is created, the request saved and STS emailed;
+    answers the Stripe Checkout page."""
     service = CarrierComplianceService(db)
-    request, payment_url, new = service.checkout(user, usdot_number, body, invoices)
+    request, payment_url, new = service.checkout(user, usdot_number, body, stripe)
     if new:  # the same open invoice again: STS was already told
         service.email_staff(request.id, sender)
     out = next(r for r in service.for_carrier(user, usdot_number) if r.id == request.id)

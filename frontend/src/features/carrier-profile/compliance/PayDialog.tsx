@@ -15,7 +15,7 @@ function tierFor(options: PriceOption[], drivers: number): PriceOption | undefin
 
 /**
  * Pay for a service: pick the option (or the number of drivers), see the price, then continue to
- * STS's payment page. CarrierSafetyScan creates the invoice on STS's website first.
+ * Stripe's secure payment page. CarrierSafetyScan creates the invoice first.
  */
 export function PayDialog({
   usdotNumber,
@@ -35,7 +35,6 @@ export function PayDialog({
   const single = price.options.length === 1 ? price.options[0].key : null
   const [option, setOption] = useState<string | null>(single ?? preselect ?? price.suggested)
   const [drivers, setDrivers] = useState(price.drivers ? String(price.drivers) : '')
-  const [note, setNote] = useState('')
   const checkout = useComplianceCheckout(usdotNumber)
 
   useEffect(() => {
@@ -58,7 +57,7 @@ export function PayDialog({
         service,
         option: chosen.key,
         drivers: price.per_driver ? count : null,
-        note: note.trim() || null,
+        note: null,
       },
       {
         onSuccess: ({ payment_url }) => {
@@ -88,8 +87,8 @@ export function PayDialog({
           {title}
         </h2>
         <p className="mt-1 text-sm text-slate-600">
-          USDOT {usdotNumber}. You’ll pay on Sky Transport Solutions’ secure payment page, and STS
-          starts on it once it’s paid.
+          USDOT {usdotNumber}. You’ll pay by card on Stripe’s secure payment page, and STS starts on
+          it once it’s paid.
         </p>
 
         {price.per_driver ? (
@@ -152,18 +151,6 @@ export function PayDialog({
 
         {price.too_big && <p className="mt-2 text-xs text-slate-600">{price.too_big}</p>}
         {price.note && <p className="mt-2 text-xs text-amber-800">{price.note}</p>}
-
-        <label htmlFor="pay-note" className="mt-4 block text-xs font-medium text-slate-600">
-          Anything we should know? (optional)
-        </label>
-        <textarea
-          id="pay-note"
-          rows={2}
-          maxLength={2000}
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          className="mt-1 w-full rounded-md border border-slate-300 bg-surface px-2.5 py-1.5 text-sm"
-        />
 
         <div className="mt-4 flex items-baseline justify-between border-t border-slate-200 pt-3">
           <span className="text-sm text-slate-600">Total</span>

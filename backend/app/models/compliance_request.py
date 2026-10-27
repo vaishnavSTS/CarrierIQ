@@ -31,11 +31,14 @@ class ComplianceRequest(IdMixin, UpdatedAtMixin, Base):
     handled_by_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("users.id"))
     handled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     email_error: Mapped[str | None] = mapped_column(Text)  # the email to STS failed: why
-    # Paid online (compliance_pricing.py): the option and quantity chosen, and the invoice
-    # STS's website created for it.
+    # Paid online (compliance_pricing.py): the option and quantity chosen, and its invoice.
     option_key: Mapped[str | None] = mapped_column(String(40))
     quantity: Mapped[int | None] = mapped_column(Integer)
     amount: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
-    invoice_id: Mapped[int | None] = mapped_column(BigInteger)
-    invoice_no: Mapped[int | None] = mapped_column(BigInteger)
-    payment_url: Mapped[str | None] = mapped_column(Text)
+    invoice_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("invoices.id"), index=True
+    )
+    # Before CarrierSafetyScan's own invoices (2026-10-27): the STS website's invoice, kept.
+    sts_invoice_id: Mapped[int | None] = mapped_column(BigInteger)
+    sts_invoice_no: Mapped[int | None] = mapped_column(BigInteger)
+    sts_payment_url: Mapped[str | None] = mapped_column(Text)

@@ -3,6 +3,7 @@ import {
   Columns3,
   FileSearch,
   LayoutDashboard,
+  ReceiptText,
   UserCheck,
   type LucideIcon,
 } from 'lucide-react'
@@ -79,6 +80,7 @@ function AppFrame() {
       <CompareNavItem />
       <NavItem to="/dataqs" icon={FileSearch} label="DataQs" />
       <NavItem to="/service-requests" icon={ClipboardList} label="Service requests" />
+      <NavItem to="/invoices" icon={ReceiptText} label="Invoices" />
       {me?.role === 'STS_ADMIN' && (
         <NavItem to="/accounts" icon={UserCheck} label="Accounts" badge={newAccounts} />
       )}
