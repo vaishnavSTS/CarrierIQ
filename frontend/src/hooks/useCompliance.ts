@@ -1,13 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
+  checkoutCompliance,
   createComplianceRequest,
+  fetchCompliancePrices,
   fetchAllRequests,
   fetchCarrierRequests,
   fetchUcrStatus,
   markRequestHandled,
 } from '../api/compliance'
-import type { ComplianceServiceId } from '../types/compliance'
+import type { ComplianceCheckoutInput, ComplianceServiceId } from '../types/compliance'
 
 export function useUcrStatus(usdotNumber: number) {
   return useQuery({
@@ -30,6 +32,22 @@ export function useCreateComplianceRequest(usdotNumber: number) {
   return useMutation({
     mutationFn: ({ service, note }: { service: ComplianceServiceId; note: string | null }) =>
       createComplianceRequest(usdotNumber, service, note),
+    onSuccess: () => client.invalidateQueries({ queryKey: ['compliance', 'requests'] }),
+  })
+}
+
+export function useCompliancePrices(usdotNumber: number) {
+  return useQuery({
+    queryKey: ['compliance', 'prices', usdotNumber],
+    queryFn: () => fetchCompliancePrices(usdotNumber),
+    staleTime: 10 * 60_000,
+  })
+}
+
+export function useComplianceCheckout(usdotNumber: number) {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: (input: ComplianceCheckoutInput) => checkoutCompliance(usdotNumber, input),
     onSuccess: () => client.invalidateQueries({ queryKey: ['compliance', 'requests'] }),
   })
 }

@@ -80,6 +80,20 @@ export function ServiceRequestsPage() {
                   </td>
                   <td className={cellClass}>
                     <div className="font-medium text-slate-900">{r.service_label}</div>
+                    {r.payment_url && (
+                      <div className="text-xs text-slate-600">
+                        Paid online: invoice {r.invoice_no ?? '—'} · {r.option_label}
+                        {r.quantity ? ` (${r.quantity} drivers)` : ''} · ${r.amount} ·{' '}
+                        <a
+                          href={r.payment_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-accent-strong hover:underline"
+                        >
+                          payment page
+                        </a>
+                      </div>
+                    )}
                     {r.email_error && (
                       <div className="text-xs text-red-700">
                         STS email not sent: {r.email_error}

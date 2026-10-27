@@ -109,6 +109,12 @@ class BookingUnavailableError(CarrierSafetyScanError):
     status_code = 503
 
 
+class InvoiceUnavailableError(CarrierSafetyScanError):
+    """STS's invoicing (skytransportsolutions.com) isn't set up or can't be reached."""
+
+    status_code = 503
+
+
 class SourceFetchError(CarrierSafetyScanError):
     """An external data source (data.transportation.gov, NHTSA, ...) failed or returned bad data."""
 

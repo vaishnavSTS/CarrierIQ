@@ -17,16 +17,21 @@ import { Link } from 'react-router-dom'
 import { StatusBadge } from '../../../components/StatusBadge'
 import {
   useCarrierRequests,
+  useCompliancePrices,
   useCreateComplianceRequest,
   useUcrStatus,
 } from '../../../hooks/useCompliance'
 import { usePortalMode } from '../../../hooks/usePortalMode'
 import type { CarrierProfile } from '../../../types/carrierProfile'
-import type { ComplianceRequest, ComplianceServiceId } from '../../../types/compliance'
+import type {
+  ComplianceRequest,
+  ComplianceServiceId,
+  ServicePrice,
+} from '../../../types/compliance'
 import { formatLocalDate } from '../../../utils/format'
 import type { Tone } from '../../../utils/status'
 import { Section } from '../Section'
-import { PAYMENT_LINKS } from './paymentLinks'
+import { PayDialog } from './PayDialog'
 import { SERVICE_LINKS } from './serviceLinks'
 
 /** Each row's button on the right: one width, so the buttons line up down the list. */
@@ -72,6 +77,7 @@ export function ComplianceSection({ profile }: { profile: CarrierProfile }) {
   const staff = usePortalMode() === 'internal'
   const ucr = useUcrStatus(usdot)
   const requests = useCarrierRequests(usdot)
+  const prices = useCompliancePrices(usdot)
   const californian =
     profile.addresses.find((a) => a.address_type === 'PHYSICAL')?.state?.toUpperCase() === 'CA'
 
@@ -189,6 +195,8 @@ export function ComplianceSection({ profile }: { profile: CarrierProfile }) {
             usdotNumber={usdot}
             openRequest={open(row.service)}
             staff={staff}
+            price={prices.data?.services.find((s) => s.service === row.service)}
+            preselect={row.service === 'DOT_MC_AUTHORITY' && !inactive ? 'ASSISTANCE' : null}
           />
         ))}
       </ul>
@@ -252,15 +260,21 @@ function ComplianceRow({
   usdotNumber,
   openRequest,
   staff,
+  price,
+  preselect,
 }: {
   row: Row
   usdotNumber: number
   openRequest: ComplianceRequest | undefined
   staff: boolean
+  /** Paid online (an invoice on STS's website); without it, the client asks STS */
+  price: ServicePrice | undefined
+  preselect: string | null
 }) {
   const [asking, setAsking] = useState(false)
+  const [paying, setPaying] = useState(false)
+  const invoice = openRequest?.payment_url ? openRequest : undefined
   const Icon = row.icon
-  const payment = PAYMENT_LINKS[row.service]
   const link = SERVICE_LINKS[row.service]
   const tone = row.badge?.tone ?? 'neutral'
   const ring =
@@ -303,7 +317,23 @@ function ComplianceRow({
           </p>
           {openRequest && (
             <p className="text-xs font-medium text-emerald-700">
-              {staff ? (
+              {invoice ? (
+                <>
+                  {staff ? `${invoice.requested_by_name ?? 'The client'}: invoice` : 'Invoice'}{' '}
+                  {invoice.invoice_no ?? ''} · {invoice.option_label}
+                  {invoice.quantity ? ` (${invoice.quantity} drivers)` : ''} · ${invoice.amount} ·{' '}
+                  {formatLocalDate(invoice.created_at)}
+                  {staff && (
+                    <>
+                      {' '}
+                      ·{' '}
+                      <Link to="/service-requests" className="underline">
+                        Service requests
+                      </Link>
+                    </>
+                  )}
+                </>
+              ) : staff ? (
                 <>
                   {openRequest.requested_by_name ?? 'The client'} asked for help on{' '}
                   {formatLocalDate(openRequest.created_at)} ·{' '}
@@ -318,7 +348,7 @@ function ComplianceRow({
           )}
         </div>
       </div>
-      {/* Right side: the row's button (its link once STS adds it), then "Pay online" if set */}
+      {/* Right side: pay online (priced services), its link, or ask STS; then an open invoice */}
       <div className="flex flex-wrap gap-2 sm:shrink-0 sm:flex-nowrap">
         {link ? (
           <a href={link} target="_blank" rel="noreferrer" className={`${mainButton} ${active}`}>
@@ -333,6 +363,14 @@ function ComplianceRow({
           >
             {row.button}
           </span>
+        ) : price ? (
+          <button
+            type="button"
+            onClick={() => setPaying(true)}
+            className={`${mainButton} ${active}`}
+          >
+            {row.button}
+          </button>
         ) : (
           <button
             type="button"
@@ -342,17 +380,27 @@ function ComplianceRow({
             {openRequest ? 'Ask again' : row.button}
           </button>
         )}
-        {payment && (
+        {invoice?.payment_url && (
           <a
-            href={payment}
+            href={invoice.payment_url}
             target="_blank"
             rel="noreferrer"
             className="inline-flex min-h-11 flex-1 items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:min-h-0 sm:flex-none"
           >
-            Pay online
+            {staff ? 'Payment page' : 'Pay invoice'}
           </a>
         )}
       </div>
+      {paying && price && (
+        <PayDialog
+          usdotNumber={usdotNumber}
+          service={row.service}
+          title={ASK_LABEL[row.service]}
+          price={price}
+          preselect={preselect}
+          onClose={() => setPaying(false)}
+        />
+      )}
       {asking && (
         <AskDialog
           usdotNumber={usdotNumber}

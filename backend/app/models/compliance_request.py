@@ -3,8 +3,9 @@ reactivating authority, a UCR filing, a California MCP, drug and alcohol testing
 so on. STS is emailed; staff see the request in the internal portal and mark it handled."""
 
 from datetime import datetime
+from decimal import Decimal
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Text
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -30,3 +31,11 @@ class ComplianceRequest(IdMixin, UpdatedAtMixin, Base):
     handled_by_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("users.id"))
     handled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     email_error: Mapped[str | None] = mapped_column(Text)  # the email to STS failed: why
+    # Paid online (compliance_pricing.py): the option and quantity chosen, and the invoice
+    # STS's website created for it.
+    option_key: Mapped[str | None] = mapped_column(String(40))
+    quantity: Mapped[int | None] = mapped_column(Integer)
+    amount: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
+    invoice_id: Mapped[int | None] = mapped_column(BigInteger)
+    invoice_no: Mapped[int | None] = mapped_column(BigInteger)
+    payment_url: Mapped[str | None] = mapped_column(Text)

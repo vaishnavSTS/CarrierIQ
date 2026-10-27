@@ -41,4 +41,41 @@ export interface ComplianceRequest {
   handled_at: string | null
   /** The email to STS failed (staff) */
   email_error: string | null
+  /** Paid online: what was chosen and the invoice on STS's website */
+  option_label: string | null
+  quantity: number | null
+  /** e.g. "277.00" */
+  amount: string | null
+  invoice_no: number | null
+  payment_url: string | null
+}
+
+export interface PriceOption {
+  key: string
+  label: string
+  /** e.g. "277"; per driver for driver files */
+  amount: string
+  min_units: number
+  max_units: number | null
+}
+
+/** A service paid online, as offered for one carrier. */
+export interface ServicePrice {
+  service: ComplianceServiceId
+  options: PriceOption[]
+  per_driver: boolean
+  note: string | null
+  /** Above the last option: contact STS */
+  too_big: string | null
+  /** The option that fits the carrier's FMCSA fleet or driver count */
+  suggested: string | null
+  /** FMCSA's driver count (driver files) */
+  drivers: number | null
+}
+
+export interface ComplianceCheckoutInput {
+  service: ComplianceServiceId
+  option: string
+  drivers: number | null
+  note: string | null
 }

@@ -149,6 +149,10 @@ class Settings(BaseSettings):
         "https://skytransportsolutions.com/api/appointment-schedule-link.ashx"
     )
     sts_schedule_link_token: str | None = None
+    # Paying for a Compliance tab service: an invoice on STS's website
+    # (EXTERNAL-CREATE-INVOICE-API.md). Off until the token is set (Render only).
+    sts_invoice_api_url: str = "https://skytransportsolutions.com/api/create-invoice-external.ashx"
+    sts_invoice_api_token: str | None = None
     # Reminders to STS staff to check a filed request in DataQs, in days after filing.
     dataqs_reminder_days: str = "7,21"
     # Send the waiting emails from a thread of the API process (every 30 seconds).

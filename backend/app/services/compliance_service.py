@@ -10,17 +10,31 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.core.exceptions import ForbiddenError, NotFoundError
-from app.models import ComplianceRequest, Organization, OrganizationCarrier, User
-from app.models.enums import ComplianceRequestStatus, ComplianceService
+from app.core.exceptions import ForbiddenError, NotFoundError, ValidationError
+from app.models import (
+    Address,
+    Carrier,
+    ComplianceRequest,
+    Organization,
+    OrganizationCarrier,
+    Phone,
+    User,
+)
+from app.models.enums import AddressType, ComplianceRequestStatus, ComplianceService
 from app.schemas.compliance import (
+    ComplianceCheckoutIn,
+    CompliancePricesOut,
     ComplianceRequestIn,
     ComplianceRequestOut,
+    PriceOptionOut,
+    ServicePriceOut,
     UcrStatusOut,
     UcrYearOut,
 )
+from app.services.compliance_pricing import PRICES, quote, suggest
 from app.services.dataqs_email import EmailSender, get_email_sender
 from app.services.dataqs_notifications import render_html
+from app.services.sts_invoice import Company, InvoiceLine, StsInvoiceClient
 from app.services.ucr_service import UcrService, required_years
 
 logger = logging.getLogger(__name__)
@@ -36,6 +50,13 @@ SERVICE_LABELS: dict[ComplianceService, str] = {
     ComplianceService.GOOD_STANDING: "Certificate of good standing",
     ComplianceService.CLEARINGHOUSE: "Clearinghouse registration",
 }
+
+
+def _option_label(request: ComplianceRequest) -> str | None:
+    price = PRICES.get(request.service)
+    if price is None or request.option_key is None:
+        return None
+    return next((o.label for o in price.options if o.key == request.option_key), None)
 
 
 def _now() -> datetime:
@@ -168,9 +189,151 @@ class CarrierComplianceService:
                     handled_by_name=handler.full_name if handler else None,
                     handled_at=r.handled_at,
                     email_error=r.email_error,
+                    option_label=_option_label(r),
+                    quantity=r.quantity,
+                    amount=r.amount,
+                    invoice_no=r.invoice_no,
+                    payment_url=r.payment_url,
                 )
             )
         return out
+
+    # --- Paying online ---------------------------------------------------------------------------
+
+    def prices(self, user: User, usdot_number: int) -> CompliancePricesOut:
+        """The services paid online for this carrier, each with the option that fits its FMCSA
+        fleet or driver count. The California MCP only for California-based carriers."""
+        self.ensure_can_see(user, usdot_number)
+        carrier = self._carrier(usdot_number)
+        californian = self._state(carrier) == "CA"
+        services = []
+        for service, price in PRICES.items():
+            if service == ComplianceService.CA_MCP and not californian:
+                continue
+            units = (
+                None
+                if carrier is None
+                else carrier.driver_count
+                if price.per_driver
+                else carrier.fleet_size
+            )
+            services.append(
+                ServicePriceOut(
+                    service=service,
+                    options=[
+                        PriceOptionOut(
+                            key=o.key,
+                            label=o.label,
+                            amount=o.amount,
+                            min_units=o.min_units,
+                            max_units=o.max_units,
+                        )
+                        for o in price.options
+                    ],
+                    per_driver=price.per_driver,
+                    note=price.note,
+                    too_big=price.too_big,
+                    suggested=suggest(price, units),
+                    drivers=carrier.driver_count if carrier and price.per_driver else None,
+                )
+            )
+        return CompliancePricesOut(services=services)
+
+    def checkout(
+        self,
+        user: User,
+        usdot_number: int,
+        body: ComplianceCheckoutIn,
+        invoices: StsInvoiceClient,
+    ) -> tuple[ComplianceRequest, str, bool]:
+        """Create the invoice on STS's website and save the request; answers its payment page and
+        whether the invoice is new.
+        The same open request (same option and drivers) reuses its invoice instead of a new one."""
+        if not user.role.is_client:
+            raise ForbiddenError("Service requests come from clients")
+        self.ensure_can_see(user, usdot_number)
+        carrier = self._carrier(usdot_number)
+        state = self._state(carrier)
+        if body.service == ComplianceService.CA_MCP and state != "CA":
+            raise ValidationError("The California MCP is for carriers based in California")
+        q = quote(body.service, body.option, body.drivers)
+        price = PRICES[body.service]
+        quantity = q.quantity if price.per_driver else None
+
+        existing = self.db.scalar(
+            select(ComplianceRequest)
+            .where(
+                ComplianceRequest.organization_id == user.organization_id,
+                ComplianceRequest.usdot_number == usdot_number,
+                ComplianceRequest.service == body.service,
+                ComplianceRequest.status == ComplianceRequestStatus.OPEN,
+                ComplianceRequest.option_key == q.option.key,
+                ComplianceRequest.payment_url.is_not(None),
+                ComplianceRequest.quantity.is_(None)
+                if quantity is None
+                else ComplianceRequest.quantity == quantity,
+            )
+            .order_by(ComplianceRequest.id.desc())
+            .limit(1)
+        )
+        if existing is not None and existing.payment_url:
+            return existing, existing.payment_url, False
+
+        label = SERVICE_LABELS[body.service]
+        description = f"{label}: {q.option.label}" + (
+            f" ({q.quantity} drivers)" if price.per_driver else ""
+        )
+        invoice = invoices.create(
+            usdot_number=usdot_number,
+            company=Company(
+                name=(carrier.legal_name if carrier else None) or f"USDOT {usdot_number}",
+                email=user.email,
+                phone=user.phone or self._carrier_phone(carrier) or "",
+                contact_name=user.full_name,
+                state=state,
+            ),
+            line=InvoiceLine(q.service_id, q.option.amount, q.quantity, description),
+            note=f"{description}, USDOT {usdot_number}",
+            internal_note=f"Compliance tab, requested by {user.full_name} <{user.email}>",
+        )
+        request = ComplianceRequest(
+            organization_id=user.organization_id,
+            usdot_number=usdot_number,
+            service=body.service,
+            note=(body.note or "").strip() or None,
+            status=ComplianceRequestStatus.OPEN,
+            requested_by_id=user.id,
+            option_key=q.option.key,
+            quantity=quantity,
+            amount=q.total,
+            invoice_id=invoice.invoice_id,
+            invoice_no=invoice.invoice_no,
+            payment_url=invoice.payment_url,
+        )
+        self.db.add(request)
+        self.db.commit()
+        return request, invoice.payment_url, True
+
+    def _carrier(self, usdot_number: int) -> Carrier | None:
+        return self.db.scalar(select(Carrier).where(Carrier.usdot_number == usdot_number))
+
+    def _state(self, carrier: Carrier | None) -> str | None:
+        """The carrier's physical address state (FMCSA census), e.g. "CA"."""
+        if carrier is None:
+            return None
+        state = self.db.scalar(
+            select(Address.state).where(
+                Address.carrier_id == carrier.id, Address.address_type == AddressType.PHYSICAL
+            )
+        )
+        return state.strip().upper() if state else None
+
+    def _carrier_phone(self, carrier: Carrier | None) -> str | None:
+        if carrier is None:
+            return None
+        return self.db.scalar(
+            select(Phone.number_normalized).where(Phone.carrier_id == carrier.id).limit(1)
+        )
 
     # --- Telling STS -----------------------------------------------------------------------------
 
@@ -198,6 +361,14 @@ class CarrierComplianceService:
                 f"Carrier: {carrier or 'unknown name'}, USDOT {request.usdot_number}.",
                 "Contact: "
                 + ", ".join(p for p in [out.requested_by_email, out.requested_by_phone] if p),
+                (
+                    f"Paid online: invoice {out.invoice_no or '(no number)'} for "
+                    f"{out.option_label or out.service_label}"
+                    + (f", {out.quantity} drivers" if out.quantity else "")
+                    + f", ${out.amount:,.2f}. The client was sent to the payment page."
+                    if out.payment_url and out.amount is not None
+                    else ""
+                ),
                 f"Note from the client: {out.note}" if out.note else "",
                 "Mark it handled on the Service requests page once you've followed up.",
             ]
@@ -218,8 +389,6 @@ class CarrierComplianceService:
             self.db.commit()
 
     def _carrier_name(self, usdot_number: int) -> str | None:
-        from app.models import Carrier
-
         return self.db.scalar(
             select(Carrier.legal_name).where(Carrier.usdot_number == usdot_number)
         )

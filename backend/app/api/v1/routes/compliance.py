@@ -14,6 +14,9 @@ from app.db.session import get_db
 from app.models import User
 from app.models.enums import ComplianceRequestStatus
 from app.schemas.compliance import (
+    ComplianceCheckoutIn,
+    ComplianceCheckoutOut,
+    CompliancePricesOut,
     ComplianceRequestIn,
     ComplianceRequestListOut,
     ComplianceRequestOut,
@@ -21,6 +24,7 @@ from app.schemas.compliance import (
 )
 from app.services.compliance_service import CarrierComplianceService
 from app.services.dataqs_email import EmailSender, get_email_sender
+from app.services.sts_invoice import StsInvoiceClient
 from app.services.ucr_service import UcrService
 
 router = APIRouter(prefix="/compliance", tags=["compliance"])
@@ -75,6 +79,36 @@ def create_request(
     request = service.create(user, usdot_number, body)
     service.email_staff(request.id, sender)
     return service.for_carrier(user, usdot_number)[0]
+
+
+def get_invoice_client() -> StsInvoiceClient:
+    """STS's website invoicing (tests replace it with a fake website)."""
+    return StsInvoiceClient()
+
+
+@router.get("/carriers/{usdot_number}/prices", response_model=CompliancePricesOut)
+def carrier_prices(usdot_number: Usdot, user: CurrentUser, db: Db) -> CompliancePricesOut:
+    """The services paid online for this carrier, with the option that fits it."""
+    return CarrierComplianceService(db).prices(user, usdot_number)
+
+
+@router.post("/carriers/{usdot_number}/checkout", response_model=ComplianceCheckoutOut)
+def checkout(
+    usdot_number: Usdot,
+    body: ComplianceCheckoutIn,
+    user: CurrentUser,
+    db: Db,
+    invoices: Annotated[StsInvoiceClient, Depends(get_invoice_client)],
+    sender: Annotated[EmailSender | None, Depends(get_request_email_sender)],
+) -> ComplianceCheckoutOut:
+    """A client pays for a service: the invoice is created on STS's website, the request saved
+    and STS emailed; answers the website's payment page."""
+    service = CarrierComplianceService(db)
+    request, payment_url, new = service.checkout(user, usdot_number, body, invoices)
+    if new:  # the same open invoice again: STS was already told
+        service.email_staff(request.id, sender)
+    out = next(r for r in service.for_carrier(user, usdot_number) if r.id == request.id)
+    return ComplianceCheckoutOut(payment_url=payment_url, request=out)
 
 
 @router.get("/requests", response_model=ComplianceRequestListOut)
