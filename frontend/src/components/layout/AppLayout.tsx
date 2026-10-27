@@ -3,7 +3,6 @@ import {
   Columns3,
   FileSearch,
   LayoutDashboard,
-  Search,
   UserCheck,
   type LucideIcon,
 } from 'lucide-react'
@@ -77,7 +76,6 @@ function AppFrame() {
   const links = (
     <>
       <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-      <NavItem to="/search" icon={Search} label="Search" />
       <CompareNavItem />
       <NavItem to="/dataqs" icon={FileSearch} label="DataQs" />
       <NavItem to="/service-requests" icon={ClipboardList} label="Service requests" />
