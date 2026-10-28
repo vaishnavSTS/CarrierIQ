@@ -42,14 +42,14 @@ export function InvoicePage() {
           {staff ? 'All invoices' : 'Back to Compliance'}
         </Link>
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => window.print()}
+          {/* The same PDF that's emailed when it's paid. */}
+          <a
+            href={`/api/v1/invoices/${inv.id}/pdf`}
             className={`${button} bg-surface text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50`}
           >
             <Download className="size-4" aria-hidden />
             Download PDF
-          </button>
+          </a>
           {inv.can_pay && (
             <button
               type="button"

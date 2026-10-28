@@ -36,10 +36,10 @@ class FakeSender:
         self.sent: list[dict] = []
         self.fail = fail
 
-    def send(self, *, to, subject, text, html, idempotency_key) -> str:
+    def send(self, *, to, subject, text, html, idempotency_key, attachments=()) -> str:
         if self.fail:
             raise RuntimeError("down")
-        self.sent.append({"to": to, "subject": subject, "text": text})
+        self.sent.append({"to": to, "subject": subject, "text": text, "files": list(attachments)})
         return "id"
 
 

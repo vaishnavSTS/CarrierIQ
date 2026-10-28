@@ -23,8 +23,9 @@ from app.core.exceptions import ConflictError, ForbiddenError, NotFoundError
 from app.models import Invoice, InvoiceLine, Organization, User
 from app.models.enums import InvoiceStatus
 from app.schemas.invoice import InvoiceLineOut, InvoiceOut, InvoiceSummaryOut
-from app.services.dataqs_email import EmailSender, get_email_sender
+from app.services.dataqs_email import Attachment, EmailSender, get_email_sender
 from app.services.dataqs_notifications import render_html
+from app.services.invoice_pdf import render_invoice_pdf
 from app.services.stripe_client import CheckoutLine, StripeClient
 
 logger = logging.getLogger(__name__)
@@ -55,6 +56,10 @@ class NewLine:
 
 def _now() -> datetime:
     return datetime.now(UTC)
+
+
+def _pdf_name(invoice: Invoice) -> str:
+    return f"invoice-{invoice.number}.pdf"
 
 
 def _money(value: Decimal) -> str:
@@ -190,7 +195,9 @@ class InvoiceService:
         return None
 
     def _tell_paid(self, invoice: Invoice, sender: EmailSender | None) -> None:
-        """Email the client who created it (their paid invoice) and STS. Never fails the webhook."""
+        """Email the client who created it (their paid invoice) and STS. Never fails the webhook.
+        While DATAQS_EMAIL_STAFF_OVERRIDE is set (testing), the client's email goes to those
+        addresses instead, saying who it was meant for; nobody outside STS is emailed."""
         sender = sender or get_email_sender()
         settings = get_settings()
         if sender is None:
@@ -207,9 +214,11 @@ class InvoiceService:
                 "contact you if anything is needed.\n\nYou can view and download the paid invoice "
                 "on CarrierSafetyScan."
             )
-            messages.append(
-                ([client.email], f"Payment received: invoice {invoice.number}", body, link)
-            )
+            to = [client.email]
+            if settings.dataqs_staff_override_list:
+                body = f"[Test routing: meant for {client.email}]\n\n{body}"
+                to = settings.dataqs_staff_override_list
+            messages.append((to, f"Payment received: invoice {invoice.number}", body, link))
         staff_to = settings.compliance_request_recipients
         if staff_to:
             link = f"{app_url}/invoices/{invoice.id}"
@@ -219,6 +228,10 @@ class InvoiceService:
                 "request is on the Service requests page."
             )
             messages.append((staff_to, f"Paid: invoice {invoice.number}, {total}", body, link))
+        # The paid invoice as a PDF goes with each email (built once).
+        pdf = Attachment(
+            _pdf_name(invoice), "application/pdf", render_invoice_pdf(self._document(invoice))
+        )
         for to, subject, body, link in messages:
             try:
                 sender.send(
@@ -227,6 +240,7 @@ class InvoiceService:
                     text=f"{body}\n\n{link}",
                     html=render_html(body, link, "View the invoice"),
                     idempotency_key=f"invoice-{invoice.id}-paid-{to[0]}",
+                    attachments=[pdf],
                 )
             except Exception:  # noqa: BLE001 - the payment is recorded either way
                 logger.warning("Invoice %s: paid email to %s failed", invoice.number, to[0])
@@ -253,6 +267,20 @@ class InvoiceService:
 
     def detail(self, user: User, invoice_id: int) -> InvoiceOut:
         invoice = self._visible(user, invoice_id)
+        return self._document(
+            invoice,
+            can_pay=user.role.is_client and invoice.status == InvoiceStatus.UNPAID,
+            can_void=user.role.is_staff and invoice.status == InvoiceStatus.UNPAID,
+        )
+
+    def pdf(self, user: User, invoice_id: int) -> tuple[str, bytes]:
+        """The invoice as a PDF file: (file name, bytes)."""
+        invoice = self._visible(user, invoice_id)
+        return _pdf_name(invoice), render_invoice_pdf(self._document(invoice))
+
+    def _document(
+        self, invoice: Invoice, *, can_pay: bool = False, can_void: bool = False
+    ) -> InvoiceOut:
         return InvoiceOut(
             **self._summary(invoice).model_dump(),
             issuer=ISSUER,
@@ -269,8 +297,8 @@ class InvoiceService:
                 for line in self._lines(invoice.id)
             ],
             dispute_policy=DISPUTE_POLICY,
-            can_pay=user.role.is_client and invoice.status == InvoiceStatus.UNPAID,
-            can_void=user.role.is_staff and invoice.status == InvoiceStatus.UNPAID,
+            can_pay=can_pay,
+            can_void=can_void,
         )
 
     def list_all(self, user: User, status: InvoiceStatus | None) -> list[InvoiceSummaryOut]:

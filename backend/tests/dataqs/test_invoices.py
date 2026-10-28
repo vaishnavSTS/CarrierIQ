@@ -113,6 +113,10 @@ def test_stripe_marks_it_paid_once_and_emails(
         e["to"] == ["owner@acme.test"] and "Payment received" in e["subject"] for e in emails
     )
     assert any("Paid: invoice" in e["subject"] for e in emails)
+    for email in emails:  # both carry the paid invoice as a PDF
+        [pdf] = email["files"]
+        assert pdf.content_type == "application/pdf" and pdf.data.startswith(b"%PDF")
+        assert pdf.filename == f"invoice-{invoice.number}.pdf"
 
     assert signed(api, paid_event(invoice_id)).json() == {"result": "already paid"}
     assert len(sender.sent) == before + len(emails)  # no second emails
@@ -150,3 +154,27 @@ def test_staff_void_an_unpaid_invoice(api: TestClient, invoice_id: int) -> None:
     assert api.post(f"/api/v1/invoices/{invoice_id}/void").status_code == 409
     log_in(api, "owner@acme.test")
     assert api.post(f"/api/v1/invoices/{invoice_id}/pay").status_code == 409
+
+
+def test_while_testing_the_client_email_goes_to_sts_only(
+    api: TestClient,
+    invoice_id: int,
+    sender: FakeSender,  # noqa: F811
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(get_settings(), "dataqs_email_staff_override", "vaishnav@sts.test")
+    before = len(sender.sent)
+    assert signed(api, paid_event(invoice_id)).json() == {"result": "paid"}
+    emails = sender.sent[before:]
+    assert emails and all(e["to"] == ["vaishnav@sts.test"] for e in emails)
+    [client_copy] = [e for e in emails if "Payment received" in e["subject"]]
+    assert "[Test routing: meant for owner@acme.test]" in client_copy["text"]
+
+
+def test_the_invoice_downloads_as_a_pdf(api: TestClient, invoice_id: int) -> None:
+    pdf = api.get(f"/api/v1/invoices/{invoice_id}/pdf")
+    assert pdf.status_code == 200 and pdf.headers["content-type"] == "application/pdf"
+    assert pdf.content.startswith(b"%PDF") and b"Invoice " in pdf.content
+    assert 'filename="invoice-' in pdf.headers["content-disposition"]
+    log_in(api, "owner@other.test")  # another company
+    assert api.get(f"/api/v1/invoices/{invoice_id}/pdf").status_code == 404

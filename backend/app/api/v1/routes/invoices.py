@@ -8,7 +8,7 @@ Stripe-Signature for STRIPE_WEBHOOK_SECRET, or it is refused.
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, Path, Request
+from fastapi import APIRouter, Depends, Header, Path, Request, Response
 from sqlalchemy.orm import Session
 
 from app.api.auth import CurrentUser, require_staff
@@ -43,6 +43,20 @@ def list_invoices(
 def get_invoice(invoice_id: InvoiceId, user: CurrentUser, db: Db) -> InvoiceOut:
     """The invoice as printed (a client's own company's, or any for staff)."""
     return InvoiceService(db).detail(user, invoice_id)
+
+
+@router.get("/{invoice_id}/pdf")
+def invoice_pdf(invoice_id: InvoiceId, user: CurrentUser, db: Db) -> Response:
+    """The invoice as a PDF download."""
+    name, data = InvoiceService(db).pdf(user, invoice_id)
+    return Response(
+        content=data,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{name}"',
+            "Cache-Control": "private, no-store",
+        },
+    )
 
 
 @router.post("/{invoice_id}/pay", response_model=InvoicePayOut)

@@ -17,6 +17,7 @@ dependencies = [
     "boto3>=1.35",  # DataQs evidence files: Supabase Storage over the S3 protocol
     "python-multipart>=0.0.12",  # file uploads (DataQs evidence)
     "openpyxl>=3.1",  # Excel downloads (High ISS list)
+    "reportlab>=4.2",  # invoice PDFs (emailed when paid)
 ]
 
 [project.optional-dependencies]
@@ -25,6 +26,7 @@ dev = [
     "ruff>=0.8",
     "mypy>=1.13",
     "types-openpyxl>=3.1",
+    "types-reportlab>=4.2",
 ]
 
 [build-system]
