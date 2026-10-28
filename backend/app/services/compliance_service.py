@@ -23,7 +23,6 @@ from app.models import (
     Invoice,
     Organization,
     OrganizationCarrier,
-    Phone,
     User,
 )
 from app.models.enums import (
@@ -73,11 +72,6 @@ ITEM_NAMES: dict[ComplianceService, str] = {
     ComplianceService.MVR: "MVR REPORT",
     ComplianceService.GOOD_STANDING: "CERTIFICATE OF GOOD STANDING",
 }
-
-
-def _pretty_phone(digits: str | None) -> str | None:
-    d = "".join(c for c in digits or "" if c.isdigit())[-10:]
-    return f"({d[:3]}) {d[3:6]}-{d[6:]}" if len(d) == 10 else (digits or None)
 
 
 def _option_label(request: ComplianceRequest) -> str | None:
@@ -331,25 +325,7 @@ class CarrierComplianceService:
             user=user,
             organization_id=user.organization_id,
             usdot_number=usdot_number,
-            bill_to={
-                "name": (carrier.legal_name if carrier else None) or f"USDOT {usdot_number}",
-                "street": address.street if address else None,
-                "city_state_zip": " ".join(
-                    p
-                    for p in [
-                        f"{address.city}," if address and address.city else None,
-                        state,
-                        address.zip if address else None,
-                    ]
-                    if p
-                )
-                or None,
-                "phone": _pretty_phone(user.phone or self._carrier_phone(carrier)),
-                "emails": sorted(
-                    {e for e in [user.email, carrier.email if carrier else None] if e}
-                ),
-                "usdot_number": usdot_number,
-            },
+            bill_to=invoices.bill_to(usdot_number, user),
             lines=[
                 NewLine(
                     item=item,
@@ -392,13 +368,6 @@ class CarrierComplianceService:
         """The carrier's physical address state, e.g. "CA"."""
         address = self._physical(carrier)
         return address.state.strip().upper() if address and address.state else None
-
-    def _carrier_phone(self, carrier: Carrier | None) -> str | None:
-        if carrier is None:
-            return None
-        return self.db.scalar(
-            select(Phone.number_normalized).where(Phone.carrier_id == carrier.id).limit(1)
-        )
 
     # --- Telling STS -----------------------------------------------------------------------------
 

@@ -1,4 +1,4 @@
-import { FilePlus2 } from 'lucide-react'
+import { FilePlus2, Tag } from 'lucide-react'
 
 import { DataQsCaseList } from '../features/dataqs/DataQsCaseList'
 import { DataQsIntro } from '../features/dataqs/DataQsIntro'
@@ -19,6 +19,10 @@ export function PortalDataQsPage() {
           <p className="mt-1 text-sm text-slate-600">
             Believe an inspection or violation on your record is wrong? STS can prepare and file a
             DataQs request with FMCSA on your behalf and track it to a decision.
+          </p>
+          <p className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-accent-soft px-2.5 py-1 text-sm font-medium text-accent-strong">
+            <Tag className="size-4" aria-hidden />
+            $50 per inspection to file a DataQs request
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

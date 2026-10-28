@@ -20,8 +20,8 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.exceptions import ConflictError, ForbiddenError, NotFoundError
-from app.models import Invoice, InvoiceLine, Organization, User
-from app.models.enums import InvoiceStatus
+from app.models import Address, Carrier, Invoice, InvoiceLine, Organization, Phone, User
+from app.models.enums import AddressType, InvoiceStatus
 from app.schemas.invoice import InvoiceLineOut, InvoiceOut, InvoiceSummaryOut
 from app.services.dataqs_email import Attachment, EmailSender, get_email_sender
 from app.services.dataqs_notifications import render_html
@@ -62,6 +62,11 @@ def _pdf_name(invoice: Invoice) -> str:
     return f"invoice-{invoice.number}.pdf"
 
 
+def _pretty_phone(digits: str | None) -> str | None:
+    d = "".join(c for c in digits or "" if c.isdigit())[-10:]
+    return f"({d[:3]}) {d[3:6]}-{d[6:]}" if len(d) == 10 else (digits or None)
+
+
 def _money(value: Decimal) -> str:
     return f"${value:,.2f}"
 
@@ -72,6 +77,44 @@ class InvoiceService:
         self.now = now
 
     # --- Creating and paying -------------------------------------------------------------------
+
+    def bill_to(self, usdot_number: int, user: User) -> dict[str, Any]:
+        """Who an invoice is printed to: the carrier (FMCSA's name and physical address) and the
+        client who ordered it (their phone, else the carrier's; their email and the carrier's)."""
+        carrier = self.db.scalar(select(Carrier).where(Carrier.usdot_number == usdot_number))
+        address = (
+            self.db.scalar(
+                select(Address)
+                .where(
+                    Address.carrier_id == carrier.id,
+                    Address.address_type == AddressType.PHYSICAL,
+                )
+                .limit(1)
+            )
+            if carrier
+            else None
+        )
+        phone = (
+            self.db.scalar(
+                select(Phone.number_normalized).where(Phone.carrier_id == carrier.id).limit(1)
+            )
+            if carrier
+            else None
+        )
+        state = address.state.strip().upper() if address and address.state else None
+        place = [
+            f"{address.city}," if address and address.city else None,
+            state,
+            address.zip if address else None,
+        ]
+        return {
+            "name": (carrier.legal_name if carrier else None) or f"USDOT {usdot_number}",
+            "street": address.street if address else None,
+            "city_state_zip": " ".join(p for p in place if p) or None,
+            "phone": _pretty_phone(user.phone or phone),
+            "emails": sorted({e for e in [user.email, carrier.email if carrier else None] if e}),
+            "usdot_number": usdot_number,
+        }
 
     def create(
         self,
