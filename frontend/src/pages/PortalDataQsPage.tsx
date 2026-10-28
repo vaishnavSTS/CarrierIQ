@@ -20,10 +20,21 @@ export function PortalDataQsPage() {
             Believe an inspection or violation on your record is wrong? STS can prepare and file a
             DataQs request with FMCSA on your behalf and track it to a decision.
           </p>
-          <p className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-accent-soft px-2.5 py-1 text-sm font-medium text-accent-strong">
-            <Tag className="size-4" aria-hidden />
-            $50 per inspection to file a DataQs request
-          </p>
+          {/* The price, made hard to miss: each inspection challenged is its own $50 request. */}
+          <div className="mt-4 inline-flex items-center gap-4 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 px-5 py-3.5 text-white shadow-lg shadow-violet-500/25">
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white/15">
+              <Tag className="size-6" aria-hidden />
+            </span>
+            <div>
+              <p className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold tracking-tight">$50</span>
+                <span className="text-base font-semibold">per inspection</span>
+              </p>
+              <p className="text-sm text-white/90">
+                To file a DataQs request. Each inspection you challenge is billed separately.
+              </p>
+            </div>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <a href="#start-request" className={`${primaryButton} inline-flex items-center gap-1.5`}>
