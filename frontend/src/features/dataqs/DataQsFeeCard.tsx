@@ -6,7 +6,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { usePayDataQsFee } from '../../hooks/useDataQs'
 import { usePortalMode } from '../../hooks/usePortalMode'
 import type { DataQsCase } from '../../types/dataqs'
-import { primaryButton, secondaryButton } from './ui'
+import { primaryButton } from './ui'
 
 const money = (amount: string) =>
   Number(amount).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
@@ -103,9 +103,6 @@ export function DataQsFeeCard({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
               <span className="text-lg font-semibold text-slate-950">{amount}</span>
             </div>
             <div className="mt-5 flex flex-wrap justify-end gap-2">
-              <button type="button" onClick={() => setOpen(false)} className={secondaryButton}>
-                Pay later
-              </button>
               <PayButton caseId={c.id} amount={amount} />
             </div>
           </div>
