@@ -1,4 +1,4 @@
-import { Columns3, Search } from 'lucide-react'
+import { Columns3, Receipt, Search } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { useCompareList } from '../../features/compare/compareContext'
@@ -43,6 +43,10 @@ export function BrokerLayout() {
         Search
       </NavLink>
       <CompareNavLink />
+      <NavLink to="/broker/invoices" className={navClass}>
+        <Receipt className="size-4" aria-hidden />
+        Invoices
+      </NavLink>
     </>
   )
   return (

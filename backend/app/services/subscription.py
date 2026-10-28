@@ -11,7 +11,9 @@ and invoices they already owe (app/api/auth.py), and the portal shows only the s
 Stripe's webhook keeps `subscription_status` current: checkout.session.completed (mode
 subscription) starts it; customer.subscription.created / updated / deleted follow it. Stripe
 retries a failed monthly charge; while it does the status is past_due and the app stays open. When
-Stripe gives up (unpaid) or the subscription is cancelled, the login locks again.
+Stripe gives up (unpaid) or the subscription is cancelled, the login locks again. Each month Stripe
+charges (invoice.paid) becomes a PAID CarrierSafetyScan invoice, emailed with its PDF and listed in
+the client's carrier Invoices tab / the broker's Invoices page, and for STS on Invoices.
 """
 
 import logging
@@ -26,8 +28,10 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.exceptions import ConflictError, ForbiddenError, ValidationError
-from app.models import User
+from app.models import Organization, User
+from app.repositories.user_repository import UserRepository
 from app.schemas.auth import BillingOut
+from app.services.dataqs_email import EmailSender
 from app.services.stripe_client import StripeClient
 
 logger = logging.getLogger(__name__)
@@ -77,6 +81,14 @@ def billing_out(user: User, now: datetime) -> BillingOut | None:
 
 def _portal_path(user: User) -> str:
     return "/broker" if user.role.is_broker else "/portal"
+
+
+def _money(value: Decimal) -> str:
+    return f"${value:,.2f}"
+
+
+def _day(value: datetime) -> str:
+    return f"{value:%b} {value.day}, {value.year}"
 
 
 def _timestamp(value: Any) -> datetime | None:
@@ -133,10 +145,12 @@ class SubscriptionService:
 
     # --- Stripe's webhook ------------------------------------------------------------------------
 
-    def handle_event(self, event: dict[str, Any]) -> str | None:
+    def handle_event(self, event: dict[str, Any], sender: EmailSender | None = None) -> str | None:
         """Apply a subscription event; None when the event isn't about a subscription."""
         kind = event.get("type")
         obj = (event.get("data") or {}).get("object") or {}
+        if kind == "invoice.paid":
+            return self._invoice_paid(obj, sender)
         if kind == "checkout.session.completed":
             if obj.get("mode") != "subscription":
                 return None
@@ -177,6 +191,58 @@ class SubscriptionService:
             self.db.commit()
             return f"subscription {status}"
         return None
+
+    def _invoice_paid(self, obj: dict[str, Any], sender: EmailSender | None) -> str | None:
+        """Stripe charged a subscription month (the first or a renewal): a PAID CarrierSafetyScan
+        invoice for it, emailed with its PDF, shown in the client's / broker's Invoices and to STS.
+        None for Stripe invoices that aren't a subscription's."""
+        # Older Stripe API versions put the subscription on the invoice, newer ones under parent.
+        details = (obj.get("parent") or {}).get("subscription_details") or obj.get(
+            "subscription_details"
+        )
+        subscription = (details or {}).get("subscription") or obj.get("subscription")
+        if not subscription:
+            return None
+        if not obj.get("amount_paid"):
+            return "nothing paid"
+        metadata = (details or {}).get("metadata") or {}
+        user = self._user({"metadata": metadata}) if metadata.get("user_id") else None
+        if user is None and obj.get("customer"):
+            user = self.db.scalar(select(User).where(User.stripe_customer_id == obj["customer"]))
+        if user is None:
+            user = self.db.scalar(select(User).where(User.stripe_subscription_id == subscription))
+        if user is None:
+            return "no such user"
+
+        organization = self.db.get(Organization, user.organization_id)
+        if user.role.is_broker:
+            usdot = organization.usdot_number if organization else None
+        else:
+            links = UserRepository(self.db).organization_carriers(user.organization_id)
+            usdot = links[0].usdot_number if links else None
+        line = ((obj.get("lines") or {}).get("data") or [{}])[0]
+        period = line.get("period") or {}
+        start = _timestamp(period.get("start") or obj.get("period_start"))
+        end = _timestamp(period.get("end") or obj.get("period_end"))
+        months = f"{_day(start)} to {_day(end)}" if start and end else "Monthly"
+        amount = Decimal(int(obj["amount_paid"])) / 100
+        from app.services.invoice_service import InvoiceService, NewLine  # (import cycle)
+
+        invoices = InvoiceService(self.db, now=self.now)
+        invoice = invoices.record_paid(
+            user=user,
+            usdot_number=usdot,
+            bill_to=invoices.bill_to(usdot, user, organization.name if organization else None),
+            lines=[NewLine(PRODUCT_NAME.upper(), months, 1, amount)],
+            stripe_reference=str(obj.get("id")),
+            client_note=(
+                f"Thank you. We received your {_money(amount)} CarrierSafetyScan subscription "
+                f"payment ({months}). Stripe charges it again each month; manage or cancel it "
+                "from Manage subscription in the app."
+            ),
+            sender=sender,
+        )
+        return f"subscription invoice {invoice.number}"
 
     def _user(self, obj: dict[str, Any]) -> User | None:
         user_id = (obj.get("metadata") or {}).get("user_id")

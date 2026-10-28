@@ -29,7 +29,8 @@ class Invoice(IdMixin, UpdatedAtMixin, Base):
     organization_id: Mapped[int] = mapped_column(
         BigInteger, ForeignKey("organizations.id"), index=True
     )
-    usdot_number: Mapped[int] = mapped_column(BigInteger, index=True)
+    # None only for a subscription invoice of a brokerage FMCSA lists without a USDOT number.
+    usdot_number: Mapped[int | None] = mapped_column(BigInteger, index=True)
     status: Mapped[InvoiceStatus] = mapped_column(
         enum_type(InvoiceStatus, "invoice_status"),
         default=InvoiceStatus.UNPAID,

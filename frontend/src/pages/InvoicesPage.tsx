@@ -89,12 +89,14 @@ export function InvoicesPage() {
                   </td>
                   <td className={cellClass}>
                     <div className="text-slate-900">{inv.billed_to}</div>
-                    <Link
-                      to={`/carriers/${inv.usdot_number}?tab=compliance`}
-                      className="font-mono text-xs text-slate-600 hover:underline"
-                    >
-                      USDOT {inv.usdot_number}
-                    </Link>
+                    {inv.usdot_number !== null && (
+                      <Link
+                        to={`/carriers/${inv.usdot_number}?tab=compliance`}
+                        className="font-mono text-xs text-slate-600 hover:underline"
+                      >
+                        USDOT {inv.usdot_number}
+                      </Link>
+                    )}
                   </td>
                   <td className={cellClass}>{inv.organization_name ?? '—'}</td>
                   <td className={`${cellClass} text-right tabular-nums`}>

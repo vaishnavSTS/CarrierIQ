@@ -78,10 +78,12 @@ export function InvoiceDocument({ invoice: inv }: { invoice: Invoice }) {
               <dd className="inline">{day(inv.voided_at)}</dd>
             </div>
           )}
-          <div>
-            <dt className="inline font-semibold">USDOT: </dt>
-            <dd className="inline">{inv.usdot_number}</dd>
-          </div>
+          {inv.usdot_number !== null && (
+            <div>
+              <dt className="inline font-semibold">USDOT: </dt>
+              <dd className="inline">{inv.usdot_number}</dd>
+            </div>
+          )}
         </dl>
       </section>
 

@@ -91,11 +91,12 @@ async def stripe_webhook(
     stripe_signature: Annotated[str | None, Header()] = None,
 ) -> dict[str, str]:
     """Stripe's events: checkout.session.completed (an invoice paid, or a subscription started),
-    charge.refunded, and customer.subscription.created / updated / deleted."""
+    charge.refunded, customer.subscription.created / updated / deleted, and invoice.paid (a
+    subscription month charged: our paid invoice for it)."""
     event = verify_webhook(await request.body(), stripe_signature)
     if event is None:
         raise ForbiddenError("Not a valid Stripe webhook")
-    result = SubscriptionService(db).handle_event(event)
+    result = SubscriptionService(db).handle_event(event, sender)
     if result is None:  # not about a subscription
         result = InvoiceService(db).handle_event(event, sender)
     logger.info("Stripe event %s (%s): %s", event.get("id"), event.get("type"), result)

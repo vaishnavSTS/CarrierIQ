@@ -14,7 +14,7 @@ class InvoiceSummaryOut(BaseModel):
     number: int
     status: InvoiceStatus
     organization_name: str | None
-    usdot_number: int
+    usdot_number: int | None
     billed_to: str
     total: Decimal
     issued_at: datetime

@@ -78,10 +78,17 @@ class InvoiceService:
 
     # --- Creating and paying -------------------------------------------------------------------
 
-    def bill_to(self, usdot_number: int, user: User) -> dict[str, Any]:
+    def bill_to(
+        self, usdot_number: int | None, user: User, company: str | None = None
+    ) -> dict[str, Any]:
         """Who an invoice is printed to: the carrier (FMCSA's name and physical address) and the
-        client who ordered it (their phone, else the carrier's; their email and the carrier's)."""
-        carrier = self.db.scalar(select(Carrier).where(Carrier.usdot_number == usdot_number))
+        client who ordered it (their phone, else the carrier's; their email and the carrier's).
+        Without a USDOT (a brokerage's subscription): `company` and the user's own details."""
+        carrier = (
+            self.db.scalar(select(Carrier).where(Carrier.usdot_number == usdot_number))
+            if usdot_number
+            else None
+        )
         address = (
             self.db.scalar(
                 select(Address)
@@ -108,7 +115,7 @@ class InvoiceService:
             address.zip if address else None,
         ]
         return {
-            "name": (carrier.legal_name if carrier else None) or f"USDOT {usdot_number}",
+            "name": (carrier.legal_name if carrier else None) or company or f"USDOT {usdot_number}",
             "street": address.street if address else None,
             "city_state_zip": " ".join(p for p in place if p) or None,
             "phone": _pretty_phone(user.phone or phone),
@@ -121,7 +128,7 @@ class InvoiceService:
         *,
         user: User,
         organization_id: int,
-        usdot_number: int,
+        usdot_number: int | None,
         bill_to: dict[str, Any],
         lines: Sequence[NewLine],
     ) -> Invoice:
@@ -246,7 +253,41 @@ class InvoiceService:
             return self.db.get(Invoice, int(invoice_id))
         return None
 
-    def _tell_paid(self, invoice: Invoice, sender: EmailSender | None) -> None:
+    def record_paid(
+        self,
+        *,
+        user: User,
+        usdot_number: int | None,
+        bill_to: dict[str, Any],
+        lines: Sequence[NewLine],
+        stripe_reference: str,
+        client_note: str,
+        sender: EmailSender | None,
+    ) -> Invoice:
+        """An invoice for a payment Stripe already took (a subscription month): created PAID for
+        the user's company, then emailed with its PDF like any paid invoice. `stripe_reference`
+        (Stripe's own invoice id, kept in stripe_session_id) makes a repeated webhook a no-op."""
+        existing = self.db.scalar(
+            select(Invoice).where(Invoice.stripe_session_id == stripe_reference)
+        )
+        if existing is not None:
+            return existing
+        invoice = self.create(
+            user=user,
+            organization_id=user.organization_id,
+            usdot_number=usdot_number,
+            bill_to=bill_to,
+            lines=lines,
+        )
+        invoice.status, invoice.paid_at = InvoiceStatus.PAID, self.now()
+        invoice.stripe_session_id = stripe_reference
+        self.db.commit()
+        self._tell_paid(invoice, sender, client_note)
+        return invoice
+
+    def _tell_paid(
+        self, invoice: Invoice, sender: EmailSender | None, client_note: str | None = None
+    ) -> None:
         """Email the client who created it (their paid invoice) and STS. Never fails the webhook.
         While DATAQS_EMAIL_STAFF_OVERRIDE is set (testing), the client's email goes to those
         addresses instead, saying who it was meant for; nobody outside STS is emailed."""
@@ -256,13 +297,15 @@ class InvoiceService:
             return
         client = self.db.get(User, invoice.created_by_id)
         total = _money(invoice.total)
+        whose = f"USDOT {invoice.usdot_number}" if invoice.usdot_number else invoice.bill_to["name"]
         messages = []
         if client is not None:
-            body = (
+            note = client_note or (
                 f"Thank you. We received your payment of {total} for invoice {invoice.number} "
-                f"(USDOT {invoice.usdot_number}). Sky Transport Solutions will start on it and "
-                "contact you if anything is needed.\n\nYour paid invoice is attached as a PDF."
+                f"({whose}). Sky Transport Solutions will start on it and contact you if "
+                "anything is needed."
             )
+            body = f"{note}\n\nYour paid invoice is attached as a PDF."
             to = [client.email]
             if settings.dataqs_staff_override_list:
                 body = f"[Test routing: meant for {client.email}]\n\n{body}"
@@ -271,7 +314,7 @@ class InvoiceService:
         staff_to = settings.compliance_request_recipients
         if staff_to:
             body = (
-                f"Invoice {invoice.number} ({total}) for USDOT {invoice.usdot_number} was paid "
+                f"Invoice {invoice.number} ({total}) for {whose} was paid "
                 f"through Stripe by {client.full_name if client else 'the client'}, for: "
                 + "; ".join(f"{line.item} ({line.description})" for line in self._lines(invoice.id))
                 + "."
@@ -300,7 +343,10 @@ class InvoiceService:
         invoice = self.db.get(Invoice, invoice_id)
         if invoice is None or not (
             user.role.is_staff
-            or (user.role.is_client and invoice.organization_id == user.organization_id)
+            or (
+                (user.role.is_client or user.role.is_broker)
+                and invoice.organization_id == user.organization_id
+            )
         ):
             raise NotFoundError(f"Invoice {invoice_id} not found")
         return invoice
@@ -354,9 +400,9 @@ class InvoiceService:
         self, user: User, status: InvoiceStatus | None, usdot_number: int | None = None
     ) -> list[InvoiceSummaryOut]:
         """Staff: every invoice, or one carrier's. Clients: their own company's invoices for one
-        carrier (its profile's Invoices tab)."""
+        carrier (its profile's Invoices tab). Brokers: their own brokerage's (subscription)."""
         query = select(Invoice).order_by(Invoice.number.desc())
-        if user.role.is_client and usdot_number is not None:
+        if (user.role.is_client and usdot_number is not None) or user.role.is_broker:
             query = query.where(Invoice.organization_id == user.organization_id)
         elif not user.role.is_staff:
             raise ForbiddenError("This area is for STS staff")

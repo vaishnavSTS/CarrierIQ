@@ -110,7 +110,8 @@ def render_invoice_pdf(inv: InvoiceOut) -> bytes:
         facts.append(("Paid on:", _day(inv.paid_at)))
     if inv.voided_at:
         facts.append(("Voided on:", _day(inv.voided_at)))
-    facts.append(("USDOT:", str(inv.usdot_number)))
+    if inv.usdot_number:
+        facts.append(("USDOT:", str(inv.usdot_number)))
     fy = top - 72
     for label, value in facts:
         c.setFont("Helvetica", 9)

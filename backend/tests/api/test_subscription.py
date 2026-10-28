@@ -4,21 +4,23 @@ made before subscriptions (no trial end) and STS staff stay free."""
 
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from urllib.parse import parse_qs
 
 import httpx
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.v1.routes.compliance import get_stripe_client
+from app.api.v1.routes.compliance import get_request_email_sender, get_stripe_client
 from app.core.config import get_settings
 from app.main import app
-from app.models import Carrier, User
-from app.models.enums import UserRole, UserStatus
+from app.models import Carrier, Invoice, InvoiceLine, User
+from app.models.enums import InvoiceStatus, UserRole, UserStatus
 from app.services.stripe_client import StripeClient
 from tests.api.test_auth import api, log_in, make_user, register  # noqa: F401 - fixture
+from tests.dataqs.test_compliance_tab import FakeSender
 from tests.dataqs.test_invoices import SECRET, signed
 
 STRIPE_PAGE = "https://checkout.stripe.com/c/pay/cs_test_sub"
@@ -186,3 +188,101 @@ def test_an_invoice_payment_is_not_taken_for_a_subscription(
         "data": {"object": {"id": "cs_1", "mode": "payment", "payment_status": "paid"}},
     }
     assert signed(api, paid).json() == {"result": "no such invoice"}
+
+
+# --- An invoice for each month Stripe charges ----------------------------------------------------
+
+
+def paid_month(user: User, invoice_id: str = "in_1", amount: int = 2500) -> dict:
+    """Stripe's invoice.paid for a subscription month (newer API shape: under `parent`)."""
+    start = int(datetime(2026, 10, 28, tzinfo=UTC).timestamp())
+    end = int(datetime(2026, 11, 28, tzinfo=UTC).timestamp())
+    return {
+        "id": f"evt_{invoice_id}",
+        "type": "invoice.paid",
+        "data": {
+            "object": {
+                "id": invoice_id,
+                "customer": "cus_1",
+                "amount_paid": amount,
+                "billing_reason": "subscription_cycle",
+                "parent": {
+                    "subscription_details": {
+                        "subscription": "sub_1",
+                        "metadata": {"user_id": str(user.id)},
+                    }
+                },
+                "lines": {"data": [{"period": {"start": start, "end": end}}]},
+            }
+        },
+    }
+
+
+@pytest.fixture
+def mails(api: TestClient) -> Iterator[FakeSender]:  # noqa: F811
+    fake = FakeSender()
+    app.dependency_overrides[get_request_email_sender] = lambda: fake
+    yield fake
+
+
+def test_each_paid_month_becomes_a_paid_invoice_emailed_with_its_pdf(
+    api: TestClient,  # noqa: F811
+    db: Session,
+    stripe: FakeStripe,
+    mails: FakeSender,
+) -> None:
+    user = signed_up(api, db)
+    result = signed(api, paid_month(user)).json()["result"]
+    assert result.startswith("subscription invoice ")
+    [invoice] = db.scalars(select(Invoice).where(Invoice.organization_id == user.organization_id))
+    assert (invoice.status, invoice.total, invoice.usdot_number) == (
+        InvoiceStatus.PAID,
+        Decimal("25.00"),
+        295017,
+    )
+    [line] = db.scalars(select(InvoiceLine).where(InvoiceLine.invoice_id == invoice.id))
+    assert line.item == "CARRIERSAFETYSCAN SUBSCRIPTION"
+    assert line.description == "Oct 28, 2026 to Nov 28, 2026"
+
+    client_mail = next(m for m in mails.sent if m["to"] == ["owner@client.com"])
+    assert "subscription payment" in client_mail["text"]
+    assert client_mail["files"] and client_mail["files"][0].data.startswith(b"%PDF")
+
+    # Stripe sending it again changes nothing.
+    before = len(mails.sent)
+    signed(api, paid_month(user))
+    assert db.scalar(select(func.count(Invoice.id))) == 1 and len(mails.sent) == before
+
+    # The client sees it on their carrier's Invoices tab.
+    listed = api.get("/api/v1/invoices?usdot_number=295017").json()["invoices"]
+    assert [i["number"] for i in listed] == [invoice.number]
+
+
+def test_a_brokers_invoice_shows_on_their_invoices_page(
+    api: TestClient,  # noqa: F811
+    db: Session,
+    stripe: FakeStripe,
+    mails: FakeSender,
+) -> None:
+    broker = make_user(db, "broker@b.test", UserRole.BROKER_ADMIN, UserStatus.ACTIVE)
+    broker.trial_ends_at = datetime.now(UTC) + timedelta(days=3)
+    other = make_user(db, "other@b.test", UserRole.BROKER_ADMIN, UserStatus.ACTIVE)
+    db.commit()
+    signed(api, paid_month(broker, "in_b"))
+    signed(api, paid_month(other, "in_o"))
+
+    log_in(api, "broker@b.test")
+    [mine] = api.get("/api/v1/invoices").json()["invoices"]
+    assert mine["usdot_number"] is None and mine["billed_to"] == "Org of broker@b.test"
+    assert api.get(f"/api/v1/invoices/{mine['id']}").status_code == 200
+    pdf = api.get(f"/api/v1/invoices/{mine['id']}/pdf")
+    assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
+
+
+def test_a_non_subscription_stripe_invoice_is_left_alone(
+    api: TestClient,  # noqa: F811
+    db: Session,
+    stripe: FakeStripe,
+) -> None:
+    event = {"id": "evt_x", "type": "invoice.paid", "data": {"object": {"id": "in_x"}}}
+    assert signed(api, event).json() == {"result": "ignored"}

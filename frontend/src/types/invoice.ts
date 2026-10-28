@@ -7,7 +7,8 @@ export interface InvoiceSummary {
   number: number
   status: InvoiceStatus
   organization_name: string | null
-  usdot_number: number
+  /** null: a brokerage's subscription invoice without a USDOT number */
+  usdot_number: number | null
   billed_to: string
   /** e.g. "277.00" */
   total: string

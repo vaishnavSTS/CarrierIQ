@@ -8,6 +8,7 @@ import { PublicLayout } from './components/layout/PublicLayout'
 import { AccountsPage } from './pages/AccountsPage'
 import { BrokerGoogleSignupPage } from './pages/BrokerGoogleSignupPage'
 import { BrokerHomePage } from './pages/BrokerHomePage'
+import { BrokerInvoicesPage } from './pages/BrokerInvoicesPage'
 import { BrokerRegisterPage } from './pages/BrokerRegisterPage'
 import { CarrierProfilePage } from './pages/CarrierProfilePage'
 import { ComparePage } from './pages/ComparePage'
@@ -103,6 +104,8 @@ export const router = createBrowserRouter([
           { index: true, element: <BrokerHomePage /> },
           { path: 'compare', element: <ComparePage /> },
           { path: 'carriers/:usdot', element: <CarrierProfilePage /> },
+          { path: 'invoices', element: <BrokerInvoicesPage /> },
+          { path: 'invoices/:invoiceId', element: <InvoicePage /> },
         ],
       },
     ],

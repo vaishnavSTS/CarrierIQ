@@ -14,7 +14,8 @@ export function InvoicePage() {
   const id = Number(useParams().invoiceId)
   const [params] = useSearchParams()
   const backFromStripe = params.get('paid') === '1'
-  const staff = usePortalMode() === 'internal'
+  const mode = usePortalMode()
+  const staff = mode === 'internal'
   const { data: inv, isPending, error } = useInvoice(id, backFromStripe)
   const pay = usePayInvoice()
   const voiding = useVoidInvoice()
@@ -35,7 +36,15 @@ export function InvoicePage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Link
-          to={staff ? '/invoices' : `/portal/carriers/${inv.usdot_number}?tab=invoices`}
+          to={
+            staff
+              ? '/invoices'
+              : mode === 'broker'
+                ? '/broker/invoices'
+                : inv.usdot_number !== null
+                  ? `/portal/carriers/${inv.usdot_number}?tab=invoices`
+                  : '/portal'
+          }
           className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-accent-strong"
         >
           <ArrowLeft className="size-4" aria-hidden />
