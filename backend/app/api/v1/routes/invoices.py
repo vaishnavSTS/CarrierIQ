@@ -8,7 +8,7 @@ Stripe-Signature for STRIPE_WEBHOOK_SECRET, or it is refused.
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, Path, Request, Response
+from fastapi import APIRouter, Depends, Header, Path, Query, Request, Response
 from sqlalchemy.orm import Session
 
 from app.api.auth import CurrentUser, require_staff
@@ -33,10 +33,14 @@ InvoiceId = Annotated[int, Path(gt=0)]
 
 @router.get("", response_model=InvoiceListOut)
 def list_invoices(
-    user: Annotated[User, Depends(require_staff)], db: Db, status: InvoiceStatus | None = None
+    user: CurrentUser,
+    db: Db,
+    status: InvoiceStatus | None = None,
+    usdot_number: Annotated[int | None, Query(gt=0, lt=100_000_000)] = None,
 ) -> InvoiceListOut:
-    """STS: every invoice, newest first."""
-    return InvoiceListOut(invoices=InvoiceService(db).list_all(user, status))
+    """Newest first. STS: every invoice, or one carrier's. Clients: their own company's
+    invoices for one carrier (usdot_number required)."""
+    return InvoiceListOut(invoices=InvoiceService(db).list_all(user, status, usdot_number))
 
 
 @router.get("/{invoice_id}", response_model=InvoiceOut)

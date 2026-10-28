@@ -5,11 +5,16 @@ export function fetchInvoice(invoiceId: number): Promise<Invoice> {
   return apiGet(`/invoices/${invoiceId}`)
 }
 
-/** STS staff: every invoice, newest first (status: one, or all). */
+/** Newest first. STS: every invoice, or one carrier's; clients: their own for one carrier. */
 export function fetchInvoices(
   status: InvoiceStatus | null,
+  usdotNumber: number | null = null,
 ): Promise<{ invoices: InvoiceSummary[] }> {
-  return apiGet(`/invoices${status ? `?status=${status}` : ''}`)
+  const query = new URLSearchParams()
+  if (status) query.set('status', status)
+  if (usdotNumber) query.set('usdot_number', String(usdotNumber))
+  const qs = query.toString()
+  return apiGet(`/invoices${qs ? `?${qs}` : ''}`)
 }
 
 /** Clients: a Stripe Checkout page for an unpaid invoice. */

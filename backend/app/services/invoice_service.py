@@ -301,12 +301,20 @@ class InvoiceService:
             can_void=can_void,
         )
 
-    def list_all(self, user: User, status: InvoiceStatus | None) -> list[InvoiceSummaryOut]:
-        if not user.role.is_staff:
-            raise ForbiddenError("This area is for STS staff")
+    def list_all(
+        self, user: User, status: InvoiceStatus | None, usdot_number: int | None = None
+    ) -> list[InvoiceSummaryOut]:
+        """Staff: every invoice, or one carrier's. Clients: their own company's invoices for one
+        carrier (its profile's Invoices tab)."""
         query = select(Invoice).order_by(Invoice.number.desc())
+        if user.role.is_client and usdot_number is not None:
+            query = query.where(Invoice.organization_id == user.organization_id)
+        elif not user.role.is_staff:
+            raise ForbiddenError("This area is for STS staff")
         if status is not None:
             query = query.where(Invoice.status == status)
+        if usdot_number is not None:
+            query = query.where(Invoice.usdot_number == usdot_number)
         return [self._summary(i) for i in self.db.scalars(query)]
 
     def _summary(self, invoice: Invoice) -> InvoiceSummaryOut:

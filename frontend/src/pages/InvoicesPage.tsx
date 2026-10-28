@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom'
 
 import { StatusBadge } from '../components/StatusBadge'
 import { cellClass, headClass, tableClass } from '../features/carrier-profile/styles'
+import { INVOICE_STATUS } from '../features/invoices/status'
 import { useInvoices } from '../hooks/useInvoices'
 import type { InvoiceStatus } from '../types/invoice'
 import { formatDateTime } from '../utils/format'
-import type { Tone } from '../utils/status'
 
 const FILTERS: [InvoiceStatus | null, string][] = [
   [null, 'All'],
@@ -15,13 +15,6 @@ const FILTERS: [InvoiceStatus | null, string][] = [
   ['VOID', 'Void'],
   ['REFUNDED', 'Refunded'],
 ]
-
-const INVOICE_STATUS: Record<InvoiceStatus, { label: string; tone: Tone }> = {
-  UNPAID: { label: 'Unpaid', tone: 'warn' },
-  PAID: { label: 'Paid', tone: 'ok' },
-  VOID: { label: 'Void', tone: 'neutral' },
-  REFUNDED: { label: 'Refunded', tone: 'neutral' },
-}
 
 /** STS staff: every CarrierSafetyScan invoice (paid through Stripe), newest first. */
 export function InvoicesPage() {
@@ -75,6 +68,9 @@ export function InvoicesPage() {
                 <th className={cellClass}>Client</th>
                 <th className={`${cellClass} text-right`}>Total</th>
                 <th className={cellClass}>Status</th>
+                <th className={cellClass}>
+                  <span className="sr-only">Actions</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -109,6 +105,14 @@ export function InvoicesPage() {
                     {inv.paid_at && (
                       <div className="text-xs text-slate-600">{formatDateTime(inv.paid_at)}</div>
                     )}
+                  </td>
+                  <td className={`${cellClass} text-right`}>
+                    <Link
+                      to={`/invoices/${inv.id}`}
+                      className="inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
+                    >
+                      View invoice
+                    </Link>
                   </td>
                 </tr>
               ))}

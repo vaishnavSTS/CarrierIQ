@@ -178,3 +178,18 @@ def test_the_invoice_downloads_as_a_pdf(api: TestClient, invoice_id: int) -> Non
     assert 'filename="invoice-' in pdf.headers["content-disposition"]
     log_in(api, "owner@other.test")  # another company
     assert api.get(f"/api/v1/invoices/{invoice_id}/pdf").status_code == 404
+
+
+def test_one_carriers_invoices_for_staff_and_its_client(api: TestClient, invoice_id: int) -> None:
+    usdot = api.get(f"/api/v1/invoices/{invoice_id}").json()["usdot_number"]
+    # The client: their own company's invoices for the carrier (its profile's Invoices tab).
+    mine = api.get(f"/api/v1/invoices?usdot_number={usdot}").json()["invoices"]
+    assert [i["id"] for i in mine] == [invoice_id] and mine[0]["issued_at"]
+    assert api.get("/api/v1/invoices").status_code == 403  # not every invoice
+    log_in(api, "owner@other.test")  # another company sees none of them
+    assert api.get(f"/api/v1/invoices?usdot_number={usdot}").json()["invoices"] == []
+    log_in(api, "analyst@sts.test")
+    assert [
+        i["id"] for i in api.get(f"/api/v1/invoices?usdot_number={usdot}").json()["invoices"]
+    ] == [invoice_id]
+    assert api.get("/api/v1/invoices?usdot_number=1").json()["invoices"] == []

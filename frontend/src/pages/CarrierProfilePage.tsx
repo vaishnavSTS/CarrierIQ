@@ -13,6 +13,7 @@ import { PacketSection } from '../features/carrier-profile/packet/PacketSection'
 import { ProfileHeader } from '../features/carrier-profile/ProfileHeader'
 import { SafetySection } from '../features/carrier-profile/SafetySection'
 import { TimelineSection } from '../features/carrier-profile/TimelineSection'
+import { CarrierInvoicesSection } from '../features/invoices/CarrierInvoicesSection'
 import { useClientSearchEnabled } from '../hooks/useAuth'
 import { useCarrierProfile } from '../hooks/useCarrierProfile'
 import { useIsOwnCarrier } from '../hooks/useIsOwnCarrier'
@@ -27,6 +28,7 @@ const TABS = [
   ['chameleon', 'Chameleon check'],
   ['packet', 'Packet'],
   ['compliance', 'Compliance'],
+  ['invoices', 'Invoices'],
   ['intelligence', 'Intelligence'],
   ['timeline', 'Timeline'],
 ] as const
@@ -42,6 +44,7 @@ const CLIENT_TABS: readonly TabId[] = [
   'network',
   'packet',
   'compliance',
+  'invoices',
 ]
 /** Brokers also get the Chameleon check (they vet carriers before giving them loads). */
 const BROKER_TABS: readonly TabId[] = [...CLIENT_TABS, 'chameleon']
@@ -70,12 +73,13 @@ export function CarrierProfilePage() {
   // The open tab lives in the URL (?tab=safety) so a refresh or shared link keeps it.
   const [params, setParams] = useSearchParams()
   const requested = params.get('tab')
-  // Compliance: STS staff for any carrier; clients for their own carriers only.
+  // Compliance and Invoices: STS staff for any carrier; clients for their own carriers only.
+  const ownOnly = (id: TabId) => id !== 'compliance' && id !== 'invoices'
   const visible =
     allowed && portal === 'client' && !ownCarrier
-      ? allowed.filter((id) => id !== 'compliance')
+      ? allowed.filter(ownOnly)
       : portal === 'broker'
-        ? (allowed?.filter((id) => id !== 'compliance') ?? null)
+        ? (allowed?.filter(ownOnly) ?? null)
         : allowed
   const tab: TabId = isTab(requested, visible) ? requested : DEFAULT_TAB
   const tabs = visible
@@ -151,6 +155,7 @@ export function CarrierProfilePage() {
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
         {tab === 'packet' && <PacketSection profile={profile} />}
         {tab === 'compliance' && <ComplianceSection profile={profile} />}
+        {tab === 'invoices' && <CarrierInvoicesSection usdotNumber={profile.usdot_number} />}
         {tab === 'identity' && <IdentitySection profile={profile} />}
         {tab === 'authority' && (
           <AuthoritySection

@@ -13,8 +13,11 @@ export function useInvoice(invoiceId: number, waitForPayment = false) {
   })
 }
 
-export function useInvoices(status: InvoiceStatus | null) {
-  return useQuery({ queryKey: ['invoices', 'all', status], queryFn: () => fetchInvoices(status) })
+export function useInvoices(status: InvoiceStatus | null, usdotNumber: number | null = null) {
+  return useQuery({
+    queryKey: ['invoices', 'all', status, usdotNumber],
+    queryFn: () => fetchInvoices(status, usdotNumber),
+  })
 }
 
 /** Opens Stripe Checkout in a tab opened on the click (browsers block tabs opened later). */
