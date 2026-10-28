@@ -42,20 +42,12 @@ function scoreClass(iss: number): string {
  */
 export function HighIssPage() {
   const [minScore, setMinScore] = useState(75)
-  const [search, setSearch] = useState('')
   const { data, isPending, error } = useQuery({
     queryKey: ['iss', 'high', minScore],
     queryFn: () => apiGet<HighIss>(`/iss/high?min_score=${minScore}`),
   })
 
-  const term = search.trim().toLowerCase()
-  const rows = (data?.carriers ?? []).filter(
-    (c) =>
-      !term ||
-      String(c.usdot_number).includes(term) ||
-      (c.legal_name ?? '').toLowerCase().includes(term) ||
-      (c.dba_name ?? '').toLowerCase().includes(term),
-  )
+  const rows = data?.carriers ?? []
 
   return (
     <div className="space-y-5">
@@ -95,19 +87,6 @@ export function HighIssPage() {
             className="mt-1 w-24 rounded-md border border-slate-300 bg-surface px-2.5 py-1.5"
           />
         </div>
-        <div className="min-w-0 flex-1 sm:max-w-xs">
-          <label htmlFor="iss-search" className="block text-xs font-medium text-slate-600">
-            Search
-          </label>
-          <input
-            id="iss-search"
-            type="search"
-            value={search}
-            placeholder="Carrier name or USDOT"
-            onChange={(e) => setSearch(e.target.value)}
-            className="mt-1 w-full rounded-md border border-slate-300 bg-surface px-2.5 py-1.5"
-          />
-        </div>
         {data && (
           <span className="pb-1.5 text-slate-600">
             {rows.length} {rows.length === 1 ? 'carrier' : 'carriers'}
@@ -121,8 +100,7 @@ export function HighIssPage() {
         <p className="text-sm text-red-700">Could not load the list: {error.message}</p>
       ) : rows.length === 0 ? (
         <p className="rounded-xl border border-slate-200 bg-surface p-4 text-sm text-slate-600">
-          No carriers with an Estimated ISS of {minScore} or higher
-          {term ? ' match your search' : ''}.
+          No carriers with an Estimated ISS of {minScore} or higher.
         </p>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-slate-200 bg-surface">
