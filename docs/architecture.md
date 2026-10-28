@@ -121,6 +121,11 @@ flowchart TD
     TRIES -- Yes --> FAIL["Job FAILED, error kept;<br/>scheduler waits 6 h for this carrier"] --> LOOP
 ```
 
+Once a month the worker also builds FMCSA's new Estimated ISS tables and recalculates every
+stored carrier (`iss_snapshots`). STS's **High ISS** page (admin menu, `/high-iss`; API
+`/api/v1/iss/high`, Excel at `/api/v1/iss/high.xlsx`) lists each carrier's latest score at
+or above a threshold (75 by default), so it follows that monthly recalculation on its own.
+
 ---
 
 ## 4. How a signal is made and reviewed

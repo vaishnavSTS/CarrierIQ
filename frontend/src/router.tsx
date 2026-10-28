@@ -27,6 +27,7 @@ import { SearchPage } from './pages/SearchPage'
 import { ServiceRequestsPage } from './pages/ServiceRequestsPage'
 import { InvoicePage } from './pages/InvoicePage'
 import { InvoicesPage } from './pages/InvoicesPage'
+import { HighIssPage } from './pages/HighIssPage'
 
 /**
  * Public: landing, login, sign-up (clients at /register, brokers at /broker/register).
@@ -68,6 +69,7 @@ export const router = createBrowserRouter([
           { path: 'accounts', element: <AccountsPage /> },
           { path: 'service-requests', element: <ServiceRequestsPage /> },
           { path: 'invoices', element: <InvoicesPage /> },
+          { path: 'high-iss', element: <HighIssPage /> },
           { path: 'invoices/:invoiceId', element: <InvoicePage /> },
         ],
       },

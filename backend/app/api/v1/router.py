@@ -17,6 +17,7 @@ from app.api.v1.routes import (
     dataqs,
     health,
     invoices,
+    iss,
     jobs,
     portal,
     signals,
@@ -32,6 +33,7 @@ api_router.include_router(carriers.router, dependencies=staff_only)
 api_router.include_router(signals.router, dependencies=staff_only)
 api_router.include_router(jobs.router, dependencies=staff_only)
 api_router.include_router(dashboard.router, dependencies=staff_only)
+api_router.include_router(iss.router, dependencies=staff_only)
 
 api_router.include_router(admin.router)
 api_router.include_router(portal.router)
