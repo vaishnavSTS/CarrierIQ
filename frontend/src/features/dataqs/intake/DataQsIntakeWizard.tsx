@@ -58,7 +58,7 @@ function Wizard({ check }: { check: DataQsCheck }) {
   const [selection, setSelection] = useState<Selection>([])
   const [issues, setIssues] = useState<Record<string, IssueDraft>>({})
   const [prior, setPrior] = useState(EMPTY_PRIOR)
-  const [viewedIn, setViewedIn] = useState('A&I/SMS Results')
+  const [viewedIn, setViewedIn] = useState('') // the client picks it (DataQs asks)
   // One key for this intake: pressing "Create" twice returns the same case.
   const [idempotencyKey] = useState(() => crypto.randomUUID())
   const create = useCreateDataQsCase(check.usdot_number)
@@ -78,7 +78,7 @@ function Wizard({ check }: { check: DataQsCheck }) {
     check.can_open,
     selection.length > 0,
     selection.every((index) => issueComplete(issues[issueKey(index)])),
-    true,
+    viewedIn !== '',
     true,
   ][step]
 

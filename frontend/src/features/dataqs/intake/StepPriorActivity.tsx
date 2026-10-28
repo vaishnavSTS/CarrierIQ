@@ -1,6 +1,14 @@
 import type { DataQsPriorActivity } from '../../../types/dataqs'
 import { inputClass, labelClass } from './intakeState'
 
+const VIEWED_IN = [
+  'A&I/SMS Results',
+  'Pre-Employment Screening Program (PSP) report',
+  'FMCSA Portal',
+  'Roadside inspection report',
+  'CarrierSafetyScan',
+]
+
 /** Step 4: where the carrier saw the record (DataQs asks), and anything already filed or
  * decided about this inspection. */
 export function StepPriorActivity({
@@ -22,23 +30,22 @@ export function StepPriorActivity({
         <label htmlFor="viewed-in" className={labelClass}>
           Where did you see this record?
         </label>
-        <input
+        <select
           id="viewed-in"
-          list="viewed-in-options"
           value={viewedIn}
-          maxLength={100}
-          placeholder="e.g. A&I/SMS Results"
           onChange={(e) => onViewedIn(e.target.value)}
           className={inputClass}
-        />
-        <datalist id="viewed-in-options">
-          <option value="A&I/SMS Results" />
-          <option value="Pre-Employment Screening Program (PSP) report" />
-          <option value="FMCSA Portal" />
-          <option value="Roadside inspection report" />
-          <option value="CarrierSafetyScan" />
-        </datalist>
-        <p className="mt-1 text-xs text-slate-600">DataQs asks this when the request is filed.</p>
+        >
+          <option value="">Choose where you saw it…</option>
+          {VIEWED_IN.map((place) => (
+            <option key={place} value={place}>
+              {place}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-slate-600">
+          DataQs asks this when the request is filed. Choose one to continue.
+        </p>
       </div>
       <label className="flex items-start gap-2">
         <input
