@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { CreditCard, X } from 'lucide-react'
+import { Check, CheckCircle2, CreditCard, Lock, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
@@ -7,6 +7,13 @@ import { usePayDataQsFee } from '../../hooks/useDataQs'
 import { usePortalMode } from '../../hooks/usePortalMode'
 import type { DataQsCase } from '../../types/dataqs'
 import { primaryButton } from './ui'
+
+/** What the DataQs fee covers, shown in the pop-up. */
+const INCLUDED = [
+  'STS reviews your request and evidence',
+  'STS prepares the request for your approval',
+  'STS files it with FMCSA DataQs and tracks it to a decision',
+]
 
 const money = (amount: string) =>
   Number(amount).toLocaleString('en-US', { style: 'currency', currency: 'USD' })
@@ -77,33 +84,56 @@ export function DataQsFeeCard({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
           aria-labelledby="fee-title"
           onClick={(e) => e.target === e.currentTarget && setOpen(false)}
         >
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-surface p-6 shadow-2xl">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 id="fee-title" className="text-lg font-semibold text-slate-950">
-                  Pay the DataQs filing fee
-                </h2>
-                <p className="mt-1 text-sm text-slate-600">
-                  Your request is submitted. The fee is{' '}
-                  <span className="font-semibold text-slate-900">{amount}</span> per inspection; STS
-                  starts reviewing it as soon as it’s paid.
-                </p>
-              </div>
+          <div className="w-full max-w-lg overflow-hidden rounded-3xl bg-surface shadow-2xl ring-1 ring-black/5">
+            {/* Header: brand gradient, the price large */}
+            <div className="relative bg-gradient-to-br from-violet-600 to-fuchsia-600 px-7 pb-7 pt-6 text-white">
               <button
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="Close"
-                className="grid size-9 shrink-0 place-items-center rounded-lg text-slate-600 hover:bg-slate-100"
+                className="absolute right-4 top-4 grid size-9 place-items-center rounded-lg text-white/80 hover:bg-white/15 hover:text-white"
               >
                 <X className="size-5" aria-hidden />
               </button>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium">
+                <CheckCircle2 className="size-3.5" aria-hidden />
+                Request submitted
+              </span>
+              <h2 id="fee-title" className="mt-3 text-2xl font-semibold tracking-tight">
+                Pay the DataQs filing fee
+              </h2>
+              <p className="mt-1 text-sm text-white/85">
+                One step left: STS starts reviewing your request as soon as it’s paid.
+              </p>
+              <div className="mt-5 flex items-end gap-2">
+                <span className="text-5xl font-bold tracking-tight">{amount}</span>
+                <span className="pb-1.5 text-sm text-white/85">per inspection</span>
+              </div>
             </div>
-            <div className="mt-5 flex items-baseline justify-between border-t border-slate-200 pt-3 text-sm">
-              <span className="text-slate-600">DataQs request · invoice {fee.invoice_number}</span>
-              <span className="text-lg font-semibold text-slate-950">{amount}</span>
-            </div>
-            <div className="mt-5 flex flex-wrap justify-end gap-2">
-              <PayButton caseId={c.id} amount={amount} />
+
+            <div className="space-y-5 px-7 py-6">
+              <div>
+                <p className="text-sm font-medium text-slate-900">What’s included</p>
+                <ul className="mt-2 space-y-2 text-sm text-slate-700">
+                  {INCLUDED.map((item) => (
+                    <li key={item} className="flex items-start gap-2">
+                      <Check className="mt-0.5 size-4 shrink-0 text-emerald-600" aria-hidden />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="flex items-baseline justify-between rounded-xl bg-slate-50 px-4 py-3 text-sm">
+                <span className="text-slate-600">
+                  DataQs request · invoice {fee.invoice_number}
+                </span>
+                <span className="text-base font-semibold text-slate-950">{amount}</span>
+              </div>
+              <PayButton caseId={c.id} amount={amount} full />
+              <p className="flex items-center justify-center gap-1.5 text-xs text-slate-500">
+                <Lock className="size-3.5" aria-hidden />
+                Secure payment by Stripe. Your card details never reach CarrierSafetyScan.
+              </p>
             </div>
           </div>
         </div>
@@ -117,24 +147,31 @@ function PayButton({
   caseId,
   amount,
   invoiceNumber,
+  full = false,
 }: {
   caseId: number
   amount: string
   invoiceNumber?: number
+  /** The pop-up's big full-width button */
+  full?: boolean
 }) {
   const pay = usePayDataQsFee(caseId)
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center gap-3">
+      <div className={full ? '' : 'flex flex-wrap items-center gap-3'}>
         <button
           type="button"
           disabled={pay.isPending}
           onClick={() =>
             pay.mutate(undefined, { onSuccess: ({ url }) => window.location.assign(url) })
           }
-          className={`${primaryButton} inline-flex items-center gap-1.5`}
+          className={
+            full
+              ? 'inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cta px-5 py-3.5 text-base font-semibold text-cta-ink shadow-lg shadow-violet-500/25 hover:bg-cta-hover disabled:opacity-60'
+              : `${primaryButton} inline-flex items-center gap-1.5`
+          }
         >
-          <CreditCard className="size-4" aria-hidden />
+          <CreditCard className={full ? 'size-5' : 'size-4'} aria-hidden />
           {pay.isPending ? 'Opening the payment page…' : `Pay ${amount}`}
         </button>
         {invoiceNumber !== undefined && (
