@@ -1,8 +1,8 @@
-import { MessageSquareText, CalendarClock, UserCheck, X } from 'lucide-react'
+import { CalendarClock, ExternalLink, MessageSquareText, UserCheck, X } from 'lucide-react'
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 
 import { useMe } from '../../hooks/useAuth'
-import { useSetDataQsOtpPreference } from '../../hooks/useDataQs'
+import { useDataQsCallLink, useSetDataQsOtpPreference } from '../../hooks/useDataQs'
 import type { DataQsCase, DataQsOtpMethod } from '../../types/dataqs'
 import { inputClass, labelClass } from './intake/intakeState'
 import { primaryButton, secondaryButton } from './ui'
@@ -19,7 +19,7 @@ const OPTIONS: { method: DataQsOtpMethod; icon: ReactNode; title: string; body: 
     method: 'SCHEDULED_CALL',
     icon: <CalendarClock className="size-5" aria-hidden />,
     title: 'A call at a time you choose',
-    body: 'Pick a time. An STS specialist calls you within 5 minutes of it to get the code.',
+    body: 'Book a time on STS’s appointment page. An STS specialist calls you then to get the code.',
   },
   {
     method: 'AUTHORIZED_AGENT',
@@ -28,12 +28,6 @@ const OPTIONS: { method: DataQsOtpMethod; icon: ReactNode; title: string; body: 
     body: 'STS requests access to your company in the FMCSA Portal and you approve it once. After that STS files with its own login, so no codes are needed.',
   },
 ]
-
-/** "2026-10-27T14:30" for a datetime-local input, in the browser's time zone. */
-function localInputValue(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
-}
 
 function formatPhone(digits: string | null | undefined): string {
   const d = (digits ?? '').replace(/\D/g, '').slice(-10)
@@ -56,11 +50,9 @@ export function DataQsOtpChoiceDialog({
   const current = c.otp_preference
   const [method, setMethod] = useState<DataQsOtpMethod | null>(current?.method ?? null)
   const [phone, setPhone] = useState(current?.phone ?? formatPhone(me?.phone))
-  const [callAt, setCallAt] = useState(
-    current?.call_at ? localInputValue(new Date(current.call_at)) : '',
-  )
   const save = useSetDataQsOtpPreference(c.id)
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const link = useDataQsCallLink(c.id)
+  const booking = method === 'SCHEDULED_CALL'
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -73,18 +65,34 @@ export function DataQsOtpChoiceDialog({
   const send = (event: FormEvent) => {
     event.preventDefault()
     if (!method) return
+    // A call: the time is booked on STS's appointment page. Open its tab now (a click), then point
+    // it at the signed link: browsers block tabs opened later.
+    const tab = booking ? window.open('', '_blank') : null
     save.mutate(
+      { method, phone: phone.trim(), call_at: null },
       {
-        method,
-        phone: phone.trim(),
-        call_at: method === 'SCHEDULED_CALL' && callAt ? new Date(callAt).toISOString() : null,
+        onSuccess: () => {
+          if (!booking) return onClose()
+          link.mutate(undefined, {
+            onSuccess: ({ url }) => {
+              if (tab) {
+                tab.opener = null
+                tab.location.href = url
+              } else {
+                window.location.href = url
+              }
+              onClose()
+            },
+            onError: () => tab?.close(),
+          })
+        },
+        onError: () => tab?.close(),
       },
-      { onSuccess: onClose },
     )
   }
 
-  const ready =
-    method !== null && phone.trim().length >= 10 && (method !== 'SCHEDULED_CALL' || callAt !== '')
+  const ready = method !== null && phone.trim().length >= 10
+  const busy = save.isPending || link.isPending
 
   return (
     <div
@@ -164,24 +172,11 @@ export function DataQsOtpChoiceDialog({
               className={inputClass}
             />
           </div>
-          {method === 'SCHEDULED_CALL' && (
-            <div>
-              <label htmlFor="otp-call-at" className={labelClass}>
-                Call me at
-              </label>
-              <input
-                id="otp-call-at"
-                type="datetime-local"
-                value={callAt}
-                min={localInputValue(new Date())}
-                onChange={(e) => setCallAt(e.target.value)}
-                aria-describedby="otp-call-at-zone"
-                className={inputClass}
-              />
-              <p id="otp-call-at-zone" className="mt-1 text-xs text-slate-600">
-                Your time zone ({timeZone}). STS calls within 5 minutes of this time.
-              </p>
-            </div>
+          {booking && (
+            <p className="self-end text-xs text-slate-600 sm:pb-2">
+              Next, STS’s appointment page opens in a new tab: pick a date and a free time. You’ll
+              get a confirmation email and text, and reminders before the call.
+            </p>
           )}
         </div>
 
@@ -190,12 +185,28 @@ export function DataQsOtpChoiceDialog({
             Could not save: {save.error.message}
           </p>
         )}
+        {link.isError && (
+          <p className="mt-3 text-sm text-red-700" role="alert">
+            Your choice is saved, but the booking page didn’t open: {link.error.message}
+          </p>
+        )}
         <div className="mt-5 flex flex-wrap justify-end gap-2">
           <button type="button" onClick={onClose} className={secondaryButton}>
             {current ? 'Cancel' : 'Decide later'}
           </button>
-          <button type="submit" disabled={!ready || save.isPending} className={primaryButton}>
-            {save.isPending ? 'Saving…' : 'Save my choice'}
+          <button
+            type="submit"
+            disabled={!ready || busy}
+            className={`${primaryButton} inline-flex items-center gap-1.5`}
+          >
+            {busy
+              ? booking
+                ? 'Opening the booking page…'
+                : 'Saving…'
+              : booking
+                ? 'Save and book a time'
+                : 'Save my choice'}
+            {booking && !busy && <ExternalLink className="size-3.5" aria-hidden />}
           </button>
         </div>
       </form>

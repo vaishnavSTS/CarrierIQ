@@ -55,7 +55,9 @@ export function DataQsOtpStaffPanel({ dataqsCase: c }: { dataqsCase: DataQsCase 
 
       {choice?.method === 'SCHEDULED_CALL' && (
         <p className="text-slate-600">
-          It’s on the open tasks, due at that time. Start the FMCSA login when you call.
+          {choice.call_at
+            ? 'It’s on the open tasks, due at that time. Start the FMCSA login when you call.'
+            : 'The time is on the STS website’s appointments page, and the call is on the open tasks. Start the FMCSA login when you call.'}
         </p>
       )}
 

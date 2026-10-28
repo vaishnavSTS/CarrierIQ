@@ -3,8 +3,8 @@ the carrier a one-time code. After submitting a request the carrier chooses how 
 
 - TEXT: STS texts the carrier (Twilio); the carrier replies with the code.
 - AI_CALL: an automated call (Twilio) asks the carrier to key in or say the code.
-- SCHEDULED_CALL: the carrier picks a time; an STS staff member calls within 5 minutes of it
-  (a task on the case, due then).
+- SCHEDULED_CALL: the carrier books a time on STS's appointment page (dataqs_call_link); an STS
+  staff member calls then (a task on the case; due at `call_at` when one is given).
 
 A code that comes back is shown only to the staff member who asked for it, for 10 minutes, then
 wiped (or as soon as they mark it used). It is never logged, emailed or put in the audit trail.
@@ -146,16 +146,15 @@ class DataQsOtpService:
             raise DataQsInvalidTransitionError("This case is closed")
         e164 = to_e164(phone)
         now = self.now()
-        if method == DataQsOtpMethod.SCHEDULED_CALL:
-            if call_at is None:
-                raise ValidationError("Choose the date and time STS should call")
+        if method == DataQsOtpMethod.SCHEDULED_CALL and call_at is not None:
+            # Usually none: the carrier books the time on STS's appointment page instead.
             if call_at.tzinfo is None:
                 raise ValidationError("The call time needs a time zone")
             if call_at <= now:
                 raise ValidationError("Choose a call time in the future")
             if call_at > now + LATEST_CALL:
                 raise ValidationError("Choose a call time within the next 60 days")
-        else:
+        elif method != DataQsOtpMethod.SCHEDULED_CALL:
             call_at = None
 
         before = {"method": case.otp_method, "call_at": _iso(case.otp_call_at)}
@@ -168,16 +167,19 @@ class DataQsOtpService:
             agent.carrier_chose(case, user)
         else:
             agent.carrier_chose_other(case, user)
-        if call_at is not None:
+        if method == DataQsOtpMethod.SCHEDULED_CALL:
+            when = (
+                "The carrier chose this time. Call within 5 minutes of it"
+                if call_at is not None
+                else "The carrier books the time on STS's appointment page (see the website's "
+                "appointments). Call then"
+            )
             self.db.add(
                 DataQsTask(
                     case_id=case.id,
                     kind=CALL_TASK,
                     title=f"Call {display_phone(e164)} for the FMCSA login code",
-                    detail=(
-                        "The carrier chose this time. Call within 5 minutes of it, start the "
-                        "FMCSA login and ask them for the code FMCSA sends."
-                    ),
+                    detail=f"{when}, start the FMCSA login and ask them for the code FMCSA sends.",
                     action_owner=DataQsActionOwner.STS,
                     assignee_id=case.owner_id,
                     due_at=call_at,

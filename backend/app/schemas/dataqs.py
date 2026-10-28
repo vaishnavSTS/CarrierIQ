@@ -659,8 +659,8 @@ class DataQsRelatedCaseOut(BaseModel):
 
 
 class DataQsOtpPreferenceIn(BaseModel):
-    """How the carrier wants to give STS the FMCSA login code. `call_at` (with a time zone) only
-    for SCHEDULED_CALL: STS calls within 5 minutes of it."""
+    """How the carrier wants to give STS the FMCSA login code. SCHEDULED_CALL: the carrier books
+    the time on STS's appointment page; an optional `call_at` (with a time zone) is used instead."""
 
     method: DataQsOtpMethod
     phone: str = Field(min_length=7, max_length=30, pattern=r"^\+?[0-9 ().-]{7,30}$")

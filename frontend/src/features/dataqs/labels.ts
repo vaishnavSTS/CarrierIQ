@@ -90,13 +90,16 @@ export function auditLabel(action: string): string {
 export const OTP_METHOD_LABEL: Record<DataQsOtpMethod, string> = {
   TEXT: 'Text message',
   AI_CALL: 'Automated call',
-  SCHEDULED_CALL: 'A call at a set time',
+  SCHEDULED_CALL: 'A call at a booked time',
   AUTHORIZED_AGENT: 'Authorize STS as an agent',
 }
 
 export function otpChoiceText(p: DataQsOtpPreference): string {
   if (p.method === 'SCHEDULED_CALL' && p.call_at) {
     return `A call to ${p.phone} within 5 minutes of ${formatDateTime(p.call_at)}`
+  }
+  if (p.method === 'SCHEDULED_CALL') {
+    return `A call to ${p.phone} at the time booked on STS’s appointment page`
   }
   if (p.method === 'AUTHORIZED_AGENT') {
     return 'Authorizing STS as an agent in the FMCSA Portal (no login code needed)'

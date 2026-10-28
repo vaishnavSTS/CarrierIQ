@@ -112,7 +112,6 @@ def test_a_scheduled_call_becomes_a_staff_task(
     api: TestClient, world: dict[str, User], db: Session
 ) -> None:
     case = submitted_case(api)
-    assert choose(api, case["id"], "SCHEDULED_CALL").status_code == 422  # needs a time
     past = (datetime.now(UTC) - timedelta(hours=1)).isoformat()
     assert choose(api, case["id"], "SCHEDULED_CALL", call_at=past).status_code == 422
 
@@ -230,3 +229,19 @@ def test_asking_without_twilio_or_a_texted_choice_is_explained(
 
     log_in(api, "owner@acme.test")
     assert api.post(f"/api/v1/dataqs/cases/{case['id']}/otp-requests").status_code == 403
+
+
+def test_a_call_booked_on_the_sts_website_needs_no_time(
+    api: TestClient, world: dict[str, User], db: Session
+) -> None:
+    """The carrier books the time on STS's appointment page, so the choice comes without one."""
+    case = submitted_case(api)
+    saved = choose(api, case["id"], "SCHEDULED_CALL")
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["otp_preference"]["call_at"] is None
+    [task] = db.scalars(
+        select(DataQsTask).where(
+            DataQsTask.case_id == case["id"], DataQsTask.kind == "CALL_FOR_OTP"
+        )
+    ).all()
+    assert task.due_at is None and "appointment page" in (task.detail or "")
