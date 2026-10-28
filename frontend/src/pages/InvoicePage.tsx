@@ -35,11 +35,11 @@ export function InvoicePage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <Link
-          to={staff ? '/invoices' : `/portal/carriers/${inv.usdot_number}?tab=compliance`}
+          to={staff ? '/invoices' : `/portal/carriers/${inv.usdot_number}?tab=invoices`}
           className="inline-flex items-center gap-1 text-sm text-slate-600 hover:text-accent-strong"
         >
           <ArrowLeft className="size-4" aria-hidden />
-          {staff ? 'All invoices' : 'Back to Compliance'}
+          {staff ? 'All invoices' : 'Back to Invoices'}
         </Link>
         <div className="flex flex-wrap gap-2">
           {/* The same PDF that's emailed when it's paid. */}

@@ -274,7 +274,8 @@ function ComplianceRow({
   const [asking, setAsking] = useState(false)
   const [paying, setPaying] = useState(false)
   const invoice = openRequest?.invoice_id ? openRequest : undefined
-  const invoicePath = invoice ? `${staff ? '' : '/portal'}/invoices/${invoice.invoice_id}` : null
+  // Staff see the invoice here; clients have it on the carrier's Invoices tab.
+  const invoicePath = staff && invoice ? `/invoices/${invoice.invoice_id}` : null
   const Icon = row.icon
   const link = SERVICE_LINKS[row.service]
   const tone = row.badge?.tone ?? 'neutral'
@@ -318,26 +319,22 @@ function ComplianceRow({
           </p>
           {openRequest && (
             <p className="text-xs font-medium text-emerald-700">
-              {invoice ? (
+              {invoice && !staff ? (
+                `Requested ${formatLocalDate(invoice.created_at)}. Your invoice is on the Invoices tab.`
+              ) : invoice ? (
                 <>
-                  {staff ? `${invoice.requested_by_name ?? 'The client'}: invoice` : 'Invoice'}{' '}
-                  {invoice.invoice_number} · {invoice.option_label}
+                  {invoice.requested_by_name ?? 'The client'}: invoice {invoice.invoice_number} ·{' '}
+                  {invoice.option_label}
                   {invoice.quantity ? ` (${invoice.quantity} drivers)` : ''} · ${invoice.amount} ·{' '}
                   {invoice.invoice_status === 'PAID'
                     ? 'paid'
                     : invoice.invoice_status === 'UNPAID'
                       ? 'not paid yet'
                       : invoice.invoice_status?.toLowerCase()}{' '}
-                  · {formatLocalDate(invoice.created_at)}
-                  {staff && (
-                    <>
-                      {' '}
-                      ·{' '}
-                      <Link to="/service-requests" className="underline">
-                        Service requests
-                      </Link>
-                    </>
-                  )}
+                  · {formatLocalDate(invoice.created_at)} ·{' '}
+                  <Link to="/service-requests" className="underline">
+                    Service requests
+                  </Link>
                 </>
               ) : staff ? (
                 <>
@@ -354,8 +351,8 @@ function ComplianceRow({
           )}
         </div>
       </div>
-      {/* Right side (clients only; staff see the open invoice's page): pay online (priced
-          services), its link, or ask STS */}
+      {/* Right side: clients pay online (priced services), follow its link, or ask STS; staff
+          see the open request's invoice */}
       <div className="flex flex-wrap gap-2 sm:shrink-0 sm:flex-nowrap">
         {staff ? null : link ? (
           <a href={link} target="_blank" rel="noreferrer" className={`${mainButton} ${active}`}>
@@ -384,7 +381,7 @@ function ComplianceRow({
             to={invoicePath}
             className="inline-flex min-h-11 flex-1 items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:min-h-0 sm:flex-none"
           >
-            {!staff && invoice?.invoice_status === 'UNPAID' ? 'Pay invoice' : 'View invoice'}
+            View invoice
           </Link>
         )}
       </div>
