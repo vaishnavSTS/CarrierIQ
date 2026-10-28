@@ -1,6 +1,7 @@
 """DataQs API shapes (docs/DataQ.md, Phase 2): intake check, case creation, evidence, submission."""
 
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
@@ -22,6 +23,7 @@ from app.models.enums import (
     DataQsScanStatus,
     DataQsVerificationStatus,
     DataQsWorkStatus,
+    InvoiceStatus,
 )
 from app.services.dataqs_eligibility import EligibilityStatus
 
@@ -701,6 +703,16 @@ class DataQsOtpRequestOut(BaseModel):
     error: str | None
 
 
+class DataQsFeeOut(BaseModel):
+    """The $50 DataQs filing fee on a case (paid through Stripe before STS starts)."""
+
+    invoice_id: int
+    invoice_number: int
+    amount: Decimal
+    status: InvoiceStatus
+    paid_at: datetime | None
+
+
 class DataQsCallLinkOut(BaseModel):
     """A signed booking link on STS's website for a call about the case."""
 
@@ -764,6 +776,8 @@ class DataQsCaseOut(DataQsCaseSummaryOut):
     can_set_otp_preference: bool = False
     otp_request: DataQsOtpRequestOut | None = None
     otp_automation_ready: bool = False
+    # The $50 DataQs fee (None: submitted before the fee, or not submitted yet).
+    fee: DataQsFeeOut | None = None
     # Whether this user may book a call with STS (on STS's website) about the case.
     agent: DataQsAgentAccessOut | None = None
     can_book_call: bool = False

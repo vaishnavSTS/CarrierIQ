@@ -49,6 +49,12 @@ def no_worker_in_api(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(get_settings(), "twilio_account_sid", None)
     monkeypatch.setattr(get_settings(), "twilio_auth_token", None)
     monkeypatch.setattr(get_settings(), "twilio_from_number", None)
+    # Never send a real email: without these, any code that falls back to get_email_sender()
+    # would use backend/.env's Gmail / SMTP / Resend settings.
+    for name in ("gmail_client_id", "gmail_client_secret", "gmail_refresh_token"):
+        monkeypatch.setattr(get_settings(), name, None)
+    monkeypatch.setattr(get_settings(), "smtp_host", None)
+    monkeypatch.setattr(get_settings(), "resend_api_key", None)
     # Tests check the real recipients, whatever test routing backend/.env sets.
     monkeypatch.setattr(get_settings(), "dataqs_email_carrier_override", None)
     monkeypatch.setattr(get_settings(), "dataqs_email_staff_override", None)

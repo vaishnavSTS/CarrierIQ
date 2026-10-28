@@ -193,3 +193,26 @@ def test_one_carriers_invoices_for_staff_and_its_client(api: TestClient, invoice
         i["id"] for i in api.get(f"/api/v1/invoices?usdot_number={usdot}").json()["invoices"]
     ] == [invoice_id]
     assert api.get("/api/v1/invoices?usdot_number=1").json()["invoices"] == []
+
+
+def test_the_dataqs_fee_is_paid_on_stripe_and_returns_to_the_case(
+    api: TestClient,
+    world: dict[str, User],
+    db: Session,
+    stripe: FakeStripe,  # noqa: F811
+    sender: FakeSender,  # noqa: F811
+) -> None:
+    from tests.dataqs.helpers import create_case, submit, upload
+
+    log_in(api, "owner@acme.test")
+    case = create_case(api)
+    upload(api, case)
+    case = submit(api, api.get(f"/api/v1/portal/dataqs/cases/{case['id']}").json(), pay_fee=False)
+    answer = api.post(f"/api/v1/portal/dataqs/cases/{case['id']}/fee/pay")
+    assert answer.status_code == 200 and answer.json()["url"] == CHECKOUT_URL
+    [form] = stripe.forms
+    assert form["success_url"].endswith(f"/portal/dataqs/cases/{case['id']}?paid=1")
+    assert form["line_items[0][price_data][unit_amount]"] == "5000"
+    assert form["line_items[0][price_data][product_data][name]"] == "DATAQS REQUEST"
+    invoice = db.get(Invoice, case["fee"]["invoice_id"])
+    assert invoice is not None and invoice.total == 50

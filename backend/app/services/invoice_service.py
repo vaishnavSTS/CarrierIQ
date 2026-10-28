@@ -153,9 +153,15 @@ class InvoiceService:
         return invoice
 
     def checkout(
-        self, invoice: Invoice, customer_email: str | None, stripe: StripeClient, cancel_url: str
+        self,
+        invoice: Invoice,
+        customer_email: str | None,
+        stripe: StripeClient,
+        cancel_url: str,
+        success_url: str | None = None,
     ) -> str:
-        """A fresh Stripe Checkout session for an unpaid invoice; answers its URL."""
+        """A fresh Stripe Checkout session for an unpaid invoice; answers its URL. After paying,
+        Stripe sends the client to `success_url` (default: the invoice's page)."""
         if invoice.status != InvoiceStatus.UNPAID:
             raise ConflictError(f"Invoice {invoice.number} is {invoice.status.value.lower()}")
         app_url = get_settings().public_app_url.rstrip("/")
@@ -166,7 +172,7 @@ class InvoiceService:
                 for line in self._lines(invoice.id)
             ],
             customer_email=customer_email,
-            success_url=f"{app_url}/portal/invoices/{invoice.id}?paid=1",
+            success_url=success_url or f"{app_url}/portal/invoices/{invoice.id}?paid=1",
             cancel_url=cancel_url,
             metadata={"invoice_id": str(invoice.id), "invoice_number": str(invoice.number)},
         )
@@ -216,6 +222,9 @@ class InvoiceService:
             invoice.stripe_session_id = str(obj.get("id") or invoice.stripe_session_id)
             invoice.stripe_payment_intent = obj.get("payment_intent") or None
             self.db.commit()
+            from app.services.dataqs_fee import hand_to_sts  # (import cycle)
+
+            hand_to_sts(self.db, invoice, self.now())  # a DataQs fee: the case goes to STS
             self._tell_paid(invoice, sender)
             return "paid"
         if kind == "charge.refunded":
@@ -267,8 +276,9 @@ class InvoiceService:
             link = f"{app_url}/invoices/{invoice.id}"
             body = (
                 f"Invoice {invoice.number} ({total}) for USDOT {invoice.usdot_number} was paid "
-                f"through Stripe by {client.full_name if client else 'the client'}. The service "
-                "request is on the Service requests page."
+                f"through Stripe by {client.full_name if client else 'the client'}, for: "
+                + "; ".join(f"{line.item} ({line.description})" for line in self._lines(invoice.id))
+                + "."
             )
             messages.append((staff_to, f"Paid: invoice {invoice.number}, {total}", body, link))
         # The paid invoice as a PDF goes with each email (built once).

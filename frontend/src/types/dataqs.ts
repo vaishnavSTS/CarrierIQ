@@ -364,6 +364,15 @@ export interface DataQsCase extends DataQsCaseSummary {
   agent: DataQsAgentAccess | null
   /** May book a call with STS about the case (on STS's website) */
   can_book_call: boolean
+  /** The $50 DataQs fee (null: submitted before the fee, or not submitted yet) */
+  fee: {
+    invoice_id: number
+    invoice_number: number
+    /** e.g. "50.00" */
+    amount: string
+    status: 'UNPAID' | 'PAID' | 'VOID' | 'REFUNDED'
+    paid_at: string | null
+  } | null
 }
 
 export interface DataQsClientUser {

@@ -31,6 +31,7 @@ from app.models.enums import (
 from app.repositories.dataqs_case_repository import DataQsCaseRepository
 from app.schemas.dataqs import DataQsAssessmentIn, DataQsCheckDefOut
 from app.services.dataqs_access import DataQsAccess
+from app.services.dataqs_fee import fee_due
 from app.services.dataqs_notifications import DataQsNotifications
 
 ASSESSMENT_CHECKS = [
@@ -143,6 +144,10 @@ class DataQsAssessmentService:
         case = self._staff_case(user, case_id, body.expected_version)
         if case.work_status not in ASSESSABLE:
             raise DataQsInvalidTransitionError("This case is not waiting for an assessment")
+        if fee_due(self.db, case):
+            raise DataQsInvalidTransitionError(
+                "The carrier hasn't paid the $50 DataQs fee yet; assess the case once it's paid"
+            )
         if set(body.checks) != CHECK_KEYS:
             raise ValidationError("Answer every check: " + ", ".join(sorted(CHECK_KEYS)))
         outcome = body.outcome

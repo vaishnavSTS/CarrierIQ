@@ -12,6 +12,7 @@ import { DataQsAssessmentHistory, DataQsTaskList } from './DataQsCaseActivity'
 import { DataQsDeadlines } from './DataQsDeadlines'
 import { DataQsEventSummary } from './DataQsEventSummary'
 import { DataQsBookCall } from './DataQsBookCall'
+import { DataQsFeeCard } from './DataQsFeeCard'
 import { DataQsFiledCard } from './DataQsFiledCard'
 import { DataQsFilingProofs } from './DataQsFilingProofs'
 import { DataQsMessages } from './DataQsMessages'
@@ -99,7 +100,10 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
   // files go in with each issue below).
   const addEvidence = !staff && c.can_upload && c.work_status !== 'DRAFT'
   // How STS gets the FMCSA login code: asked of the carrier once the request is submitted.
+  // The $50 DataQs fee comes first; STS starts (and asks about FMCSA sign-in) once it's paid.
+  const feeDue = c.fee?.status === 'UNPAID'
   const otpCard =
+    !feeDue &&
     c.work_status !== 'DRAFT' &&
     c.work_status !== 'CLOSED' &&
     (c.can_set_otp_preference || c.otp_preference !== null)
@@ -108,6 +112,11 @@ function Room({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
       <CaseSummary dataqsCase={c} staff={staff} />
 
       <Section title={staff ? 'To do now' : 'Your next steps'}>
+        {feeDue && (
+          <Card title={staff ? 'Waiting for the DataQs fee' : 'Pay the DataQs filing fee'}>
+            <DataQsFeeCard dataqsCase={c} />
+          </Card>
+        )}
         {c.missing_items.length > 0 && (
           <Card title="Still needed">
             <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">

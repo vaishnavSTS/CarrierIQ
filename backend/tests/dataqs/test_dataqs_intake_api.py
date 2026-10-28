@@ -16,6 +16,7 @@ from tests.dataqs.helpers import (
     MemoryStorage,
     create_case,
     log_in,
+    pay_dataqs_fee,
     upload,
 )
 
@@ -183,7 +184,14 @@ def test_submit_signs_the_authorization_and_hands_the_case_to_sts(
     response = api.post(f"/api/v1/portal/dataqs/cases/{case['id']}/submit", json=submit)
     assert response.status_code == 200, response.text
     body = response.json()
-    assert (body["work_status"], body["action_owner"]) == ("STAFF_REVIEW", "STS")
+    # The $50 DataQs fee is due first: the case waits on the carrier, with no STS task yet.
+    assert (body["work_status"], body["action_owner"]) == ("STAFF_REVIEW", "CARRIER")
+    assert (body["fee"]["amount"], body["fee"]["status"]) == ("50.00", "UNPAID")
+    assert "DataQs fee is due" in body["next_action"]
+    assert not db.scalars(select(DataQsTask).where(DataQsTask.case_id == case["id"])).all()
+    pay_dataqs_fee(case["id"])  # Stripe confirms it: the case goes to STS
+    body = api.get(f"/api/v1/portal/dataqs/cases/{case['id']}").json()
+    assert (body["action_owner"], body["fee"]["status"]) == ("STS", "PAID")
     assert body["can_submit"] is False
     assert body["authorizations"][0]["signer_name"] == "Pat Owner"
     assert body["missing_items"] == []
@@ -224,3 +232,19 @@ def test_staff_see_every_case_with_its_audit_trail(
     assert [a["action"] for a in api.get(f"/api/v1/dataqs/cases/{case['id']}").json()["audit"]][
         -1
     ] == "evidence.downloaded"
+
+
+def test_sts_cannot_assess_before_the_fee_is_paid(
+    api: TestClient, world: dict[str, User], db: Session
+) -> None:
+    from tests.dataqs.helpers import assess, staff_case, submit
+
+    log_in(api, "owner@acme.test")
+    case = create_case(api)
+    upload(api, case)
+    case = submit(api, api.get(f"/api/v1/portal/dataqs/cases/{case['id']}").json(), pay_fee=False)
+    log_in(api, "analyst@sts.test")
+    refused = assess(api, staff_case(api, case["id"]), "READY_TO_PREPARE")
+    assert refused.status_code == 409 and "$50 DataQs fee" in refused.text
+    pay_dataqs_fee(case["id"])
+    assert assess(api, staff_case(api, case["id"]), "READY_TO_PREPARE").status_code == 200

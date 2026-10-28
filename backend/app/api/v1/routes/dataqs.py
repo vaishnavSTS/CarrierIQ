@@ -18,8 +18,9 @@ from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.orm import Session
 
 from app.api.auth import require_client, require_staff, require_sts_admin
+from app.api.v1.routes.compliance import get_stripe_client
 from app.core.config import get_settings
-from app.core.exceptions import ValidationError
+from app.core.exceptions import DataQsInvalidTransitionError, ValidationError
 from app.db.session import get_db
 from app.models import User
 from app.repositories.dataqs_case_repository import DataQsCaseRepository
@@ -51,12 +52,15 @@ from app.schemas.dataqs import (
     DataQsVerifyIssueIn,
     DataQsVersionIn,
 )
+from app.schemas.invoice import InvoicePayOut
+from app.services.dataqs_access import DataQsAccess
 from app.services.dataqs_agent_access_service import DataQsAgentAccessService
 from app.services.dataqs_assessment_service import DataQsAssessmentService
 from app.services.dataqs_call_link import DataQsCallLinkService, get_booking_transport
 from app.services.dataqs_case_service import DataQsCaseService
 from app.services.dataqs_evidence_service import DataQsEvidenceService
 from app.services.dataqs_evidence_storage import EvidenceStorage, get_evidence_storage
+from app.services.dataqs_fee import fee_invoice
 from app.services.dataqs_filing_adapter import ManualFilingAdapter
 from app.services.dataqs_filing_proof_service import DataQsFilingProofService
 from app.services.dataqs_lifecycle import DataQsLifecycleService
@@ -68,6 +72,8 @@ from app.services.dataqs_verification_service import (
     FmcsaSource,
     get_fmcsa_source,
 )
+from app.services.invoice_service import InvoiceService
+from app.services.stripe_client import StripeClient
 
 router = APIRouter(prefix="/dataqs", tags=["dataqs"])
 portal_router = APIRouter(prefix="/portal/dataqs", tags=["dataqs"])
@@ -424,6 +430,25 @@ def build_package(
     replaces the old package and any approval of it) and send it to the carrier for approval."""
     service.build(user, case_id, body)
     return cases.detail(user, case_id)
+
+
+@portal_router.post("/cases/{case_id}/fee/pay", response_model=InvoicePayOut)
+def pay_dataqs_fee(
+    case_id: int,
+    user: ClientUser,
+    db: Annotated[Session, Depends(get_db)],
+    stripe: Annotated[StripeClient, Depends(get_stripe_client)],
+) -> InvoicePayOut:
+    """The carrier pays the $50 DataQs fee: a Stripe Checkout page that returns to the case."""
+    case = DataQsAccess(db, DataQsCaseRepository(db)).case_to_act_on(user, case_id)
+    invoice = fee_invoice(db, case)
+    if invoice is None:
+        raise DataQsInvalidTransitionError("This case has no DataQs fee to pay")
+    page = f"{get_settings().public_app_url.rstrip('/')}/portal/dataqs/cases/{case.id}"
+    url = InvoiceService(db).checkout(
+        invoice, user.email, stripe, cancel_url=page, success_url=f"{page}?paid=1"
+    )
+    return InvoicePayOut(url=url)
 
 
 @portal_router.post("/cases/{case_id}/resubmit", response_model=DataQsCaseOut)

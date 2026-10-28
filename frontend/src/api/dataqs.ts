@@ -146,6 +146,11 @@ export function updateDataQsAgentAccess(
   return post(`${base}/cases/${caseId}/agent-access/${action}`, {})
 }
 
+/** Clients: a Stripe Checkout page for the case's $50 DataQs fee (it returns to the case). */
+export function payDataQsFee(caseId: number): Promise<{ url: string }> {
+  return post(`/portal/dataqs/cases/${caseId}/fee/pay`, {})
+}
+
 /** A signed link to book a call with STS about the case, on STS's website. */
 export function dataQsCallLink(base: DataQsBase, caseId: number): Promise<{ url: string }> {
   return post(`${base}/cases/${caseId}/call-link`, {})

@@ -42,8 +42,8 @@ from app.models import (
     DataQsEvidence,
     DataQsFilingProof,
     DataQsIssue,
-    DataQsTask,
     Inspection,
+    Invoice,
     User,
 )
 from app.models.enums import (
@@ -57,6 +57,7 @@ from app.models.enums import (
     DataQsReason,
     DataQsVerificationStatus,
     DataQsWorkStatus,
+    InvoiceStatus,
     UserRole,
 )
 from app.repositories.dataqs_case_repository import DataQsCaseRepository
@@ -79,6 +80,7 @@ from app.schemas.dataqs import (
     DataQsEventOut,
     DataQsEvidenceLinkOut,
     DataQsEvidenceOut,
+    DataQsFeeOut,
     DataQsFilingProofOut,
     DataQsIssueOut,
     DataQsMessageOut,
@@ -101,7 +103,6 @@ from app.services import dataqs_eligibility
 from app.services.dataqs_access import DataQsAccess, may_act
 from app.services.dataqs_agent_access_service import approve_steps
 from app.services.dataqs_assessment_service import (
-    ASSESS_TARGET,
     ASSESSABLE,
     ASSESSMENT_CHECKS,
     CARRIER_OUTCOME_LABELS,
@@ -117,6 +118,7 @@ from app.services.dataqs_checklist import (
 )
 from app.services.dataqs_clock_service import LABELS as CLOCK_LABELS
 from app.services.dataqs_clock_service import DataQsClockService, state
+from app.services.dataqs_fee import DATAQS_FEE, add_fee, fee_invoice
 from app.services.dataqs_lifecycle import LEVEL_LABEL, NEXT_LEVEL, proposed_cycle
 from app.services.dataqs_notifications import DataQsNotifications
 from app.services.dataqs_otp_service import DataQsOtpService, display_phone
@@ -675,23 +677,20 @@ class DataQsCaseService:
         )
         before = {"work_status": case.work_status.value}
         case.work_status = DataQsWorkStatus.STAFF_REVIEW
-        case.action_owner = DataQsActionOwner.STS
+        # The $50 DataQs fee: STS starts (the Assess task) once Stripe confirms it's paid.
+        case.action_owner = DataQsActionOwner.CARRIER
+        fee = add_fee(self.db, case, user)
         self.db.flush()
-        self.db.add(
-            DataQsTask(
-                case_id=case.id,
-                kind="ASSESS_CASE",
-                title=f"Assess DataQs case {case.id}",
-                action_owner=DataQsActionOwner.STS,
-                due_at=now + ASSESS_TARGET,
-            )
-        )
         self.repository.audit(
             case,
             user,
             "case.submitted",
             before=before,
-            after={"work_status": case.work_status.value, "terms_version": CONSENT_TERMS_VERSION},
+            after={
+                "work_status": case.work_status.value,
+                "terms_version": CONSENT_TERMS_VERSION,
+                "fee_invoice_number": fee.number,
+            },
         )
         self.db.commit()
         return case
@@ -821,6 +820,17 @@ class DataQsCaseService:
             ),
             can_set_otp_preference=can_act and case.work_status != DataQsWorkStatus.CLOSED,
             can_book_call=can_act and case.work_status != DataQsWorkStatus.CLOSED,
+            fee=(
+                DataQsFeeOut(
+                    invoice_id=fee.id,
+                    invoice_number=fee.number,
+                    amount=fee.total,
+                    status=fee.status,
+                    paid_at=fee.paid_at,
+                )
+                if (fee := fee_invoice(self.db, case))
+                else None
+            ),
             agent=(
                 DataQsAgentAccessOut(
                     status=case.agent_access,
@@ -1341,6 +1351,15 @@ class DataQsCaseService:
             evidence_counts[e.case_id] += 1
         org_names = self.repository.organization_names([c.organization_id for c in cases])
         sts_orgs = self.repository.sts_organization_ids([c.organization_id for c in cases])
+        # Cases whose $50 DataQs fee isn't paid yet: STS waits for it.
+        fee_ids = [c.fee_invoice_id for c in cases if c.fee_invoice_id]
+        unpaid_fees = set(
+            self.db.scalars(
+                select(Invoice.id).where(
+                    Invoice.id.in_(fee_ids), Invoice.status != InvoiceStatus.PAID
+                )
+            )
+        )
         linked_issues = {
             link.issue_id for link in self.repository.evidence_links([e.id for e in evidence])
         }
@@ -1402,7 +1421,11 @@ class DataQsCaseService:
                 ),
                 open_task_count=open_tasks[c.id],
                 overdue_task_count=overdue_tasks[c.id],
-                next_action=NEXT_ACTION[c.work_status],
+                next_action=(
+                    f"The ${DATAQS_FEE:,.0f} DataQs fee is due; STS starts once it's paid"
+                    if c.fee_invoice_id in unpaid_fees
+                    else NEXT_ACTION[c.work_status]
+                ),
                 next_deadline_at=deadlines[c.id][0] if c.id in deadlines else None,
                 next_deadline_label=deadlines[c.id][1] if c.id in deadlines else None,
                 created_at=c.created_at,

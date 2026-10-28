@@ -27,6 +27,7 @@ import {
   resubmitDataQsCase,
   settleDataQsFiling,
   dataQsCallLink,
+  payDataQsFee,
   updateDataQsAgentAccess,
   uploadDataQsFilingProof,
   startDataQsFiling,
@@ -117,6 +118,10 @@ export function useDataQsAgentAccess(caseId: number) {
 }
 
 /** A booking link on STS's website (nothing on the case changes, so no refetch). */
+export function usePayDataQsFee(caseId: number) {
+  return useMutation({ mutationFn: () => payDataQsFee(caseId) })
+}
+
 export function useDataQsCallLink(caseId: number) {
   const base = useDataQsBase()
   return useMutation({ mutationFn: () => dataQsCallLink(base, caseId) })

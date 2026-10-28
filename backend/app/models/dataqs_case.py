@@ -127,6 +127,9 @@ class DataQsCase(IdMixin, UpdatedAtMixin, Base):
     agent_reminders: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     agent_reminded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     agent_granted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # The DataQs filing fee (dataqs_fee.py): its invoice, made when the carrier submits. Until it's
+    # paid the case waits on the carrier; None for cases submitted before the fee.
+    fee_invoice_id: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("invoices.id"))
     row_version: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
 
     __mapper_args__ = {"version_id_col": row_version}

@@ -167,8 +167,9 @@ def submitted_case(api: TestClient) -> dict:
     return submit(api, case)
 
 
-def submit(api: TestClient, case: dict) -> dict:
-    """The carrier's owner signs the authorization and submits the case to STS."""
+def submit(api: TestClient, case: dict, pay_fee: bool = True) -> dict:
+    """The carrier's owner signs the authorization and submits the case to STS, and (unless
+    pay_fee is False) the $50 DataQs fee is paid, as Stripe's webhook would record it."""
     response = api.post(
         f"/api/v1/portal/dataqs/cases/{case['id']}/submit",
         json={
@@ -179,7 +180,33 @@ def submit(api: TestClient, case: dict) -> dict:
         },
     )
     assert response.status_code == 200, response.text
+    if pay_fee:
+        pay_dataqs_fee(response.json()["id"])
+        return api.get(f"/api/v1/portal/dataqs/cases/{case['id']}").json()
     return response.json()
+
+
+def pay_dataqs_fee(case_id: int) -> None:
+    """Record the case's DataQs fee as paid (what Stripe's webhook does) in the test database."""
+    from app.db.session import get_db
+    from app.main import app
+    from app.models import DataQsCase
+    from app.services.invoice_service import InvoiceService
+
+    db = app.dependency_overrides[get_db]()
+    fee_id = db.get(DataQsCase, case_id).fee_invoice_id
+    event = {
+        "type": "checkout.session.completed",
+        "data": {
+            "object": {
+                "id": "cs_test",
+                "payment_status": "paid",
+                "payment_intent": f"pi_{case_id}",
+                "metadata": {"invoice_id": str(fee_id)},
+            }
+        },
+    }
+    InvoiceService(db).handle_event(event, sender=None)
 
 
 def staff_case(api: TestClient, case_id: int) -> dict:
