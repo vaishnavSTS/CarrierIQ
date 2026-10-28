@@ -2,7 +2,7 @@ import secrets
 from collections.abc import Iterator
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -33,6 +33,8 @@ from app.schemas.auth import (
 )
 from app.services.auth_service import AuthService
 from app.services.broker_authority import BrokerAuthorityChecker
+from app.services.dataqs_email import EmailSender, get_email_sender
+from app.services.welcome_email import send_welcome, welcome_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -47,6 +49,19 @@ GOOGLE_SIGNUP_PAGE = {"client": "/register/google", "broker": "/broker/register/
 
 def get_auth_service(db: Annotated[Session, Depends(get_db)]) -> AuthService:
     return AuthService(db, UserRepository(db))
+
+
+def get_signup_email_sender() -> EmailSender | None:
+    """How the welcome email is sent (tests replace it)."""
+    return get_email_sender()
+
+
+Mailer = Annotated[EmailSender | None, Depends(get_signup_email_sender)]
+
+
+def _welcome(tasks: BackgroundTasks, user: User, company: str, sender: EmailSender | None) -> None:
+    """The welcome email, sent after the answer so it never slows or fails the sign-up."""
+    tasks.add_task(send_welcome, welcome_email(user, company), sender)
 
 
 def get_google_client() -> GoogleOAuthClient:
@@ -105,22 +120,32 @@ def options() -> AuthOptionsOut:
 
 
 @router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
-def register(data: RegisterIn, response: Response, service: Service) -> UserOut:
-    """A client signs up and is logged in at once; STS sees the new account in a pop-up."""
+def register(
+    data: RegisterIn, response: Response, service: Service, tasks: BackgroundTasks, mailer: Mailer
+) -> UserOut:
+    """A client signs up and is logged in at once; STS sees the new account in a pop-up. They get
+    a welcome email."""
     user = service.register(data)
     _start_session(response, user)
+    _welcome(tasks, user, data.company_name, mailer)
     return service.user_out(user)
 
 
 @router.post("/broker/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def register_broker(
-    data: BrokerRegisterIn, response: Response, service: Service, checker: Checker
+    data: BrokerRegisterIn,
+    response: Response,
+    service: Service,
+    checker: Checker,
+    tasks: BackgroundTasks,
+    mailer: Mailer,
 ) -> UserOut:
     """A broker signs up and is logged in at once, once FMCSA shows active broker authority for
     the MC or USDOT number they gave (422 with the reason otherwise)."""
     authority = checker.check(data.id_kind, data.id_number)
     user = service.register_broker(data, authority)
     _start_session(response, user)
+    _welcome(tasks, user, data.company_name, mailer)
     return service.user_out(user)
 
 
@@ -236,12 +261,18 @@ def google_signup_pending(request: Request) -> GoogleSignupPendingOut:
 
 @router.post("/google/signup", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def google_signup_complete(
-    data: GoogleSignupIn, request: Request, response: Response, service: Service
+    data: GoogleSignupIn,
+    request: Request,
+    response: Response,
+    service: Service,
+    tasks: BackgroundTasks,
+    mailer: Mailer,
 ) -> UserOut:
     """Company, mobile number and USDOT for a new Google user, who is then logged in."""
     user = service.complete_google_signup(_pending_google_signup(request), data)
     _clear_cookie(response, GOOGLE_SIGNUP_COOKIE)
     _start_session(response, user)
+    _welcome(tasks, user, data.company_name, mailer)
     return service.user_out(user)
 
 
@@ -252,6 +283,8 @@ def broker_google_signup_complete(
     response: Response,
     service: Service,
     checker: Checker,
+    tasks: BackgroundTasks,
+    mailer: Mailer,
 ) -> UserOut:
     """Company, mobile number and MC / USDOT for a new Google user signing up as a broker."""
     identity = _pending_google_signup(request)
@@ -259,4 +292,5 @@ def broker_google_signup_complete(
     user = service.complete_google_broker_signup(identity, data, authority)
     _clear_cookie(response, GOOGLE_SIGNUP_COOKIE)
     _start_session(response, user)
+    _welcome(tasks, user, data.company_name, mailer)
     return service.user_out(user)

@@ -109,7 +109,11 @@ def staff_link(case: DataQsCase) -> str:
 
 
 def render_html(
-    text: str, link: str | None, link_label: str, first: tuple[str, str] | None = None
+    text: str,
+    link: str | None,
+    link_label: str,
+    first: tuple[str, str] | None = None,
+    footer: str = "Sky Transport Solutions · DataQs service",
 ) -> str:
     """The email as HTML; `first` (label, url) is a button before the main one. No `link`, no
     button (e.g. the paid-invoice emails, which attach the invoice instead)."""
@@ -133,7 +137,7 @@ def render_html(
             if link
             else ""
         )
-        + '<p style="color:#6b6880;font-size:12px">Sky Transport Solutions · DataQs service</p>'
+        + f'<p style="color:#6b6880;font-size:12px">{html.escape(footer)}</p>'
         "</div>"
     )
 
