@@ -399,8 +399,8 @@ class CarrierComplianceService:
                     f"Invoice {out.invoice_number} for "
                     f"{out.option_label or out.service_label}"
                     + (f", {out.quantity} drivers" if out.quantity else "")
-                    + f", ${out.amount:,.2f}. The client was sent to Stripe to pay; you'll get "
-                    "another email when it's paid."
+                    + f", ${out.amount:,.2f} (attached). The client was sent to Stripe to pay; "
+                    "you'll get another email when it's paid."
                     if out.invoice_number and out.amount is not None
                     else ""
                 ),
@@ -409,14 +409,16 @@ class CarrierComplianceService:
             ]
             if part
         )
-        link = f"{settings.public_app_url.rstrip('/')}/service-requests"
+        # The invoice goes with the email as its PDF, so no link or button.
+        pdf = InvoiceService(self.db).attachment(request.invoice_id) if request.invoice_id else None
         try:
             sender.send(
                 to=to,
                 subject=subject,
-                text=f"{body}\n\n{link}",
-                html=render_html(body, link, "Open service requests"),
+                text=body,
+                html=render_html(body, None, ""),
                 idempotency_key=f"compliance-request-{request.id}",
+                attachments=[pdf] if pdf else [],
             )
         except Exception as exc:  # noqa: BLE001 - keep the request; staff see the failure
             logger.warning("Compliance request %s: email to STS failed", request.id)

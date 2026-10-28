@@ -368,6 +368,15 @@ class InvoiceService:
             can_void=user.role.is_staff and invoice.status == InvoiceStatus.UNPAID,
         )
 
+    def attachment(self, invoice_id: int) -> Attachment | None:
+        """The invoice's PDF to attach to an email STS sends (no access check: server-side only)."""
+        invoice = self.db.get(Invoice, invoice_id)
+        if invoice is None:
+            return None
+        return Attachment(
+            _pdf_name(invoice), "application/pdf", render_invoice_pdf(self._document(invoice))
+        )
+
     def pdf(self, user: User, invoice_id: int) -> tuple[str, bytes]:
         """The invoice as a PDF file: (file name, bytes)."""
         invoice = self._visible(user, invoice_id)

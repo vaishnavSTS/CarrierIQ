@@ -135,6 +135,10 @@ def test_paying_creates_our_invoice_and_a_stripe_checkout(
 
     [email] = sender.sent
     assert f"Invoice {invoice.number}" in email["text"] and "$277.00" in email["text"]
+    # The invoice is attached as its PDF, so the email has no link or button.
+    [pdf] = email["files"]
+    assert pdf.filename == f"invoice-{invoice.number}.pdf" and pdf.data.startswith(b"%PDF")
+    assert "/service-requests" not in email["text"] and "Open service requests" not in email["html"]
 
     # The same choice again while unpaid: the same invoice, a fresh Stripe session, no new email.
     again = pay(api, "UCR", "TRUCKS_3_5")
