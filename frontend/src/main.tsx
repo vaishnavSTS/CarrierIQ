@@ -16,14 +16,17 @@ const queryClient: QueryClient = new QueryClient({
       if (error instanceof ApiError && error.status === 401) {
         queryClient.setQueryData(ME_KEY, null)
       }
+      // 402: the free trial ended meanwhile; reload the user so the subscribe pop-up shows.
+      if (error instanceof ApiError && error.status === 402) {
+        void queryClient.invalidateQueries({ queryKey: ME_KEY })
+      }
     },
   }),
   defaultOptions: {
     queries: {
-      // Retrying a 401 or 403 cannot succeed.
+      // Retrying a 401, 402 or 403 cannot succeed.
       retry: (failures, error) =>
-        !(error instanceof ApiError && (error.status === 401 || error.status === 403)) &&
-        failures < 1,
+        !(error instanceof ApiError && [401, 402, 403].includes(error.status)) && failures < 1,
       refetchOnWindowFocus: false,
     },
   },

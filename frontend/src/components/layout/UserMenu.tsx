@@ -1,6 +1,7 @@
 import { LogOut } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
+import { ManageSubscriptionButton } from '../../features/billing/ManageSubscriptionButton'
 import { useLogout, useMe } from '../../hooks/useAuth'
 import { ROLE_LABELS } from './roleLabels'
 import { ThemeToggle } from './ThemeToggle'
@@ -23,6 +24,7 @@ export function UserMenu() {
           {user.organization_name} · {ROLE_LABELS[user.role]}
         </div>
       </div>
+      <ManageSubscriptionButton className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-900 disabled:opacity-50" />
       <button
         type="button"
         onClick={() => logout.mutate(undefined, { onSettled: () => navigate('/') })}

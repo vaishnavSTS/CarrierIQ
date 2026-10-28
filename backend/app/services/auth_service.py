@@ -52,6 +52,7 @@ from app.schemas.auth import (
 )
 from app.services.broker_authority import BrokerAuthority
 from app.services.dataqs_case_service import DataQsCaseService
+from app.services.subscription import TRIAL, billing_out
 
 # Compared against when the email is unknown, so a wrong email takes as long as a wrong password.
 _DUMMY_HASH = hash_password("not-a-real-password")
@@ -126,6 +127,7 @@ class AuthService:
             role=UserRole.CLIENT_ADMIN,
             status=UserStatus.ACTIVE,
             last_login_at=self.now(),
+            trial_ends_at=self.now() + TRIAL,  # then $25/month (app/services/subscription.py)
         )
         self.db.add(user)
         self.db.add(OrganizationCarrier(organization_id=organization.id, usdot_number=usdot_number))
@@ -177,6 +179,7 @@ class AuthService:
             role=UserRole.BROKER_ADMIN,
             status=UserStatus.ACTIVE,
             last_login_at=self.now(),
+            trial_ends_at=self.now() + TRIAL,  # then $25/month (app/services/subscription.py)
         )
         self.db.add(user)
         self.db.commit()
@@ -246,7 +249,7 @@ class AuthService:
 
     def user_out(self, user: User) -> UserOut:
         organization = self.users.organization(user.organization_id)
-        return UserOut(**_user_fields(user, organization))
+        return UserOut(**_user_fields(user, organization), billing=billing_out(user, self.now()))
 
     # --- STS admin -----------------------------------------------------------------------------
 

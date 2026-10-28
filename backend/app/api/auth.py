@@ -4,18 +4,32 @@ Every route except health and the public auth routes depends on one of these (wi
 in app/api/v1/router.py), so hiding a page in the frontend is never the only protection.
 """
 
+import re
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import Depends, Path, Request
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.core.exceptions import CarrierNotFoundError, ForbiddenError, UnauthorizedError
+from app.core.exceptions import (
+    CarrierNotFoundError,
+    ForbiddenError,
+    SubscriptionRequiredError,
+    UnauthorizedError,
+)
 from app.core.security import read_session_token
 from app.db.session import get_db
 from app.models import User
 from app.models.enums import UserRole, UserStatus
 from app.repositories.user_repository import UserRepository
+from app.services.subscription import billing_state
+
+# What a login whose trial is over (and not subscribed) may still reach: logging in and out, the
+# subscription, and invoices they already owe (incl. paying a DataQs case's fee).
+OPEN_WHEN_LOCKED = re.compile(
+    r"^/api/v1/(auth(/|$)|billing(/|$)|invoices(/|$)|portal/dataqs/cases/\d+/fee/pay$)"
+)
 
 
 def get_current_user(request: Request, db: Annotated[Session, Depends(get_db)]) -> User:
@@ -25,6 +39,12 @@ def get_current_user(request: Request, db: Annotated[Session, Depends(get_db)]) 
     # An account disabled after logging in loses access on its next request.
     if user is None or user.status != UserStatus.ACTIVE:
         raise UnauthorizedError("Log in to continue")
+    if billing_state(user, datetime.now(UTC)) == "locked" and not OPEN_WHEN_LOCKED.match(
+        request.url.path
+    ):
+        raise SubscriptionRequiredError(
+            "Your free trial has ended. Subscribe to keep using CarrierSafetyScan."
+        )
     return user
 
 

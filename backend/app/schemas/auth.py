@@ -3,6 +3,7 @@ portal's brokerage."""
 
 import re
 from datetime import datetime
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator
@@ -132,6 +133,22 @@ class AuthOptionsOut(BaseModel):
     client_search: bool  # clients may search any carrier (CLIENT_SEARCH_ENABLED, team testing)
 
 
+class BillingOut(BaseModel):
+    """The $25/month subscription (app/services/subscription.py); None on UserOut when free."""
+
+    state: str  # trial | active | locked
+    trial_ends_at: datetime
+    trial_days_left: int | None  # while on the trial
+    monthly_price: Decimal
+    subscription_status: str | None  # Stripe's: active, past_due, canceled, ...
+    current_period_end: datetime | None  # paid up to (Stripe charges again then)
+    can_manage: bool  # has a Stripe customer: Stripe's billing page can open
+
+
+class BillingLinkOut(BaseModel):
+    url: str
+
+
 class UserOut(BaseModel):
     id: int
     email: str
@@ -144,6 +161,7 @@ class UserOut(BaseModel):
     organization_name: str
     created_at: datetime
     last_login_at: datetime | None
+    billing: BillingOut | None = None  # client and broker logins on the paid plan
 
 
 class SeenOut(BaseModel):

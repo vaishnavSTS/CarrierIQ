@@ -4,6 +4,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useCompareList } from '../../features/compare/compareContext'
 import { CompareProvider } from '../../features/compare/CompareProvider'
 import { CompareTray } from '../../features/compare/CompareTray'
+import { SubscriptionGate } from '../../features/billing/SubscriptionGate'
 import { PortalModeContext } from '../../hooks/usePortalMode'
 import { BackgroundSpotlight } from './BackgroundSpotlight'
 import { Brand } from './Brand'
@@ -61,7 +62,9 @@ export function BrokerLayout() {
         </header>
         <main className="mx-auto max-w-7xl px-4 py-6 pb-24">
           <PortalModeContext.Provider value="broker">
-            <Outlet />
+            <SubscriptionGate>
+              <Outlet />
+            </SubscriptionGate>
           </PortalModeContext.Provider>
         </main>
         <CompareTray />

@@ -109,6 +109,13 @@ class BookingUnavailableError(CarrierSafetyScanError):
     status_code = 503
 
 
+class SubscriptionRequiredError(CarrierSafetyScanError):
+    """The free trial is over and there's no live subscription: subscribe to keep using the app."""
+
+    status_code = 402
+    code = "subscription_required"
+
+
 class PaymentUnavailableError(CarrierSafetyScanError):
     """Online payment (Stripe) isn't set up or can't be reached."""
 

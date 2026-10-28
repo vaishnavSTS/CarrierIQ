@@ -1,6 +1,7 @@
 import { FileSearch, Search, Truck } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 
+import { SubscriptionGate } from '../../features/billing/SubscriptionGate'
 import { PortalModeContext } from '../../hooks/usePortalMode'
 import { useClientSearchEnabled } from '../../hooks/useAuth'
 import { BackgroundSpotlight } from './BackgroundSpotlight'
@@ -53,7 +54,9 @@ export function PortalLayout() {
       </header>
       <main className="mx-auto max-w-7xl px-4 py-6">
         <PortalModeContext.Provider value="client">
-          <Outlet />
+          <SubscriptionGate>
+            <Outlet />
+          </SubscriptionGate>
         </PortalModeContext.Provider>
       </main>
     </div>

@@ -21,6 +21,7 @@ from app.schemas.invoice import InvoiceListOut, InvoiceOut, InvoicePayOut
 from app.services.dataqs_email import EmailSender
 from app.services.invoice_service import InvoiceService
 from app.services.stripe_client import StripeClient, verify_webhook
+from app.services.subscription import SubscriptionService
 
 logger = logging.getLogger(__name__)
 
@@ -89,10 +90,13 @@ async def stripe_webhook(
     sender: Annotated[EmailSender | None, Depends(get_request_email_sender)],
     stripe_signature: Annotated[str | None, Header()] = None,
 ) -> dict[str, str]:
-    """Stripe's events: checkout.session.completed (paid) and charge.refunded."""
+    """Stripe's events: checkout.session.completed (an invoice paid, or a subscription started),
+    charge.refunded, and customer.subscription.created / updated / deleted."""
     event = verify_webhook(await request.body(), stripe_signature)
     if event is None:
         raise ForbiddenError("Not a valid Stripe webhook")
-    result = InvoiceService(db).handle_event(event, sender)
+    result = SubscriptionService(db).handle_event(event)
+    if result is None:  # not about a subscription
+        result = InvoiceService(db).handle_event(event, sender)
     logger.info("Stripe event %s (%s): %s", event.get("id"), event.get("type"), result)
     return {"result": result}

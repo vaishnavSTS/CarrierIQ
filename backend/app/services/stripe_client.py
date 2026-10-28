@@ -1,4 +1,5 @@
-"""Stripe over its REST API: Checkout Sessions for paying an invoice, and checking that a webhook
+"""Stripe over its REST API: Checkout Sessions for paying an invoice or starting the monthly
+subscription, Stripe's billing page (manage or cancel a subscription), and checking that a webhook
 really came from Stripe.
 
 Stripe Checkout is Stripe's own hosted payment page: card details go to Stripe, never to
@@ -77,18 +78,65 @@ class StripeClient:
             form[f"{prefix}[price_data][product_data][name]"] = line.name
             if line.description:
                 form[f"{prefix}[price_data][product_data][description]"] = line.description
+        return self._post("checkout/sessions", form, key)
+
+    def create_subscription_checkout(
+        self,
+        *,
+        reference: str,
+        name: str,
+        monthly_amount: Decimal,  # dollars
+        customer_id: str | None,
+        customer_email: str,
+        success_url: str,
+        cancel_url: str,
+        metadata: dict[str, str],
+    ) -> CheckoutSession:
+        """Stripe's page to start a monthly subscription; Stripe then charges it every month."""
+        key = get_settings().stripe_secret_key
+        if not key:
+            raise PaymentUnavailableError("Online payment isn't set up yet. Please contact STS.")
+        form: dict[str, str] = {
+            "mode": "subscription",
+            "client_reference_id": reference,
+            "success_url": success_url,
+            "cancel_url": cancel_url,
+            "line_items[0][quantity]": "1",
+            "line_items[0][price_data][currency]": "usd",
+            "line_items[0][price_data][unit_amount]": str(int(monthly_amount * 100)),
+            "line_items[0][price_data][recurring][interval]": "month",
+            "line_items[0][price_data][product_data][name]": name,
+        }
+        if customer_id:
+            form["customer"] = customer_id
+        else:
+            form["customer_email"] = customer_email
+        for name_, value in metadata.items():
+            form[f"metadata[{name_}]"] = value
+            form[f"subscription_data[metadata][{name_}]"] = value
+        return self._post("checkout/sessions", form, key)
+
+    def create_billing_portal(self, *, customer_id: str, return_url: str) -> CheckoutSession:
+        """Stripe's own billing page for a customer: change the card, see receipts, cancel."""
+        key = get_settings().stripe_secret_key
+        if not key:
+            raise PaymentUnavailableError("Online payment isn't set up yet. Please contact STS.")
+        form = {"customer": customer_id, "return_url": return_url}
+        return self._post("billing_portal/sessions", form, key)
+
+    def _post(self, path: str, form: dict[str, str], key: str) -> CheckoutSession:
         try:
             with httpx.Client(transport=self.transport, timeout=30.0) as client:
-                response = client.post(f"{API}/checkout/sessions", data=form, auth=(key, ""))
+                response = client.post(f"{API}/{path}", data=form, auth=(key, ""))
             data = response.json()
         except (httpx.HTTPError, ValueError) as exc:
-            logger.warning("Stripe checkout failed: %s", type(exc).__name__)
+            logger.warning("Stripe %s failed: %s", path, type(exc).__name__)
             raise PaymentUnavailableError(
                 "The payment page couldn't be opened. Please try again in a minute."
             ) from exc
         if response.status_code >= 400 or not data.get("url"):
             error = (data.get("error") or {}).get("message") or f"HTTP {response.status_code}"
-            logger.warning("Stripe refused the checkout (%s): %s", response.status_code, error)
+            logger.warning("Stripe refused %s (%s): %s", path, response.status_code, error)
             raise PaymentUnavailableError(
                 "The payment page couldn't be opened. Please contact STS."
             )

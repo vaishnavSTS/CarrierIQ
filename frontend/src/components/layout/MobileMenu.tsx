@@ -2,6 +2,7 @@ import { LogOut, Menu, X } from 'lucide-react'
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { ManageSubscriptionButton } from '../../features/billing/ManageSubscriptionButton'
 import { useLogout, useMe } from '../../hooks/useAuth'
 import { ROLE_LABELS } from './roleLabels'
 import { ThemeToggle } from './ThemeToggle'
@@ -70,6 +71,7 @@ export function MobileMenu({ children }: { children: ReactNode }) {
                 Theme
                 <ThemeToggle />
               </div>
+              <ManageSubscriptionButton className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-surface px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:opacity-50" />
               <button
                 type="button"
                 onClick={() => logout.mutate(undefined, { onSettled: () => navigate('/') })}

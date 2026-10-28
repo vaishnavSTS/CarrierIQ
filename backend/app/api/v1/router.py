@@ -11,6 +11,7 @@ from app.api.auth import require_staff
 from app.api.v1.routes import (
     admin,
     auth,
+    billing,
     carriers,
     compliance,
     dashboard,
@@ -47,3 +48,5 @@ api_router.include_router(twilio_webhooks.router)
 api_router.include_router(compliance.router)
 api_router.include_router(invoices.router)
 api_router.include_router(invoices.webhook_router)
+# The $25/month subscription for client and broker logins.
+api_router.include_router(billing.router)

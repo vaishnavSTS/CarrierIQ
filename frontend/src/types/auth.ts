@@ -8,6 +8,22 @@ export type UserRole =
 export type Portal = 'internal' | 'client' | 'broker'
 export type UserStatus = 'PENDING' | 'ACTIVE' | 'DISABLED'
 
+/** The $25/month subscription; null on User for logins that never pay (staff, older accounts). */
+export interface Billing {
+  state: 'trial' | 'active' | 'locked'
+  trial_ends_at: string
+  /** While on the free trial */
+  trial_days_left: number | null
+  /** Dollars, e.g. "25" */
+  monthly_price: string
+  /** Stripe's: active, past_due, canceled, ... */
+  subscription_status: string | null
+  /** Paid up to; Stripe charges again then */
+  current_period_end: string | null
+  /** Stripe's billing page can open (change card, cancel) */
+  can_manage: boolean
+}
+
 export interface User {
   id: number
   email: string
@@ -22,6 +38,7 @@ export interface User {
   organization_name: string
   created_at: string
   last_login_at: string | null
+  billing?: Billing | null
 }
 
 export interface RegisterInput {
