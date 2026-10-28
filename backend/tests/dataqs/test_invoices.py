@@ -169,6 +169,10 @@ def test_while_testing_the_client_email_goes_to_sts_only(
     assert emails and all(e["to"] == ["vaishnav@sts.test"] for e in emails)
     [client_copy] = [e for e in emails if "Payment received" in e["subject"]]
     assert "[Test routing: meant for owner@acme.test]" in client_copy["text"]
+    # The paid invoice is attached, so the emails carry no link or button to it.
+    for email in emails:
+        assert "View the invoice" not in email["html"] and "/invoices/" not in email["text"]
+        assert email["files"] and email["files"][0].data.startswith(b"%PDF")
 
 
 def test_the_invoice_downloads_as_a_pdf(api: TestClient, invoice_id: int) -> None:

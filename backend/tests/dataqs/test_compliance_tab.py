@@ -39,7 +39,9 @@ class FakeSender:
     def send(self, *, to, subject, text, html, idempotency_key, attachments=()) -> str:
         if self.fail:
             raise RuntimeError("down")
-        self.sent.append({"to": to, "subject": subject, "text": text, "files": list(attachments)})
+        self.sent.append(
+            {"to": to, "subject": subject, "text": text, "html": html, "files": list(attachments)}
+        )
         return "id"
 
 

@@ -108,8 +108,11 @@ def staff_link(case: DataQsCase) -> str:
     return f"{get_settings().public_app_url.rstrip('/')}/dataqs/cases/{case.id}"
 
 
-def render_html(text: str, link: str, link_label: str, first: tuple[str, str] | None = None) -> str:
-    """The email as HTML; `first` (label, url) is a button before the main one."""
+def render_html(
+    text: str, link: str | None, link_label: str, first: tuple[str, str] | None = None
+) -> str:
+    """The email as HTML; `first` (label, url) is a button before the main one. No `link`, no
+    button (e.g. the paid-invoice emails, which attach the invoice instead)."""
     paragraphs = "".join(
         f"<p>{html.escape(part).replace(chr(10), '<br>')}</p>" for part in text.split("\n\n")
     )
@@ -123,9 +126,14 @@ def render_html(text: str, link: str, link_label: str, first: tuple[str, str] | 
             if first
             else ""
         )
-        + f'<p><a href="{html.escape(link)}" style="background:#6d4aff;color:#fff;padding:8px 14px;'
-        f'border-radius:6px;text-decoration:none">{html.escape(link_label)}</a></p>'
-        '<p style="color:#6b6880;font-size:12px">Sky Transport Solutions · DataQs service</p>'
+        + (
+            f'<p><a href="{html.escape(link)}" style="background:#6d4aff;color:#fff;'
+            f'padding:8px 14px;border-radius:6px;text-decoration:none">'
+            f"{html.escape(link_label)}</a></p>"
+            if link
+            else ""
+        )
+        + '<p style="color:#6b6880;font-size:12px">Sky Transport Solutions · DataQs service</p>'
         "</div>"
     )
 

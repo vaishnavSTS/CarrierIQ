@@ -255,43 +255,39 @@ class InvoiceService:
         if sender is None:
             return
         client = self.db.get(User, invoice.created_by_id)
-        app_url = settings.public_app_url.rstrip("/")
         total = _money(invoice.total)
         messages = []
         if client is not None:
-            link = f"{app_url}/portal/invoices/{invoice.id}"
             body = (
                 f"Thank you. We received your payment of {total} for invoice {invoice.number} "
                 f"(USDOT {invoice.usdot_number}). Sky Transport Solutions will start on it and "
-                "contact you if anything is needed.\n\nYou can view and download the paid invoice "
-                "on CarrierSafetyScan."
+                "contact you if anything is needed.\n\nYour paid invoice is attached as a PDF."
             )
             to = [client.email]
             if settings.dataqs_staff_override_list:
                 body = f"[Test routing: meant for {client.email}]\n\n{body}"
                 to = settings.dataqs_staff_override_list
-            messages.append((to, f"Payment received: invoice {invoice.number}", body, link))
+            messages.append((to, f"Payment received: invoice {invoice.number}", body))
         staff_to = settings.compliance_request_recipients
         if staff_to:
-            link = f"{app_url}/invoices/{invoice.id}"
             body = (
                 f"Invoice {invoice.number} ({total}) for USDOT {invoice.usdot_number} was paid "
                 f"through Stripe by {client.full_name if client else 'the client'}, for: "
                 + "; ".join(f"{line.item} ({line.description})" for line in self._lines(invoice.id))
                 + "."
             )
-            messages.append((staff_to, f"Paid: invoice {invoice.number}, {total}", body, link))
-        # The paid invoice as a PDF goes with each email (built once).
+            messages.append((staff_to, f"Paid: invoice {invoice.number}, {total}", body))
+        # The paid invoice as a PDF goes with each email (built once), so no link to it.
         pdf = Attachment(
             _pdf_name(invoice), "application/pdf", render_invoice_pdf(self._document(invoice))
         )
-        for to, subject, body, link in messages:
+        for to, subject, body in messages:
             try:
                 sender.send(
                     to=to,
                     subject=subject,
-                    text=f"{body}\n\n{link}",
-                    html=render_html(body, link, "View the invoice"),
+                    text=body,
+                    html=render_html(body, None, ""),
                     idempotency_key=f"invoice-{invoice.id}-paid-{to[0]}",
                     attachments=[pdf],
                 )
