@@ -27,7 +27,7 @@ def high(db: Db, min_score: MinScore = 75) -> HighIssOut:
 def high_excel(db: Db, min_score: MinScore = 75) -> Response:
     """The same list as an Excel file."""
     data = high_iss_xlsx(high_iss(db, min_score))
-    name = f"high-iss-{min_score}-plus-{date.today():%Y-%m-%d}.xlsx"
+    name = f"high-safety-score-{min_score}-plus-{date.today():%Y-%m-%d}.xlsx"
     return Response(
         content=data,
         media_type=XLSX,

@@ -114,7 +114,7 @@ def test_the_excel_file(api: TestClient, carriers: None) -> None:
     answer = api.get("/api/v1/iss/high.xlsx")
     assert answer.status_code == 200
     assert answer.headers["content-type"].startswith("application/vnd.openxmlformats")
-    assert "high-iss-75-plus-" in answer.headers["content-disposition"]
+    assert "high-safety-score-75-plus-" in answer.headers["content-disposition"]
     sheet = load_workbook(BytesIO(answer.content)).active
     assert sheet is not None
     assert "October 2026" in str(sheet["A1"].value)

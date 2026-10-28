@@ -80,7 +80,7 @@ function AppFrame() {
       <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
       <CompareNavItem />
       <NavItem to="/dataqs" icon={FileSearch} label="DataQs" />
-      <NavItem to="/high-iss" icon={Gauge} label="High ISS" />
+      <NavItem to="/high-iss" icon={Gauge} label="High Safety Score" />
       <NavItem to="/service-requests" icon={ClipboardList} label="Service requests" />
       <NavItem to="/invoices" icon={ReceiptText} label="Invoices" />
       {me?.role === 'STS_ADMIN' && (

@@ -53,7 +53,7 @@ export function HighIssPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">High ISS</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">High Safety Score</h1>
           <p className="mt-1 text-sm text-slate-600">
             Carriers whose latest Estimated ISS is {minScore} or higher, worst first. Updated each
             month when ISS is recalculated
