@@ -1,6 +1,6 @@
-"""The $25/month subscription: the 14-day trial from sign-up, the lock once it ends, Stripe's
-subscribe and billing pages, and Stripe's webhook starting and ending the subscription. Accounts
-made before subscriptions (no trial end) and STS staff stay free."""
+"""The $25/month subscription: the one-month (30-day) trial from sign-up, the lock once it ends,
+Stripe's subscribe and billing pages, and Stripe's webhook starting and ending the subscription.
+Accounts made before subscriptions (no trial end) and STS staff stay free."""
 
 from collections.abc import Iterator
 from datetime import UTC, datetime, timedelta
@@ -62,14 +62,14 @@ def end_trial(db: Session, user: User) -> None:
     db.commit()
 
 
-def test_a_new_sign_up_gets_14_free_days(api: TestClient, db: Session) -> None:  # noqa: F811
+def test_a_new_sign_up_gets_a_month_free(api: TestClient, db: Session) -> None:  # noqa: F811
     user = signed_up(api, db)
     assert user.trial_ends_at is not None
     left = user.trial_ends_at - datetime.now(UTC)
-    assert timedelta(days=13, hours=23) < left <= timedelta(days=14)
+    assert timedelta(days=29, hours=23) < left <= timedelta(days=30)
 
     billing = api.get("/api/v1/auth/me").json()["billing"]
-    assert billing["state"] == "trial" and billing["trial_days_left"] == 14
+    assert billing["state"] == "trial" and billing["trial_days_left"] == 30
     assert billing["monthly_price"] == "25" and billing["can_manage"] is False
     assert api.get("/api/v1/portal/overview").status_code == 200
 

@@ -1,5 +1,5 @@
-"""The CarrierSafetyScan subscription: each client and broker login gets a 14-day free trial from
-sign-up, then pays $25 a month through Stripe (a Stripe subscription, charged monthly by Stripe).
+"""The CarrierSafetyScan subscription: each client and broker login gets a one-month (30-day) free
+trial from sign-up, then pays $25 a month through Stripe (a Stripe subscription, charged monthly).
 
 Who pays: each login (user) separately. STS staff never do, and accounts made before subscriptions
 began have no trial end (`trial_ends_at` None), so they stay free.
@@ -36,7 +36,7 @@ from app.services.stripe_client import StripeClient
 
 logger = logging.getLogger(__name__)
 
-TRIAL = timedelta(days=14)
+TRIAL = timedelta(days=30)  # one month
 MONTHLY_PRICE = Decimal("25")
 PRODUCT_NAME = "CarrierSafetyScan subscription"
 # Stripe statuses that keep the app open; past_due = Stripe is still retrying the charge.
