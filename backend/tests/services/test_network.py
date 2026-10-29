@@ -197,6 +197,7 @@ def api(db: Session) -> Iterator[TestClient]:
             "basic_desc": "Vehicle Maintenance",
             "group_desc": "Brakes All Others",
             "total_severity_wght": "4",
+            "time_weight": "1",  # FMCSA's file always has one: points = 4 x 1
         }
     ]
     fake.boc3[BOC3_DATASETS[1]] = [legacy_row, legacy_row, {**legacy_row, "dot_number": "03295017"}]

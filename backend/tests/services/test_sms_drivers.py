@@ -51,3 +51,35 @@ def test_weights_add_up_by_basic_and_group() -> None:
     assert (tires.group, tires.violations, tires.weight, tires.share) == ("Tires", 2, 16.0, 0.8889)
     assert tires.examples[0].startswith("Tire-")
     assert (hos.basic, hos.weight) == ("Hours-of-Service Compliance", 7.0)
+
+
+def timed(inspection: str, basic: str, severity: str, time: str) -> dict[str, str]:
+    return {
+        **row(basic, "G", severity),
+        "unique_id": inspection,
+        "time_weight": time,
+        "total_severity_wght": severity,
+    }
+
+
+def test_points_are_time_weighted_as_fmcsa_counts_them() -> None:
+    """Grewal Freightlines (USDOT 2763257), FMCSA SMS: Unsafe Driving 4×3 + 5×3 = 27 points
+    (measure 9 = 27 ÷ 3), Hours of Service 7×3 = 21 points (measure 0.84 = 21 ÷ 25)."""
+    rows = parse_violations(
+        [
+            timed("1", "Unsafe Driving", "4", "3"),
+            timed("2", "Unsafe Driving", "5", "3"),
+            timed("3", "Hours-of-Service Compliance", "7", "3"),
+        ]
+    )
+    weights = {d.basic: d.weight for d in basic_drivers(rows, date(2026, 10, 1))}
+    assert weights == {"Unsafe Driving": 27.0, "Hours-of-Service Compliance": 21.0}
+
+
+def test_an_inspections_severity_is_capped_at_30_per_basic() -> None:
+    """FMCSA SMS: one inspection counts at most 30 severity points in a BASIC (before time)."""
+    rows = parse_violations(
+        [timed("9", "Vehicle Maintenance", "10", "2") for _ in range(4)]  # 40 -> capped at 30
+    )
+    [maint] = basic_drivers(rows, date(2026, 10, 1))
+    assert maint.weight == 60.0  # 30 x time weight 2

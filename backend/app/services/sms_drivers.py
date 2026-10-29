@@ -80,26 +80,47 @@ def parse_violations(rows: Sequence[dict[str, Any]]) -> list[ViolationValues]:
     return found
 
 
+# FMCSA SMS: an inspection's severity weight within one BASIC is capped at 30.
+SEVERITY_CAP = Decimal(30)
+
+
+def sms_points(violations: Sequence[Any]) -> dict[int, Decimal]:
+    """Each violation's points as FMCSA's SMS counts them, keyed by id(): its severity weight
+    (FMCSA's total_severity_wght: severity + 2 when out of service), scaled down when the
+    inspection's severity in that BASIC is over 30, times its time weight (3, 2 or 1)."""
+    by_inspection: dict[tuple[str, str], list[Any]] = defaultdict(list)
+    for v in violations:
+        by_inspection[(v.inspection_id, v.basic)].append(v)
+    points: dict[int, Decimal] = {}
+    for rows in by_inspection.values():
+        severity = sum((Decimal(v.total_weight) for v in rows), Decimal(0))
+        scale = min(Decimal(1), SEVERITY_CAP / severity) if severity else Decimal(0)
+        for v in rows:
+            points[id(v)] = Decimal(v.total_weight) * scale * Decimal(v.time_weight)
+    return points
+
+
 def basic_drivers(violations: Sequence[Any], today: date) -> list[BasicDriverOut]:
-    """Per BASIC, heaviest first: totals and the violation groups that weigh most. Accepts
-    ViolationValues or SmsViolation rows (same attribute names)."""
+    """Per BASIC, heaviest first: totals and the violation groups that weigh most, in FMCSA's SMS
+    points (sms_points). Accepts ViolationValues or SmsViolation rows (same attribute names)."""
+    points = sms_points(violations)
     by_basic: dict[str, list[Any]] = defaultdict(list)
     for v in violations:
         by_basic[v.basic].append(v)
     recent_from = today - timedelta(days=RECENT_DAYS)
     out = []
     for basic, rows in by_basic.items():
-        total = float(sum(Decimal(v.total_weight) for v in rows))
+        total = float(sum(points[id(v)] for v in rows))
         groups: dict[str, list[Any]] = defaultdict(list)
         for v in rows:
             groups[v.group or "Other"].append(v)
         group_out = []
         for name, members in groups.items():
-            weight = float(sum(Decimal(v.total_weight) for v in members))
+            weight = float(sum(points[id(v)] for v in members))
             heaviest: dict[str, float] = defaultdict(float)
             for v in members:
                 if v.description:
-                    heaviest[v.description] += float(v.total_weight)
+                    heaviest[v.description] += float(points[id(v)])
             group_out.append(
                 ViolationGroupOut(
                     group=name,

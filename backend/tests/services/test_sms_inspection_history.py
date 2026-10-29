@@ -42,6 +42,7 @@ def test_violations_grouped_by_inspection_newest_and_heaviest_first() -> None:
         state="NE",
         plate="ZP59859",
         plate_state="CA",
+        vin="1XPBDP9X1KD123456",
         vehicle_oos=False,
         driver_oos=True,
     )
@@ -57,6 +58,7 @@ def test_violations_grouped_by_inspection_newest_and_heaviest_first() -> None:
     )
     assert [v.code for v in newest.violations] == ["395.8E-HOSPDOOS", "395.24C2II-ELDTN"]
     assert newest.violations[0].out_of_service and newest.violations[0].total_weight == 27
+    assert newest.vin == "1XPBDP9X1KD123456" and newest.violations[0].unit == "D"
     # An inspection that isn't on file still shows, without the report details.
     assert history[1].report_number is None and history[1].violations[0].code == "392.2-SLLS2"
 

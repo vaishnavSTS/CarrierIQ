@@ -1,4 +1,5 @@
 import type { CarrierAuthority } from '../../../types/carrierAuthority'
+import type { Fleet } from '../../../types/carrierEquipment'
 import type { CrashSummary, EstimatedIss, Sms } from '../../../types/carrierSafety'
 import type { CarrierProfile } from '../../../types/carrierProfile'
 import type { CarrierNetwork } from '../../../types/network'
@@ -63,10 +64,26 @@ export function packetItems(
   sms: Sms | null = null,
   crashes: CrashSummary | null = null,
   iss: EstimatedIss | null = null,
+  fleet: Fleet | null = null,
 ): PacketLists {
   const hurting: PacketItem[] = []
   const watch: PacketItem[] = []
   const good: PacketItem[] = []
+
+  // More power units on inspections than the MCS-150 lists. FMCSA divides the Unsafe Driving and
+  // Crash Indicator measures by average power units × utilization, so too low a count raises them.
+  if (
+    fleet &&
+    fleet.registered_power_units !== null &&
+    fleet.recent_power_units > fleet.registered_power_units
+  ) {
+    watch.push({
+      key: 'fleet-count',
+      title: 'More trucks inspected than the MCS-150 lists',
+      detail: `${fleet.recent_power_units} power units appear on inspections in the last ${fleet.recent_months} months; the MCS-150 lists ${fleet.registered_power_units}. Some may be leased or no longer in use.`,
+      fix: 'Keeping the MCS-150 power-unit count (and mileage) current. FMCSA divides the Unsafe Driving and Crash Indicator measures by average power units × utilization, so a count that is too low raises them.',
+    })
+  }
 
   // Safety first: it is what a broker looks at first.
   const flagged = new Set<string>()

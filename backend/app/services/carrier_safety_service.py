@@ -161,6 +161,7 @@ def sms_inspection_history(
                 level=found.inspection_level if found else None,
                 plate=found.plate if found else None,
                 plate_state=found.plate_state if found else None,
+                vin=found.vin if found else None,
                 vehicle_oos=found.vehicle_oos if found else False,
                 driver_oos=found.driver_oos if found else False,
                 violations=[
@@ -169,6 +170,7 @@ def sms_inspection_history(
                         description=v.description,
                         basic=v.basic,
                         group=v.group,
+                        unit=v.unit,
                         out_of_service=v.out_of_service,
                         severity_weight=v.severity_weight,
                         time_weight=v.time_weight,

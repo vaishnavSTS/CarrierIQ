@@ -82,7 +82,7 @@ export function RecordPage({
                       <th className="py-1 font-medium">Date</th>
                       <th className="py-1 font-medium">Inspection</th>
                       <th className="py-1 font-medium">What happens</th>
-                      <th className="py-1 text-right font-medium">Weight</th>
+                      <th className="py-1 text-right font-medium">Points</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 align-top text-slate-700">
@@ -124,7 +124,7 @@ export function RecordPage({
                 </p>
               ) : (
                 <ol className="space-y-1.5 text-sm text-slate-700">
-                  {heaviest.map(({ violation: v, inspection: i }, n) => (
+                  {heaviest.map(({ violation: v, inspection: i, points: worth }, n) => (
                     <li key={`${i.inspection_id}-${v.code}-${n}`} className="flex gap-2">
                       <span className="grid size-5 shrink-0 place-items-center rounded-full bg-accent-strong text-[11px] font-bold text-surface">
                         {n + 1}
@@ -135,7 +135,7 @@ export function RecordPage({
                         </span>{' '}
                         <span className="text-xs text-slate-500">
                           ({violationCode(v.code)} · {formatDate(i.inspection_date)}
-                          {i.state && ` ${i.state}`} · weight {points(v.total_weight)}
+                          {i.state && ` ${i.state}`} · {points(worth)} points
                           {v.out_of_service && ', out of service'})
                         </span>
                       </span>
@@ -144,8 +144,7 @@ export function RecordPage({
                 </ol>
               )}
               <p className="text-xs text-slate-700">
-                If one of these is wrong, a DataQs challenge removes its whole weight from the
-                score.
+                If one of these is wrong, a DataQs challenge removes its points from the score.
                 {client && ' STS files DataQs requests for $50 per inspection.'}
               </p>
             </div>

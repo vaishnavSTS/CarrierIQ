@@ -74,10 +74,11 @@ class SmsViolationOut(BaseModel):
     description: str | None
     basic: str  # FMCSA's BASIC name, e.g. "HOS Compliance"
     group: str | None
+    unit: str | None  # FMCSA's unit: "1" the power unit, "2" a trailer, "D"/"C" the driver
     out_of_service: bool
     severity_weight: int  # 1-10, FMCSA adds 2 when out of service
     time_weight: int  # 3 (last 6 months), 2 (6-12), 1 (12-24)
-    total_weight: float  # FMCSA's total severity weight
+    total_weight: float  # FMCSA's total severity weight: severity + 2 when out of service
 
 
 class SmsInspectionOut(BaseModel):
@@ -90,6 +91,7 @@ class SmsInspectionOut(BaseModel):
     level: int | None
     plate: str | None
     plate_state: str | None
+    vin: str | None  # unit 1 (the power unit), from the inspection when it is on file
     vehicle_oos: bool
     driver_oos: bool
     violations: list[SmsViolationOut]
@@ -139,7 +141,7 @@ class ViolationGroupOut(BaseModel):
     group: str
     violations: int
     out_of_service: int
-    weight: float  # sum of FMCSA total severity weights
+    weight: float  # FMCSA SMS points: severity (+2 OOS, capped at 30 per inspection) × time weight
     share: float  # of the BASIC's total weight, 0..1
     examples: list[str]  # most heavily weighted violation descriptions
 

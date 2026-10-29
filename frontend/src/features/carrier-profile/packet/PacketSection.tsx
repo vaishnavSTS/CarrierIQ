@@ -38,7 +38,14 @@ import { ContactStrip } from './ContactStrip'
 import { packetItems, type PacketItem } from './packetItems'
 import { fitSheets, PrintCopy } from './printFit'
 import { RecordPage } from './RecordPage'
-import { recordNeedsTwoPages, tileFacts } from './recordDetail'
+import {
+  cleanInspections,
+  heaviestTruck,
+  recordNeedsTwoPages,
+  repeatViolations,
+  tileFacts,
+  violationCode,
+} from './recordDetail'
 
 /** Caps that keep each printed page to one A4 page. */
 const MAX_HURTING = 4
@@ -309,8 +316,12 @@ export function PacketDocument({
     sms,
     crashes,
     iss,
+    equipment.fleet,
   )
   const tiles = basicTiles(iss, sms, drivers, crashes)
+  const clean = safety ? cleanInspections(safety) : null
+  const truck = heaviestTruck(safety?.sms_inspections ?? [])
+  const repeats = repeatViolations(safety?.sms_inspections ?? [])
   const summary = improvementSummary(drivers, recent)
   const driverRows = (drivers ?? [])
     .flatMap((b) => b.groups.map((g) => ({ basic: b.basic, group: g })))
@@ -420,7 +431,7 @@ export function PacketDocument({
           </Heading>
           <div className="grid gap-2 sm:grid-cols-3">
             {tiles.map((t) => (
-              <Tile key={t.key} tile={t} facts={tileFacts(t.key, sms)} />
+              <Tile key={t.key} tile={t} facts={tileFacts(t.key, sms, drivers)} />
             ))}
           </div>
         </div>
@@ -460,6 +471,11 @@ export function PacketDocument({
             <Fact label="Fatal · injury">
               {crashes ? `${crashes.recent_fatal} · ${crashes.recent_injury}` : null}
             </Fact>
+            {clean && (
+              <Fact label="Clean inspections · SMS 24 mo">
+                {`${clean.clean} of ${clean.total} (${formatPercent(clean.clean / clean.total)})`}
+              </Fact>
+            )}
           </dl>
         </div>
 
@@ -584,6 +600,51 @@ export function PacketDocument({
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {(truck || repeats.length > 0) && (
+          <div className="space-y-2">
+            <Heading aside="FMCSA SMS violations, last 24 months">
+              Patterns in the violations
+            </Heading>
+            {truck && (
+              <ul>
+                <ItemBox
+                  tone="amber"
+                  item={{
+                    key: 'truck',
+                    title: `One truck carries ${formatPercent(truck.points / truck.total)} of the Vehicle Maintenance points on the carrier’s trucks`,
+                    detail: `VIN ${truck.vin}${truck.plates.length ? ` (plate ${truck.plates.join(', ')})` : ''}: ${Math.round(truck.points)} of the ${Math.round(truck.total)} points recorded on the ${truck.trucks} inspected trucks themselves (trailer violations not counted), from ${truck.violations} violation${truck.violations === 1 ? '' : 's'} on ${truck.inspections} inspection${truck.inspections === 1 ? '' : 's'}.${truck.unmatched ? ` ${truck.unmatched} inspection${truck.unmatched === 1 ? '' : 's'} with truck violations couldn’t be matched to a truck and ${truck.unmatched === 1 ? 'is' : 'are'} left out.` : ''}`,
+                    fix: 'Repairs and pre-trip checks on this truck first.',
+                  }}
+                />
+              </ul>
+            )}
+            {repeats.length > 0 && (
+              <div className="break-inside-avoid rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                <div className="font-semibold text-slate-900">Cited again and again</div>
+                <p className="text-xs text-slate-600">
+                  The same violation on more than one inspection usually points to a gap in
+                  maintenance or pre-trip checks rather than bad luck.
+                </p>
+                <ul className="mt-1 space-y-0.5 text-slate-700">
+                  {repeats.map((r) => (
+                    <li key={r.code} className="flex justify-between gap-3">
+                      <span>
+                        {r.description ?? violationCode(r.code)}{' '}
+                        <span className="text-xs text-slate-500">
+                          ({violationCode(r.code)} · {r.basic})
+                        </span>
+                      </span>
+                      <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums">
+                        {r.inspections} inspections
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
       </Sheet>

@@ -83,6 +83,8 @@ export interface SmsViolation {
   /** FMCSA's BASIC name, e.g. "HOS Compliance" */
   basic: string
   group: string | null
+  /** FMCSA's unit: "1" the power unit, "2" a trailer, "D"/"C" the driver */
+  unit?: string | null
   out_of_service: boolean
   /** 1-10; FMCSA adds 2 when out of service */
   severity_weight: number
@@ -100,6 +102,8 @@ export interface SmsInspection {
   level: number | null
   plate: string | null
   plate_state: string | null
+  /** Unit 1 (the power unit), when the inspection is on file */
+  vin?: string | null
   vehicle_oos: boolean
   driver_oos: boolean
   violations: SmsViolation[]

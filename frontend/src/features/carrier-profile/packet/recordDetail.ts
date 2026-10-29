@@ -1,4 +1,10 @@
-import type { CarrierSafety, Sms, SmsInspection, SmsViolation } from '../../../types/carrierSafety'
+import type {
+  BasicDriver,
+  CarrierSafety,
+  Sms,
+  SmsInspection,
+  SmsViolation,
+} from '../../../types/carrierSafety'
 import { basicKey } from './basicTiles'
 
 /**
@@ -50,12 +56,16 @@ function eventGroup(key: string, sms: Sms, withViolation: number): string | null
  * The figures FMCSA's SMS profile shows under each BASIC: the measure, the inspections with
  * violations and the safety event group. Empty when SMS isn't loaded.
  */
-export function tileFacts(key: string, sms: Sms | null): string[] {
+export function tileFacts(
+  key: string,
+  sms: Sms | null,
+  drivers: BasicDriver[] | null = null,
+): string[] {
   const basic = sms?.basics.find((b) => b.key === key)
   if (!sms || !basic) return []
   const relevant = key === 'veh_maint' ? sms.vehicle_inspections : sms.driver_inspections
   const facts: string[] = []
-  if (basic.measure !== null) facts.push(`Measure ${basic.measure.toFixed(2)}`)
+  if (basic.measure !== null) facts.push(measureLine(key, basic.measure, drivers))
   if (key !== 'crash') {
     facts.push(
       `${basic.inspections_with_violation} of ${relevant} ${key === 'veh_maint' ? 'vehicle' : 'driver'} inspections with violations`,
@@ -67,9 +77,37 @@ export function tileFacts(key: string, sms: Sms | null): string[] {
   return facts
 }
 
-/** A violation's weight before FMCSA's time weight: severity (+2 when out of service), capped. */
-function baseWeight(v: SmsViolation): number {
-  return v.time_weight > 0 ? v.total_weight / v.time_weight : v.total_weight
+/** FMCSA SMS: an inspection's severity within one BASIC counts at most 30 (before time weight). */
+const SEVERITY_CAP = 30
+const capped = new WeakMap<SmsInspection, Map<SmsViolation, number>>()
+
+/**
+ * Each violation's severity as FMCSA counts it: total_weight (severity + 2 when out of service),
+ * scaled down when the inspection's total in that BASIC is over 30. (backend: sms_points)
+ */
+function cappedSeverity(inspection: SmsInspection, v: SmsViolation): number {
+  let byViolation = capped.get(inspection)
+  if (!byViolation) {
+    byViolation = new Map()
+    const totals = new Map<string, number>()
+    for (const x of inspection.violations) {
+      totals.set(x.basic, (totals.get(x.basic) ?? 0) + x.total_weight)
+    }
+    for (const x of inspection.violations) {
+      const total = totals.get(x.basic) ?? 0
+      byViolation.set(
+        x,
+        total > SEVERITY_CAP ? (x.total_weight * SEVERITY_CAP) / total : x.total_weight,
+      )
+    }
+    capped.set(inspection, byViolation)
+  }
+  return byViolation.get(v) ?? v.total_weight
+}
+
+/** A violation's points in FMCSA's SMS: its (capped) severity × its time weight (3, 2 or 1). */
+export function smsPoints(inspection: SmsInspection, v: SmsViolation): number {
+  return cappedSeverity(inspection, v) * v.time_weight
 }
 
 function addMonths(value: string, months: number): Date {
@@ -99,7 +137,8 @@ export function improvementSteps(
 ): ImprovementStep[] {
   const steps: ImprovementStep[] = []
   for (const inspection of inspections) {
-    const base = inspection.violations.reduce((sum, v) => sum + baseWeight(v), 0)
+    // Each step lowers the time weight by 1 (3→2, 2→1, 1→0): the points drop by the severity.
+    const base = inspection.violations.reduce((sum, v) => sum + cappedSeverity(inspection, v), 0)
     const basics = [...new Set(inspection.violations.map((v) => v.basic))]
     for (const [months, change] of [
       [6, ['weighs 2× instead of 3×', 'weigh 2× instead of 3×']],
@@ -123,10 +162,12 @@ export interface ViolationRow {
   weight: number
 }
 
-/** FMCSA's violation summary: one row per violation code, heaviest total weight first. */
+/** FMCSA's violation summary: one row per violation code, most SMS points first. */
 export function violationRows(inspections: SmsInspection[]): ViolationRow[] {
   const rows = new Map<string, ViolationRow>()
-  for (const v of inspections.flatMap((i) => i.violations)) {
+  for (const [inspection, v] of inspections.flatMap((i) =>
+    i.violations.map((x) => [i, x] as const),
+  )) {
     const row = rows.get(v.code) ?? {
       code: v.code,
       description: v.description,
@@ -138,7 +179,7 @@ export function violationRows(inspections: SmsInspection[]): ViolationRow[] {
     }
     row.count += 1
     row.outOfService += v.out_of_service ? 1 : 0
-    row.weight += v.total_weight
+    row.weight += smsPoints(inspection, v)
     rows.set(v.code, row)
   }
   return [...rows.values()].sort((a, b) => b.weight - a.weight || b.count - a.count)
@@ -147,17 +188,25 @@ export function violationRows(inspections: SmsInspection[]): ViolationRow[] {
 export interface Challengeable {
   violation: SmsViolation
   inspection: SmsInspection
+  /** Its points in FMCSA's SMS today */
+  points: number
 }
 
 /**
- * The heaviest violations (most weight in the score), worth checking first: if one is wrong, a
- * DataQs challenge takes its whole weight out of the BASIC.
+ * The heaviest violations (most SMS points today), worth checking first: if one is wrong, a
+ * DataQs challenge takes its points out of the BASIC.
  */
 export function heaviestViolations(inspections: SmsInspection[], limit = 3): Challengeable[] {
   return inspections
-    .flatMap((inspection) => inspection.violations.map((violation) => ({ violation, inspection })))
+    .flatMap((inspection) =>
+      inspection.violations.map((violation) => ({
+        violation,
+        inspection,
+        points: smsPoints(inspection, violation),
+      })),
+    )
     .filter(({ violation }) => basicKey(violation.basic) !== 'crash')
-    .sort((a, b) => b.violation.total_weight - a.violation.total_weight)
+    .sort((a, b) => b.points - a.points)
     .slice(0, limit)
 }
 
@@ -174,4 +223,128 @@ export function violationCode(code: string): string {
 export function recordNeedsTwoPages(safety: CarrierSafety): boolean {
   const inspections = safety.sms_inspections ?? []
   return inspections.length > 3 || violationRows(inspections).length > 10
+}
+
+const number = (value: number, decimals = 2) =>
+  value.toLocaleString('en-US', { maximumFractionDigits: decimals })
+
+/**
+ * "Measure 3.22 = 58 points ÷ 18": FMCSA's measure is the BASIC's SMS points (severity × time
+ * weight) divided by the carrier's exposure: time-weighted relevant inspections (a whole number),
+ * or for Unsafe Driving its average power units × utilization factor. The divisor isn't published,
+ * so it is what the points and FMCSA's (rounded) measure imply; "≈" unless the sum checks out.
+ */
+function measureLine(key: string, measure: number, drivers: BasicDriver[] | null): string {
+  const shown = `Measure ${measure.toFixed(2)}`
+  const points = drivers?.find((d) => basicKey(d.basic) === key)?.weight ?? 0
+  if (measure <= 0 || points <= 0) return shown
+  const unsafe = key === 'unsafe_driv'
+  const divisor = unsafe ? points / measure : Math.round(points / measure)
+  if (divisor <= 0) return shown
+  const exact = Math.abs(points / divisor - measure) < 0.005
+  return `${shown} ${exact ? '=' : '≈'} ${number(points, 1)} points ÷ ${number(divisor)}${
+    unsafe ? ' (power units × utilization)' : ''
+  }`
+}
+
+export interface TruckShare {
+  vin: string
+  /** Every plate the truck had on these inspections */
+  plates: string[]
+  points: number
+  /** All Vehicle Maintenance points on the carrier's power units */
+  total: number
+  violations: number
+  inspections: number
+  trucks: number
+  /** Inspections with truck violations that couldn't be tied to a VIN (left out) */
+  unmatched: number
+}
+
+/**
+ * The power unit with the most Vehicle Maintenance weight, when one truck carries at least 40% of
+ * it among two or more trucks. Only violations FMCSA records on unit 1 (the power unit) count, on
+ * inspections whose VIN is on file; trailer and driver violations are not a truck's.
+ */
+export function heaviestTruck(inspections: SmsInspection[]): TruckShare | null {
+  const byVin = new Map<string, TruckShare>()
+  let total = 0
+  let unmatched = 0
+  for (const inspection of inspections) {
+    const own = inspection.violations.filter(
+      (v) => v.unit === '1' && basicKey(v.basic) === 'veh_maint',
+    )
+    if (own.length === 0) continue
+    if (!inspection.vin) {
+      unmatched += 1
+      continue
+    }
+    const points = own.reduce((sum, v) => sum + smsPoints(inspection, v), 0)
+    total += points
+    const row = byVin.get(inspection.vin) ?? {
+      vin: inspection.vin,
+      plates: [],
+      points: 0,
+      total: 0,
+      violations: 0,
+      inspections: 0,
+      trucks: 0,
+      unmatched: 0,
+    }
+    row.points += points
+    if (inspection.plate && !row.plates.includes(inspection.plate))
+      row.plates.push(inspection.plate)
+    row.violations += own.length
+    row.inspections += 1
+    byVin.set(inspection.vin, row)
+  }
+  const top = [...byVin.values()].sort((a, b) => b.points - a.points)[0]
+  if (!top || byVin.size < 2 || total <= 0 || top.points / total < 0.4) return null
+  return { ...top, total, trucks: byVin.size, unmatched }
+}
+
+export interface RepeatViolation {
+  code: string
+  description: string | null
+  basic: string
+  inspections: number
+}
+
+/** The same violation code cited on 2 or more inspections, most inspections first. */
+export function repeatViolations(inspections: SmsInspection[], limit = 3): RepeatViolation[] {
+  const seen = new Map<string, RepeatViolation & { ids: Set<string> }>()
+  for (const inspection of inspections) {
+    for (const v of inspection.violations) {
+      const row = seen.get(v.code) ?? {
+        code: v.code,
+        description: v.description,
+        basic: v.basic,
+        inspections: 0,
+        ids: new Set<string>(),
+      }
+      row.ids.add(inspection.inspection_id)
+      row.inspections = row.ids.size
+      seen.set(v.code, row)
+    }
+  }
+  return [...seen.values()]
+    .filter((r) => r.inspections >= 2)
+    .sort((a, b) => b.inspections - a.inspections)
+    .slice(0, limit)
+    .map(({ code, description, basic, inspections: n }) => ({
+      code,
+      description,
+      basic,
+      inspections: n,
+    }))
+}
+
+/**
+ * Inspections in FMCSA's 24-month SMS window with no violation counted in SMS: FMCSA's total
+ * less those with SMS violations. Null until both are loaded.
+ */
+export function cleanInspections(safety: CarrierSafety): { clean: number; total: number } | null {
+  const total = safety.sms?.inspections ?? 0
+  if (!safety.sms_inspections || total <= 0) return null
+  return { clean: Math.max(0, total - safety.sms_inspections.length), total }
 }
