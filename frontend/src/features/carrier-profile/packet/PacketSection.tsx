@@ -38,7 +38,7 @@ import { ContactStrip } from './ContactStrip'
 import { packetItems, type PacketItem } from './packetItems'
 import { fitSheets, PrintCopy } from './printFit'
 import { RecordPage } from './RecordPage'
-import { tileFacts } from './recordDetail'
+import { recordNeedsTwoPages, tileFacts } from './recordDetail'
 
 /** Caps that keep each printed page to one A4 page. */
 const MAX_HURTING = 4
@@ -340,7 +340,9 @@ export function PacketDocument({
   const carrier = `${profile.legal_name} · USDOT ${profile.usdot_number}`
   // Page 4, FMCSA's record line by line, once its violation file is loaded.
   const record = safety !== null && safety.sms_inspections != null
-  const total = record ? 4 : 3
+  // A busy record gets two pages, so nothing is shrunk too small to read.
+  const twoRecordPages = record && safety !== null && recordNeedsTwoPages(safety)
+  const total = record ? (twoRecordPages ? 5 : 4) : 3
   // Each page's line in the Sky Transport Solutions strip: what that page is about.
   const ask =
     'Questions about this report? A Sky Transport Solutions specialist can explain any item.'
@@ -590,7 +592,13 @@ export function PacketDocument({
         contact={contact.record}
       >
         <div className="space-y-2">
-          <Heading aside="Each item names its FMCSA record">
+          <Heading
+            aside={
+              hurting.length > 0
+                ? 'These records are in order; the safety problems are on pages 1 and 2'
+                : 'Each item names its FMCSA record'
+            }
+          >
             <span className="flex items-center gap-2 text-emerald-700">
               <CircleCheck className="size-5" aria-hidden />
               In good standing
@@ -757,7 +765,24 @@ export function PacketDocument({
           carrier={carrier}
           contact={contact.inspections}
         >
-          <RecordPage safety={safety} client={client} whose={whose} />
+          <RecordPage
+            safety={safety}
+            client={client}
+            whose={whose}
+            part={twoRecordPages ? 'summary' : 'all'}
+          />
+        </Sheet>
+      )}
+      {/* Page 5, for a busy record: the inspection history, crashes and pull-in rates */}
+      {twoRecordPages && safety && (
+        <Sheet
+          page={5}
+          total={total}
+          title="Inspection history"
+          carrier={carrier}
+          contact={contact.inspections}
+        >
+          <RecordPage safety={safety} client={client} whose={whose} part="history" />
         </Sheet>
       )}
     </>
@@ -821,8 +846,8 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
     <article id="carrier-packet" className="space-y-6 print:hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <p className="text-sm text-slate-500">
-          Four A4 pages: the scorecard, what to fix, the strengths and record, and the inspection
-          record with when the score improves.
+          A4 pages: the scorecard, what to fix, the strengths and record, and the inspection record
+          with when the score improves (two pages when the record is long).
         </p>
         <button
           type="button"

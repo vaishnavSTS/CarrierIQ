@@ -7,6 +7,17 @@ import type { BrokerFlag } from '../network/brokerFlags'
 import { basicTip } from '../safety/improvementTips'
 import { NEAR_THRESHOLD_POINTS } from '../safety/issBand'
 
+/** What a passed registration check found, as the report's green list says it. */
+const GOOD_TITLES: Record<string, string> = {
+  motus: 'Authority and insurance listed in Motus (FMCSA’s current system)',
+  boc3: 'Process agent (BOC-3) listed in Motus',
+  // Only the filing's age is checked (FMCSA's due date also depends on the USDOT number).
+  mcs150: 'MCS-150 filed within the last 2 years',
+  prior_revoke: 'No link to a previously revoked USDOT number',
+  oos: 'No out-of-service orders',
+  revocations: 'No revocation or suspension orders',
+}
+
 export interface PacketItem {
   key: string
   title: string
@@ -171,11 +182,20 @@ export function packetItems(
         : 'FMCSA lists BI&PD insurance on file.',
     })
   }
+  // FMCSA's authority history can show revocations (since reinstated) that Motus' revocation list
+  // doesn't: then "no revocation or suspension orders" would mislead, so it isn't listed as good.
+  const revokedBefore = authority.authority_history.some((a) => {
+    const action = a.action.toUpperCase()
+    return /REVOC|REVOK|SUSPEN/.test(action) && !action.includes('DISCONTINUED')
+  })
   for (const check of network.registration_checks) {
+    if (check.key === 'revocations' && revokedBefore) continue
     if (check.status === 'ok') {
       good.push({
         key: `check-${check.key}`,
-        title: check.label,
+        // The check's name ("Out-of-service orders") reads like a problem on a green line, so
+        // the report says what was found.
+        title: GOOD_TITLES[check.key] ?? check.label,
         detail: firstSentence(check.detail),
       })
     }

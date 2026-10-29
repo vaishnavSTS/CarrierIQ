@@ -1,4 +1,4 @@
-import type { Sms, SmsInspection, SmsViolation } from '../../../types/carrierSafety'
+import type { CarrierSafety, Sms, SmsInspection, SmsViolation } from '../../../types/carrierSafety'
 import { basicKey } from './basicTiles'
 
 /**
@@ -34,7 +34,10 @@ function eventGroup(key: string, sms: Sms, withViolation: number): string | null
       : rule.by === 'vehicle'
         ? sms.vehicle_inspections
         : withViolation
-  if (withViolation === 0 || count < rule.edges[0]) return 'No safety event group yet'
+  // Below FMCSA's minimum (e.g. fewer than 5 relevant inspections): FMCSA shows no grouping.
+  if (count < rule.edges[0]) return 'No safety event group'
+  // Enough inspections but no violations: not confirmed how FMCSA shows it, so say nothing.
+  if (withViolation === 0) return null
   let i = 0
   while (i + 1 < rule.edges.length && count >= rule.edges[i + 1]) i += 1
   const low = rule.edges[i]
@@ -161,4 +164,14 @@ export function heaviestViolations(inspections: SmsInspection[], limit = 3): Cha
 /** FMCSA's violation code as FMCSA prints it: "3958EHOSPDOOS" → "395.8EHOSPDOOS" (49 CFR part.section). */
 export function violationCode(code: string): string {
   return /^\d{4}/.test(code) ? `${code.slice(0, 3)}.${code.slice(3)}` : code
+}
+
+/**
+ * A record with more than 3 inspections with violations, or more than 10 violation codes, would be
+ * printed too small on one page: it gets two (when the score improves, the heaviest violations and
+ * the violation summary; then the inspection history, crashes and pull-in rates).
+ */
+export function recordNeedsTwoPages(safety: CarrierSafety): boolean {
+  const inspections = safety.sms_inspections ?? []
+  return inspections.length > 3 || violationRows(inspections).length > 10
 }

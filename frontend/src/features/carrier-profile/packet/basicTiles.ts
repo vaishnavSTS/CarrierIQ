@@ -127,6 +127,10 @@ export function basicTiles(
     if (estimate?.assessed) {
       return { key, label, tone: 'green', status: 'Below threshold', note: note(scored, counts) }
     }
+    if (!estimate) {
+      // No Estimated ISS (its monthly tables aren't loaded): nothing to say about the score.
+      return { key, label, tone: 'grey', status: 'Score not available', note: counts }
+    }
     return { key, label, tone: 'grey', status: 'Too few inspections to score', note: counts }
   })
 }
