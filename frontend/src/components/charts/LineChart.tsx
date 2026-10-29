@@ -83,7 +83,7 @@ export function LineChart({
         ))}
       </div>
 
-      <div ref={ref} className="relative">
+      <div ref={ref} className="relative w-full min-w-0 overflow-hidden">
         <svg width={width} height={height} role="group" aria-label={ariaLabel}>
           {ticks(scale.max, scale.step).map((t) => (
             <g key={t}>

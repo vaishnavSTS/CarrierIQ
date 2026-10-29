@@ -32,7 +32,7 @@ export function DataQsCaseList({ showCompany, empty }: { showCompany: boolean; e
           </li>
         ))}
       </ul>
-      <div className="hidden overflow-x-auto rounded-2xl border border-slate-200 bg-surface sm:block">
+      <div className="hidden relative overflow-x-auto rounded-2xl border border-slate-200 bg-surface sm:block">
         <table className={tableClass}>
           <thead className={headClass}>
             <tr>

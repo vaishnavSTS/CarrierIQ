@@ -103,7 +103,7 @@ export function HighIssPage() {
           No carriers with an Estimated ISS of {minScore} or higher.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-surface">
+        <div className="relative overflow-x-auto rounded-xl border border-slate-200 bg-surface">
           <table className={tableClass}>
             <thead className={headClass}>
               <tr>

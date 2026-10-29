@@ -38,7 +38,7 @@ export function OosTable({ recent }: { recent: OosWindow | null }) {
 
   return (
     <div>
-      <div className="overflow-x-auto">
+      <div className="relative overflow-x-auto">
         <table className={tableClass}>
           <thead className={headClass}>
             <tr>

@@ -38,7 +38,7 @@ function Violations({ inspection }: { inspection: InspectionDetail }) {
                 ? `Unit ${v.unit_number}`
                 : 'Vehicle'}
           </span>
-          <span className="flex-1">
+          <span className="min-w-0 flex-1 break-words">
             <span className="text-slate-900">{v.description ?? '—'}</span>{' '}
             <span className="font-mono text-xs text-slate-500">{v.code}</span>
             {v.citation_number && (

@@ -39,6 +39,7 @@ import logo from '../../../assets/carriersafetyscan-logo.png'
 import { packetItems, type PacketItem } from './packetItems'
 import { fitSheets, PrintCopy } from './printFit'
 import { RecordPage } from './RecordPage'
+import { ScrollX } from './ScrollX'
 import { SectionHeading } from './SectionHeading'
 import {
   cleanInspections,
@@ -112,11 +113,15 @@ function Sheet({
       className={
         printed
           ? 'packet-sheet flex flex-col space-y-4 bg-white'
-          : 'packet-sheet flex flex-col space-y-5 rounded-xl border border-slate-200 bg-surface p-6 sm:p-8'
+          : 'packet-sheet flex flex-col space-y-5 rounded-xl border border-slate-200 bg-surface p-4 sm:p-8'
       }
     >
-      <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-2 text-[11px] uppercase tracking-[0.14em] text-slate-500">
-        <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
+      <div
+        className={`flex items-center justify-between border-b border-slate-200 pb-2 text-[11px] uppercase tracking-[0.14em] text-slate-500 ${printed ? 'gap-4' : 'flex-wrap gap-x-4 gap-y-1'}`}
+      >
+        <span
+          className={`flex items-center gap-1.5 ${printed ? 'shrink-0 whitespace-nowrap' : 'flex-wrap sm:shrink-0 sm:whitespace-nowrap'}`}
+        >
           <img src={logo} alt="" className="size-5 object-contain" />
           <span className="text-[12px] font-semibold normal-case tracking-normal text-slate-900">
             CarrierSafetyScan
@@ -573,37 +578,39 @@ export function PacketDocument({
               Where the violations come from
             </SectionHeading>
             {summary && <p className="text-sm text-slate-700">{summary}</p>}
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 text-left text-[10px] uppercase tracking-wide text-slate-500">
-                  <th className="py-1 font-medium">Violation type</th>
-                  <th className="w-20 py-1 pl-3 text-right font-medium">Violations</th>
-                  <th className="w-20 py-1 pl-3 text-right font-medium">Out of service</th>
-                  <th className="w-20 py-1 pl-3 text-right font-medium">Share of BASIC</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 align-top tabular-nums text-slate-700">
-                {driverRows.map(({ basic, group }) => {
-                  const tip = groupTip(group.group)
-                  return (
-                    <tr key={`${basic}-${group.group}`}>
-                      <td className="py-1.5 pr-3">
-                        <span className="font-medium text-slate-900">{group.group}</span>{' '}
-                        <span className="text-xs text-slate-500">({basic})</span>
-                        {tip && <span className="block text-xs text-slate-500">{tip}</span>}
-                      </td>
-                      <td className="py-1.5 pl-3 text-right">{group.violations}</td>
-                      <td
-                        className={`py-1.5 pl-3 text-right ${group.out_of_service > 0 ? 'font-semibold text-red-700' : ''}`}
-                      >
-                        {group.out_of_service}
-                      </td>
-                      <td className="py-1.5 pl-3 text-right">{formatPercent(group.share)}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+            <ScrollX>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-left text-[10px] uppercase tracking-wide text-slate-500">
+                    <th className="py-1 font-medium">Violation type</th>
+                    <th className="w-20 py-1 pl-3 text-right font-medium">Violations</th>
+                    <th className="w-20 py-1 pl-3 text-right font-medium">Out of service</th>
+                    <th className="w-20 py-1 pl-3 text-right font-medium">Share of BASIC</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 align-top tabular-nums text-slate-700">
+                  {driverRows.map(({ basic, group }) => {
+                    const tip = groupTip(group.group)
+                    return (
+                      <tr key={`${basic}-${group.group}`}>
+                        <td className="py-1.5 pr-3">
+                          <span className="font-medium text-slate-900">{group.group}</span>{' '}
+                          <span className="text-xs text-slate-500">({basic})</span>
+                          {tip && <span className="block text-xs text-slate-500">{tip}</span>}
+                        </td>
+                        <td className="py-1.5 pl-3 text-right">{group.violations}</td>
+                        <td
+                          className={`py-1.5 pl-3 text-right ${group.out_of_service > 0 ? 'font-semibold text-red-700' : ''}`}
+                        >
+                          {group.out_of_service}
+                        </td>
+                        <td className="py-1.5 pl-3 text-right">{formatPercent(group.share)}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </ScrollX>
           </div>
         )}
 

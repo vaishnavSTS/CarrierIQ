@@ -13,9 +13,9 @@ export function PublicLayout() {
     <div className="relative isolate flex min-h-screen flex-col">
       <BackgroundSpotlight />
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-canvas/85 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-4 sm:gap-3">
           <Brand to="/" />
-          <nav className="ml-auto flex items-center gap-2 whitespace-nowrap text-sm">
+          <nav className="ml-auto flex items-center gap-1 whitespace-nowrap text-sm sm:gap-2">
             {/* Phones: room for the buttons; the theme follows the device there. */}
             <span className="hidden sm:block">
               <ThemeToggle />
@@ -31,13 +31,13 @@ export function PublicLayout() {
               <>
                 <Link
                   to="/login"
-                  className="rounded-lg px-3 py-1.5 text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+                  className="rounded-lg px-1.5 py-1.5 text-slate-500 hover:bg-slate-50 hover:text-slate-900 sm:px-3"
                 >
                   Log in
                 </Link>
                 <Link
                   to="/register"
-                  className="rounded-lg bg-cta px-3 py-1.5 font-medium text-cta-ink transition-colors hover:bg-cta-hover active:bg-cta-active"
+                  className="rounded-lg bg-cta px-2 py-1.5 sm:px-3 font-medium text-cta-ink transition-colors hover:bg-cta-hover active:bg-cta-active"
                 >
                   <span className="sm:hidden">Sign up</span>
                   <span className="hidden sm:inline">Create account</span>

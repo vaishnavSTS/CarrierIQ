@@ -150,19 +150,22 @@ export function TimelineSection({
       ) : (
         <ol className="space-y-3">
           {shown.map((r) => (
-            <li key={r.key} className="flex gap-4 text-sm">
-              <span className="w-24 shrink-0 whitespace-nowrap text-slate-500">
+            <li
+              key={r.key}
+              className="grid grid-cols-[6rem_1fr] gap-x-4 gap-y-1 text-sm sm:grid-cols-[6rem_6rem_1fr]"
+            >
+              <span className="whitespace-nowrap text-slate-500">
                 {formatDate(r.date)}
                 <span className="block text-[11px]">{KIND_LABEL[r.kind]}</span>
               </span>
-              <span className="w-24 shrink-0">
+              <span>
                 {r.severity ? (
                   <StatusBadge label={r.severity.toLowerCase()} tone={severityTone(r.severity)} />
                 ) : (
                   <StatusBadge label="change" tone="neutral" />
                 )}
               </span>
-              <span className="flex-1">
+              <span className="col-span-2 min-w-0 break-words sm:col-span-1">
                 <span className="font-medium text-slate-900">{r.title}</span>
                 {r.signalId !== null && (
                   <Link

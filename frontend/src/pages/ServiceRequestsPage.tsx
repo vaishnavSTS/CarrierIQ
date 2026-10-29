@@ -57,7 +57,7 @@ export function ServiceRequestsPage() {
           No requests here.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-surface">
+        <div className="relative overflow-x-auto rounded-xl border border-slate-200 bg-surface">
           <table className={tableClass}>
             <thead className={headClass}>
               <tr>

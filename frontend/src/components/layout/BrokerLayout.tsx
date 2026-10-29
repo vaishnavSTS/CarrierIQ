@@ -59,7 +59,7 @@ export function BrokerLayout() {
             <span className="hidden rounded-md bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 sm:inline">
               Broker portal
             </span>
-            <nav className="ml-4 hidden items-center gap-1 text-sm sm:flex">{links}</nav>
+            <nav className="ml-4 hidden items-center gap-1 text-sm lg:flex">{links}</nav>
             <UserMenu />
             <MobileMenu>{links}</MobileMenu>
           </div>

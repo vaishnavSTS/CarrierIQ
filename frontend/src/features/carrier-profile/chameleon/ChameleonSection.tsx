@@ -97,7 +97,7 @@ function Shutdown({ c }: { c: ChameleonLinked }) {
 
 function LinkedTable({ carriers }: { carriers: ChameleonLinked[] }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table className={tableClass}>
         <thead className={headClass}>
           <tr>

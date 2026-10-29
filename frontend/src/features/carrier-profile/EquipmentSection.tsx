@@ -308,7 +308,7 @@ export function EquipmentSection({ usdotNumber }: { usdotNumber: number }) {
                   <Empty>No vehicles match.</Empty>
                 </div>
               ) : (
-                <div className="mt-2 overflow-x-auto">
+                <div className="mt-2 relative overflow-x-auto">
                   <table className={tableClass}>
                     <thead className={headClass}>
                       <tr>

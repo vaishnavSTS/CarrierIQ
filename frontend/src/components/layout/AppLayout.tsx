@@ -87,9 +87,9 @@ function AppFrame() {
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-canvas/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:gap-6">
           <Brand to="/dashboard" />
-          <nav className="hidden gap-1 text-sm sm:flex">{links}</nav>
-          <UserMenu />
-          <MobileMenu>{links}</MobileMenu>
+          <nav className="hidden gap-1 text-sm xl:flex">{links}</nav>
+          <UserMenu from="xl" />
+          <MobileMenu from="xl">{links}</MobileMenu>
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-6 pb-24">

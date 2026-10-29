@@ -74,7 +74,7 @@ export function ComparePage() {
         <>
           <Summary facts={facts} ranked={ranked} />
 
-          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-surface">
+          <div className="relative overflow-x-auto rounded-2xl border border-slate-200 bg-surface">
             <table className="w-full min-w-[640px] table-fixed text-sm">
               <colgroup>
                 <col className="w-48" />

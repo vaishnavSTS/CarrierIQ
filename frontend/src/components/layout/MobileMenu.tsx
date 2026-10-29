@@ -4,15 +4,22 @@ import { useNavigate } from 'react-router-dom'
 
 import { ManageSubscriptionButton } from '../../features/billing/ManageSubscriptionButton'
 import { useLogout, useMe } from '../../hooks/useAuth'
+import { HIDE_FROM, type HeaderBreakpoint } from './headerBreakpoint'
 import { ROLE_LABELS } from './roleLabels'
 import { ThemeToggle } from './ThemeToggle'
 
 /**
- * Phones only: a menu button that opens the page links (`children`), who is logged in, the theme
+ * Phones and tablets (below `from`, where the header's links stop fitting): a menu button that opens the page links (`children`), who is logged in, the theme
  * switch and Log out, below the header. It closes when a link is chosen, on Escape, or on a tap
  * outside it. Wider screens show the links and the user menu in the header itself.
  */
-export function MobileMenu({ children }: { children: ReactNode }) {
+export function MobileMenu({
+  children,
+  from = 'lg',
+}: {
+  children: ReactNode
+  from?: HeaderBreakpoint
+}) {
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
   const { data: user } = useMe()
@@ -41,7 +48,7 @@ export function MobileMenu({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div ref={root} className="ml-auto sm:hidden">
+    <div ref={root} className={`ml-auto ${HIDE_FROM[from]}`}>
       <button
         type="button"
         aria-expanded={open}

@@ -44,7 +44,7 @@ export function CsaBasics({ sms }: { sms: Sms | null }) {
         carrier’s inspections or size; it has no fixed range, and higher means more or more serious
         violations.
       </p>
-      <div className="overflow-x-auto">
+      <div className="relative overflow-x-auto">
         <table className={tableClass}>
           <thead className={headClass}>
             <tr>

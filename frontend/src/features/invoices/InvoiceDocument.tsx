@@ -94,7 +94,7 @@ export function InvoiceDocument({ invoice: inv }: { invoice: Invoice }) {
         {to.emails && to.emails.length > 0 && <div>Email: {to.emails.join(', ')}</div>}
       </section>
 
-      <div className="mt-10 overflow-x-auto">
+      <div className="mt-10 relative overflow-x-auto">
         <table className="w-full min-w-[520px] border-collapse text-left">
           <thead>
             <tr className="border-y border-[#e5e7eb] font-semibold">

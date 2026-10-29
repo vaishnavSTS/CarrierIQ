@@ -47,7 +47,7 @@ export function PortalLayout() {
           <span className="hidden rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline">
             Client portal
           </span>
-          <nav className="ml-4 hidden items-center gap-1 text-sm sm:flex">{links}</nav>
+          <nav className="ml-4 hidden items-center gap-1 text-sm lg:flex">{links}</nav>
           <UserMenu />
           <MobileMenu>{links}</MobileMenu>
         </div>

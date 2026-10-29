@@ -3,6 +3,7 @@ import { CalendarClock, Scale } from 'lucide-react'
 import type { CarrierSafety } from '../../../types/carrierSafety'
 import { formatDate } from '../../../utils/format'
 import { heaviestViolations, improvementSteps, violationCode, violationRows } from './recordDetail'
+import { ScrollX } from './ScrollX'
 import { SectionHeading } from './SectionHeading'
 
 /** Caps that keep the record to about one A4 page; more when it has two pages (`part`). */
@@ -70,40 +71,42 @@ export function RecordPage({
                   No violations in FMCSA’s 24-month window, so nothing is waiting to drop off.
                 </p>
               ) : (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-200 text-left text-[10px] uppercase tracking-wide text-slate-500">
-                      <th className="py-1 font-medium">Date</th>
-                      <th className="py-1 font-medium">Inspection</th>
-                      <th className="py-1 font-medium">What happens</th>
-                      <th className="py-1 text-right font-medium">Points removed</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 align-top text-slate-700">
-                    {steps.map((s) => (
-                      <tr key={`${s.inspection.inspection_id}-${s.change[0]}`}>
-                        <td className="whitespace-nowrap py-1 pr-2 font-medium tabular-nums text-slate-900">
-                          {day(s.date)}
-                        </td>
-                        <td className="py-1 pr-2">
-                          {formatDate(s.inspection.inspection_date)}
-                          {s.inspection.state && ` · ${s.inspection.state}`}
-                          <span className="block text-[11px] text-slate-500">
-                            {s.basics.join(', ')}
-                          </span>
-                        </td>
-                        <td className="py-1 pr-2">
-                          {s.inspection.violations.length === 1
-                            ? `Its violation ${s.change[0]}`
-                            : `Its ${s.inspection.violations.length} violations ${s.change[1]}`}
-                        </td>
-                        <td className="py-1 text-right font-semibold tabular-nums text-emerald-700">
-                          {points(s.points)} fewer
-                        </td>
+                <ScrollX>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-left text-[10px] uppercase tracking-wide text-slate-500">
+                        <th className="py-1 font-medium">Date</th>
+                        <th className="py-1 font-medium">Inspection</th>
+                        <th className="py-1 font-medium">What happens</th>
+                        <th className="py-1 text-right font-medium">Points removed</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 align-top text-slate-700">
+                      {steps.map((s) => (
+                        <tr key={`${s.inspection.inspection_id}-${s.change[0]}`}>
+                          <td className="whitespace-nowrap py-1 pr-2 font-medium tabular-nums text-slate-900">
+                            {day(s.date)}
+                          </td>
+                          <td className="py-1 pr-2">
+                            {formatDate(s.inspection.inspection_date)}
+                            {s.inspection.state && ` · ${s.inspection.state}`}
+                            <span className="block text-[11px] text-slate-500">
+                              {s.basics.join(', ')}
+                            </span>
+                          </td>
+                          <td className="py-1 pr-2">
+                            {s.inspection.violations.length === 1
+                              ? `Its violation ${s.change[0]}`
+                              : `Its ${s.inspection.violations.length} violations ${s.change[1]}`}
+                          </td>
+                          <td className="py-1 text-right font-semibold tabular-nums text-emerald-700">
+                            {points(s.points)} fewer
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </ScrollX>
               )}
             </div>
 
@@ -151,41 +154,43 @@ export function RecordPage({
               >
                 Violation summary
               </SectionHeading>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 text-left text-[10px] uppercase tracking-wide text-slate-500">
-                    <th className="py-1 font-medium">Code</th>
-                    <th className="py-1 font-medium">Description</th>
-                    <th className="py-1 pl-3 font-medium">BASIC</th>
-                    <th className="w-16 py-1 pl-3 text-center font-medium">Count</th>
-                    <th className="w-16 py-1 pl-3 text-center font-medium" title="Out of service">
-                      OOS
-                    </th>
-                    <th className="w-16 py-1 pl-3 text-center font-medium">Severity</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 align-top tabular-nums text-slate-700">
-                  {codes.slice(0, maxCodes).map((r) => (
-                    <tr key={r.code}>
-                      <td className="whitespace-nowrap py-1 pr-2 font-mono text-[11px] text-slate-900">
-                        {violationCode(r.code)}
-                      </td>
-                      <td className="py-1 pr-2">
-                        {/* One line here: the inspection history below has each one in full. */}
-                        <span className="line-clamp-1">{r.description ?? '—'}</span>
-                      </td>
-                      <td className="py-1 pl-3 pr-2 text-xs">{r.basic}</td>
-                      <td className="py-1 pl-3 text-center">{r.count}</td>
-                      <td
-                        className={`py-1 pl-3 text-center ${r.outOfService > 0 ? 'font-semibold text-red-700' : ''}`}
-                      >
-                        {r.outOfService}
-                      </td>
-                      <td className="py-1 pl-3 text-center">{r.severity}</td>
+              <ScrollX>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-left text-[10px] uppercase tracking-wide text-slate-500">
+                      <th className="py-1 font-medium">Code</th>
+                      <th className="py-1 font-medium">Description</th>
+                      <th className="py-1 pl-3 font-medium">BASIC</th>
+                      <th className="w-16 py-1 pl-3 text-center font-medium">Count</th>
+                      <th className="w-16 py-1 pl-3 text-center font-medium" title="Out of service">
+                        OOS
+                      </th>
+                      <th className="w-16 py-1 pl-3 text-center font-medium">Severity</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 align-top tabular-nums text-slate-700">
+                    {codes.slice(0, maxCodes).map((r) => (
+                      <tr key={r.code}>
+                        <td className="whitespace-nowrap py-1 pr-2 font-mono text-[11px] text-slate-900">
+                          {violationCode(r.code)}
+                        </td>
+                        <td className="py-1 pr-2">
+                          {/* One line here: the inspection history below has each one in full. */}
+                          <span className="line-clamp-1">{r.description ?? '—'}</span>
+                        </td>
+                        <td className="py-1 pl-3 pr-2 text-xs">{r.basic}</td>
+                        <td className="py-1 pl-3 text-center">{r.count}</td>
+                        <td
+                          className={`py-1 pl-3 text-center ${r.outOfService > 0 ? 'font-semibold text-red-700' : ''}`}
+                        >
+                          {r.outOfService}
+                        </td>
+                        <td className="py-1 pl-3 text-center">{r.severity}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </ScrollX>
               {codes.length > maxCodes && (
                 <p className="text-xs text-slate-500">
                   +{codes.length - maxCodes} more codes on the Safety tab in CarrierSafetyScan.

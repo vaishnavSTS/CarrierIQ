@@ -26,7 +26,7 @@ export function CrashList({ crashes }: { crashes: CrashSummary | null }) {
         fatality and an injury counts in each. Crash involvement does not mean the carrier was at
         fault: the Crash File does not record fault.
       </p>
-      <div className="overflow-x-auto">
+      <div className="relative overflow-x-auto">
         <table className={tableClass}>
           <thead className={headClass}>
             <tr>

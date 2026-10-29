@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom'
 
 import { ManageSubscriptionButton } from '../../features/billing/ManageSubscriptionButton'
 import { useLogout, useMe } from '../../hooks/useAuth'
+import { SHOW_FROM, type HeaderBreakpoint } from './headerBreakpoint'
 import { ROLE_LABELS } from './roleLabels'
 import { ThemeToggle } from './ThemeToggle'
 
 /** Theme switch, then the logged-in user's name, organization and role, with a log-out button.
- * Wider screens only; phones have the same in MobileMenu. */
-export function UserMenu() {
+ * Wide screens only (from `from`, the width where the header's links fit); narrower screens have
+ * the same in MobileMenu. */
+export function UserMenu({ from = 'lg' }: { from?: HeaderBreakpoint }) {
   const { data: user } = useMe()
   const logout = useLogout()
   const navigate = useNavigate()
@@ -16,7 +18,7 @@ export function UserMenu() {
   if (!user) return null
 
   return (
-    <div className="ml-auto hidden items-center gap-3 text-sm sm:flex">
+    <div className={`ml-auto hidden items-center gap-3 text-sm ${SHOW_FROM[from]}`}>
       <ThemeToggle />
       <div className="text-right leading-tight">
         <div className="font-medium text-slate-900">{user.full_name}</div>

@@ -84,7 +84,7 @@ export function RelationshipView({
         </p>
       )}
       {related.length > 0 && (
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className={tableClass}>
             <thead className={headClass}>
               <tr>

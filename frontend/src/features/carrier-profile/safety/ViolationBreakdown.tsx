@@ -58,7 +58,7 @@ export function ViolationBreakdown({ summary }: { summary: ViolationSummary }) {
           </ul>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
             Most frequent violations
           </h3>

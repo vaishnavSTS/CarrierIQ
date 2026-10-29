@@ -237,7 +237,7 @@ function filingSources(filings: InsuranceFiling[]): string {
 
 function FilingsTable({ filings, past }: { filings: InsuranceFiling[]; past: boolean }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table className={tableClass}>
         <thead className={headClass}>
           <tr>
@@ -479,7 +479,7 @@ export function AuthoritySection({
             <Empty>No authority actions in FMCSA records.</Empty>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className="relative overflow-x-auto">
                 <table className={tableClass}>
                   <thead className={headClass}>
                     <tr>

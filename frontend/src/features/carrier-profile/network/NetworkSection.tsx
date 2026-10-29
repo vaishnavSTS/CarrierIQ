@@ -76,7 +76,7 @@ function shownValue(kind: string, value: string | null): string {
 function LinkedTable({ carriers }: { carriers: LinkedCarrier[] }) {
   const client = useIsClientPortal()
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table className={tableClass}>
         <thead className={headClass}>
           <tr>

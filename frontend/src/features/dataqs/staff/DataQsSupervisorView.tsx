@@ -123,7 +123,7 @@ function ExceptionTable({ rows }: { rows: DataQsException[] }) {
           </li>
         ))}
       </ul>
-      <div className="hidden overflow-x-auto rounded-xl border border-slate-200 sm:block">
+      <div className="hidden relative overflow-x-auto rounded-xl border border-slate-200 sm:block">
         <table className={tableClass}>
           <thead className={headClass}>
             <tr>
@@ -216,7 +216,7 @@ function WorkloadTable({ rows }: { rows: DataQsWorkload[] }) {
           </li>
         ))}
       </ul>
-      <div className="hidden overflow-x-auto rounded-xl border border-slate-200 sm:block">
+      <div className="hidden relative overflow-x-auto rounded-xl border border-slate-200 sm:block">
         <table className={tableClass}>
           <thead className={headClass}>
             <tr>
