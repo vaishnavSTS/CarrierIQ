@@ -1,9 +1,7 @@
 import {
   CircleCheck,
   CircleMinus,
-  Mail,
   OctagonX,
-  Phone,
   Printer,
   TriangleAlert,
   type LucideIcon,
@@ -37,6 +35,7 @@ import { IssGauge } from '../safety/IssGauge'
 import { IssTrend } from './IssTrend'
 import { basicTiles, type BasicTile, type TileTone } from './basicTiles'
 import { STS_CONTACT } from './contact'
+import { ContactLinks, ContactStrip, WebsiteQr } from './ContactStrip'
 import { packetItems, type PacketItem } from './packetItems'
 import { RecordPage } from './RecordPage'
 import { tileFacts } from './recordDetail'
@@ -87,16 +86,19 @@ function Sheet({
   total,
   title,
   carrier,
+  contact,
   children,
 }: {
   page: number
   total: number
   title: string
   carrier: string
+  /** The page's line for the Sky Transport Solutions strip at its bottom; none on page 2 */
+  contact?: string
   children: ReactNode
 }) {
   return (
-    <section className="packet-sheet space-y-5 rounded-xl border border-slate-200 bg-surface p-6 sm:p-8 print:space-y-4 print:rounded-none print:border-0 print:p-0">
+    <section className="packet-sheet flex flex-col space-y-5 rounded-xl border border-slate-200 bg-surface p-6 sm:p-8 print:space-y-4 print:rounded-none print:border-0 print:p-0">
       <div className="flex items-baseline justify-between gap-4 border-b border-slate-200 pb-2 text-[11px] uppercase tracking-[0.14em] text-slate-500">
         <span className="shrink-0 whitespace-nowrap">
           <span className="font-semibold text-slate-900">CarrierSafetyScan</span>{' '}
@@ -114,6 +116,11 @@ function Sheet({
         </span>
       </div>
       {children}
+      {contact && (
+        <div className="mt-auto pt-1">
+          <ContactStrip message={contact} />
+        </div>
+      )}
     </section>
   )
 }
@@ -322,11 +329,31 @@ export function PacketDocument({
   // Page 4, FMCSA's record line by line, once its violation file is loaded.
   const record = safety !== null && safety.sms_inspections != null
   const total = record ? 4 : 3
+  // Each page's line in the Sky Transport Solutions strip: what that page is about.
+  const ask =
+    'Questions about this report? A Sky Transport Solutions specialist can explain any item.'
+  const contact = {
+    scorecard: client
+      ? 'Want a lower safety score? Talk to a Sky Transport Solutions specialist.'
+      : ask,
+    record: client
+      ? 'Keep your record clean: Sky Transport Solutions handles MCS-150 updates, insurance and BOC-3 filings.'
+      : ask,
+    inspections: client
+      ? 'Found a wrong violation? Sky Transport Solutions files DataQs challenges for $50 per inspection.'
+      : ask,
+  }
 
   return (
     <>
       {/* Page 1: the scorecard */}
-      <Sheet page={1} total={total} title="Carrier safety scorecard" carrier={carrier}>
+      <Sheet
+        page={1}
+        total={total}
+        title="Carrier safety scorecard"
+        carrier={carrier}
+        contact={contact.scorecard}
+      >
         <div className="rounded-xl border border-accent/20 bg-accent-soft px-5 py-4 text-slate-900">
           <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent-strong">
             Carrier safety scorecard
@@ -536,40 +563,39 @@ export function PacketDocument({
           </div>
         )}
 
-        <div className="break-inside-avoid rounded-xl border-2 border-accent bg-accent-soft px-5 py-4">
-          <div className="text-base font-semibold text-slate-900">
-            {client
-              ? hurting.length + watch.length > 0
-                ? 'Want help fixing these?'
-                : 'Want to keep it this way?'
-              : 'Questions about this report?'}
+        <div className="flex break-inside-avoid items-center gap-5 rounded-xl border-2 border-accent bg-accent-soft px-5 py-4">
+          <div className="min-w-0 flex-1">
+            <div className="text-base font-semibold text-slate-900">
+              {client
+                ? hurting.length + watch.length > 0
+                  ? 'Want help fixing these?'
+                  : 'Want to keep it this way?'
+                : 'Questions about this report?'}
+            </div>
+            <p className="mt-1 text-sm text-slate-700">
+              {client
+                ? `${STS_CONTACT.company} can walk you through each item on this page and help you put a plan in place.`
+                : `${STS_CONTACT.company} can explain any item on this page.`}
+            </p>
+            <ContactLinks className="mt-2 text-sm" />
           </div>
-          <p className="mt-1 text-sm text-slate-700">
-            {client
-              ? `${STS_CONTACT.company} can walk you through each item on this page and help you put a plan in place.`
-              : `${STS_CONTACT.company} can explain any item on this page.`}
-          </p>
-          <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm font-semibold">
-            <a
-              href={`tel:+1${STS_CONTACT.phone}`}
-              className="inline-flex items-center gap-1.5 text-accent-strong hover:underline"
-            >
-              <Phone className="size-4" aria-hidden />
-              {formatPhone(STS_CONTACT.phone)}
-            </a>
-            <a
-              href={`mailto:${STS_CONTACT.email}`}
-              className="inline-flex items-center gap-1.5 text-accent-strong hover:underline"
-            >
-              <Mail className="size-4" aria-hidden />
-              {STS_CONTACT.email}
-            </a>
+          <div className="flex shrink-0 flex-col items-center gap-1">
+            <WebsiteQr size="large" />
+            <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+              Scan to visit our website
+            </span>
           </div>
         </div>
       </Sheet>
 
       {/* Page 3: strengths and the record */}
-      <Sheet page={3} total={total} title="Strengths and record" carrier={carrier}>
+      <Sheet
+        page={3}
+        total={total}
+        title="Strengths and record"
+        carrier={carrier}
+        contact={contact.record}
+      >
         <div className="space-y-2">
           <Heading aside="Each item names its FMCSA record">
             <span className="flex items-center gap-2 text-emerald-700">
@@ -731,7 +757,13 @@ export function PacketDocument({
 
       {/* Page 4: the SMS record line by line, and when the score improves */}
       {record && safety && (
-        <Sheet page={4} total={total} title="Inspection record" carrier={carrier}>
+        <Sheet
+          page={4}
+          total={total}
+          title="Inspection record"
+          carrier={carrier}
+          contact={contact.inspections}
+        >
           <RecordPage safety={safety} client={client} whose={whose} />
         </Sheet>
       )}

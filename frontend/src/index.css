@@ -314,6 +314,11 @@ body {
   #carrier-packet-print .packet-sheet + .packet-sheet {
     break-before: page;
   }
+  /* Each sheet is one A4 page tall (297mm less the margins), so the Sky Transport Solutions strip
+     sits at the bottom of every page. */
+  #carrier-packet-print .packet-sheet {
+    min-height: 276mm;
+  }
   /* The Safety Score Report prints alone: the app (and its wide menu bar) is left out entirely,
      so nothing makes the browser shrink the report to fit. */
   body:has(#carrier-packet-print) > #root {

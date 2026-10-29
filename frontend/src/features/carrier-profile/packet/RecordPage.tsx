@@ -1,9 +1,8 @@
-import { CalendarClock, Mail, Phone, Scale } from 'lucide-react'
+import { CalendarClock, Scale } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import type { CarrierSafety } from '../../../types/carrierSafety'
-import { formatDate, formatPhone } from '../../../utils/format'
-import { STS_CONTACT } from './contact'
+import { formatDate } from '../../../utils/format'
 import { heaviestViolations, improvementSteps, violationCode, violationRows } from './recordDetail'
 
 /** Caps that keep the record page to about one A4 page. */
@@ -135,22 +134,6 @@ export function RecordPage({
             If one of these is wrong, a DataQs challenge removes its whole weight from the score.
             {client && ' STS files DataQs requests for $50 per inspection.'}
           </p>
-          <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm font-semibold">
-            <a
-              href={`tel:+1${STS_CONTACT.phone}`}
-              className="inline-flex items-center gap-1.5 text-accent-strong hover:underline"
-            >
-              <Phone className="size-4" aria-hidden />
-              {formatPhone(STS_CONTACT.phone)}
-            </a>
-            <a
-              href={`mailto:${STS_CONTACT.email}`}
-              className="inline-flex items-center gap-1.5 text-accent-strong hover:underline"
-            >
-              <Mail className="size-4" aria-hidden />
-              {STS_CONTACT.email}
-            </a>
-          </div>
         </div>
       </div>
 
@@ -176,7 +159,10 @@ export function RecordPage({
                   <td className="whitespace-nowrap py-1 pr-2 font-mono text-[11px] text-slate-900">
                     {violationCode(r.code)}
                   </td>
-                  <td className="py-1 pr-2">{r.description ?? '—'}</td>
+                  <td className="py-1 pr-2">
+                    {/* One line here: the inspection history below has each one in full. */}
+                    <span className="line-clamp-1">{r.description ?? '—'}</span>
+                  </td>
                   <td className="py-1 pr-2 text-xs">{r.basic}</td>
                   <td className="py-1 text-right">{r.count}</td>
                   <td
