@@ -35,7 +35,7 @@ import { IssGauge } from '../safety/IssGauge'
 import { IssTrend } from './IssTrend'
 import { basicTiles, type BasicTile, type TileTone } from './basicTiles'
 import { STS_CONTACT } from './contact'
-import { ContactLinks, ContactStrip, WebsiteQr } from './ContactStrip'
+import { ContactLinks, ContactStrip, StsLogo, WebsiteQr } from './ContactStrip'
 import { packetItems, type PacketItem } from './packetItems'
 import { fitSheets, PrintCopy } from './printFit'
 import { RecordPage } from './RecordPage'
@@ -99,7 +99,7 @@ function Sheet({
   children: ReactNode
 }) {
   const printed = useContext(PrintCopy)
-  return (
+  const sheet = (
     <section
       className={
         printed
@@ -133,6 +133,9 @@ function Sheet({
       )}
     </section>
   )
+  // Printed: each sheet sits on its own A4 page with the margins drawn inside it, so the browser
+  // has no margin to print its date, title and page address in (index.css .print-page).
+  return printed ? <div className="print-page">{sheet}</div> : sheet
 }
 
 function Heading({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
@@ -574,6 +577,7 @@ export function PacketDocument({
         )}
 
         <div className="flex break-inside-avoid items-center gap-5 rounded-xl border-2 border-accent bg-accent-soft px-5 py-4">
+          <StsLogo className="size-20" />
           <div className="min-w-0 flex-1">
             <div className="text-base font-semibold text-slate-900">
               {client

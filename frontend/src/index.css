@@ -259,13 +259,13 @@ body {
  * the standard light slate scale, whatever the screen theme. The selector also names the dark
  * theme so it outranks it, and every token the dark theme changes is reset here.
  */
-/* The Safety Score Report's printed copy (PacketSection): laid out off-screen at the printed A4
-   width (210mm less 10mm margins) so each page can be measured and fitted before printing. */
+/* The Safety Score Report's printed copy (PacketSection): laid out off-screen at A4's width (its
+   pages draw their own margins) so each page can be measured and fitted before printing. */
 #carrier-packet-print {
   position: fixed;
   top: 0;
   left: -10000px;
-  width: 190mm;
+  width: 210mm;
   visibility: hidden;
   pointer-events: none;
 }
@@ -323,8 +323,22 @@ body {
   html:has(#invoice-print) {
     font-size: 12.5px;
   }
-  #carrier-packet-print .packet-sheet + .packet-sheet {
-    break-before: page;
+  /* One A4 page per report sheet, with its margins drawn inside the page (and none outside it), so
+     the browser has no room to print its date, title and page address on the report. */
+  @page report {
+    size: A4;
+    margin: 0;
+  }
+  #carrier-packet-print .print-page {
+    page: report;
+    width: 210mm;
+    height: 297mm;
+    padding: 9mm 10mm;
+    overflow: hidden;
+    break-after: page;
+  }
+  #carrier-packet-print .print-page:last-child {
+    break-after: auto;
   }
   /* The Safety Score Report prints alone: the app (and its wide menu bar) is left out entirely,
      so nothing makes the browser shrink the report to fit. */

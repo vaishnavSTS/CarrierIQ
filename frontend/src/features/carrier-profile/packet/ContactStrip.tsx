@@ -2,6 +2,7 @@ import { Globe, Mail, Phone } from 'lucide-react'
 
 import { formatPhone } from '../../../utils/format'
 import { STS_CONTACT } from './contact'
+import stsLogo from './sts-logo.png'
 import qrCode from './sts-website-qr.svg'
 
 /** Sky Transport Solutions' phone, email and website, each a link (they stay clickable in the PDF). */
@@ -35,6 +36,17 @@ export function ContactLinks({ className = '' }: { className?: string }) {
   )
 }
 
+/** Sky Transport Solutions' globe logo. */
+export function StsLogo({ className = 'size-14' }: { className?: string }) {
+  return (
+    <img
+      src={stsLogo}
+      alt={STS_CONTACT.company}
+      className={`${className} shrink-0 object-contain`}
+    />
+  )
+}
+
 /**
  * The QR code for Sky Transport Solutions' website (sts-website-qr.svg: the website address only,
  * no carrier data; made once with reportlab's QR encoder). At least 1.5 cm when printed so phones
@@ -51,12 +63,13 @@ export function WebsiteQr({ size = 'small' }: { size?: 'small' | 'large' }) {
 }
 
 /**
- * The bottom of every report page: a message for that page, Sky Transport Solutions' phone, email
- * and website, and the QR code to its website.
+ * The bottom of every report page: Sky Transport Solutions' logo, a message for that page, its
+ * phone, email and website, and the QR code to its website.
  */
 export function ContactStrip({ message }: { message: string }) {
   return (
     <div className="contact-strip flex break-inside-avoid items-center gap-4 rounded-xl border border-accent/30 bg-accent-soft px-4 py-2.5">
+      <StsLogo />
       <div className="min-w-0 flex-1 space-y-1 text-sm">
         <p className="font-semibold text-slate-900">{message}</p>
         <p className="text-xs text-slate-600">
