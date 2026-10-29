@@ -6,7 +6,7 @@ import {
   TriangleAlert,
   type LucideIcon,
 } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useContext, useLayoutEffect, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
 import { useCarrierAuthority } from '../../../hooks/useCarrierAuthority'
@@ -37,6 +37,7 @@ import { basicTiles, type BasicTile, type TileTone } from './basicTiles'
 import { STS_CONTACT } from './contact'
 import { ContactLinks, ContactStrip, WebsiteQr } from './ContactStrip'
 import { packetItems, type PacketItem } from './packetItems'
+import { fitSheets, PrintCopy } from './printFit'
 import { RecordPage } from './RecordPage'
 import { tileFacts } from './recordDetail'
 
@@ -97,8 +98,15 @@ function Sheet({
   contact?: string
   children: ReactNode
 }) {
+  const printed = useContext(PrintCopy)
   return (
-    <section className="packet-sheet flex flex-col space-y-5 rounded-xl border border-slate-200 bg-surface p-6 sm:p-8 print:space-y-4 print:rounded-none print:border-0 print:p-0">
+    <section
+      className={
+        printed
+          ? 'packet-sheet flex flex-col justify-between space-y-4 bg-white'
+          : 'packet-sheet flex flex-col space-y-5 rounded-xl border border-slate-200 bg-surface p-6 sm:p-8'
+      }
+    >
       <div className="flex items-baseline justify-between gap-4 border-b border-slate-200 pb-2 text-[11px] uppercase tracking-[0.14em] text-slate-500">
         <span className="shrink-0 whitespace-nowrap">
           <span className="font-semibold text-slate-900">CarrierSafetyScan</span>{' '}
@@ -117,7 +125,9 @@ function Sheet({
       </div>
       {children}
       {contact && (
-        <div className="mt-auto pt-1">
+        // Printed: the page's sections are spread over the whole A4 page (justify-between), so
+        // the strip ends up at its bottom anyway; on screen it follows the content.
+        <div className={printed ? 'pt-1' : 'mt-auto pt-1'}>
           <ContactStrip message={contact} />
         </div>
       )}
@@ -778,6 +788,19 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
   const equipment = useCarrierEquipment(profile.usdot_number)
   const safety = useCarrierSafety(profile.usdot_number)
   const portal = usePortalMode()
+  const printCopy = useRef<HTMLDivElement>(null)
+
+  // Fit each printed sheet to one A4 page whenever the report changes, once fonts have loaded,
+  // and again just before printing.
+  useLayoutEffect(() => {
+    const root = printCopy.current
+    if (!root) return
+    const fit = () => fitSheets(root)
+    fit()
+    void document.fonts?.ready.then(fit)
+    window.addEventListener('beforeprint', fit)
+    return () => window.removeEventListener('beforeprint', fit)
+  })
 
   if (authority.isPending || network.isPending || equipment.isPending || safety.isPending) {
     return (
@@ -829,11 +852,11 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
       </div>
       {document_}
       {/* The printed copy sits directly in <body>, outside the app, so the browser prints it at
-          full A4 size: inside the app the hidden menu bar and page frame would still take up
-          width, and the browser would shrink the whole report to fit them. */}
+          full A4 size (inside the app the hidden menu bar would make it shrink everything). It is
+          laid out off-screen at the printed width so fitSheets can size each page exactly. */}
       {createPortal(
-        <div id="carrier-packet-print" className="hidden print:block">
-          {document_}
+        <div id="carrier-packet-print" ref={printCopy} aria-hidden>
+          <PrintCopy.Provider value>{document_}</PrintCopy.Provider>
         </div>,
         document.body,
       )}

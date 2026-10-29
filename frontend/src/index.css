@@ -259,6 +259,17 @@ body {
  * the standard light slate scale, whatever the screen theme. The selector also names the dark
  * theme so it outranks it, and every token the dark theme changes is reset here.
  */
+/* The Safety Score Report's printed copy (PacketSection): laid out off-screen at the printed A4
+   width (210mm less 10mm margins) so each page can be measured and fitted before printing. */
+#carrier-packet-print {
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  width: 190mm;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 @media print {
   :root,
   :root[data-theme='dark'] {
@@ -307,17 +318,13 @@ body {
     size: A4;
     margin: 9mm 10mm;
   }
-  /* The type scale for print: large enough to fill an A4 page, small enough for one page per sheet. */
-  html {
+  /* A slightly smaller type scale for printed invoices. (The Safety Score Report sizes each of its
+     pages itself: printFit.ts.) */
+  html:has(#invoice-print) {
     font-size: 12.5px;
   }
   #carrier-packet-print .packet-sheet + .packet-sheet {
     break-before: page;
-  }
-  /* Each sheet is one A4 page tall (297mm less the margins), so the Sky Transport Solutions strip
-     sits at the bottom of every page. */
-  #carrier-packet-print .packet-sheet {
-    min-height: 276mm;
   }
   /* The Safety Score Report prints alone: the app (and its wide menu bar) is left out entirely,
      so nothing makes the browser shrink the report to fit. */
@@ -339,6 +346,9 @@ body {
   #carrier-packet-print {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
+    position: static;
+    width: auto;
+    visibility: visible;
   }
   #invoice-print {
     /* Keep the safety-score dial and badges in colour: browsers drop colours when printing. */
