@@ -580,9 +580,9 @@ export function PacketDocument({
               <thead>
                 <tr className="border-b border-slate-200 text-left text-[10px] uppercase tracking-wide text-slate-500">
                   <th className="py-1 font-medium">Violation type</th>
-                  <th className="py-1 text-right font-medium">Violations</th>
-                  <th className="py-1 text-right font-medium">Out of service</th>
-                  <th className="py-1 text-right font-medium">Share of BASIC</th>
+                  <th className="w-20 py-1 pl-3 text-right font-medium">Violations</th>
+                  <th className="w-20 py-1 pl-3 text-right font-medium">Out of service</th>
+                  <th className="w-20 py-1 pl-3 text-right font-medium">Share of BASIC</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 align-top tabular-nums text-slate-700">
@@ -595,13 +595,13 @@ export function PacketDocument({
                         <span className="text-xs text-slate-500">({basic})</span>
                         {tip && <span className="block text-xs text-slate-500">{tip}</span>}
                       </td>
-                      <td className="py-1.5 text-right">{group.violations}</td>
+                      <td className="py-1.5 pl-3 text-right">{group.violations}</td>
                       <td
-                        className={`py-1.5 text-right ${group.out_of_service > 0 ? 'font-semibold text-red-700' : ''}`}
+                        className={`py-1.5 pl-3 text-right ${group.out_of_service > 0 ? 'font-semibold text-red-700' : ''}`}
                       >
                         {group.out_of_service}
                       </td>
-                      <td className="py-1.5 text-right">{formatPercent(group.share)}</td>
+                      <td className="py-1.5 pl-3 text-right">{formatPercent(group.share)}</td>
                     </tr>
                   )
                 })}

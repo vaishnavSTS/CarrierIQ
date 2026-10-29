@@ -160,10 +160,12 @@ export function RecordPage({
                   <tr className="border-b border-slate-200 text-left text-[10px] uppercase tracking-wide text-slate-500">
                     <th className="py-1 font-medium">Code</th>
                     <th className="py-1 font-medium">Description</th>
-                    <th className="py-1 font-medium">BASIC</th>
-                    <th className="py-1 text-right font-medium">Count</th>
-                    <th className="py-1 text-right font-medium">OOS</th>
-                    <th className="py-1 text-right font-medium">Severity</th>
+                    <th className="py-1 pl-3 font-medium">BASIC</th>
+                    <th className="w-16 py-1 pl-3 text-center font-medium">Count</th>
+                    <th className="w-16 py-1 pl-3 text-center font-medium" title="Out of service">
+                      OOS
+                    </th>
+                    <th className="w-16 py-1 pl-3 text-center font-medium">Severity</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 align-top tabular-nums text-slate-700">
@@ -176,14 +178,14 @@ export function RecordPage({
                         {/* One line here: the inspection history below has each one in full. */}
                         <span className="line-clamp-1">{r.description ?? '—'}</span>
                       </td>
-                      <td className="py-1 pr-2 text-xs">{r.basic}</td>
-                      <td className="py-1 text-right">{r.count}</td>
+                      <td className="py-1 pl-3 pr-2 text-xs">{r.basic}</td>
+                      <td className="py-1 pl-3 text-center">{r.count}</td>
                       <td
-                        className={`py-1 text-right ${r.outOfService > 0 ? 'font-semibold text-red-700' : ''}`}
+                        className={`py-1 pl-3 text-center ${r.outOfService > 0 ? 'font-semibold text-red-700' : ''}`}
                       >
                         {r.outOfService}
                       </td>
-                      <td className="py-1 text-right">{r.severity}</td>
+                      <td className="py-1 pl-3 text-center">{r.severity}</td>
                     </tr>
                   ))}
                 </tbody>
