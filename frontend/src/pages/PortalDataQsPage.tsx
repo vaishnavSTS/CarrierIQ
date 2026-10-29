@@ -44,25 +44,25 @@ export function PortalDataQsPage() {
         </a>
       </div>
       {/* 2 or more inspections: an STS specialist talks through the offers. */}
-      <div className="-mt-3 flex flex-col gap-3 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 px-6 py-4 text-white shadow-lg shadow-violet-500/25 lg:flex-row lg:items-center lg:justify-between">
-        <p className="flex items-center gap-3 text-sm text-white/90">
-          <Users className="size-5 shrink-0 text-white" aria-hidden />
+      <div className="-mt-3 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-surface px-6 py-4 shadow-sm lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+        <p className="flex min-w-0 items-center gap-3 text-sm text-slate-700">
+          <Users className="size-5 shrink-0 text-accent-strong" aria-hidden />
           <span>
-            <span className="font-semibold text-white">Filing 2 or more DataQs?</span> Ask a Sky
+            <span className="font-semibold text-slate-900">Filing 2 or more DataQs?</span> Ask a Sky
             Transport Solutions specialist about our offers.
           </span>
         </p>
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium">
+        <div className="flex shrink-0 flex-wrap items-center gap-2 text-sm font-medium lg:flex-nowrap">
           <a
             href="tel:+18004989820"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-white hover:bg-white/25"
+            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-800 hover:border-accent hover:text-accent-strong"
           >
             <Phone className="size-4" aria-hidden />
             (800) 498-9820
           </a>
           <a
             href="mailto:info@skytransportsolutions.com"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-white hover:bg-white/25"
+            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-800 hover:border-accent hover:text-accent-strong"
           >
             <Mail className="size-4" aria-hidden />
             info@skytransportsolutions.com
@@ -71,7 +71,7 @@ export function PortalDataQsPage() {
             href="https://www.skytransportsolutions.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-white hover:bg-white/25"
+            className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-800 hover:border-accent hover:text-accent-strong"
           >
             <Globe className="size-4" aria-hidden />
             skytransportsolutions.com
