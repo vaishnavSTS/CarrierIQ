@@ -43,15 +43,13 @@ export function PortalDataQsPage() {
           Start a request
         </a>
       </div>
-      {/* More than 2 inspections: STS talks it through directly. */}
+      {/* 2 or more inspections: an STS specialist talks through the offers. */}
       <div className="-mt-3 flex flex-col gap-3 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 px-6 py-4 text-white shadow-lg shadow-violet-500/25 lg:flex-row lg:items-center lg:justify-between">
         <p className="flex items-center gap-3 text-sm text-white/90">
           <Users className="size-5 shrink-0 text-white" aria-hidden />
           <span>
-            <span className="font-semibold text-white">
-              Filing DataQs for more than 2 inspections?
-            </span>{' '}
-            Contact Sky Transport Solutions directly.
+            <span className="font-semibold text-white">Filing 2 or more DataQs?</span> Ask a Sky
+            Transport Solutions specialist about our offers.
           </span>
         </p>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium">
