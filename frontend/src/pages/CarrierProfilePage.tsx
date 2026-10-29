@@ -26,7 +26,7 @@ const TABS = [
   ['equipment', 'Equipment'],
   ['network', 'Network'],
   ['chameleon', 'Chameleon check'],
-  ['packet', 'Packet'],
+  ['packet', 'Safety Score Report'],
   ['compliance', 'Compliance'],
   ['invoices', 'Invoices'],
   ['intelligence', 'Intelligence'],

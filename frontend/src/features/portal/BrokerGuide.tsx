@@ -39,7 +39,7 @@ const FEATURES: GuideItem[] = [
   },
   {
     icon: FileText,
-    title: 'Carrier packet',
+    title: 'Safety Score Report',
     text: 'A dated, sourced summary of the carrier you can print or save to your load file.',
   },
 ]
@@ -58,7 +58,7 @@ const STEPS: GuideItem[] = [
   {
     icon: FileText,
     title: 'Keep a record',
-    text: 'Save the packet with the load, so you can show what you checked and when.',
+    text: 'Save the Safety Score Report with the load, so you can show what you checked and when.',
   },
 ]
 

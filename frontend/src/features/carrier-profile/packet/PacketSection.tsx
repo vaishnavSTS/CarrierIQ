@@ -687,10 +687,11 @@ export function PacketDocument({
         <footer className="space-y-1.5 border-t border-slate-200 pt-3 text-[11px] leading-relaxed text-slate-500">
           <p>
             Generated {formatLocalDate(generated.toISOString())} from public FMCSA and NHTSA records
-            (FMCSA data refreshed {formatLocalDate(profile.last_refreshed_at)}). This packet reports
-            what the records show; it is not an FMCSA safety rating and not a recommendation to use
-            or avoid any carrier. The Estimated ISS is CarrierSafetyScan’s estimate from public
-            FMCSA data using FMCSA’s published methods, not FMCSA’s official ISS.
+            (FMCSA data refreshed {formatLocalDate(profile.last_refreshed_at)}). This Safety Score
+            Report shows what the records show; it is not an FMCSA safety rating and not a
+            recommendation to use or avoid any carrier. The Estimated ISS is CarrierSafetyScan’s
+            estimate from public FMCSA data using FMCSA’s published methods, not FMCSA’s official
+            ISS.
           </p>
           <p>
             How FMCSA counts violations: each has a severity weight (1–10, +2 when it put a vehicle
@@ -720,12 +721,15 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
   const portal = usePortalMode()
 
   if (authority.isPending || network.isPending || equipment.isPending || safety.isPending) {
-    return <p className="text-sm text-slate-500">Building the packet from FMCSA records…</p>
+    return (
+      <p className="text-sm text-slate-500">Building the Safety Score Report from FMCSA records…</p>
+    )
   }
   if (!authority.data || !network.data || !equipment.data) {
     return (
       <p className="text-sm text-red-700">
-        Could not load every section for the packet; the individual tabs show what is available.
+        Could not load every section for the Safety Score Report; the individual tabs show what is
+        available.
       </p>
     )
   }

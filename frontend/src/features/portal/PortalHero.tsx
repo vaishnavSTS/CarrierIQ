@@ -31,7 +31,7 @@ const VIEWS: { icon: LucideIcon; label: string }[] = [
   { icon: TrendingDown, label: 'Safety & how to improve' },
   { icon: Truck, label: 'Equipment' },
   { icon: ShieldCheck, label: 'How brokers see you' },
-  { icon: FileText, label: 'Packet' },
+  { icon: FileText, label: 'Safety Score Report' },
 ]
 
 /**

@@ -40,7 +40,7 @@ const FEATURES: GuideItem[] = [
   {
     icon: Send,
     title: 'Win the load',
-    text: 'A dated, sourced packet to send brokers and shippers, so they see your record and its sources before they ask.',
+    text: 'A dated, sourced Safety Score Report to send brokers and shippers, so they see your record and its sources before they ask.',
   },
 ]
 
@@ -58,7 +58,7 @@ const STEPS: GuideItem[] = [
   {
     icon: Send,
     title: 'Share',
-    text: 'Send brokers the packet, so they see your record and its sources before they ask.',
+    text: 'Send brokers the Safety Score Report, so they see your record and its sources before they ask.',
   },
 ]
 
