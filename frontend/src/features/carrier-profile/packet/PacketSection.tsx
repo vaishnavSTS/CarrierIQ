@@ -933,11 +933,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
   )
   return (
     <article id="carrier-packet" className="space-y-6 print:hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
-        <p className="text-sm text-slate-500">
-          A4 pages: the scorecard, what to fix, the strengths and record, and the inspection record
-          with when the score improves (two pages when the record is long).
-        </p>
+      <div className="flex justify-end print:hidden">
         <button
           type="button"
           onClick={saveAsPdf}

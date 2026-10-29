@@ -1,8 +1,9 @@
 import { Check, Plus } from 'lucide-react'
 
+import { useIsBrokerPortal } from '../../hooks/usePortalMode'
 import { MAX_COMPARE, useCompareList } from './compareContext'
 
-/** "Compare" toggle for one carrier; renders nothing in the client portal. */
+/** "Compare" toggle for one carrier: brokers only (not shown to STS staff or clients). */
 export function CompareButton({
   usdotNumber,
   size = 'md',
@@ -11,7 +12,8 @@ export function CompareButton({
   size?: 'sm' | 'md'
 }) {
   const compare = useCompareList()
-  if (!compare) return null
+  const broker = useIsBrokerPortal()
+  if (!compare || !broker) return null
   const selected = compare.has(usdotNumber)
   const disabled = !selected && compare.full
   const Icon = selected ? Check : Plus
