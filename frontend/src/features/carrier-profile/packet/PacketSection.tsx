@@ -34,8 +34,7 @@ import { groupTip, improvementSummary } from '../safety/improvementTips'
 import { IssGauge } from '../safety/IssGauge'
 import { IssTrend } from './IssTrend'
 import { basicTiles, type BasicTile, type TileTone } from './basicTiles'
-import { STS_CONTACT } from './contact'
-import { ContactLinks, ContactStrip, StsLogo, WebsiteQr } from './ContactStrip'
+import { ContactStrip } from './ContactStrip'
 import { packetItems, type PacketItem } from './packetItems'
 import { fitSheets, PrintCopy } from './printFit'
 import { RecordPage } from './RecordPage'
@@ -94,7 +93,7 @@ function Sheet({
   total: number
   title: string
   carrier: string
-  /** The page's line for the Sky Transport Solutions strip at its bottom; none on page 2 */
+  /** The page's line for the Sky Transport Solutions strip at its bottom */
   contact?: string
   children: ReactNode
 }) {
@@ -352,6 +351,11 @@ export function PacketDocument({
     record: client
       ? 'Keep your record clean: Sky Transport Solutions handles MCS-150 updates, insurance and BOC-3 filings.'
       : ask,
+    fixes: client
+      ? hurting.length + watch.length > 0
+        ? 'Want help fixing these? A Sky Transport Solutions specialist can walk you through each item.'
+        : 'Want to keep it this way? A Sky Transport Solutions specialist can help you stay compliant.'
+      : ask,
     inspections: client
       ? 'Found a wrong violation? Sky Transport Solutions files DataQs challenges for $50 per inspection.'
       : ask,
@@ -488,7 +492,7 @@ export function PacketDocument({
       </Sheet>
 
       {/* Page 2: what is hurting the score, and how to fix it */}
-      <Sheet page={2} total={total} title="What to fix" carrier={carrier}>
+      <Sheet page={2} total={total} title="What to fix" carrier={carrier} contact={contact.fixes}>
         <div className="space-y-2">
           <Heading aside="Each item names its FMCSA record">
             <span
@@ -575,31 +579,6 @@ export function PacketDocument({
             </table>
           </div>
         )}
-
-        <div className="flex break-inside-avoid items-center gap-5 rounded-xl border-2 border-accent bg-accent-soft px-5 py-4">
-          <StsLogo className="size-20" />
-          <div className="min-w-0 flex-1">
-            <div className="text-base font-semibold text-slate-900">
-              {client
-                ? hurting.length + watch.length > 0
-                  ? 'Want help fixing these?'
-                  : 'Want to keep it this way?'
-                : 'Questions about this report?'}
-            </div>
-            <p className="mt-1 text-sm text-slate-700">
-              {client
-                ? `${STS_CONTACT.company} can walk you through each item on this page and help you put a plan in place.`
-                : `${STS_CONTACT.company} can explain any item on this page.`}
-            </p>
-            <ContactLinks className="mt-2 text-sm" />
-          </div>
-          <div className="flex shrink-0 flex-col items-center gap-1">
-            <WebsiteQr size="large" />
-            <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
-              Scan to visit our website
-            </span>
-          </div>
-        </div>
       </Sheet>
 
       {/* Page 3: strengths and the record */}
