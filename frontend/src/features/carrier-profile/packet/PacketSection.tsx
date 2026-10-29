@@ -99,7 +99,12 @@ function Sheet({
     <section className="packet-sheet space-y-5 rounded-xl border border-slate-200 bg-surface p-6 sm:p-8 print:space-y-4 print:rounded-none print:border-0 print:p-0">
       <div className="flex items-baseline justify-between gap-4 border-b border-slate-200 pb-2 text-[11px] uppercase tracking-[0.14em] text-slate-500">
         <span className="shrink-0 whitespace-nowrap">
-          <span className="font-semibold text-slate-900">CarrierSafetyScan</span> · {title}
+          <span className="font-semibold text-slate-900">CarrierSafetyScan</span>{' '}
+          <span className="normal-case tracking-normal text-slate-600">
+            Powered by{' '}
+            <span className="font-semibold text-violet-700">Sky Transport Solutions</span>
+          </span>{' '}
+          · {title}
         </span>
         <span className="flex min-w-0 gap-1 normal-case tracking-normal">
           <span className="truncate">{carrier}</span>
