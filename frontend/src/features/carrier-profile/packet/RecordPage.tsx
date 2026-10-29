@@ -6,12 +6,12 @@ import { formatDate } from '../../../utils/format'
 import { heaviestViolations, improvementSteps, violationCode, violationRows } from './recordDetail'
 
 /** Caps that keep the record to about one A4 page; more when it has two pages (`part`). */
-const MAX_STEPS = 8
+const MAX_STEPS = 6
 const MAX_CODES = 10
-const MAX_CODES_OWN_PAGE = 16
+const MAX_CODES_OWN_PAGE = 9
 const MAX_INSPECTIONS = 6
-const MAX_INSPECTIONS_OWN_PAGE = 10
-const MAX_VIOLATIONS_PER_INSPECTION = 6
+const MAX_INSPECTIONS_OWN_PAGE = 6
+const MAX_VIOLATIONS_PER_INSPECTION = 5
 const MAX_PULL_IN_STATES = 8
 
 function Heading({ children, aside }: { children: ReactNode; aside?: ReactNode }) {

@@ -259,6 +259,12 @@ body {
  * the standard light slate scale, whatever the screen theme. The selector also names the dark
  * theme so it outranks it, and every token the dark theme changes is reset here.
  */
+/* In the printed report no text is smaller than 12px (before the page scale), so the smallest
+   print stays readable. */
+#carrier-packet-print :is(.text-\[9px\], .text-\[10px\], .text-\[10\.5px\], .text-\[11px\]) {
+  font-size: 12px;
+}
+
 /* The Safety Score Report's printed copy (PacketSection): laid out off-screen at A4's width (its
    pages draw their own margins) so each page can be measured and fitted before printing. */
 #carrier-packet-print {

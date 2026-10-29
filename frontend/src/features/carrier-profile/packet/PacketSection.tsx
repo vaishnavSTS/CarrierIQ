@@ -102,7 +102,7 @@ function Sheet({
     <section
       className={
         printed
-          ? 'packet-sheet flex flex-col justify-between space-y-4 bg-white'
+          ? 'packet-sheet flex flex-col space-y-4 bg-white'
           : 'packet-sheet flex flex-col space-y-5 rounded-xl border border-slate-200 bg-surface p-6 sm:p-8'
       }
     >
@@ -122,7 +122,12 @@ function Sheet({
           </span>
         </span>
       </div>
-      {children}
+      {printed ? (
+        // Printed: the sections follow the heading; this grows so the strip sits at the page's bottom.
+        <div className="flex flex-1 flex-col gap-4">{children}</div>
+      ) : (
+        children
+      )}
       {contact && (
         // Printed: the page's sections are spread over the whole A4 page (justify-between), so
         // the strip ends up at its bottom anyway; on screen it follows the content.
@@ -632,9 +637,25 @@ export function PacketDocument({
               </Fact>
             ))}
             <Fact label="Safety rating">
-              {profile.safety.safety_rating
-                ? humanize(profile.safety.safety_rating.toLowerCase())
-                : 'Not rated'}
+              {profile.safety.safety_rating ? (
+                <>
+                  {humanize(profile.safety.safety_rating.toLowerCase())}
+                  {profile.safety.safety_rating_date &&
+                    ` · rated ${formatDate(profile.safety.safety_rating_date)}`}
+                  {/* A good rating next to a poor score looks contradictory: they are two
+                      separate FMCSA measures (FMCSA SAFER shows both). */}
+                  {profile.safety.safety_rating === 'SATISFACTORY' &&
+                    iss?.value != null &&
+                    iss.value >= 75 && (
+                      <span className="mt-0.5 block text-xs font-normal text-slate-600">
+                        A safety rating comes from an FMCSA review of the carrier’s records; the ISS
+                        comes from roadside inspections and crashes.
+                      </span>
+                    )}
+                </>
+              ) : (
+                'Not rated'
+              )}
             </Fact>
             <Fact label="Out-of-service order">
               {oosOrder ? (oosOrder.status === 'alert' ? 'Active' : 'None active') : null}

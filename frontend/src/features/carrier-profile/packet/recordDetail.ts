@@ -34,10 +34,10 @@ function eventGroup(key: string, sms: Sms, withViolation: number): string | null
       : rule.by === 'vehicle'
         ? sms.vehicle_inspections
         : withViolation
-  // Below FMCSA's minimum (e.g. fewer than 5 relevant inspections): FMCSA shows no grouping.
+  // Below FMCSA's minimum (e.g. fewer than 5 relevant inspections): FMCSA shows no grouping. With
+  // enough relevant inspections FMCSA shows the group even without violations (checked on FMCSA's
+  // SMS profile of USDOT 2763257: Driver Fitness, 0 of 14, "11-20 relevant driver inspections").
   if (count < rule.edges[0]) return 'No safety event group'
-  // Enough inspections but no violations: not confirmed how FMCSA shows it, so say nothing.
-  if (withViolation === 0) return null
   let i = 0
   while (i + 1 < rule.edges.length && count >= rule.edges[i + 1]) i += 1
   const low = rule.edges[i]
@@ -48,7 +48,7 @@ function eventGroup(key: string, sms: Sms, withViolation: number): string | null
 
 /**
  * The figures FMCSA's SMS profile shows under each BASIC: the measure, the inspections with
- * violations, the safety event group and the investigation result. Empty when SMS isn't loaded.
+ * violations and the safety event group. Empty when SMS isn't loaded.
  */
 export function tileFacts(key: string, sms: Sms | null): string[] {
   const basic = sms?.basics.find((b) => b.key === key)
@@ -63,7 +63,7 @@ export function tileFacts(key: string, sms: Sms | null): string[] {
   }
   const group = eventGroup(key, sms, basic.inspections_with_violation)
   if (group) facts.push(group)
-  if (basic.acute_critical === false) facts.push('Investigations: no acute/critical violations')
+  // (An acute/critical violation turns the tile red and says so; none found isn't repeated here.)
   return facts
 }
 
