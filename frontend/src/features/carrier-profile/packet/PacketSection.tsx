@@ -116,7 +116,7 @@ function Sheet({
     >
       <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-2 text-[11px] uppercase tracking-[0.14em] text-slate-500">
         <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
-          <img src={logo} alt="" className="size-5 rounded" />
+          <img src={logo} alt="" className="size-5 object-contain" />
           <span className="text-[12px] font-semibold normal-case tracking-normal text-slate-900">
             CarrierSafetyScan
           </span>
@@ -404,7 +404,7 @@ export function PacketDocument({
               {[`USDOT ${profile.usdot_number}`, ...dockets, address].filter(Boolean).join(' · ')}
             </p>
           </div>
-          <img src={logo} alt="CarrierSafetyScan" className="size-16 shrink-0 rounded-xl" />
+          <img src={logo} alt="CarrierSafetyScan" className="size-20 shrink-0 object-contain" />
         </div>
 
         <div className="grid items-center gap-5 sm:grid-cols-[auto_1fr]">

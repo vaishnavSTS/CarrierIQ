@@ -9,11 +9,7 @@ import logo from '../../assets/carriersafetyscan-logo.png'
 export function Brand({ to }: { to: string }) {
   return (
     <Link to={to} className="flex items-center gap-2">
-      <img
-        src={logo}
-        alt=""
-        className="size-8 shrink-0 rounded-lg shadow-md shadow-brand-glow/35"
-      />
+      <img src={logo} alt="" className="size-9 shrink-0 object-contain" />
       <span className="flex flex-col leading-tight">
         <span className="text-base font-semibold tracking-tight text-slate-900">
           CarrierSafetyScan

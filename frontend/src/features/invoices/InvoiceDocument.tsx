@@ -34,7 +34,7 @@ export function InvoiceDocument({ invoice: inv }: { invoice: Invoice }) {
     >
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-2.5">
-          <img src={logo} alt="" className="size-11 shrink-0 rounded-xl" />
+          <img src={logo} alt="" className="size-12 shrink-0 object-contain" />
           <span className="flex flex-col leading-tight">
             <span className="text-lg font-semibold tracking-tight text-[#14121f]">
               CarrierSafetyScan

@@ -43,18 +43,13 @@ def _money(value: Decimal) -> str:
     return f"{value:,.2f}"
 
 
-# The CarrierSafetyScan logo (the truck and shield on navy), as on the app and the web invoice.
+# The CarrierSafetyScan logo (the truck and shield, on the page's white), as in the app.
 LOGO = Path(__file__).resolve().parent.parent / "assets" / "carriersafetyscan-logo.jpg"
 
 
 def _logo(c: Canvas, x: float, y: float, size: float) -> None:
-    """The CarrierSafetyScan logo in a rounded square."""
-    c.saveState()
-    path = c.beginPath()
-    path.roundRect(x, y, size, size, 6)
-    c.clipPath(path, stroke=0, fill=0)
+    """The CarrierSafetyScan logo."""
     c.drawImage(ImageReader(str(LOGO)), x, y, size, size)
-    c.restoreState()
 
 
 def render_invoice_pdf(inv: InvoiceOut) -> bytes:
