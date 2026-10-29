@@ -73,14 +73,15 @@ export function CarrierProfilePage() {
   // The open tab lives in the URL (?tab=safety) so a refresh or shared link keeps it.
   const [params, setParams] = useSearchParams()
   const requested = params.get('tab')
-  // Compliance and Invoices: STS staff for any carrier; clients for their own carriers only.
+  // Compliance: STS staff for any carrier; clients for their own carriers only. Invoices: clients
+  // for their own carriers (STS staff use the Invoices page instead).
   const ownOnly = (id: TabId) => id !== 'compliance' && id !== 'invoices'
   const visible =
     allowed && portal === 'client' && !ownCarrier
       ? allowed.filter(ownOnly)
       : portal === 'broker'
         ? (allowed?.filter(ownOnly) ?? null)
-        : allowed
+        : (allowed ?? TABS.map(([id]) => id).filter((id) => id !== 'invoices'))
   const tab: TabId = isTab(requested, visible) ? requested : DEFAULT_TAB
   const tabs = visible
     ? TABS.filter(([id]) => visible.includes(id)).map(

@@ -1,6 +1,5 @@
 import {
   ClipboardList,
-  Columns3,
   FileSearch,
   Gauge,
   LayoutDashboard,
@@ -11,7 +10,6 @@ import {
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { NewSignupBanner } from '../../features/accounts/NewSignupBanner'
-import { useCompareList } from '../../features/compare/compareContext'
 import { CompareProvider } from '../../features/compare/CompareProvider'
 import { CompareTray } from '../../features/compare/CompareTray'
 import { useMe } from '../../hooks/useAuth'
@@ -58,11 +56,6 @@ function NavItem({
   )
 }
 
-function CompareNavItem() {
-  const count = useCompareList()?.usdots.length ?? 0
-  return <NavItem to="/compare" icon={Columns3} label="Compare" badge={count} />
-}
-
 /** Internal portal frame (STS staff). */
 export function AppLayout() {
   return (
@@ -78,7 +71,6 @@ function AppFrame() {
   const links = (
     <>
       <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-      <CompareNavItem />
       <NavItem to="/dataqs" icon={FileSearch} label="DataQs" />
       <NavItem to="/high-iss" icon={Gauge} label="High Safety Score" />
       <NavItem to="/service-requests" icon={ClipboardList} label="Service requests" />
