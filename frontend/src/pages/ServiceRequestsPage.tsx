@@ -114,7 +114,7 @@ export function ServiceRequestsPage() {
                   </td>
                   <td className={cellClass}>
                     <Link
-                      to={`/carriers/${r.usdot_number}?tab=compliance`}
+                      to={`/carriers/${r.usdot_number}`}
                       className="font-mono text-accent-strong hover:underline"
                     >
                       {r.usdot_number}

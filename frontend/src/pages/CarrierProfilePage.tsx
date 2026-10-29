@@ -75,15 +75,16 @@ export function CarrierProfilePage() {
   // ?tab=packet: the tab's old name, from links shared before it was renamed.
   const asked = params.get('tab')
   const requested = asked === 'packet' ? 'safety-score-report' : asked
-  // Compliance: STS staff for any carrier; clients for their own carriers only. Invoices: clients
-  // for their own carriers (STS staff use the Invoices page instead).
+  // Compliance and Invoices: clients for their own carriers only. STS staff use the Service
+  // requests and Invoices pages instead.
   const ownOnly = (id: TabId) => id !== 'compliance' && id !== 'invoices'
   const visible =
     allowed && portal === 'client' && !ownCarrier
       ? allowed.filter(ownOnly)
       : portal === 'broker'
         ? (allowed?.filter(ownOnly) ?? null)
-        : (allowed ?? TABS.map(([id]) => id).filter((id) => id !== 'invoices'))
+        : (allowed ??
+          TABS.map(([id]) => id).filter((id) => id !== 'invoices' && id !== 'compliance'))
   const tab: TabId = isTab(requested, visible) ? requested : DEFAULT_TAB
   const tabs = visible
     ? TABS.filter(([id]) => visible.includes(id)).map(

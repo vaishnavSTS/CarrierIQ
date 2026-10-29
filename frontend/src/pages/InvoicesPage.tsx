@@ -91,7 +91,7 @@ export function InvoicesPage() {
                     <div className="text-slate-900">{inv.billed_to}</div>
                     {inv.usdot_number !== null && (
                       <Link
-                        to={`/carriers/${inv.usdot_number}?tab=compliance`}
+                        to={`/carriers/${inv.usdot_number}`}
                         className="font-mono text-xs text-slate-600 hover:underline"
                       >
                         USDOT {inv.usdot_number}
