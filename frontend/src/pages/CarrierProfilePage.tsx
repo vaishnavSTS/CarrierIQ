@@ -26,7 +26,7 @@ const TABS = [
   ['equipment', 'Equipment'],
   ['network', 'Network'],
   ['chameleon', 'Chameleon check'],
-  ['packet', 'Safety Score Report'],
+  ['safety-score-report', 'Safety Score Report'],
   ['compliance', 'Compliance'],
   ['invoices', 'Invoices'],
   ['intelligence', 'Intelligence'],
@@ -42,7 +42,7 @@ const CLIENT_TABS: readonly TabId[] = [
   'safety',
   'equipment',
   'network',
-  'packet',
+  'safety-score-report',
   'compliance',
   'invoices',
 ]
@@ -72,7 +72,9 @@ export function CarrierProfilePage() {
   const navigate = useNavigate()
   // The open tab lives in the URL (?tab=safety) so a refresh or shared link keeps it.
   const [params, setParams] = useSearchParams()
-  const requested = params.get('tab')
+  // ?tab=packet: the tab's old name, from links shared before it was renamed.
+  const asked = params.get('tab')
+  const requested = asked === 'packet' ? 'safety-score-report' : asked
   // Compliance: STS staff for any carrier; clients for their own carriers only. Invoices: clients
   // for their own carriers (STS staff use the Invoices page instead).
   const ownOnly = (id: TabId) => id !== 'compliance' && id !== 'invoices'
@@ -154,7 +156,7 @@ export function CarrierProfilePage() {
       </div>
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
-        {tab === 'packet' && <PacketSection profile={profile} />}
+        {tab === 'safety-score-report' && <PacketSection profile={profile} />}
         {tab === 'compliance' && <ComplianceSection profile={profile} />}
         {tab === 'invoices' && <CarrierInvoicesSection usdotNumber={profile.usdot_number} />}
         {tab === 'identity' && <IdentitySection profile={profile} />}
