@@ -44,25 +44,27 @@ export function PortalDataQsPage() {
         </a>
       </div>
       {/* More than 2 inspections: STS talks it through directly. */}
-      <div className="-mt-3 flex flex-col gap-3 rounded-2xl border border-violet-200 bg-violet-50 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
-        <p className="flex items-center gap-3 text-sm text-violet-950">
-          <Users className="size-5 shrink-0 text-violet-600" aria-hidden />
+      <div className="-mt-3 flex flex-col gap-3 rounded-2xl bg-gradient-to-br from-violet-600 to-fuchsia-600 px-6 py-4 text-white shadow-lg shadow-violet-500/25 lg:flex-row lg:items-center lg:justify-between">
+        <p className="flex items-center gap-3 text-sm text-white/90">
+          <Users className="size-5 shrink-0 text-white" aria-hidden />
           <span>
-            <span className="font-semibold">Filing DataQs for more than 2 inspections?</span>{' '}
+            <span className="font-semibold text-white">
+              Filing DataQs for more than 2 inspections?
+            </span>{' '}
             Contact Sky Transport Solutions directly.
           </span>
         </p>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium">
           <a
             href="tel:+18004989820"
-            className="inline-flex items-center gap-1.5 text-violet-700 hover:underline"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-white hover:bg-white/25"
           >
             <Phone className="size-4" aria-hidden />
             (800) 498-9820
           </a>
           <a
             href="mailto:info@skytransportsolutions.com"
-            className="inline-flex items-center gap-1.5 text-violet-700 hover:underline"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-white hover:bg-white/25"
           >
             <Mail className="size-4" aria-hidden />
             info@skytransportsolutions.com
@@ -71,7 +73,7 @@ export function PortalDataQsPage() {
             href="https://www.skytransportsolutions.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-violet-700 hover:underline"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-white hover:bg-white/25"
           >
             <Globe className="size-4" aria-hidden />
             skytransportsolutions.com
