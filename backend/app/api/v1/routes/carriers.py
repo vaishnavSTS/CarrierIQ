@@ -50,7 +50,7 @@ from app.services.pull_in import pull_in_for
 from app.services.qcmobile_service import build_qcmobile_service
 from app.services.registration_orders_service import build_registration_orders_service
 from app.services.signal_service import build_signal_service
-from app.services.sms_service import crashes_for, drivers_for, sms_for
+from app.services.sms_service import crashes_for, drivers_for, sms_for, sms_violations_for
 from app.services.timeline_service import build_timeline_service
 
 router = APIRouter(prefix="/carriers", tags=["carriers"])
@@ -148,6 +148,7 @@ def get_carrier_safety_service(
         iss=lambda usdot: iss_for(db, usdot),
         iss_history=lambda usdot: iss_history(db, usdot),
         pull_in=lambda score: pull_in_for(score, IssPullInRateRepository(db).rows()),
+        sms_violations=lambda usdot: sms_violations_for(db, usdot),
     )
 
 

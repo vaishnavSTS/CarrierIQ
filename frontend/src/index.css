@@ -302,12 +302,14 @@ body {
     --color-sky-600: #0b62b8;
     --color-sky-700: #0b62b8;
   }
+  /* A4, with narrow margins so the report uses the whole page. */
   @page {
-    margin: 12mm;
+    size: A4;
+    margin: 9mm 10mm;
   }
-  /* A slightly smaller type scale so each packet sheet fits one US Letter / A4 page. */
+  /* A slightly smaller type scale so each report sheet fits one A4 page. */
   html {
-    font-size: 12px;
+    font-size: 12.5px;
   }
   #carrier-packet .packet-sheet + .packet-sheet {
     break-before: page;

@@ -72,6 +72,37 @@ export interface Sms {
   driver_inspections: number
   vehicle_inspections: number
   basics: Basic[]
+  /** FMCSA's SMS month these results are from */
+  snapshot_month?: string | null
+}
+
+/** One violation as FMCSA's SMS counts it. */
+export interface SmsViolation {
+  code: string
+  description: string | null
+  /** FMCSA's BASIC name, e.g. "HOS Compliance" */
+  basic: string
+  group: string | null
+  out_of_service: boolean
+  /** 1-10; FMCSA adds 2 when out of service */
+  severity_weight: number
+  /** 3 (last 6 months), 2 (6-12 months), 1 (12-24 months) */
+  time_weight: number
+  total_weight: number
+}
+
+/** An inspection in FMCSA's SMS window with the violations it counts, heaviest first. */
+export interface SmsInspection {
+  inspection_id: string
+  inspection_date: string
+  report_number: string | null
+  state: string | null
+  level: number | null
+  plate: string | null
+  plate_state: string | null
+  vehicle_oos: boolean
+  driver_oos: boolean
+  violations: SmsViolation[]
 }
 
 export interface Crash {
@@ -161,6 +192,8 @@ export interface CarrierSafety {
   crashes: CrashSummary | null
   /** null: not fetched yet; heaviest BASIC first */
   drivers: BasicDriver[] | null
+  /** Inspections with SMS violations, newest first; null: not fetched yet */
+  sms_inspections?: SmsInspection[] | null
   /** CarrierSafetyScan's estimate of FMCSA's ISS; null: monthly tables or carrier SMS not loaded */
   estimated_iss?: EstimatedIss | null
   /** Saved Estimated ISS results, newest first */

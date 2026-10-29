@@ -33,17 +33,14 @@ import {
 import { brokerFlags } from '../network/brokerFlags'
 import { groupTip, improvementSummary } from '../safety/improvementTips'
 import { IssGauge } from '../safety/IssGauge'
+import { IssTrend } from './IssTrend'
 import { basicTiles, type BasicTile, type TileTone } from './basicTiles'
+import { STS_CONTACT } from './contact'
 import { packetItems, type PacketItem } from './packetItems'
+import { RecordPage } from './RecordPage'
+import { tileFacts } from './recordDetail'
 
-/** Printed on page 2 of every packet. */
-const STS_CONTACT = {
-  company: 'Sky Transport Solutions',
-  email: 'Info@skytransportsolutions.com',
-  phone: '8004989820',
-}
-
-/** Caps that keep the printed packet at three US Letter pages. */
+/** Caps that keep each printed page to one A4 page. */
 const MAX_HURTING = 4
 const MAX_WATCH = 3
 const MAX_GOOD = 8
@@ -86,11 +83,13 @@ function yearsSince(value: string | null): number | null {
 /** One printed page: a running header, then the page's content. */
 function Sheet({
   page,
+  total,
   title,
   carrier,
   children,
 }: {
   page: number
+  total: number
   title: string
   carrier: string
   children: ReactNode
@@ -103,7 +102,9 @@ function Sheet({
         </span>
         <span className="flex min-w-0 gap-1 normal-case tracking-normal">
           <span className="truncate">{carrier}</span>
-          <span className="shrink-0 whitespace-nowrap">· Page {page} of 3</span>
+          <span className="shrink-0 whitespace-nowrap">
+            · Page {page} of {total}
+          </span>
         </span>
       </div>
       {children}
@@ -131,7 +132,7 @@ function CountPill({ tone, count, label }: { tone: TileTone; count: number; labe
   )
 }
 
-function Tile({ tile }: { tile: BasicTile }) {
+function Tile({ tile, facts }: { tile: BasicTile; facts: string[] }) {
   const { box, icon, title, Icon } = TONE[tile.tone]
   return (
     <div className={`break-inside-avoid rounded-lg border-l-4 px-3 py-2.5 ${box}`}>
@@ -142,6 +143,13 @@ function Tile({ tile }: { tile: BasicTile }) {
       <div className={`mt-1 text-sm font-semibold ${title}`}>{tile.status}</div>
       {tile.note && (
         <div className="mt-0.5 text-[11px] leading-snug text-slate-600">{tile.note}</div>
+      )}
+      {facts.length > 0 && (
+        <ul className="mt-1 space-y-px border-t border-black/5 pt-1 text-[10.5px] leading-snug text-slate-600">
+          {facts.map((f) => (
+            <li key={f}>{f}</li>
+          ))}
+        </ul>
       )}
     </div>
   )
@@ -305,11 +313,14 @@ export function PacketDocument({
   const linked = network.linked_carriers.filter((c) => c.shares.some((s) => s.kind !== 'building'))
   const generated = new Date()
   const carrier = `${profile.legal_name} · USDOT ${profile.usdot_number}`
+  // Page 4, FMCSA's record line by line, once its violation file is loaded.
+  const record = safety !== null && safety.sms_inspections != null
+  const total = record ? 4 : 3
 
   return (
     <>
       {/* Page 1: the scorecard */}
-      <Sheet page={1} title="Carrier safety scorecard" carrier={carrier}>
+      <Sheet page={1} total={total} title="Carrier safety scorecard" carrier={carrier}>
         <div className="rounded-xl border border-accent/20 bg-accent-soft px-5 py-4 text-slate-900">
           <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent-strong">
             Carrier safety scorecard
@@ -335,6 +346,7 @@ export function PacketDocument({
                 {iss.reason}.
               </p>
             )}
+            <IssTrend iss={iss} history={safety?.iss_history ?? []} />
             <div className="grid gap-2 sm:grid-cols-3">
               <CountPill tone="red" count={hurting.length} label={`Hurting ${whose} score`} />
               <CountPill tone="amber" count={watch.length} label="Worth watching" />
@@ -344,12 +356,14 @@ export function PacketDocument({
         </div>
 
         <div className="space-y-2">
-          <Heading aside="FMCSA SMS; thresholds are FMCSA’s intervention thresholds">
+          <Heading
+            aside={`FMCSA SMS${sms?.snapshot_month ? ` ${new Date(`${sms.snapshot_month}T00:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} results` : ''} · 24 months · thresholds are FMCSA’s`}
+          >
             Safety categories (CSA BASICs)
           </Heading>
           <div className="grid gap-2 sm:grid-cols-3">
             {tiles.map((t) => (
-              <Tile key={t.key} tile={t} />
+              <Tile key={t.key} tile={t} facts={tileFacts(t.key, sms)} />
             ))}
           </div>
         </div>
@@ -428,7 +442,7 @@ export function PacketDocument({
       </Sheet>
 
       {/* Page 2: what is hurting the score, and how to fix it */}
-      <Sheet page={2} title="What to fix" carrier={carrier}>
+      <Sheet page={2} total={total} title="What to fix" carrier={carrier}>
         <div className="space-y-2">
           <Heading aside="Each item names its FMCSA record">
             <span
@@ -549,7 +563,7 @@ export function PacketDocument({
       </Sheet>
 
       {/* Page 3: strengths and the record */}
-      <Sheet page={3} title="Strengths and record" carrier={carrier}>
+      <Sheet page={3} total={total} title="Strengths and record" carrier={carrier}>
         <div className="space-y-2">
           <Heading aside="Each item names its FMCSA record">
             <span className="flex items-center gap-2 text-emerald-700">
@@ -708,6 +722,13 @@ export function PacketDocument({
           </p>
         </footer>
       </Sheet>
+
+      {/* Page 4: the SMS record line by line, and when the score improves */}
+      {record && safety && (
+        <Sheet page={4} total={total} title="Inspection record" carrier={carrier}>
+          <RecordPage safety={safety} client={client} whose={whose} />
+        </Sheet>
+      )}
     </>
   )
 }
@@ -737,7 +758,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
   function saveAsPdf() {
     // The browser names the PDF after the page title.
     const title = document.title
-    document.title = `CarrierSafetyScan packet - ${profile.legal_name} - USDOT ${profile.usdot_number}`
+    document.title = `CarrierSafetyScan Safety Score Report - ${profile.legal_name} - USDOT ${profile.usdot_number}`
     window.print()
     document.title = title
   }
@@ -746,7 +767,8 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
     <article id="carrier-packet" className="space-y-6 print:space-y-0">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <p className="text-sm text-slate-500">
-          Three pages: the scorecard, what to fix, and the strengths and record.
+          Four A4 pages: the scorecard, what to fix, the strengths and record, and the inspection
+          record with when the score improves.
         </p>
         <button
           type="button"

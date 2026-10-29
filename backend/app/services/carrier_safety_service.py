@@ -1,10 +1,11 @@
 """Safety detail and paged inspection history for one carrier (spec Phase 5)."""
 
-from collections.abc import Callable
+from collections import defaultdict
+from collections.abc import Callable, Sequence
 from datetime import UTC, date, datetime
 
 from app.core.exceptions import CarrierNotFoundError
-from app.models import Carrier
+from app.models import Carrier, Inspection, SmsViolation
 from app.repositories.inspection_repository import InspectionRepository
 from app.schemas.carrier_safety import (
     BasicDriverOut,
@@ -15,7 +16,9 @@ from app.schemas.carrier_safety import (
     InspectionPageOut,
     IssHistoryOut,
     PullInOut,
+    SmsInspectionOut,
     SmsOut,
+    SmsViolationOut,
 )
 from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.safety_analysis import (
@@ -38,7 +41,9 @@ class CarrierSafetyService:
         iss: Callable[[int], EstimatedIssOut | None] = lambda _: None,
         iss_history: Callable[[int], list[IssHistoryOut]] = lambda _: [],
         pull_in: Callable[[int | None], PullInOut | None] = lambda _: None,
+        sms_violations: Callable[[int], list[SmsViolation] | None] = lambda _: None,
     ) -> None:
+        self.sms_violations = sms_violations
         self.iss = iss
         self.iss_history = iss_history
         self.pull_in = pull_in
@@ -75,6 +80,9 @@ class CarrierSafetyService:
             sms=self.sms(carrier.usdot_number),
             crashes=self.crashes(carrier.usdot_number, self.today()),
             drivers=self.drivers(carrier.usdot_number, self.today()),
+            sms_inspections=sms_inspection_history(
+                self.sms_violations(carrier.usdot_number), inspections
+            ),
             estimated_iss=estimated,
             # After the estimate, which saves itself to the history first when it changed.
             iss_history=self.iss_history(carrier.usdot_number),
@@ -122,3 +130,52 @@ class CarrierSafetyService:
                 for i in rows
             ],
         )
+
+
+def sms_inspection_history(
+    violations: Sequence[SmsViolation] | None, inspections: Sequence[Inspection]
+) -> list[SmsInspectionOut] | None:
+    """FMCSA's SMS violations grouped by inspection (newest first, heaviest violation first), with
+    the report number, state and plate from the inspection itself when it is on file. The SMS file
+    and the inspection file use different ids, so an inspection is matched by id, else by date when
+    the carrier had only one inspection that day."""
+    if violations is None:
+        return None
+    by_id = {i.inspection_id: i for i in inspections}
+    by_date: dict[date, list[Inspection]] = defaultdict(list)
+    for i in inspections:
+        by_date[i.inspection_date].append(i)
+    grouped: dict[str, list[SmsViolation]] = defaultdict(list)
+    for v in violations:
+        grouped[v.inspection_id].append(v)
+    out = []
+    for inspection_id, rows in grouped.items():
+        same_day = by_date.get(rows[0].inspection_date, [])
+        found = by_id.get(inspection_id) or (same_day[0] if len(same_day) == 1 else None)
+        out.append(
+            SmsInspectionOut(
+                inspection_id=inspection_id,
+                inspection_date=rows[0].inspection_date,
+                report_number=found.report_number if found else None,
+                state=found.state if found else None,
+                level=found.inspection_level if found else None,
+                plate=found.plate if found else None,
+                plate_state=found.plate_state if found else None,
+                vehicle_oos=found.vehicle_oos if found else False,
+                driver_oos=found.driver_oos if found else False,
+                violations=[
+                    SmsViolationOut(
+                        code=v.code,
+                        description=v.description,
+                        basic=v.basic,
+                        group=v.group,
+                        out_of_service=v.out_of_service,
+                        severity_weight=v.severity_weight,
+                        time_weight=v.time_weight,
+                        total_weight=float(v.total_weight),
+                    )
+                    for v in sorted(rows, key=lambda r: r.total_weight, reverse=True)
+                ],
+            )
+        )
+    return sorted(out, key=lambda i: i.inspection_date, reverse=True)

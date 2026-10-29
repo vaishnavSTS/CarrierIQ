@@ -67,6 +67,34 @@ class BasicOut(BaseModel):
     note: str | None  # e.g. why there is no percentile
 
 
+class SmsViolationOut(BaseModel):
+    """One violation as FMCSA's SMS counts it (Safety Score Report's inspection history)."""
+
+    code: str  # e.g. 395.8E-HOSPDOOS
+    description: str | None
+    basic: str  # FMCSA's BASIC name, e.g. "HOS Compliance"
+    group: str | None
+    out_of_service: bool
+    severity_weight: int  # 1-10, FMCSA adds 2 when out of service
+    time_weight: int  # 3 (last 6 months), 2 (6-12), 1 (12-24)
+    total_weight: float  # FMCSA's total severity weight
+
+
+class SmsInspectionOut(BaseModel):
+    """An inspection in FMCSA's SMS window with the violations it counts, heaviest first."""
+
+    inspection_id: str
+    inspection_date: date
+    report_number: str | None
+    state: str | None
+    level: int | None
+    plate: str | None
+    plate_state: str | None
+    vehicle_oos: bool
+    driver_oos: bool
+    violations: list[SmsViolationOut]
+
+
 class SmsOut(BaseModel):
     """FMCSA SMS (CSA) results for the carrier, 24-month measurement period."""
 
@@ -77,6 +105,7 @@ class SmsOut(BaseModel):
     driver_inspections: int
     vehicle_inspections: int
     basics: list[BasicOut]
+    snapshot_month: date | None = None  # FMCSA's SMS month these results are from
 
 
 class CrashOut(BaseModel):
@@ -203,6 +232,8 @@ class CarrierSafetyOut(BaseModel):
     sms: SmsOut | None = None  # None: not fetched yet
     crashes: CrashSummaryOut | None = None  # None: not fetched yet
     drivers: list[BasicDriverOut] | None = None  # None: not fetched yet; heaviest BASIC first
+    # Inspections with SMS violations, newest first; None: FMCSA's violation file not fetched yet.
+    sms_inspections: list[SmsInspectionOut] | None = None
     estimated_iss: EstimatedIssOut | None = None  # None: tables or carrier SMS not loaded yet
     iss_history: list[IssHistoryOut] = []  # saved Estimated ISS results, newest first
     # Weigh-station pull-in rate by state for the Estimated ISS; None: no estimate or no table

@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.ingestion.sms import CRASH_YEARS, SOURCE, SmsAdapter
 from app.ingestion.socrata_client import SocrataClient
+from app.models import SmsViolation
 from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.ingestion_run_repository import IngestionRunRepository
 from app.repositories.raw_record_repository import RawRecordRepository
@@ -55,6 +56,7 @@ def sms_for(db: Session, usdot_number: int) -> SmsOut | None:
         return sms_result([("", "", [])])  # fetched; the carrier is in no SMS file
     first = rows[0]
     return SmsOut(
+        snapshot_month=first.snapshot_month,
         dataset_id=first.dataset_id,
         dataset=first.dataset,
         passenger=first.passenger,
@@ -111,6 +113,14 @@ def drivers_for(db: Session, usdot_number: int, today: date) -> list[BasicDriver
     carrier = CarrierRepository(db).get_by_usdot(usdot_number)
     rows = SafetyRecordRepository(db).violations(carrier.id) if carrier else []
     return basic_drivers(rows, today)
+
+
+def sms_violations_for(db: Session, usdot_number: int) -> list[SmsViolation] | None:
+    """FMCSA's SMS violations as last fetched; None when the violation file was never fetched."""
+    if not _fetched(db, SmsAdapter.violation_id(), usdot_number):
+        return None
+    carrier = CarrierRepository(db).get_by_usdot(usdot_number)
+    return SafetyRecordRepository(db).violations(carrier.id) if carrier else []
 
 
 @dataclass(frozen=True)
