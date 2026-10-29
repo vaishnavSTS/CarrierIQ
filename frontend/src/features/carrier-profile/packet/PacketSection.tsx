@@ -39,6 +39,7 @@ import logo from '../../../assets/carriersafetyscan-logo.png'
 import { packetItems, type PacketItem } from './packetItems'
 import { fitSheets, PrintCopy } from './printFit'
 import { RecordPage } from './RecordPage'
+import { SectionHeading } from './SectionHeading'
 import {
   cleanInspections,
   heaviestTruck,
@@ -151,15 +152,6 @@ function Sheet({
   // Printed: each sheet sits on its own A4 page with the margins drawn inside it, so the browser
   // has no margin to print its date, title and page address in (index.css .print-page).
   return printed ? <div className="print-page">{sheet}</div> : sheet
-}
-
-function Heading({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
-  return (
-    <h2 className="flex flex-wrap items-baseline justify-between gap-x-3 text-base font-semibold tracking-tight text-slate-900">
-      {children}
-      {aside && <span className="text-xs font-normal text-slate-500">{aside}</span>}
-    </h2>
-  )
 }
 
 function CountPill({ tone, count, label }: { tone: TileTone; count: number; label: string }) {
@@ -431,11 +423,11 @@ export function PacketDocument({
         </div>
 
         <div className="space-y-2">
-          <Heading
+          <SectionHeading
             aside={`FMCSA SMS${sms?.snapshot_month ? ` ${new Date(`${sms.snapshot_month}T00:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} results` : ''} · 24 months · thresholds are FMCSA’s`}
           >
             Safety categories (CSA BASICs)
-          </Heading>
+          </SectionHeading>
           <div className="grid gap-2 sm:grid-cols-3">
             {tiles.map((t) => (
               <Tile key={t.key} tile={t} facts={tileFacts(t.key, sms, drivers)} />
@@ -445,7 +437,9 @@ export function PacketDocument({
 
         <div className="grid gap-5 sm:grid-cols-[1.4fr_1fr]">
           <div className="space-y-3">
-            <Heading aside={`Last ${recent?.months ?? 24} months`}>Out-of-service rates</Heading>
+            <SectionHeading aside={`Last ${recent?.months ?? 24} months`}>
+              Out-of-service rates
+            </SectionHeading>
             {recent ? (
               <>
                 <OosBar
@@ -524,14 +518,17 @@ export function PacketDocument({
       {/* Page 2: what is hurting the score, and how to fix it */}
       <Sheet page={2} total={total} title="What to fix" carrier={carrier} contact={contact.fixes}>
         <div className="space-y-2">
-          <Heading aside="Each item names its FMCSA record">
+          <SectionHeading
+            aside="Each item names its FMCSA record"
+            tone={hurting.length ? 'red' : 'green'}
+          >
             <span
               className={`flex items-center gap-2 ${hurting.length ? 'text-red-700' : 'text-slate-900'}`}
             >
               <OctagonX className="size-5" aria-hidden />
               What’s hurting {whose} safety score
             </span>
-          </Heading>
+          </SectionHeading>
           {hurting.length === 0 ? (
             <ul>
               <ItemBox
@@ -555,12 +552,12 @@ export function PacketDocument({
 
         {watch.length > 0 && (
           <div className="space-y-2">
-            <Heading>
+            <SectionHeading tone="amber">
               <span className="flex items-center gap-2 text-amber-700">
                 <TriangleAlert className="size-5" aria-hidden />
                 Worth watching
               </span>
-            </Heading>
+            </SectionHeading>
             <ul className="space-y-2">
               {watch.slice(0, MAX_WATCH).map((item) => (
                 <ItemBox key={item.key} tone="amber" item={item} />
@@ -572,9 +569,9 @@ export function PacketDocument({
 
         {driverRows.length > 0 && (
           <div className="space-y-2">
-            <Heading aside="FMCSA SMS violations, FMCSA’s severity and time weights">
+            <SectionHeading aside="FMCSA SMS violations, FMCSA’s severity and time weights">
               Where the violations come from
-            </Heading>
+            </SectionHeading>
             {summary && <p className="text-sm text-slate-700">{summary}</p>}
             <table className="w-full text-sm">
               <thead>
@@ -612,9 +609,9 @@ export function PacketDocument({
 
         {(truck || repeats.length > 0) && (
           <div className="space-y-2">
-            <Heading aside="FMCSA SMS violations, last 24 months">
+            <SectionHeading aside="FMCSA SMS violations, last 24 months" tone="amber">
               Patterns in the violations
-            </Heading>
+            </SectionHeading>
             {truck && (
               <ul>
                 <ItemBox
@@ -665,7 +662,8 @@ export function PacketDocument({
         contact={contact.record}
       >
         <div className="space-y-2">
-          <Heading
+          <SectionHeading
+            tone="green"
             aside={
               hurting.length > 0
                 ? 'These records are in order; the safety problems are on pages 1 and 2'
@@ -676,7 +674,7 @@ export function PacketDocument({
               <CircleCheck className="size-5" aria-hidden />
               In good standing
             </span>
-          </Heading>
+          </SectionHeading>
           <ul className="grid gap-2 sm:grid-cols-2">
             {good.slice(0, MAX_GOOD).map((item) => (
               <li
@@ -692,9 +690,9 @@ export function PacketDocument({
         </div>
 
         <div className="space-y-2">
-          <Heading aside="FMCSA census, authority, insurance and BOC-3 filings; NHTSA vPIC">
+          <SectionHeading aside="FMCSA census, authority, insurance and BOC-3 filings; NHTSA vPIC">
             Key facts
-          </Heading>
+          </SectionHeading>
           <dl className="grid grid-cols-2 gap-x-5 gap-y-2.5 sm:grid-cols-4">
             <Fact label="USDOT status">
               {profile.registration_status && humanize(profile.registration_status.toLowerCase())}
@@ -780,7 +778,7 @@ export function PacketDocument({
           <div className="grid gap-5 sm:grid-cols-2">
             {events.length > 0 && (
               <div className="space-y-1.5">
-                <Heading>Recent significant events</Heading>
+                <SectionHeading>Recent significant events</SectionHeading>
                 <ul className="space-y-1 text-sm text-slate-700">
                   {events.map((e) => (
                     <li key={`${e.event_type}-${e.event_date}-${e.title}`}>
@@ -795,7 +793,9 @@ export function PacketDocument({
             )}
             {linked.length > 0 && (
               <div className="space-y-1.5">
-                <Heading aside="Relationships to review, not findings">Linked carriers</Heading>
+                <SectionHeading aside="Relationships to review, not findings">
+                  Linked carriers
+                </SectionHeading>
                 <ul className="space-y-1 text-sm text-slate-700">
                   {linked.slice(0, MAX_LINKED).map((c) => (
                     <li key={c.usdot_number}>

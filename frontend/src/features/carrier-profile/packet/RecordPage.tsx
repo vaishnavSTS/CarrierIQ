@@ -1,9 +1,9 @@
 import { CalendarClock, Scale } from 'lucide-react'
-import type { ReactNode } from 'react'
 
 import type { CarrierSafety } from '../../../types/carrierSafety'
 import { formatDate } from '../../../utils/format'
 import { heaviestViolations, improvementSteps, violationCode, violationRows } from './recordDetail'
+import { SectionHeading } from './SectionHeading'
 
 /** Caps that keep the record to about one A4 page; more when it has two pages (`part`). */
 const MAX_STEPS = 6
@@ -13,15 +13,6 @@ const MAX_INSPECTIONS = 6
 const MAX_INSPECTIONS_OWN_PAGE = 6
 const MAX_VIOLATIONS_PER_INSPECTION = 5
 const MAX_PULL_IN_STATES = 8
-
-function Heading({ children, aside }: { children: ReactNode; aside?: ReactNode }) {
-  return (
-    <h2 className="flex flex-wrap items-baseline justify-between gap-x-3 text-base font-semibold tracking-tight text-slate-900">
-      {children}
-      {aside && <span className="text-xs font-normal text-slate-500">{aside}</span>}
-    </h2>
-  )
-}
 
 const day = (value: Date) =>
   value.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -65,12 +56,15 @@ export function RecordPage({
         <>
           <div className="grid gap-5 sm:grid-cols-[1.15fr_1fr]">
             <div className="space-y-2">
-              <Heading aside="FMCSA time weights: 3× for 6 months, 2× to 12, 1× to 24; applied at FMCSA’s next monthly update">
+              <SectionHeading
+                tone="green"
+                aside="FMCSA time weights: 3× for 6 months, 2× to 12, 1× to 24; applied at FMCSA’s next monthly update"
+              >
                 <span className="flex items-center gap-2">
                   <CalendarClock className="size-5 text-emerald-600" aria-hidden />
                   When {whose} score improves on its own
                 </span>
-              </Heading>
+              </SectionHeading>
               {steps.length === 0 ? (
                 <p className="text-sm text-slate-600">
                   No violations in FMCSA’s 24-month window, so nothing is waiting to drop off.
@@ -152,9 +146,11 @@ export function RecordPage({
 
           {codes.length > 0 && (
             <div className="space-y-2">
-              <Heading aside={`FMCSA SMS · ${codes.reduce((n, r) => n + r.count, 0)} violations`}>
+              <SectionHeading
+                aside={`FMCSA SMS · ${codes.reduce((n, r) => n + r.count, 0)} violations`}
+              >
                 Violation summary
-              </Heading>
+              </SectionHeading>
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 text-left text-[10px] uppercase tracking-wide text-slate-500">
@@ -202,11 +198,11 @@ export function RecordPage({
       {part !== 'summary' && (
         <>
           <div className="space-y-2">
-            <Heading
+            <SectionHeading
               aside={`${inspections.length} with violations · ${clean} without, in FMCSA’s 24 months`}
             >
               Inspection history
-            </Heading>
+            </SectionHeading>
             {inspections.length === 0 ? (
               <p className="text-sm text-slate-600">
                 {safety.sms_inspections === null || safety.sms_inspections === undefined
@@ -280,7 +276,7 @@ export function RecordPage({
             <div className="grid gap-5 sm:grid-cols-2">
               {crashes.length > 0 && (
                 <div className="space-y-1.5">
-                  <Heading aside="FMCSA Crash File · 24 months">Crashes</Heading>
+                  <SectionHeading aside="FMCSA Crash File · 24 months">Crashes</SectionHeading>
                   <ul className="space-y-0.5 text-sm text-slate-700">
                     {crashes.slice(0, 6).map((c) => (
                       <li key={c.report_number}>
@@ -304,9 +300,9 @@ export function RecordPage({
               )}
               {pullIn && rates.length > 0 && (
                 <div className="space-y-1.5">
-                  <Heading aside={`At an Estimated ISS of ${pullIn.score}`}>
+                  <SectionHeading aside={`At an Estimated ISS of ${pullIn.score}`}>
                     Weigh-station pull-in rates
-                  </Heading>
+                  </SectionHeading>
                   <div className="flex flex-wrap gap-1.5">
                     {rates.map((r) => (
                       <span
