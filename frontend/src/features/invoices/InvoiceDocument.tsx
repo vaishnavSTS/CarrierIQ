@@ -1,4 +1,4 @@
-import { Radar } from 'lucide-react'
+import logo from '../../assets/carriersafetyscan-logo.png'
 
 import type { Invoice } from '../../types/invoice'
 
@@ -34,9 +34,7 @@ export function InvoiceDocument({ invoice: inv }: { invoice: Invoice }) {
     >
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-2.5">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white">
-            <Radar className="size-6" aria-hidden />
-          </span>
+          <img src={logo} alt="" className="size-11 shrink-0 rounded-xl" />
           <span className="flex flex-col leading-tight">
             <span className="text-lg font-semibold tracking-tight text-[#14121f]">
               CarrierSafetyScan

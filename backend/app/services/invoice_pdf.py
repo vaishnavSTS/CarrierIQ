@@ -5,11 +5,12 @@ REFUNDED stamp and the payment dispute policy. Attached to the emails sent when 
 from datetime import datetime
 from decimal import Decimal
 from io import BytesIO
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from reportlab.lib.colors import HexColor, white
+from reportlab.lib.colors import HexColor
 from reportlab.lib.pagesizes import LETTER
-from reportlab.lib.utils import simpleSplit
+from reportlab.lib.utils import ImageReader, simpleSplit
 from reportlab.pdfgen.canvas import Canvas
 
 from app.schemas.invoice import InvoiceOut
@@ -19,8 +20,6 @@ INK = HexColor("#1f2328")
 MUTED = HexColor("#4b5563")
 RULE = HexColor("#e5e7eb")
 STRIPE = HexColor("#f3f4f6")
-VIOLET = HexColor("#8b5cf6")
-FUCHSIA = HexColor("#c026d3")
 BRAND_TEXT = HexColor("#9333ea")
 STAMPS = {"PAID": HexColor("#c8102e"), "VOID": HexColor("#6b7280"), "REFUNDED": HexColor("#6b7280")}
 
@@ -44,22 +43,18 @@ def _money(value: Decimal) -> str:
     return f"{value:,.2f}"
 
 
+# The CarrierSafetyScan logo (the truck and shield on navy), as on the app and the web invoice.
+LOGO = Path(__file__).resolve().parent.parent / "assets" / "carriersafetyscan-logo.jpg"
+
+
 def _logo(c: Canvas, x: float, y: float, size: float) -> None:
-    """The CarrierSafetyScan mark: a violet-to-fuchsia rounded square with a white radar."""
+    """The CarrierSafetyScan logo in a rounded square."""
     c.saveState()
     path = c.beginPath()
     path.roundRect(x, y, size, size, 6)
     c.clipPath(path, stroke=0, fill=0)
-    c.linearGradient(x, y + size, x + size, y, (VIOLET, FUCHSIA), extend=False)
+    c.drawImage(ImageReader(str(LOGO)), x, y, size, size)
     c.restoreState()
-    cx, cy = x + size / 2, y + size / 2
-    c.setStrokeColor(white)
-    c.setLineWidth(1.3)
-    c.circle(cx, cy, size * 0.3, stroke=1, fill=0)
-    c.circle(cx, cy, size * 0.13, stroke=1, fill=0)
-    c.line(cx, cy, cx + size * 0.24, cy + size * 0.18)
-    c.setFillColor(white)
-    c.circle(cx, cy, 1.2, stroke=0, fill=1)
 
 
 def render_invoice_pdf(inv: InvoiceOut) -> bytes:

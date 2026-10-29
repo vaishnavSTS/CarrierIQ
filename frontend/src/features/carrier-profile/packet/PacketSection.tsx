@@ -35,6 +35,7 @@ import { IssGauge } from '../safety/IssGauge'
 import { IssTrend } from './IssTrend'
 import { basicTiles, type BasicTile, type TileTone } from './basicTiles'
 import { ContactStrip } from './ContactStrip'
+import logo from '../../../assets/carriersafetyscan-logo.png'
 import { packetItems, type PacketItem } from './packetItems'
 import { fitSheets, PrintCopy } from './printFit'
 import { RecordPage } from './RecordPage'
@@ -113,9 +114,12 @@ function Sheet({
           : 'packet-sheet flex flex-col space-y-5 rounded-xl border border-slate-200 bg-surface p-6 sm:p-8'
       }
     >
-      <div className="flex items-baseline justify-between gap-4 border-b border-slate-200 pb-2 text-[11px] uppercase tracking-[0.14em] text-slate-500">
-        <span className="shrink-0 whitespace-nowrap">
-          <span className="font-semibold text-slate-900">CarrierSafetyScan</span>{' '}
+      <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-2 text-[11px] uppercase tracking-[0.14em] text-slate-500">
+        <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
+          <img src={logo} alt="" className="size-5 rounded" />
+          <span className="text-[12px] font-semibold normal-case tracking-normal text-slate-900">
+            CarrierSafetyScan
+          </span>
           <span className="normal-case tracking-normal text-slate-600">
             Powered by{' '}
             <span className="font-semibold text-violet-700">Sky Transport Solutions</span>
@@ -389,15 +393,18 @@ export function PacketDocument({
         carrier={carrier}
         contact={contact.scorecard}
       >
-        <div className="rounded-xl border border-accent/20 bg-accent-soft px-5 py-4 text-slate-900">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent-strong">
-            Carrier safety scorecard
+        <div className="flex items-center gap-4 rounded-xl border border-accent/20 bg-accent-soft px-5 py-4 text-slate-900">
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent-strong">
+              Carrier safety scorecard
+            </div>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight">{profile.legal_name}</h1>
+            {profile.dba_name && <p className="text-sm text-slate-600">DBA {profile.dba_name}</p>}
+            <p className="mt-1 text-sm text-slate-600">
+              {[`USDOT ${profile.usdot_number}`, ...dockets, address].filter(Boolean).join(' · ')}
+            </p>
           </div>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight">{profile.legal_name}</h1>
-          {profile.dba_name && <p className="text-sm text-slate-600">DBA {profile.dba_name}</p>}
-          <p className="mt-1 text-sm text-slate-600">
-            {[`USDOT ${profile.usdot_number}`, ...dockets, address].filter(Boolean).join(' · ')}
-          </p>
+          <img src={logo} alt="CarrierSafetyScan" className="size-16 shrink-0 rounded-xl" />
         </div>
 
         <div className="grid items-center gap-5 sm:grid-cols-[auto_1fr]">
