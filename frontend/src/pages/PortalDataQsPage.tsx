@@ -48,8 +48,8 @@ export function PortalDataQsPage() {
         <p className="flex min-w-0 items-center gap-3 text-sm text-slate-700">
           <Users className="size-5 shrink-0 text-accent-strong" aria-hidden />
           <span>
-            <span className="font-semibold text-slate-900">Filing 2 or more DataQs?</span> Ask a Sky
-            Transport Solutions specialist about our offers.
+            <span className="font-semibold text-slate-900">Filing 2 or more DataQs?</span> Contact a
+            Sky Transport Solutions specialist about our offers.
           </span>
         </p>
         <div className="flex shrink-0 flex-wrap items-center gap-2 text-sm font-medium lg:flex-nowrap">
