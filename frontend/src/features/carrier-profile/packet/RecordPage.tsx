@@ -82,7 +82,7 @@ export function RecordPage({
                       <th className="py-1 font-medium">Date</th>
                       <th className="py-1 font-medium">Inspection</th>
                       <th className="py-1 font-medium">What happens</th>
-                      <th className="py-1 text-right font-medium">Points</th>
+                      <th className="py-1 text-right font-medium">Points removed</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 align-top text-slate-700">
@@ -104,7 +104,7 @@ export function RecordPage({
                             : `Its ${s.inspection.violations.length} violations ${s.change[1]}`}
                         </td>
                         <td className="py-1 text-right font-semibold tabular-nums text-emerald-700">
-                          −{points(s.points)}
+                          {points(s.points)} fewer
                         </td>
                       </tr>
                     ))}
