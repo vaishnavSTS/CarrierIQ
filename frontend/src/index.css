@@ -307,12 +307,17 @@ body {
     size: A4;
     margin: 9mm 10mm;
   }
-  /* A slightly smaller type scale so each report sheet fits one A4 page. */
+  /* The type scale for print: large enough to fill an A4 page, small enough for one page per sheet. */
   html {
     font-size: 12.5px;
   }
-  #carrier-packet .packet-sheet + .packet-sheet {
+  #carrier-packet-print .packet-sheet + .packet-sheet {
     break-before: page;
+  }
+  /* The Safety Score Report prints alone: the app (and its wide menu bar) is left out entirely,
+     so nothing makes the browser shrink the report to fit. */
+  body:has(#carrier-packet-print) > #root {
+    display: none !important;
   }
   body {
     background: #ffffff;
@@ -320,13 +325,16 @@ body {
   body * {
     visibility: hidden;
   }
-  #carrier-packet,
-  #carrier-packet *,
+  #carrier-packet-print,
+  #carrier-packet-print *,
   #invoice-print,
   #invoice-print * {
     visibility: visible;
   }
-  #carrier-packet,
+  #carrier-packet-print {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
   #invoice-print {
     /* Keep the safety-score dial and badges in colour: browsers drop colours when printing. */
     print-color-adjust: exact;

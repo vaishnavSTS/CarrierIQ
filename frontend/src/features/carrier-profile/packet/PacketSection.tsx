@@ -9,6 +9,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 
 import { useCarrierAuthority } from '../../../hooks/useCarrierAuthority'
 import { useCarrierEquipment } from '../../../hooks/useCarrierEquipment'
@@ -763,8 +764,18 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
     document.title = title
   }
 
+  const document_ = (
+    <PacketDocument
+      profile={profile}
+      authority={authority.data}
+      network={network.data}
+      equipment={equipment.data}
+      safety={safety.data ?? null}
+      portal={portal}
+    />
+  )
   return (
-    <article id="carrier-packet" className="space-y-6 print:space-y-0">
+    <article id="carrier-packet" className="space-y-6 print:hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <p className="text-sm text-slate-500">
           Four A4 pages: the scorecard, what to fix, the strengths and record, and the inspection
@@ -779,14 +790,16 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
           Download / Save as PDF
         </button>
       </div>
-      <PacketDocument
-        profile={profile}
-        authority={authority.data}
-        network={network.data}
-        equipment={equipment.data}
-        safety={safety.data ?? null}
-        portal={portal}
-      />
+      {document_}
+      {/* The printed copy sits directly in <body>, outside the app, so the browser prints it at
+          full A4 size: inside the app the hidden menu bar and page frame would still take up
+          width, and the browser would shrink the whole report to fit them. */}
+      {createPortal(
+        <div id="carrier-packet-print" className="hidden print:block">
+          {document_}
+        </div>,
+        document.body,
+      )}
     </article>
   )
 }
