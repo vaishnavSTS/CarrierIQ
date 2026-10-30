@@ -185,6 +185,15 @@ class Settings(BaseSettings):
     google_client_secret: str | None = None
     google_redirect_uri: str = "http://localhost:5173/api/v1/auth/google/callback"
 
+    # Bot protection on login and sign-up. Cloudflare Turnstile is off unless both keys are set.
+    turnstile_site_key: str | None = None
+    turnstile_secret_key: str | None = None
+    rate_limit_enabled: bool = True
+
+    @property
+    def turnstile_enabled(self) -> bool:
+        return bool(self.turnstile_site_key and self.turnstile_secret_key)
+
     @property
     def google_enabled(self) -> bool:
         return bool(self.google_client_id and self.google_client_secret)

@@ -3,6 +3,7 @@ import { Link, Navigate } from 'react-router-dom'
 
 import { ApiError } from '../api/client'
 import { AuthCard, Field, FormError, GoogleButton, SubmitButton } from '../features/auth/AuthCard'
+import { useTurnstile } from '../features/auth/useTurnstile'
 import { homeFor, useMe, useRegister } from '../hooks/useAuth'
 
 const MIN_PASSWORD = 10 // matches the API's AUTH_MIN_PASSWORD_LENGTH default
@@ -19,6 +20,7 @@ export function RegisterPage() {
   })
   const [localError, setLocalError] = useState<string | null>(null)
   const { data: current } = useMe()
+  const human = useTurnstile()
   const register = useRegister()
 
   // Signing up logs the client in, so this also sends them to their portal afterwards.
@@ -49,14 +51,27 @@ export function RegisterPage() {
       setLocalError('Enter a 10-digit US or Canada mobile number.')
       return
     }
-    register.mutate({
-      full_name: form.full_name,
-      company_name: form.company_name,
-      email: form.email,
-      phone,
-      password: form.password,
-      usdot_number: Number(usdot),
-    })
+    if (human.pending) {
+      setLocalError(
+        human.problem ??
+          'The security check isn’t finished yet. Please wait a moment and try again.',
+      )
+      return
+    }
+    register.mutate(
+      {
+        input: {
+          full_name: form.full_name,
+          company_name: form.company_name,
+          email: form.email,
+          phone,
+          password: form.password,
+          usdot_number: Number(usdot),
+        },
+        turnstileToken: human.token,
+      },
+      { onError: human.reset },
+    )
   }
 
   const error =
@@ -139,6 +154,7 @@ export function RegisterPage() {
           value={form.confirm}
           onChange={set('confirm')}
         />
+        {human.widget}
         <FormError message={error} />
         <SubmitButton busy={register.isPending}>Create account</SubmitButton>
       </form>

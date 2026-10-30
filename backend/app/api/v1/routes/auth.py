@@ -7,6 +7,17 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.api.auth import CurrentUser
+from app.api.bot_protection import (
+    check_failed_logins,
+    clear_failed_logins,
+    limit_forgot_password,
+    limit_login,
+    limit_reset_password,
+    limit_signup,
+    may_email_reset_link,
+    record_failed_login,
+    require_human,
+)
 from app.core.config import get_settings
 from app.core.exceptions import (
     AccountDisabledError,
@@ -25,15 +36,18 @@ from app.schemas.auth import (
     AuthOptionsOut,
     BrokerGoogleSignupIn,
     BrokerRegisterIn,
+    ForgotPasswordIn,
     GoogleSignupIn,
     GoogleSignupPendingOut,
     LoginIn,
     RegisterIn,
+    ResetPasswordIn,
     UserOut,
 )
-from app.services.auth_service import AuthService
+from app.services.auth_service import PASSWORD_RESET_MINUTES, AuthService
 from app.services.broker_authority import BrokerAuthorityChecker
 from app.services.dataqs_email import EmailSender, get_email_sender
+from app.services.password_reset_email import password_reset_email, send_password_reset
 from app.services.welcome_email import send_welcome, welcome_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -115,11 +129,18 @@ def options() -> AuthOptionsOut:
     search any carrier."""
     settings = get_settings()
     return AuthOptionsOut(
-        google=settings.google_enabled, client_search=settings.client_search_enabled
+        google=settings.google_enabled,
+        client_search=settings.client_search_enabled,
+        turnstile_site_key=settings.turnstile_site_key if settings.turnstile_enabled else None,
     )
 
 
-@router.post("/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    response_model=UserOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(limit_signup), Depends(require_human)],
+)
 def register(
     data: RegisterIn, response: Response, service: Service, tasks: BackgroundTasks, mailer: Mailer
 ) -> UserOut:
@@ -131,7 +152,12 @@ def register(
     return service.user_out(user)
 
 
-@router.post("/broker/register", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/broker/register",
+    response_model=UserOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(limit_signup), Depends(require_human)],
+)
 def register_broker(
     data: BrokerRegisterIn,
     response: Response,
@@ -149,12 +175,46 @@ def register_broker(
     return service.user_out(user)
 
 
-@router.post("/login", response_model=UserOut)
+@router.post(
+    "/login",
+    response_model=UserOut,
+    dependencies=[Depends(limit_login), Depends(require_human)],
+)
 def login(data: LoginIn, response: Response, service: Service) -> UserOut:
     """Sets the session cookie. `portal` in the answer says which portal to open."""
-    user = service.login(data)
+    check_failed_logins(data.email)
+    try:
+        user = service.login(data)
+    except UnauthorizedError:
+        record_failed_login(data.email)
+        raise
+    clear_failed_logins(data.email)
     _start_session(response, user)
     return service.user_out(user)
+
+
+@router.post(
+    "/password/forgot",
+    dependencies=[Depends(limit_forgot_password), Depends(require_human)],
+)
+def forgot_password(
+    data: ForgotPasswordIn, service: Service, tasks: BackgroundTasks, mailer: Mailer
+) -> dict[str, bool]:
+    """Emails a reset link if the account exists. The answer never says whether it does."""
+    found = service.reset_token_for(data.email)
+    if found is not None and may_email_reset_link(data.email):
+        user, token = found
+        email = password_reset_email(user, token, PASSWORD_RESET_MINUTES)
+        tasks.add_task(send_password_reset, email, mailer)
+    return {"ok": True}
+
+
+@router.post("/password/reset", dependencies=[Depends(limit_reset_password)])
+def reset_password(data: ResetPasswordIn, service: Service) -> dict[str, bool]:
+    """Sets a new password from an emailed link. The user then logs in with it."""
+    user = service.reset_password(data.token, data.password)
+    clear_failed_logins(user.email)
+    return {"ok": True}
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
@@ -259,7 +319,12 @@ def google_signup_pending(request: Request) -> GoogleSignupPendingOut:
     )
 
 
-@router.post("/google/signup", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/google/signup",
+    response_model=UserOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(limit_signup)],
+)
 def google_signup_complete(
     data: GoogleSignupIn,
     request: Request,
@@ -276,7 +341,12 @@ def google_signup_complete(
     return service.user_out(user)
 
 
-@router.post("/broker/google/signup", response_model=UserOut, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/broker/google/signup",
+    response_model=UserOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(limit_signup)],
+)
 def broker_google_signup_complete(
     data: BrokerGoogleSignupIn,
     request: Request,

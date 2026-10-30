@@ -10,6 +10,7 @@ import {
   SubmitButton,
   type Audience,
 } from '../features/auth/AuthCard'
+import { useTurnstile } from '../features/auth/useTurnstile'
 import { homeFor, useLogin, useMe } from '../hooks/useAuth'
 import type { Portal } from '../types/auth'
 
@@ -62,26 +63,34 @@ export function LoginPage({ audience = 'client' }: { audience?: Audience }) {
   const navigate = useNavigate()
   const { data: current } = useMe()
   const login = useLogin()
+  const human = useTurnstile()
+  const [waiting, setWaiting] = useState(false)
 
   if (current) return <Navigate to={homeFor(current.portal)} replace />
 
   function submit(event: FormEvent) {
     event.preventDefault()
+    setWaiting(human.pending)
+    if (human.pending) return
     login.mutate(
-      { email, password },
+      { email, password, turnstileToken: human.token },
       {
         onSuccess: (user) => navigate(safeNext(params.get('next'), user.portal), { replace: true }),
+        onError: human.reset,
       },
     )
   }
 
   const googleNotice = GOOGLE_NOTICES[params.get('google') ?? '']
   const error =
-    login.error instanceof ApiError
-      ? login.error.message
-      : login.error
-        ? 'Could not reach CarrierSafetyScan. Try again in a moment.'
-        : (googleNotice ?? null)
+    waiting && human.pending
+      ? (human.problem ??
+        'The security check isn’t finished yet. Please wait a moment and try again.')
+      : login.error instanceof ApiError
+        ? login.error.message
+        : login.error
+          ? 'Could not reach CarrierSafetyScan. Try again in a moment.'
+          : (googleNotice ?? null)
 
   return (
     <AuthCard
@@ -90,6 +99,14 @@ export function LoginPage({ audience = 'client' }: { audience?: Audience }) {
       subtitle={COPY[audience].subtitle}
       footer={<LoginFooter audience={audience} />}
     >
+      {params.get('reset') === 'done' && (
+        <p
+          role="status"
+          className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-sm text-emerald-800"
+        >
+          Your password was changed. Log in with your new password.
+        </p>
+      )}
       <GoogleButton portal={audience === 'broker' ? 'broker' : 'client'} />
       <form onSubmit={submit} className="space-y-4">
         <Field
@@ -109,6 +126,12 @@ export function LoginPage({ audience = 'client' }: { audience?: Audience }) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+        <p className="text-right text-sm">
+          <Link to="/forgot-password" className={linkClass}>
+            Forgot password?
+          </Link>
+        </p>
+        {human.widget}
         <FormError message={error} />
         <SubmitButton busy={login.isPending}>Log in</SubmitButton>
       </form>

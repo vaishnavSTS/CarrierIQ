@@ -37,6 +37,17 @@ class LoginIn(BaseModel):
     _normalize_email = field_validator("email")(_email)
 
 
+class ForgotPasswordIn(BaseModel):
+    email: str = Field(max_length=254)
+
+    _normalize_email = field_validator("email")(_email)
+
+
+class ResetPasswordIn(BaseModel):
+    token: str = Field(max_length=2000)
+    password: str = Field(max_length=200)  # minimum length is a setting, checked by the service
+
+
 class RegisterIn(BaseModel):
     """A client signs up their company. The account waits for STS approval."""
 
@@ -131,6 +142,7 @@ class GoogleSignupPendingOut(BaseModel):
 class AuthOptionsOut(BaseModel):
     google: bool  # show "Continue with Google"
     client_search: bool  # clients may search any carrier (CLIENT_SEARCH_ENABLED, team testing)
+    turnstile_site_key: str | None = None  # show the Turnstile check on login and sign-up
 
 
 class BillingOut(BaseModel):

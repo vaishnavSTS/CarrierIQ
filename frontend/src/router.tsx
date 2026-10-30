@@ -17,7 +17,9 @@ import { DataQsCasePage } from './pages/DataQsCasePage'
 import { DataQsPage } from './pages/DataQsPage'
 import { GoogleSignupPage } from './pages/GoogleSignupPage'
 import { LandingPage } from './pages/LandingPage'
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { LoginPage } from './pages/LoginPage'
+import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ClientSearchPage } from './pages/ClientSearchPage'
 import { PortalDataQsIntakePage } from './pages/PortalDataQsIntakePage'
@@ -46,6 +48,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <LandingPage /> },
       { path: 'login', element: <LoginPage /> },
+      { path: 'forgot-password', element: <ForgotPasswordPage /> },
+      { path: 'reset-password', element: <ResetPasswordPage /> },
       { path: 'register', element: <RegisterPage /> },
       { path: 'register/google', element: <GoogleSignupPage /> },
       { path: 'broker/login', element: <LoginPage audience="broker" /> },

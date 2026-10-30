@@ -16,7 +16,9 @@ Rules:
   Google sign-in never creates staff; it only logs in staff accounts that already exist.
 """
 
+import hashlib
 import re
+import secrets
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import TypedDict
@@ -33,7 +35,12 @@ from app.core.exceptions import (
     ValidationError,
 )
 from app.core.google_oauth import GoogleIdentity
-from app.core.security import hash_password, verify_password
+from app.core.security import (
+    create_purpose_token,
+    hash_password,
+    read_purpose_token,
+    verify_password,
+)
 from app.models import Organization, OrganizationCarrier, User
 from app.models.enums import OrganizationKind, UserRole, UserStatus
 from app.repositories.user_repository import UserRepository
@@ -69,6 +76,15 @@ def company_key(name: str | None) -> str:
     BROTHERS TRUCKING COMPANY" both become "VANEK BROTHERS TRUCKING"; "&" counts as "AND"."""
     words = re.sub(r"[^A-Z0-9 ]", " ", (name or "").upper().replace("&", " AND ")).split()
     return " ".join(w for w in words if w not in _COMPANY_ENDINGS)
+
+
+PASSWORD_RESET_PURPOSE = "password_reset"
+PASSWORD_RESET_MINUTES = 30
+
+
+def _password_fingerprint(user: User) -> str:
+    """Changes whenever the password does (a Google-only account has none yet)."""
+    return hashlib.sha256((user.password_hash or "").encode()).hexdigest()[:32]
 
 
 def check_password_strength(password: str) -> None:
@@ -194,6 +210,38 @@ class AuthService:
         if not verify_password(data.password, user.password_hash or _DUMMY_HASH):
             raise UnauthorizedError("Email or password is incorrect")
         return self._admit(user)
+
+    # --- Forgot password ------------------------------------------------------------------------
+
+    def reset_token_for(self, email: str) -> tuple[User, str] | None:
+        """The user and their reset token; None when there is nobody to send one to. A disabled
+        account gets none: only STS can bring it back."""
+        user = self.users.by_email(email)
+        if user is None or user.status == UserStatus.DISABLED:
+            return None
+        claims = {"sub": str(user.id), "fp": _password_fingerprint(user)}
+        return user, create_purpose_token(claims, PASSWORD_RESET_PURPOSE, PASSWORD_RESET_MINUTES)
+
+    def reset_password(self, token: str, password: str) -> User:
+        """Sets the new password. The token names the current password, so it stops working once
+        the password changes: a link works once."""
+        expired = ValidationError(
+            "This reset link has expired or was already used. Please ask for a new one."
+        )
+        claims = read_purpose_token(token, PASSWORD_RESET_PURPOSE)
+        if not claims or not claims.get("sub", "").isdigit():
+            raise expired
+        user = self.db.get(User, int(claims["sub"]))
+        if (
+            user is None
+            or user.status == UserStatus.DISABLED
+            or not secrets.compare_digest(claims.get("fp", ""), _password_fingerprint(user))
+        ):
+            raise expired
+        check_password_strength(password)
+        user.password_hash = hash_password(password)
+        self.db.commit()
+        return user
 
     # --- Google sign-in ------------------------------------------------------------------------
 

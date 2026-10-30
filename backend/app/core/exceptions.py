@@ -122,6 +122,29 @@ class PaymentUnavailableError(CarrierSafetyScanError):
     status_code = 503
 
 
+class BotCheckFailedError(CarrierSafetyScanError):
+    """The form's Cloudflare Turnstile token is missing or was refused."""
+
+    status_code = 400
+    code = "bot_check_failed"
+
+
+class RateLimitedError(CarrierSafetyScanError):
+    """Too many attempts in a short time; `retry_after` says when to try again (seconds)."""
+
+    status_code = 429
+    code = "rate_limited"
+
+    def __init__(self, retry_after: int) -> None:
+        minutes = max(1, (retry_after + 59) // 60)
+        if minutes > 90:
+            wait = f"{(minutes + 59) // 60} hours"
+        else:
+            wait = f"{minutes} minute{'' if minutes == 1 else 's'}"
+        super().__init__(f"Too many attempts. Please try again in {wait}.")
+        self.retry_after = retry_after
+
+
 class SourceFetchError(CarrierSafetyScanError):
     """An external data source (data.transportation.gov, NHTSA, ...) failed or returned bad data."""
 
@@ -151,4 +174,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=exc.status_code,
             content={"error": {"code": exc.code, "message": exc.message}},
+            headers=(
+                {"Retry-After": str(exc.retry_after)} if isinstance(exc, RateLimitedError) else None
+            ),
         )

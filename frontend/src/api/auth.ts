@@ -11,10 +11,13 @@ import type {
 } from '../types/auth'
 import { ApiError, apiGet, apiRequest } from './client'
 
-function postJson<T>(path: string, body?: unknown): Promise<T> {
+function postJson<T>(path: string, body?: unknown, turnstileToken?: string | null): Promise<T> {
   return apiRequest<T>(path, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(turnstileToken ? { 'X-Turnstile-Token': turnstileToken } : {}),
+    },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
 }
@@ -30,8 +33,21 @@ export async function fetchMe(): Promise<User | null> {
 }
 
 /** The session lives in an HttpOnly cookie set by the API; this page never sees the token. */
-export function login(email: string, password: string): Promise<User> {
-  return postJson<User>('/auth/login', { email, password })
+export function login(
+  email: string,
+  password: string,
+  turnstileToken: string | null,
+): Promise<User> {
+  return postJson<User>('/auth/login', { email, password }, turnstileToken)
+}
+
+/** Emails a reset link if the account exists; the answer is the same either way. */
+export function forgotPassword(email: string, turnstileToken: string | null): Promise<unknown> {
+  return postJson('/auth/password/forgot', { email }, turnstileToken)
+}
+
+export function resetPassword(token: string, password: string): Promise<unknown> {
+  return postJson('/auth/password/reset', { token, password })
 }
 
 export function logout(): Promise<void> {
@@ -39,13 +55,16 @@ export function logout(): Promise<void> {
 }
 
 /** Creates the client account and logs it in (the API sets the session cookie). */
-export function register(input: RegisterInput): Promise<User> {
-  return postJson<User>('/auth/register', input)
+export function register(input: RegisterInput, turnstileToken: string | null): Promise<User> {
+  return postJson<User>('/auth/register', input, turnstileToken)
 }
 
 /** Checks FMCSA for active broker authority, then creates the broker account and logs it in. */
-export function registerBroker(input: BrokerRegisterInput): Promise<User> {
-  return postJson<User>('/auth/broker/register', input)
+export function registerBroker(
+  input: BrokerRegisterInput,
+  turnstileToken: string | null,
+): Promise<User> {
+  return postJson<User>('/auth/broker/register', input, turnstileToken)
 }
 
 export function fetchBrokerOverview(): Promise<Brokerage> {

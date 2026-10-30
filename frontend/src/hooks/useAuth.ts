@@ -32,8 +32,15 @@ export function useMe() {
 export function useLogin() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ email, password }: { email: string; password: string }) =>
-      login(email, password),
+    mutationFn: ({
+      email,
+      password,
+      turnstileToken,
+    }: {
+      email: string
+      password: string
+      turnstileToken: string | null
+    }) => login(email, password, turnstileToken),
     onSuccess: (user) => {
       // Drop anything cached for a previous user before showing this one's pages.
       queryClient.clear()
@@ -57,7 +64,13 @@ export function useLogout() {
 export function useRegister() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: RegisterInput) => register(input),
+    mutationFn: ({
+      input,
+      turnstileToken,
+    }: {
+      input: RegisterInput
+      turnstileToken: string | null
+    }) => register(input, turnstileToken),
     onSuccess: (user) => {
       queryClient.clear()
       queryClient.setQueryData(ME_KEY, user)
@@ -69,7 +82,13 @@ export function useRegister() {
 export function useRegisterBroker() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: BrokerRegisterInput) => registerBroker(input),
+    mutationFn: ({
+      input,
+      turnstileToken,
+    }: {
+      input: BrokerRegisterInput
+      turnstileToken: string | null
+    }) => registerBroker(input, turnstileToken),
     onSuccess: (user: User) => {
       queryClient.clear()
       queryClient.setQueryData(ME_KEY, user)

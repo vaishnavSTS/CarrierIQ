@@ -133,7 +133,7 @@ export function AuthCard({
         >
           <BrandPanel audience={audience} />
 
-          <section className="p-6 sm:p-10">
+          <section className="min-w-0 p-4 sm:p-10">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}

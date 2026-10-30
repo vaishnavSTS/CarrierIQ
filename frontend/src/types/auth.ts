@@ -94,6 +94,8 @@ export interface AuthOptions {
   google: boolean
   /** Clients may search and open any carrier (temporary, for team testing) */
   client_search: boolean
+  /** Show the Cloudflare Turnstile check on login and sign-up; null while it is off */
+  turnstile_site_key: string | null
 }
 
 export interface GoogleSignupPending {

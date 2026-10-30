@@ -90,6 +90,12 @@ services:
       # DATAQS_EMAIL_REPLY_TO. While DATAQS_EMAIL_STAFF_OVERRIDE is set, they go there instead.
       - key: COMPLIANCE_REQUEST_EMAIL
         sync: false
+      # Cloudflare Turnstile on login and sign-up. Off until both are set; the site key is public
+      # (the pages get it from /auth/options), the secret key never leaves the server.
+      - key: TURNSTILE_SITE_KEY
+        sync: false
+      - key: TURNSTILE_SECRET_KEY
+        sync: false
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET
