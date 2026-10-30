@@ -13,10 +13,17 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { motion } from 'motion/react'
-import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import { AuroraBackdrop } from '../components/layout/AuroraBackdrop'
+import { IconBadge, PrimaryLink, reveal, SectionHeading } from '../features/landing/landingParts'
+import {
+  AboutStsSection,
+  DataQsSection,
+  HeroTryForm,
+  PricingSection,
+  ReportPreview,
+} from '../features/landing/LandingSections'
 import { SampleShowcase } from '../features/landing/SampleShowcase'
 import { homeFor, useMe } from '../hooks/useAuth'
 
@@ -25,14 +32,6 @@ const ease = [0.16, 1, 0.3, 1] as const
 const rise = (delay: number) => ({
   initial: { opacity: 0, y: 18 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.6, delay, ease },
-})
-
-/** Fades in once when scrolled into view. */
-const reveal = (delay = 0) => ({
-  initial: { opacity: 0, y: 24 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, margin: '-60px' },
   transition: { duration: 0.6, delay, ease },
 })
 
@@ -99,10 +98,11 @@ export function LandingPage() {
               {...rise(0)}
               className="text-4xl font-semibold leading-[1.08] tracking-tight text-slate-950 md:text-5xl lg:text-[3.4rem]"
             >
-              Understand your carrier{' '}
+              See your carrier{' '}
               <span className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-700 bg-clip-text text-transparent">
                 the way brokers do
               </span>
+              , and know exactly what to fix
             </motion.h1>
             <motion.p
               {...rise(0.1)}
@@ -122,21 +122,17 @@ export function LandingPage() {
                   Open {user.portal === 'internal' ? 'the dashboard' : 'my portal'}
                 </PrimaryLink>
               ) : (
-                <>
-                  <PrimaryLink to="/try">Try Now</PrimaryLink>
-                  <Link
-                    to="/register"
-                    className="rounded-xl border border-slate-300 bg-surface/60 px-5 py-3 text-sm font-medium text-slate-900 backdrop-blur transition-colors hover:border-slate-400 hover:bg-slate-50"
-                  >
-                    Create a client account
-                  </Link>
-                  <Link
-                    to="/login"
-                    className="rounded-xl border border-slate-300 bg-surface/60 px-5 py-3 text-sm font-medium text-slate-900 backdrop-blur transition-colors hover:border-slate-400 hover:bg-slate-50"
-                  >
-                    Log in
-                  </Link>
-                </>
+                <div className="w-full space-y-4">
+                  <HeroTryForm />
+                  <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm lg:justify-start">
+                    <Link to="/register" className="font-medium text-accent-strong hover:underline">
+                      Create a client account
+                    </Link>
+                    <Link to="/login" className="text-slate-600 hover:text-slate-900">
+                      Log in
+                    </Link>
+                  </div>
+                </div>
               )}
             </motion.div>
 
@@ -271,6 +267,9 @@ export function LandingPage() {
           </div>
         </section>
 
+        <DataQsSection />
+        <ReportPreview />
+
         {/* How it works */}
         <section className="pb-20">
           <SectionHeading eyebrow="How it works" title="From sign-up to a packet in minutes" />
@@ -299,6 +298,9 @@ export function LandingPage() {
             ))}
           </ol>
         </section>
+
+        <PricingSection />
+        <AboutStsSection />
 
         {/* Closing call to action */}
         {!user && (
@@ -329,46 +331,5 @@ export function LandingPage() {
         )}
       </div>
     </div>
-  )
-}
-
-function PrimaryLink({
-  to,
-  small = false,
-  children,
-}: {
-  to: string
-  small?: boolean
-  children: ReactNode
-}) {
-  return (
-    <Link
-      to={to}
-      className={`group inline-flex items-center gap-2 rounded-xl bg-cta font-medium text-cta-ink shadow-lg shadow-brand-glow/30 transition-all hover:bg-cta-hover hover:shadow-xl hover:shadow-brand-glow/40 active:bg-cta-active ${
-        small ? 'px-4 py-2.5 text-sm' : 'px-5 py-3 text-sm'
-      }`}
-    >
-      {children}
-      <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
-    </Link>
-  )
-}
-
-function IconBadge({ icon: Icon }: { icon: LucideIcon }) {
-  return (
-    <span className="grid size-11 place-items-center rounded-xl border border-slate-200 bg-slate-50 text-slate-700">
-      <Icon className="size-5" aria-hidden />
-    </span>
-  )
-}
-
-function SectionHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
-  return (
-    <motion.div {...reveal()} className="text-center">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{eyebrow}</p>
-      <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 md:text-3xl">
-        {title}
-      </h2>
-    </motion.div>
   )
 }

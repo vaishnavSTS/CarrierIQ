@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { ApiError } from '../api/client'
 import { startTry } from '../api/carriers'
@@ -10,7 +10,8 @@ import { SignUpDialog } from '../features/try-now/SignUpDialog'
 
 /** Try Now: look up one carrier by USDOT number, with no account. */
 export function TryNowPage() {
-  const [usdot, setUsdot] = useState('')
+  const [params] = useSearchParams()
+  const [usdot, setUsdot] = useState(params.get('usdot') ?? '')
   const [localError, setLocalError] = useState<string | null>(null)
   const [limitReached, setLimitReached] = useState(false)
   const navigate = useNavigate()
