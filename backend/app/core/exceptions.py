@@ -67,6 +67,12 @@ class AccountDisabledError(ForbiddenError):
     code = "account_disabled"
 
 
+class EmailNotVerifiedError(ForbiddenError):
+    """Right password, but the account's email hasn't been confirmed yet."""
+
+    code = "email_not_verified"
+
+
 class ConflictError(CarrierSafetyScanError):
     status_code = 409
     code = "conflict"

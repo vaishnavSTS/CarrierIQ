@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 
 import { ApiError } from '../api/client'
 import { AuthCard, Field, FormError, GoogleButton, SubmitButton } from '../features/auth/AuthCard'
@@ -26,6 +26,7 @@ export function BrokerRegisterPage() {
   const [localError, setLocalError] = useState<string | null>(null)
   const { data: current } = useMe()
   const human = useTurnstile()
+  const navigate = useNavigate()
   const register = useRegisterBroker()
 
   // Signing up logs the broker in, so this also sends them to their portal afterwards.
@@ -74,9 +75,16 @@ export function BrokerRegisterPage() {
           id_kind: idKind,
           id_number: idNumber,
         },
-        turnstileToken: human.token,
+        humanHeaders: human.headers,
       },
-      { onError: human.reset },
+      {
+        onError: human.reset,
+        onSuccess: (user) => {
+          if (user.email_verified === false) {
+            navigate('/verify-email', { state: { email: user.email } })
+          }
+        },
+      },
     )
   }
 

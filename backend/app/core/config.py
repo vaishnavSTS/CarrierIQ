@@ -189,6 +189,9 @@ class Settings(BaseSettings):
     turnstile_site_key: str | None = None
     turnstile_secret_key: str | None = None
     rate_limit_enabled: bool = True
+    # New password sign-ups confirm their email before the trial starts (needs an email service;
+    # without one they go straight in).
+    email_verification_required: bool = True
 
     @property
     def turnstile_enabled(self) -> bool:

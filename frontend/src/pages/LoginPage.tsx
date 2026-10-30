@@ -73,7 +73,7 @@ export function LoginPage({ audience = 'client' }: { audience?: Audience }) {
     setWaiting(human.pending)
     if (human.pending) return
     login.mutate(
-      { email, password, turnstileToken: human.token },
+      { email, password, humanHeaders: human.headers },
       {
         onSuccess: (user) => navigate(safeNext(params.get('next'), user.portal), { replace: true }),
         onError: human.reset,
@@ -133,6 +133,13 @@ export function LoginPage({ audience = 'client' }: { audience?: Audience }) {
         </p>
         {human.widget}
         <FormError message={error} />
+        {login.error instanceof ApiError && login.error.code === 'email_not_verified' && (
+          <p className="text-sm">
+            <Link to="/verify-email" state={{ email }} className={linkClass}>
+              Send a new confirmation link
+            </Link>
+          </p>
+        )}
         <SubmitButton busy={login.isPending}>Log in</SubmitButton>
       </form>
     </AuthCard>

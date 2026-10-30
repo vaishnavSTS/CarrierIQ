@@ -39,6 +39,8 @@ export interface User {
   created_at: string
   last_login_at: string | null
   billing?: Billing | null
+  /** False right after a password sign-up, until the emailed link is clicked */
+  email_verified?: boolean
 }
 
 export interface RegisterInput {

@@ -16,6 +16,8 @@ FAILED_LOGINS_PER_EMAIL = (3, 600.0)
 FORGOT_PER_IP = (5, 3600.0)
 RESET_EMAILS_PER_ADDRESS = (3, 3600.0)
 RESET_PER_IP = (10, 3600.0)
+RESEND_PER_IP = (5, 3600.0)
+VERIFY_PER_IP = (10, 3600.0)
 
 
 def client_ip(request: Request) -> str:
@@ -51,14 +53,26 @@ def limit_reset_password(request: Request) -> None:
         limiter.hit(f"reset-ip:{client_ip(request)}", limit, window)
 
 
-def may_email_reset_link(email: str) -> bool:
-    """False once this address has had its share of reset emails, so nobody can flood an inbox.
+def limit_resend_verification(request: Request) -> None:
+    if get_settings().rate_limit_enabled:
+        limit, window = RESEND_PER_IP
+        limiter.hit(f"resend-ip:{client_ip(request)}", limit, window)
+
+
+def limit_verify_email(request: Request) -> None:
+    if get_settings().rate_limit_enabled:
+        limit, window = VERIFY_PER_IP
+        limiter.hit(f"verify-ip:{client_ip(request)}", limit, window)
+
+
+def may_email_link(kind: str, email: str) -> bool:
+    """False once this address has had its share of these emails, so nobody can flood an inbox.
     The page's answer doesn't change, so it doesn't reveal the account either."""
     if not get_settings().rate_limit_enabled:
         return True
     limit, window = RESET_EMAILS_PER_ADDRESS
     try:
-        limiter.hit(f"reset-email:{email}", limit, window)
+        limiter.hit(f"{kind}-email:{email}", limit, window)
     except RateLimitedError:
         return False
     return True
@@ -89,7 +103,11 @@ def get_turnstile_verifier() -> TurnstileVerifier:
 def require_human(
     verifier: Annotated[TurnstileVerifier, Depends(get_turnstile_verifier)],
     token: Annotated[str | None, Header(alias="X-Turnstile-Token")] = None,
+    trap: Annotated[str | None, Header(alias="X-Form-Trap")] = None,
 ) -> None:
-    """The form's Turnstile token must check out. Off until both Turnstile keys are set."""
+    """The form's hidden honeypot field must be empty (people never see it) and its Turnstile token
+    must check out (off until both Turnstile keys are set)."""
+    if trap:
+        raise BotCheckFailedError("The security check didn't pass. Please try it again.")
     if get_settings().turnstile_enabled and not (token and verifier.verify(token)):
         raise BotCheckFailedError("The security check didn't pass. Please try it again.")

@@ -12,9 +12,11 @@ from app.api.bot_protection import (
     clear_failed_logins,
     limit_forgot_password,
     limit_login,
+    limit_resend_verification,
     limit_reset_password,
     limit_signup,
-    may_email_reset_link,
+    limit_verify_email,
+    may_email_link,
     record_failed_login,
     require_human,
 )
@@ -41,12 +43,19 @@ from app.schemas.auth import (
     GoogleSignupPendingOut,
     LoginIn,
     RegisterIn,
+    ResendVerificationIn,
     ResetPasswordIn,
     UserOut,
+    VerifyEmailIn,
 )
-from app.services.auth_service import PASSWORD_RESET_MINUTES, AuthService
+from app.services.auth_service import (
+    EMAIL_VERIFY_HOURS,
+    PASSWORD_RESET_MINUTES,
+    AuthService,
+)
 from app.services.broker_authority import BrokerAuthorityChecker
 from app.services.dataqs_email import EmailSender, get_email_sender
+from app.services.email_verification import send_verification, verification_email
 from app.services.password_reset_email import password_reset_email, send_password_reset
 from app.services.welcome_email import send_welcome, welcome_email
 
@@ -71,6 +80,19 @@ def get_signup_email_sender() -> EmailSender | None:
 
 
 Mailer = Annotated[EmailSender | None, Depends(get_signup_email_sender)]
+
+
+def _must_confirm_email(sender: EmailSender | None) -> bool:
+    """Password sign-ups confirm their email first, when there is a way to send them the link."""
+    return get_settings().email_verification_required and sender is not None
+
+
+def _send_link(
+    tasks: BackgroundTasks, service: AuthService, user: User, sender: EmailSender | None
+) -> None:
+    token = service.verification_token(user)
+    email = verification_email(user, token, EMAIL_VERIFY_HOURS)
+    tasks.add_task(send_verification, email, sender)
 
 
 def _welcome(tasks: BackgroundTasks, user: User, company: str, sender: EmailSender | None) -> None:
@@ -146,9 +168,13 @@ def register(
 ) -> UserOut:
     """A client signs up and is logged in at once; STS sees the new account in a pop-up. They get
     a welcome email."""
-    user = service.register(data)
-    _start_session(response, user)
-    _welcome(tasks, user, data.company_name, mailer)
+    must_confirm = _must_confirm_email(mailer)
+    user = service.register(data, verified=not must_confirm)
+    if must_confirm:
+        _send_link(tasks, service, user, mailer)
+    else:
+        _start_session(response, user)
+        _welcome(tasks, user, data.company_name, mailer)
     return service.user_out(user)
 
 
@@ -169,9 +195,13 @@ def register_broker(
     """A broker signs up and is logged in at once, once FMCSA shows active broker authority for
     the MC or USDOT number they gave (422 with the reason otherwise)."""
     authority = checker.check(data.id_kind, data.id_number)
-    user = service.register_broker(data, authority)
-    _start_session(response, user)
-    _welcome(tasks, user, data.company_name, mailer)
+    must_confirm = _must_confirm_email(mailer)
+    user = service.register_broker(data, authority, verified=not must_confirm)
+    if must_confirm:
+        _send_link(tasks, service, user, mailer)
+    else:
+        _start_session(response, user)
+        _welcome(tasks, user, data.company_name, mailer)
     return service.user_out(user)
 
 
@@ -194,6 +224,44 @@ def login(data: LoginIn, response: Response, service: Service) -> UserOut:
 
 
 @router.post(
+    "/email/verify", response_model=UserOut | None, dependencies=[Depends(limit_verify_email)]
+)
+def verify_email(
+    data: VerifyEmailIn,
+    response: Response,
+    service: Service,
+    tasks: BackgroundTasks,
+    mailer: Mailer,
+) -> UserOut | None:
+    """The emailed link: confirms the email, starts the trial and logs them in, with the welcome
+    email. A POST from the page, so mail scanners opening the link confirm nothing. null when it
+    was already confirmed: they log in as usual."""
+    user = service.verify_email(data.token)
+    if user is None:
+        return None
+    _start_session(response, user)
+    _welcome(tasks, user, service.users.organization(user.organization_id).name, mailer)
+    return service.user_out(user)
+
+
+@router.post(
+    "/email/resend",
+    dependencies=[Depends(limit_resend_verification), Depends(require_human)],
+)
+def resend_verification(
+    data: ResendVerificationIn, service: Service, tasks: BackgroundTasks, mailer: Mailer
+) -> dict[str, bool]:
+    """Another link, if this account still needs one. The answer never says whether it does."""
+    found = service.verification_token_for(data.email)
+    if found is not None and may_email_link("verify", data.email):
+        user, token = found
+        tasks.add_task(
+            send_verification, verification_email(user, token, EMAIL_VERIFY_HOURS), mailer
+        )
+    return {"ok": True}
+
+
+@router.post(
     "/password/forgot",
     dependencies=[Depends(limit_forgot_password), Depends(require_human)],
 )
@@ -202,7 +270,7 @@ def forgot_password(
 ) -> dict[str, bool]:
     """Emails a reset link if the account exists. The answer never says whether it does."""
     found = service.reset_token_for(data.email)
-    if found is not None and may_email_reset_link(data.email):
+    if found is not None and may_email_link("reset", data.email):
         user, token = found
         email = password_reset_email(user, token, PASSWORD_RESET_MINUTES)
         tasks.add_task(send_password_reset, email, mailer)

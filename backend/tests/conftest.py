@@ -58,6 +58,8 @@ def no_worker_in_api(monkeypatch: pytest.MonkeyPatch) -> None:
     # Bot protection is tested in tests/api/test_bot_protection.py; other tests log in freely and
     # never call Cloudflare, whatever backend/.env sets.
     monkeypatch.setattr(get_settings(), "rate_limit_enabled", False)
+    # Email verification is tested in tests/api/test_email_verification.py.
+    monkeypatch.setattr(get_settings(), "email_verification_required", False)
     monkeypatch.setattr(get_settings(), "turnstile_site_key", None)
     monkeypatch.setattr(get_settings(), "turnstile_secret_key", None)
     # Tests check the real recipients, whatever test routing backend/.env sets.

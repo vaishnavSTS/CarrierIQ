@@ -13,7 +13,7 @@ export function ForgotPasswordPage() {
   const [waiting, setWaiting] = useState(false)
   const human = useTurnstile()
   const request = useMutation({
-    mutationFn: () => forgotPassword(email, human.token),
+    mutationFn: () => forgotPassword(email, human.headers),
     onError: human.reset,
   })
 

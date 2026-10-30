@@ -11,12 +11,16 @@ import type {
 } from '../types/auth'
 import { ApiError, apiGet, apiRequest } from './client'
 
-function postJson<T>(path: string, body?: unknown, turnstileToken?: string | null): Promise<T> {
+function postJson<T>(
+  path: string,
+  body?: unknown,
+  humanHeaders?: Record<string, string>,
+): Promise<T> {
   return apiRequest<T>(path, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(turnstileToken ? { 'X-Turnstile-Token': turnstileToken } : {}),
+      ...humanHeaders,
     },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
@@ -36,14 +40,29 @@ export async function fetchMe(): Promise<User | null> {
 export function login(
   email: string,
   password: string,
-  turnstileToken: string | null,
+  humanHeaders: Record<string, string>,
 ): Promise<User> {
-  return postJson<User>('/auth/login', { email, password }, turnstileToken)
+  return postJson<User>('/auth/login', { email, password }, humanHeaders)
 }
 
 /** Emails a reset link if the account exists; the answer is the same either way. */
-export function forgotPassword(email: string, turnstileToken: string | null): Promise<unknown> {
-  return postJson('/auth/password/forgot', { email }, turnstileToken)
+export function forgotPassword(
+  email: string,
+  humanHeaders: Record<string, string>,
+): Promise<unknown> {
+  return postJson('/auth/password/forgot', { email }, humanHeaders)
+}
+
+/** Confirms the email and logs in; null when it was already confirmed. */
+export function verifyEmail(token: string): Promise<User | null> {
+  return postJson<User | null>('/auth/email/verify', { token })
+}
+
+export function resendVerification(
+  email: string,
+  humanHeaders: Record<string, string>,
+): Promise<unknown> {
+  return postJson('/auth/email/resend', { email }, humanHeaders)
 }
 
 export function resetPassword(token: string, password: string): Promise<unknown> {
@@ -55,16 +74,19 @@ export function logout(): Promise<void> {
 }
 
 /** Creates the client account and logs it in (the API sets the session cookie). */
-export function register(input: RegisterInput, turnstileToken: string | null): Promise<User> {
-  return postJson<User>('/auth/register', input, turnstileToken)
+export function register(
+  input: RegisterInput,
+  humanHeaders: Record<string, string>,
+): Promise<User> {
+  return postJson<User>('/auth/register', input, humanHeaders)
 }
 
 /** Checks FMCSA for active broker authority, then creates the broker account and logs it in. */
 export function registerBroker(
   input: BrokerRegisterInput,
-  turnstileToken: string | null,
+  humanHeaders: Record<string, string>,
 ): Promise<User> {
-  return postJson<User>('/auth/broker/register', input, turnstileToken)
+  return postJson<User>('/auth/broker/register', input, humanHeaders)
 }
 
 export function fetchBrokerOverview(): Promise<Brokerage> {

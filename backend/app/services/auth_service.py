@@ -30,6 +30,7 @@ from app.core.exceptions import (
     AccountDisabledError,
     AccountPendingError,
     ConflictError,
+    EmailNotVerifiedError,
     NotFoundError,
     UnauthorizedError,
     ValidationError,
@@ -80,6 +81,8 @@ def company_key(name: str | None) -> str:
 
 PASSWORD_RESET_PURPOSE = "password_reset"
 PASSWORD_RESET_MINUTES = 30
+EMAIL_VERIFY_PURPOSE = "email_verify"
+EMAIL_VERIFY_HOURS = 24
 
 
 def _password_fingerprint(user: User) -> str:
@@ -104,7 +107,7 @@ class AuthService:
         self.users = users
         self.now = now
 
-    def register(self, data: RegisterIn) -> User:
+    def register(self, data: RegisterIn, verified: bool = True) -> User:
         check_password_strength(data.password)
         if self.users.by_email(data.email) is not None:
             raise ConflictError("An account with this email already exists")
@@ -115,6 +118,7 @@ class AuthService:
             phone=data.phone,
             usdot_number=data.usdot_number,
             password_hash=hash_password(data.password),
+            verified=verified,
         )
 
     def _create_client(
@@ -127,6 +131,7 @@ class AuthService:
         usdot_number: int,
         password_hash: str | None = None,
         google_sub: str | None = None,
+        verified: bool = True,
     ) -> User:
         """A new CLIENT organization with one ACTIVE account, ready to log in, and its USDOT
         (unconfirmed: `verified` marks carriers STS itself linked or checked)."""
@@ -142,7 +147,8 @@ class AuthService:
             google_sub=google_sub,
             role=UserRole.CLIENT_ADMIN,
             status=UserStatus.ACTIVE,
-            last_login_at=self.now(),
+            last_login_at=self.now() if verified else None,
+            email_verified_at=self.now() if verified else None,
             trial_ends_at=self.now() + TRIAL,  # then $25/month (app/services/subscription.py)
         )
         self.db.add(user)
@@ -150,7 +156,9 @@ class AuthService:
         self.db.commit()
         return user
 
-    def register_broker(self, data: BrokerRegisterIn, authority: BrokerAuthority) -> User:
+    def register_broker(
+        self, data: BrokerRegisterIn, authority: BrokerAuthority, verified: bool = True
+    ) -> User:
         """`authority`: what FMCSA showed for the number the broker gave (checked by the route)."""
         check_password_strength(data.password)
         if self.users.by_email(data.email) is not None:
@@ -162,6 +170,7 @@ class AuthService:
             phone=data.phone,
             authority=authority,
             password_hash=hash_password(data.password),
+            verified=verified,
         )
 
     def _create_broker(
@@ -174,6 +183,7 @@ class AuthService:
         authority: BrokerAuthority,
         password_hash: str | None = None,
         google_sub: str | None = None,
+        verified: bool = True,
     ) -> User:
         organization = Organization(
             name=company_name,
@@ -194,7 +204,8 @@ class AuthService:
             google_sub=google_sub,
             role=UserRole.BROKER_ADMIN,
             status=UserStatus.ACTIVE,
-            last_login_at=self.now(),
+            last_login_at=self.now() if verified else None,
+            email_verified_at=self.now() if verified else None,
             trial_ends_at=self.now() + TRIAL,  # then $25/month (app/services/subscription.py)
         )
         self.db.add(user)
@@ -240,8 +251,47 @@ class AuthService:
             raise expired
         check_password_strength(password)
         user.password_hash = hash_password(password)
+        if user.email_verified_at is None:  # the link reached their inbox: the email is theirs
+            self._confirm_email(user)
         self.db.commit()
         return user
+
+    # --- Confirming the email ------------------------------------------------------------------
+
+    def verification_token_for(self, email: str) -> tuple[User, str] | None:
+        """The user and a token for the link; None when no email is due (no such account, already
+        confirmed, or disabled)."""
+        user = self.users.by_email(email)
+        if user is None or user.email_verified_at or user.status == UserStatus.DISABLED:
+            return None
+        return user, self.verification_token(user)
+
+    def verification_token(self, user: User) -> str:
+        claims = {"sub": str(user.id)}
+        return create_purpose_token(claims, EMAIL_VERIFY_PURPOSE, EMAIL_VERIFY_HOURS * 60)
+
+    def verify_email(self, token: str) -> User | None:
+        """Confirms the email and starts the trial. None when it was already confirmed: then the
+        link does nothing more, so an old link can't log anyone in."""
+        expired = ValidationError(
+            "This confirmation link has expired or isn't valid. Please ask for a new one."
+        )
+        claims = read_purpose_token(token, EMAIL_VERIFY_PURPOSE)
+        if not claims or not claims.get("sub", "").isdigit():
+            raise expired
+        user = self.db.get(User, int(claims["sub"]))
+        if user is None:
+            raise expired
+        if user.email_verified_at is not None:
+            return None
+        self._confirm_email(user)
+        return self._admit(user)
+
+    def _confirm_email(self, user: User) -> None:
+        """The month of free trial runs from now. Accounts on no trial stay on none."""
+        user.email_verified_at = self.now()
+        if user.trial_ends_at is not None:
+            user.trial_ends_at = self.now() + TRIAL
 
     # --- Google sign-in ------------------------------------------------------------------------
 
@@ -255,6 +305,11 @@ class AuthService:
             return None
         if user.google_sub is None:
             user.google_sub = identity.sub  # first Google sign-in for an existing account
+            if user.email_verified_at is None:
+                # Whoever signed up with this address never proved it was theirs, and Google says
+                # it belongs to this person: the password that person didn't choose must go.
+                user.password_hash = None
+                self._confirm_email(user)
             self.db.commit()
         elif user.google_sub != identity.sub:
             raise UnauthorizedError("This email is linked to a different Google account")
@@ -291,13 +346,21 @@ class AuthService:
             raise AccountPendingError("Your account is waiting for approval by STS")
         if user.status == UserStatus.DISABLED:
             raise AccountDisabledError("This account has been disabled. Contact STS for help")
+        if user.email_verified_at is None and get_settings().email_verification_required:
+            raise EmailNotVerifiedError(
+                "Please confirm your email first: click the link we sent you."
+            )
         user.last_login_at = self.now()
         self.db.commit()
         return user
 
     def user_out(self, user: User) -> UserOut:
         organization = self.users.organization(user.organization_id)
-        return UserOut(**_user_fields(user, organization), billing=billing_out(user, self.now()))
+        return UserOut(
+            **_user_fields(user, organization),
+            billing=billing_out(user, self.now()),
+            email_verified=user.email_verified_at is not None,
+        )
 
     # --- STS admin -----------------------------------------------------------------------------
 

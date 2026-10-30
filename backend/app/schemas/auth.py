@@ -43,6 +43,16 @@ class ForgotPasswordIn(BaseModel):
     _normalize_email = field_validator("email")(_email)
 
 
+class ResendVerificationIn(BaseModel):
+    email: str = Field(max_length=254)
+
+    _normalize_email = field_validator("email")(_email)
+
+
+class VerifyEmailIn(BaseModel):
+    token: str = Field(max_length=2000)
+
+
 class ResetPasswordIn(BaseModel):
     token: str = Field(max_length=2000)
     password: str = Field(max_length=200)  # minimum length is a setting, checked by the service
@@ -174,6 +184,7 @@ class UserOut(BaseModel):
     created_at: datetime
     last_login_at: datetime | None
     billing: BillingOut | None = None  # client and broker logins on the paid plan
+    email_verified: bool = True  # False: just signed up, waiting for the emailed link
 
 
 class SeenOut(BaseModel):

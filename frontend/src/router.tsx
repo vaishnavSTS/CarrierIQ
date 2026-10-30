@@ -20,6 +20,7 @@ import { LandingPage } from './pages/LandingPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { LoginPage } from './pages/LoginPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
+import { VerifyEmailPage } from './pages/VerifyEmailPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ClientSearchPage } from './pages/ClientSearchPage'
 import { PortalDataQsIntakePage } from './pages/PortalDataQsIntakePage'
@@ -50,6 +51,7 @@ export const router = createBrowserRouter([
       { path: 'login', element: <LoginPage /> },
       { path: 'forgot-password', element: <ForgotPasswordPage /> },
       { path: 'reset-password', element: <ResetPasswordPage /> },
+      { path: 'verify-email', element: <VerifyEmailPage /> },
       { path: 'register', element: <RegisterPage /> },
       { path: 'register/google', element: <GoogleSignupPage /> },
       { path: 'broker/login', element: <LoginPage audience="broker" /> },

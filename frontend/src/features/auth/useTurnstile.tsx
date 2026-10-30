@@ -48,8 +48,8 @@ function loadTurnstile(): Promise<TurnstileApi> {
 export interface Turnstile {
   /** Goes in the form, above the submit button; nothing while Turnstile is off */
   widget: ReactNode
-  /** The one-time token to send with the form; null until the check has passed */
-  token: string | null
+  /** Send these with the form: the one-time token, and the honeypot if something filled it */
+  headers: Record<string, string>
   /** The check is on and hasn't passed yet: the form can't be sent */
   pending: boolean
   /** Why the check can't be finished, for the form's error line */
@@ -59,13 +59,14 @@ export interface Turnstile {
 }
 
 /**
- * Cloudflare Turnstile for a form. It is on when the API gives a site key (/auth/options); most
- * people just see it tick itself, without a puzzle.
+ * Bot checks for a form: a hidden honeypot field, and Cloudflare Turnstile when the API gives a
+ * site key (/auth/options); most people just see that tick itself, without a puzzle.
  */
 export function useTurnstile(): Turnstile {
   const siteKey = useAuthOptions().data?.turnstile_site_key ?? null
   const [token, setToken] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
+  const [trap, setTrap] = useState('')
   const box = useRef<HTMLDivElement>(null)
   const widgetId = useRef<string | null>(null)
 
@@ -106,8 +107,26 @@ export function useTurnstile(): Turnstile {
   }, [])
 
   return {
-    widget: siteKey ? <div ref={box} className="min-h-[65px]" /> : null,
-    token,
+    widget: (
+      <>
+        {/* The honeypot: off-screen and skipped by the keyboard, so only a bot fills it in. */}
+        <div aria-hidden className="absolute -left-[9999px] size-px overflow-hidden">
+          <input
+            type="text"
+            name="company_website"
+            tabIndex={-1}
+            autoComplete="off"
+            value={trap}
+            onChange={(e) => setTrap(e.target.value)}
+          />
+        </div>
+        {siteKey && <div ref={box} className="min-h-[65px]" />}
+      </>
+    ),
+    headers: {
+      ...(token ? { 'X-Turnstile-Token': token } : {}),
+      ...(trap ? { 'X-Form-Trap': trap } : {}),
+    },
     pending: Boolean(siteKey) && !token,
     problem: failed
       ? 'The security check couldn’t load. Check your connection, then refresh this page.'

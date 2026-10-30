@@ -35,6 +35,8 @@ class User(IdMixin, UpdatedAtMixin, Base):
         server_default=UserStatus.PENDING.value,
     )
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # None: signed up with a password and hasn't clicked the emailed link yet; can't log in.
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # When an STS admin dismissed the "new sign-up" pop-up for this account; None = new.
     seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # The $25/month subscription (app/services/subscription.py). None = never billed: STS staff and

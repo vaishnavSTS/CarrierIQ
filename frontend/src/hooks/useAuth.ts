@@ -35,12 +35,12 @@ export function useLogin() {
     mutationFn: ({
       email,
       password,
-      turnstileToken,
+      humanHeaders,
     }: {
       email: string
       password: string
-      turnstileToken: string | null
-    }) => login(email, password, turnstileToken),
+      humanHeaders: Record<string, string>
+    }) => login(email, password, humanHeaders),
     onSuccess: (user) => {
       // Drop anything cached for a previous user before showing this one's pages.
       queryClient.clear()
@@ -66,12 +66,14 @@ export function useRegister() {
   return useMutation({
     mutationFn: ({
       input,
-      turnstileToken,
+      humanHeaders,
     }: {
       input: RegisterInput
-      turnstileToken: string | null
-    }) => register(input, turnstileToken),
+      humanHeaders: Record<string, string>
+    }) => register(input, humanHeaders),
     onSuccess: (user) => {
+      // Waiting for the emailed link: they aren't logged in yet.
+      if (user.email_verified === false) return
       queryClient.clear()
       queryClient.setQueryData(ME_KEY, user)
     },
@@ -84,12 +86,14 @@ export function useRegisterBroker() {
   return useMutation({
     mutationFn: ({
       input,
-      turnstileToken,
+      humanHeaders,
     }: {
       input: BrokerRegisterInput
-      turnstileToken: string | null
-    }) => registerBroker(input, turnstileToken),
+      humanHeaders: Record<string, string>
+    }) => registerBroker(input, humanHeaders),
     onSuccess: (user: User) => {
+      // Waiting for the emailed link: they aren't logged in yet.
+      if (user.email_verified === false) return
       queryClient.clear()
       queryClient.setQueryData(ME_KEY, user)
     },
