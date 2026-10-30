@@ -42,6 +42,8 @@ import { PullInRates } from './PullInRates'
 import { RecordPage } from './RecordPage'
 import { ScrollX } from './ScrollX'
 import { SectionHeading } from './SectionHeading'
+import { solutions } from './solutions'
+import { SolutionsBox } from './SolutionsBox'
 import {
   cleanInspections,
   heaviestTruck,
@@ -56,6 +58,9 @@ const MAX_HURTING = 4
 const MAX_WATCH = 3
 const MAX_GOOD = 8
 const MAX_DRIVER_ROWS = 4
+/** Steps in page 2's plan; fewer when the page is already full */
+const PLAN_STEPS = 6
+const PLAN_STEPS_BUSY = 4
 const MAX_EVENTS = 5
 const MAX_LINKED = 4
 
@@ -194,7 +199,16 @@ function Tile({ tile, facts }: { tile: BasicTile; facts: string[] }) {
   )
 }
 
-function ItemBox({ tone, item }: { tone: TileTone; item: PacketItem }) {
+function ItemBox({
+  tone,
+  item,
+  hideFix = false,
+}: {
+  tone: TileTone
+  item: PacketItem
+  /** The fix is in the plan below, in plain words */
+  hideFix?: boolean
+}) {
   const { box, icon, title, Icon } = TONE[tone]
   return (
     <li className={`break-inside-avoid rounded-lg border-l-4 px-3 py-2 ${box}`}>
@@ -203,7 +217,7 @@ function ItemBox({ tone, item }: { tone: TileTone; item: PacketItem }) {
         <div className="min-w-0 text-sm">
           <div className={`font-semibold ${title}`}>{item.title}</div>
           {item.detail && <p className="mt-0.5 text-slate-700">{item.detail}</p>}
-          {item.fix && (
+          {item.fix && !hideFix && (
             <p className="mt-1 text-xs text-slate-600">
               <span className="font-semibold text-slate-800">What usually fixes it:</span>{' '}
               {item.fix}
@@ -273,9 +287,9 @@ function OosBar({
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="break-inside-avoid">
+    <div className="min-w-0 break-inside-avoid">
       <dt className="text-[10px] uppercase tracking-wide text-slate-500">{label}</dt>
-      <dd className="text-sm font-medium text-slate-900">{children ?? '—'}</dd>
+      <dd className="break-words text-sm font-medium text-slate-900">{children ?? '—'}</dd>
     </div>
   )
 }
@@ -325,6 +339,26 @@ export function PacketDocument({
   const truck = heaviestTruck(safety?.sms_inspections ?? [])
   const repeats = repeatViolations(safety?.sms_inspections ?? [])
   const summary = improvementSummary(drivers, recent)
+  // Page 2 already full of red and amber items: the plan gets its four most important steps and
+  // the patterns move to page 3, so the report keeps a readable size.
+  const busy = Math.min(hurting.length, MAX_HURTING) + Math.min(watch.length, MAX_WATCH) >= 6
+  const plan = solutions({
+    iss,
+    sms,
+    drivers,
+    recent,
+    inspections: safety?.sms_inspections ?? null,
+    truck,
+    fleet: equipment.fleet,
+    client,
+    max: busy ? PLAN_STEPS_BUSY : PLAN_STEPS,
+  })
+  // The plan says in plain words what the BASIC, out-of-service and MCS-150 items' "what usually
+  // fixes it" lines say, so those lines are left out when it covers them.
+  const planned = (item: PacketItem) =>
+    item.key.startsWith('basic-') || item.key.endsWith('-oos')
+      ? plan.length > 0
+      : item.key === 'fleet-count' && plan.some((s) => s.key === 'mcs150')
   const driverRows = (drivers ?? [])
     .flatMap((b) => b.groups.map((g) => ({ basic: b.basic, group: g })))
     .sort((a, b) => b.group.weight - a.group.weight)
@@ -381,6 +415,51 @@ export function PacketDocument({
       : ask,
   }
 
+  // Patterns in the violations: on page 2, or at the top of page 3 when page 2 is full.
+  const patterns = (truck || repeats.length > 0) && (
+    <div className="space-y-2">
+      <SectionHeading aside="FMCSA SMS violations, last 24 months" tone="amber">
+        Patterns in the violations
+      </SectionHeading>
+      {truck && (
+        <ul>
+          <ItemBox
+            tone="amber"
+            item={{
+              key: 'truck',
+              title: `One truck carries ${formatPercent(truck.points / truck.total)} of the Vehicle Maintenance points on the carrier’s trucks`,
+              detail: `VIN ${truck.vin}${truck.plates.length ? ` (plate ${truck.plates.join(', ')})` : ''}: ${Math.round(truck.points)} of the ${Math.round(truck.total)} points recorded on the ${truck.trucks} inspected trucks themselves (trailer violations not counted), from ${truck.violations} violation${truck.violations === 1 ? '' : 's'} on ${truck.inspections} inspection${truck.inspections === 1 ? '' : 's'}.${truck.unmatched ? ` ${truck.unmatched} inspection${truck.unmatched === 1 ? '' : 's'} with truck violations couldn’t be matched to a truck and ${truck.unmatched === 1 ? 'is' : 'are'} left out.` : ''}`,
+              fix: 'Repairs and pre-trip checks on this truck first.',
+            }}
+          />
+        </ul>
+      )}
+      {repeats.length > 0 && (
+        <div className="break-inside-avoid rounded-lg border border-slate-200 px-3 py-2 text-sm">
+          <div className="font-semibold text-slate-900">Cited again and again</div>
+          <p className="text-xs text-slate-600">
+            The same violation on more than one inspection usually points to a gap in maintenance or
+            pre-trip checks rather than bad luck.
+          </p>
+          <ul className="mt-1 space-y-0.5 text-slate-700">
+            {repeats.map((r) => (
+              <li key={r.code} className="flex justify-between gap-3">
+                <span>
+                  {r.description ?? violationCode(r.code)}{' '}
+                  <span className="text-xs text-slate-500">
+                    ({violationCode(r.code)} · {r.basic})
+                  </span>
+                </span>
+                <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums">
+                  {r.inspections} inspections
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
   return (
     <>
       {/* Page 1: the scorecard */}
@@ -550,7 +629,7 @@ export function PacketDocument({
           ) : (
             <ul className="space-y-2">
               {hurting.slice(0, MAX_HURTING).map((item) => (
-                <ItemBox key={item.key} tone="red" item={item} />
+                <ItemBox key={item.key} tone="red" item={item} hideFix={planned(item)} />
               ))}
             </ul>
           )}
@@ -567,12 +646,14 @@ export function PacketDocument({
             </SectionHeading>
             <ul className="space-y-2">
               {watch.slice(0, MAX_WATCH).map((item) => (
-                <ItemBox key={item.key} tone="amber" item={item} />
+                <ItemBox key={item.key} tone="amber" item={item} hideFix={planned(item)} />
               ))}
             </ul>
             <More count={watch.length - MAX_WATCH} />
           </div>
         )}
+
+        <SolutionsBox steps={plan} />
 
         {driverRows.length > 0 && (
           <div className="space-y-2">
@@ -598,7 +679,10 @@ export function PacketDocument({
                         <td className="py-1.5 pr-3">
                           <span className="font-medium text-slate-900">{group.group}</span>{' '}
                           <span className="text-xs text-slate-500">({basic})</span>
-                          {tip && <span className="block text-xs text-slate-500">{tip}</span>}
+                          {/* The plan above has these in plain words. */}
+                          {tip && plan.length === 0 && (
+                            <span className="block text-xs text-slate-500">{tip}</span>
+                          )}
                         </td>
                         <td className="py-1.5 pl-3 text-right">{group.violations}</td>
                         <td
@@ -616,50 +700,7 @@ export function PacketDocument({
           </div>
         )}
 
-        {(truck || repeats.length > 0) && (
-          <div className="space-y-2">
-            <SectionHeading aside="FMCSA SMS violations, last 24 months" tone="amber">
-              Patterns in the violations
-            </SectionHeading>
-            {truck && (
-              <ul>
-                <ItemBox
-                  tone="amber"
-                  item={{
-                    key: 'truck',
-                    title: `One truck carries ${formatPercent(truck.points / truck.total)} of the Vehicle Maintenance points on the carrier’s trucks`,
-                    detail: `VIN ${truck.vin}${truck.plates.length ? ` (plate ${truck.plates.join(', ')})` : ''}: ${Math.round(truck.points)} of the ${Math.round(truck.total)} points recorded on the ${truck.trucks} inspected trucks themselves (trailer violations not counted), from ${truck.violations} violation${truck.violations === 1 ? '' : 's'} on ${truck.inspections} inspection${truck.inspections === 1 ? '' : 's'}.${truck.unmatched ? ` ${truck.unmatched} inspection${truck.unmatched === 1 ? '' : 's'} with truck violations couldn’t be matched to a truck and ${truck.unmatched === 1 ? 'is' : 'are'} left out.` : ''}`,
-                    fix: 'Repairs and pre-trip checks on this truck first.',
-                  }}
-                />
-              </ul>
-            )}
-            {repeats.length > 0 && (
-              <div className="break-inside-avoid rounded-lg border border-slate-200 px-3 py-2 text-sm">
-                <div className="font-semibold text-slate-900">Cited again and again</div>
-                <p className="text-xs text-slate-600">
-                  The same violation on more than one inspection usually points to a gap in
-                  maintenance or pre-trip checks rather than bad luck.
-                </p>
-                <ul className="mt-1 space-y-0.5 text-slate-700">
-                  {repeats.map((r) => (
-                    <li key={r.code} className="flex justify-between gap-3">
-                      <span>
-                        {r.description ?? violationCode(r.code)}{' '}
-                        <span className="text-xs text-slate-500">
-                          ({violationCode(r.code)} · {r.basic})
-                        </span>
-                      </span>
-                      <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums">
-                        {r.inspections} inspections
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
+        {!busy && patterns}
       </Sheet>
 
       {/* Page 3: strengths and the record */}
@@ -670,12 +711,13 @@ export function PacketDocument({
         carrier={carrier}
         contact={contact.record}
       >
+        {busy && patterns}
         <div className="space-y-2">
           <SectionHeading
             tone="green"
             aside={
               hurting.length > 0
-                ? 'These records are in order; the safety problems are on pages 1 and 2'
+                ? `These records are in order; the safety problems are on pages 1 and 2${busy && patterns ? ' and above' : ''}`
                 : 'Each item names its FMCSA record'
             }
           >
