@@ -39,7 +39,7 @@ class User(IdMixin, UpdatedAtMixin, Base):
     email_verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # When an STS admin dismissed the "new sign-up" pop-up for this account; None = new.
     seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    # The $25/month subscription (app/services/subscription.py). None = never billed: STS staff and
+    # The $49/month subscription (app/services/subscription.py). None = never billed: STS staff and
     # accounts made before subscriptions began. Otherwise the free trial ends then.
     trial_ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # Stripe's subscription status (active, past_due, canceled, ...), kept current by its webhook.

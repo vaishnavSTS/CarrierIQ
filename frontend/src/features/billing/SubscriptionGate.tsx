@@ -19,7 +19,7 @@ const OPEN_WHEN_LOCKED = /^\/(portal|broker)\/invoices\//
 const dollars = (amount: string) => `$${Number(amount).toFixed(0)}`
 
 /**
- * The $25/month subscription in the client and broker portals (backend:
+ * The $49/month subscription in the client and broker portals (backend:
  * app/services/subscription.py). On the one-month (30-day) trial: a banner with the days left. Once it ends
  * without a subscription: the page is hidden behind a pop-up that can't be closed, whose button
  * opens Stripe's subscribe page. Back from Stripe (?subscribed=1) it waits for Stripe's webhook.

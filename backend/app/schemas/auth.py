@@ -156,7 +156,7 @@ class AuthOptionsOut(BaseModel):
 
 
 class BillingOut(BaseModel):
-    """The $25/month subscription (app/services/subscription.py); None on UserOut when free."""
+    """The $49/month subscription (app/services/subscription.py); None on UserOut when free."""
 
     state: str  # trial | active | locked
     trial_ends_at: datetime

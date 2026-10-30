@@ -1,4 +1,4 @@
-"""The $25/month subscription for client and broker logins (app/services/subscription.py): its
+"""The $49/month subscription for client and broker logins (app/services/subscription.py): its
 state, Stripe's page to subscribe, and Stripe's billing page to manage or cancel it. Open while the
 login is locked (app/api/auth.py), so a login whose trial has ended can still subscribe."""
 

@@ -1,6 +1,6 @@
 import { apiRequest } from './client'
 
-/** Stripe's page to start the $25/month subscription; it returns to the portal (?subscribed=1). */
+/** Stripe's page to start the $49/month subscription; it returns to the portal (?subscribed=1). */
 export function subscribe(): Promise<{ url: string }> {
   return apiRequest('/billing/subscribe', { method: 'POST' })
 }

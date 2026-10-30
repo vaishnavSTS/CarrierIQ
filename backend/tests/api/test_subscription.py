@@ -1,4 +1,4 @@
-"""The $25/month subscription: the one-month (30-day) trial from sign-up, the lock once it ends,
+"""The $49/month subscription: the one-month (30-day) trial from sign-up, the lock once it ends,
 Stripe's subscribe and billing pages, and Stripe's webhook starting and ending the subscription.
 Accounts made before subscriptions (no trial end) and STS staff stay free."""
 
@@ -70,7 +70,7 @@ def test_a_new_sign_up_gets_a_month_free(api: TestClient, db: Session) -> None: 
 
     billing = api.get("/api/v1/auth/me").json()["billing"]
     assert billing["state"] == "trial" and billing["trial_days_left"] == 30
-    assert billing["monthly_price"] == "25" and billing["can_manage"] is False
+    assert billing["monthly_price"] == "49" and billing["can_manage"] is False
     assert api.get("/api/v1/portal/overview").status_code == 200
 
 
@@ -99,7 +99,7 @@ def test_accounts_from_before_and_staff_stay_free(api: TestClient, db: Session) 
     assert api.get("/api/v1/auth/me").json()["billing"] is None
 
 
-def test_subscribing_opens_stripe_for_25_a_month(
+def test_subscribing_opens_stripe_for_49_a_month(
     api: TestClient,  # noqa: F811
     db: Session,
     stripe: FakeStripe,
@@ -111,7 +111,7 @@ def test_subscribing_opens_stripe_for_25_a_month(
     assert response.json() == {"url": STRIPE_PAGE}
     [(path, form)] = stripe.calls
     assert path == "/v1/checkout/sessions" and form["mode"] == "subscription"
-    assert form["line_items[0][price_data][unit_amount]"] == "2500"
+    assert form["line_items[0][price_data][unit_amount]"] == "4900"
     assert form["line_items[0][price_data][recurring][interval]"] == "month"
     assert form["customer_email"] == "owner@client.com"
     assert form["subscription_data[metadata][user_id]"] == str(user.id)
@@ -193,7 +193,7 @@ def test_an_invoice_payment_is_not_taken_for_a_subscription(
 # --- An invoice for each month Stripe charges ----------------------------------------------------
 
 
-def paid_month(user: User, invoice_id: str = "in_1", amount: int = 2500) -> dict:
+def paid_month(user: User, invoice_id: str = "in_1", amount: int = 4900) -> dict:
     """Stripe's invoice.paid for a subscription month (newer API shape: under `parent`)."""
     start = int(datetime(2026, 10, 28, tzinfo=UTC).timestamp())
     end = int(datetime(2026, 11, 28, tzinfo=UTC).timestamp())
@@ -237,7 +237,7 @@ def test_each_paid_month_becomes_a_paid_invoice_emailed_with_its_pdf(
     [invoice] = db.scalars(select(Invoice).where(Invoice.organization_id == user.organization_id))
     assert (invoice.status, invoice.total, invoice.usdot_number) == (
         InvoiceStatus.PAID,
-        Decimal("25.00"),
+        Decimal("49.00"),
         295017,
     )
     [line] = db.scalars(select(InvoiceLine).where(InvoiceLine.invoice_id == invoice.id))

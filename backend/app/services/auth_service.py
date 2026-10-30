@@ -149,7 +149,7 @@ class AuthService:
             status=UserStatus.ACTIVE,
             last_login_at=self.now() if verified else None,
             email_verified_at=self.now() if verified else None,
-            trial_ends_at=self.now() + TRIAL,  # then $25/month (app/services/subscription.py)
+            trial_ends_at=self.now() + TRIAL,  # then $49/month (app/services/subscription.py)
         )
         self.db.add(user)
         self.db.add(OrganizationCarrier(organization_id=organization.id, usdot_number=usdot_number))
@@ -206,7 +206,7 @@ class AuthService:
             status=UserStatus.ACTIVE,
             last_login_at=self.now() if verified else None,
             email_verified_at=self.now() if verified else None,
-            trial_ends_at=self.now() + TRIAL,  # then $25/month (app/services/subscription.py)
+            trial_ends_at=self.now() + TRIAL,  # then $49/month (app/services/subscription.py)
         )
         self.db.add(user)
         self.db.commit()

@@ -1,5 +1,5 @@
 """The CarrierSafetyScan subscription: each client and broker login gets a one-month (30-day) free
-trial from sign-up, then pays $25 a month through Stripe (a Stripe subscription, charged monthly).
+trial from sign-up, then pays $49 a month through Stripe (a Stripe subscription, charged monthly).
 
 Who pays: each login (user) separately. STS staff never do, and accounts made before subscriptions
 began have no trial end (`trial_ends_at` None), so they stay free.
@@ -37,7 +37,7 @@ from app.services.stripe_client import StripeClient
 logger = logging.getLogger(__name__)
 
 TRIAL = timedelta(days=30)  # one month
-MONTHLY_PRICE = Decimal("25")
+MONTHLY_PRICE = Decimal("49")
 PRODUCT_NAME = "CarrierSafetyScan subscription"
 # Stripe statuses that keep the app open; past_due = Stripe is still retrying the charge.
 LIVE_STATUSES = frozenset({"active", "trialing", "past_due"})
@@ -110,7 +110,7 @@ class SubscriptionService:
         return billing_out(user, self.now())
 
     def subscribe(self, user: User) -> str:
-        """Stripe's page to start the $25/month subscription for this login."""
+        """Stripe's page to start the $49/month subscription for this login."""
         if self._billed(user) == "active":
             raise ConflictError("You're already subscribed")
         home = f"{get_settings().public_app_url.rstrip('/')}{_portal_path(user)}"
