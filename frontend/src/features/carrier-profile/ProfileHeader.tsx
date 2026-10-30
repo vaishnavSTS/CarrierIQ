@@ -5,7 +5,7 @@ import type { CarrierProfile } from '../../types/carrierProfile'
 import { needsForHireAuthority } from '../../utils/classification'
 import { censusLabel, formatDateTime, formatDocket, sourceLabel } from '../../utils/format'
 import { saferUrl, smsUrl } from '../../utils/sources'
-import { useIsClientPortal } from '../../hooks/usePortalMode'
+import { useIsClientPortal, useIsTryMode } from '../../hooks/usePortalMode'
 import { reviewLabel } from '../../utils/review'
 import { HeaderCard } from './HeaderCard'
 import { LinkedHeadsUp } from './network/LinkedHeadsUp'
@@ -16,6 +16,7 @@ import { INSURANCE_LABEL, insuranceTone, severityTone, statusTone } from '../../
 export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
   const dockets = profile.authority.dockets
   const client = useIsClientPortal()
+  const trying = useIsTryMode()
   return (
     <header className="rounded-lg border border-slate-200 bg-surface p-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -149,7 +150,7 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
             )}
           </HeaderCard>
         )}
-        <LinkedHeadsUp usdotNumber={profile.usdot_number} />
+        {!trying && <LinkedHeadsUp usdotNumber={profile.usdot_number} />}
       </div>
     </header>
   )

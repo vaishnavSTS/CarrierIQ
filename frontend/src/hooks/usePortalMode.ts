@@ -10,6 +10,13 @@ import type { Portal } from '../types/auth'
  */
 export const PortalModeContext = createContext<Portal>('internal')
 
+/** True on the Try Now pages: a visitor with no account, reading /try/carriers/... */
+export const TryModeContext = createContext(false)
+
+export function useIsTryMode(): boolean {
+  return useContext(TryModeContext)
+}
+
 export function usePortalMode(): Portal {
   return useContext(PortalModeContext)
 }
@@ -23,7 +30,7 @@ export function useIsBrokerPortal(): boolean {
   return usePortalMode() === 'broker'
 }
 
-export type CarrierApiBase = '/carriers' | '/portal/carriers' | '/broker/carriers'
+export type CarrierApiBase = '/carriers' | '/portal/carriers' | '/broker/carriers' | '/try/carriers'
 
 const API_BASE: Record<Portal, CarrierApiBase> = {
   internal: '/carriers',
@@ -33,7 +40,8 @@ const API_BASE: Record<Portal, CarrierApiBase> = {
 
 /** API path prefix for carrier data in the current portal. */
 export function useCarrierApiBase(): CarrierApiBase {
-  return API_BASE[usePortalMode()]
+  const base = API_BASE[usePortalMode()]
+  return useIsTryMode() ? '/try/carriers' : base
 }
 
 const PAGE_BASE: Record<Portal, string> = {

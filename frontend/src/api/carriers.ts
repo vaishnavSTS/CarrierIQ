@@ -26,6 +26,18 @@ export function fetchCarrierProfile(
   return apiGet<CarrierProfile>(`${base}/${usdotNumber}`)
 }
 
+/** Try Now: opens a visitor's one free carrier (bot checks in `humanHeaders`). */
+export function startTry(
+  usdotNumber: number,
+  humanHeaders: Record<string, string>,
+): Promise<CarrierProfile> {
+  return apiRequest<CarrierProfile>('/try/start', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...humanHeaders },
+    body: JSON.stringify({ usdot_number: usdotNumber }),
+  })
+}
+
 export function fetchCarrierSafety(
   usdotNumber: number,
   base: CarrierApiBase = '/carriers',

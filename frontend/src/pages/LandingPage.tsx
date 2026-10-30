@@ -123,7 +123,13 @@ export function LandingPage() {
                 </PrimaryLink>
               ) : (
                 <>
-                  <PrimaryLink to="/register">Create a client account</PrimaryLink>
+                  <PrimaryLink to="/try">Try Now</PrimaryLink>
+                  <Link
+                    to="/register"
+                    className="rounded-xl border border-slate-300 bg-surface/60 px-5 py-3 text-sm font-medium text-slate-900 backdrop-blur transition-colors hover:border-slate-400 hover:bg-slate-50"
+                  >
+                    Create a client account
+                  </Link>
                   <Link
                     to="/login"
                     className="rounded-xl border border-slate-300 bg-surface/60 px-5 py-3 text-sm font-medium text-slate-900 backdrop-blur transition-colors hover:border-slate-400 hover:bg-slate-50"

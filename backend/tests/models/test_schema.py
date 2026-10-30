@@ -39,6 +39,7 @@ TABLES = {
     "worker_heartbeats",
     # Accounts (client and internal portals)
     "organizations",
+    "try_uses",
     "users",
     "organization_carriers",
     # Estimated ISS lookup tables

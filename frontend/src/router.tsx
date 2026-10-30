@@ -28,6 +28,8 @@ import { PortalDataQsPage } from './pages/PortalDataQsPage'
 import { PortalHomePage } from './pages/PortalHomePage'
 import { RegisterPage } from './pages/RegisterPage'
 import { SearchPage } from './pages/SearchPage'
+import { TryCarrierPage } from './pages/TryCarrierPage'
+import { TryNowPage } from './pages/TryNowPage'
 import { ServiceRequestsPage } from './pages/ServiceRequestsPage'
 import { InvoicePage } from './pages/InvoicePage'
 import { InvoicesPage } from './pages/InvoicesPage'
@@ -48,6 +50,8 @@ export const router = createBrowserRouter([
     element: <PublicLayout />,
     children: [
       { index: true, element: <LandingPage /> },
+      { path: 'try', element: <TryNowPage /> },
+      { path: 'try/:usdot', element: <TryCarrierPage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'forgot-password', element: <ForgotPasswordPage /> },
       { path: 'reset-password', element: <ResetPasswordPage /> },

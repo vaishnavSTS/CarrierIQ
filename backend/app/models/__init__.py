@@ -47,6 +47,7 @@ from app.models.signal_evidence import SignalEvidence
 from app.models.sms_result import SmsResult
 from app.models.sms_violation import SmsViolation
 from app.models.timeline_event import TimelineEvent
+from app.models.try_use import TryUse
 from app.models.user import User
 from app.models.vehicle import Vehicle
 from app.models.worker_heartbeat import WorkerHeartbeat
@@ -102,6 +103,7 @@ __all__ = [
     "SmsResult",
     "SmsViolation",
     "TimelineEvent",
+    "TryUse",
     "User",
     "Vehicle",
     "WorkerHeartbeat",

@@ -151,6 +151,13 @@ class RateLimitedError(CarrierSafetyScanError):
         self.retry_after = retry_after
 
 
+class TryLimitReachedError(CarrierSafetyScanError):
+    """A Try Now visitor has used their free carrier; the page offers to sign up."""
+
+    status_code = 429
+    code = "try_limit_reached"
+
+
 class SourceFetchError(CarrierSafetyScanError):
     """An external data source (data.transportation.gov, NHTSA, ...) failed or returned bad data."""
 
