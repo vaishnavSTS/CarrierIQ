@@ -6,6 +6,7 @@ import { PortalModeContext } from '../../hooks/usePortalMode'
 import { useClientSearchEnabled } from '../../hooks/useAuth'
 import { BackgroundSpotlight } from './BackgroundSpotlight'
 import { ScrollToTop } from './ScrollToTop'
+import { SiteFooter } from './SiteFooter'
 import { Brand } from './Brand'
 import { MobileMenu } from './MobileMenu'
 import { UserMenu } from './UserMenu'
@@ -40,7 +41,7 @@ export function PortalLayout() {
     </>
   )
   return (
-    <div className="relative isolate min-h-screen">
+    <div className="relative isolate flex min-h-screen flex-col">
       <ScrollToTop />
       <BackgroundSpotlight />
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-canvas/85 backdrop-blur">
@@ -54,13 +55,14 @@ export function PortalLayout() {
           <MobileMenu>{links}</MobileMenu>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-6">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">
         <PortalModeContext.Provider value="client">
           <SubscriptionGate>
             <Outlet />
           </SubscriptionGate>
         </PortalModeContext.Provider>
       </main>
+      <SiteFooter />
     </div>
   )
 }

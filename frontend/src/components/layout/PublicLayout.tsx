@@ -3,6 +3,7 @@ import { Link, Outlet } from 'react-router-dom'
 import { homeFor, useMe } from '../../hooks/useAuth'
 import { BackgroundSpotlight } from './BackgroundSpotlight'
 import { ScrollToTop } from './ScrollToTop'
+import { SiteFooter } from './SiteFooter'
 import { Brand } from './Brand'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -58,12 +59,7 @@ export function PublicLayout() {
       <main className="flex-1">
         <Outlet />
       </main>
-      <footer className="border-t border-slate-200 py-6 text-center text-xs text-slate-500">
-        CarrierSafetyScan by STS · Built on public FMCSA and NHTSA data ·{' '}
-        <Link to="/contact" className="font-medium text-accent-strong hover:underline">
-          Contact us
-        </Link>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }

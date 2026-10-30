@@ -8,6 +8,7 @@ import { SubscriptionGate } from '../../features/billing/SubscriptionGate'
 import { PortalModeContext } from '../../hooks/usePortalMode'
 import { BackgroundSpotlight } from './BackgroundSpotlight'
 import { ScrollToTop } from './ScrollToTop'
+import { SiteFooter } from './SiteFooter'
 import { Brand } from './Brand'
 import { MobileMenu } from './MobileMenu'
 import { UserMenu } from './UserMenu'
@@ -52,7 +53,7 @@ export function BrokerLayout() {
   )
   return (
     <CompareProvider page="/broker/compare">
-      <div className="relative isolate min-h-screen">
+      <div className="relative isolate flex min-h-screen flex-col">
         <ScrollToTop />
         <BackgroundSpotlight />
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-canvas/85 backdrop-blur">
@@ -66,13 +67,14 @@ export function BrokerLayout() {
             <MobileMenu>{links}</MobileMenu>
           </div>
         </header>
-        <main className="mx-auto max-w-7xl px-4 py-6 pb-24">
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 pb-24">
           <PortalModeContext.Provider value="broker">
             <SubscriptionGate>
               <Outlet />
             </SubscriptionGate>
           </PortalModeContext.Provider>
         </main>
+        <SiteFooter />
         <CompareTray />
       </div>
     </CompareProvider>

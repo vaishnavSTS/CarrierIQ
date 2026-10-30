@@ -93,8 +93,8 @@ export function RegisterPage() {
   return (
     <AuthCard
       wide
-      title="Create a carrier account"
-      subtitle="For carriers. Your portal opens as soon as you sign up."
+      title="Create a client account"
+      subtitle="For clients. Your portal opens as soon as you sign up."
       footer={
         <>
           Already have an account?{' '}

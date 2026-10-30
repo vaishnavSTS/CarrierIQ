@@ -40,7 +40,7 @@ function safeNext(next: string | null, portal: Portal): string {
 const COPY: Record<Audience, { title: string; subtitle: string }> = {
   client: {
     title: 'Log in to CarrierSafetyScan',
-    subtitle: 'For carriers: your FMCSA record and what to improve.',
+    subtitle: 'For clients: your carrier’s FMCSA record and what to improve.',
   },
   broker: {
     title: 'Broker login',
@@ -154,7 +154,7 @@ function LoginFooter({ audience }: { audience: Audience }) {
       <>
         Not on the STS team?{' '}
         <Link to="/login" className={linkClass}>
-          Carrier login
+          Client login
         </Link>{' '}
         ·{' '}
         <Link to="/broker/login" className={linkClass}>
@@ -166,7 +166,7 @@ function LoginFooter({ audience }: { audience: Audience }) {
   const broker = audience === 'broker'
   return (
     <>
-      {broker ? 'New broker?' : 'New carrier?'}{' '}
+      {broker ? 'New broker?' : 'New client?'}{' '}
       <Link to={broker ? '/broker/register' : '/register'} className={linkClass}>
         {broker ? 'Create a broker account' : 'Create an account'}
       </Link>
