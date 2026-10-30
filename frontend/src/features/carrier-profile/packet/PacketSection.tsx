@@ -38,6 +38,7 @@ import { ContactStrip } from './ContactStrip'
 import logo from '../../../assets/carriersafetyscan-logo.png'
 import { packetItems, type PacketItem } from './packetItems'
 import { fitSheets, PrintCopy } from './printFit'
+import { PullInRates } from './PullInRates'
 import { RecordPage } from './RecordPage'
 import { ScrollX } from './ScrollX'
 import { SectionHeading } from './SectionHeading'
@@ -419,6 +420,7 @@ export function PacketDocument({
               </p>
             )}
             <IssTrend iss={iss} history={safety?.iss_history ?? []} />
+            {safety && <PullInRates safety={safety} client={client} />}
             <div className="grid gap-2 sm:grid-cols-3">
               <CountPill tone="red" count={hurting.length} label={`Hurting ${whose} score`} />
               <CountPill tone="amber" count={watch.length} label="Worth watching" />

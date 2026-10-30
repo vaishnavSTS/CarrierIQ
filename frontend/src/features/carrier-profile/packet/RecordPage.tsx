@@ -14,7 +14,6 @@ const MAX_INSPECTIONS = 6
 /** On its own page the history table fills the page: inspections are added while their rows fit. */
 const MAX_HISTORY_ROWS_OWN_PAGE = 22
 const MAX_VIOLATIONS_PER_INSPECTION = 5
-const MAX_PULL_IN_STATES = 8
 
 const day = (value: Date) =>
   value.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -41,7 +40,7 @@ const points = (value: number) => (Number.isInteger(value) ? `${value}` : value.
 /**
  * Page 4 of the Safety Score Report: FMCSA's SMS record line by line (as on FMCSA's own SMS
  * profile), and what CarrierSafetyScan adds: when the score improves on its own, which violations
- * weigh most (worth checking for a DataQs challenge), and weigh-station pull-in rates.
+ * weigh most (worth checking for a DataQs challenge).
  */
 export function RecordPage({
   safety,
@@ -66,9 +65,6 @@ export function RecordPage({
   const crashes = (safety.crashes?.crashes ?? []).filter(
     (c) => new Date(c.report_date) >= new Date(Date.now() - 730 * 24 * 3600 * 1000),
   )
-  const states = new Set(safety.by_state.slice(0, MAX_PULL_IN_STATES).map((s) => s.key))
-  const pullIn = safety.pull_in
-  const rates = (pullIn?.rates ?? []).filter((r) => states.has(r.state) && r.percent !== null)
 
   return (
     <>
@@ -334,55 +330,26 @@ export function RecordPage({
             </p>
           </div>
 
-          {(crashes.length > 0 || (pullIn && rates.length > 0)) && (
-            <div className="grid gap-5 sm:grid-cols-2">
-              {crashes.length > 0 && (
-                <div className="space-y-1.5">
-                  <SectionHeading aside="FMCSA Crash File · 24 months">Crashes</SectionHeading>
-                  <ul className="space-y-0.5 text-sm text-slate-700">
-                    {crashes.slice(0, 6).map((c) => (
-                      <li key={c.report_number}>
-                        <span className="tabular-nums text-slate-900">
-                          {formatDate(c.report_date)}
-                        </span>
-                        {[c.city, c.state].filter(Boolean).length > 0 &&
-                          ` · ${[c.city, c.state].filter(Boolean).join(', ')}`}
-                        {' · '}
-                        {[
-                          c.fatalities > 0 && `${c.fatalities} fatal`,
-                          c.injuries > 0 && `${c.injuries} injured`,
-                          c.tow_away && 'tow-away',
-                        ]
-                          .filter(Boolean)
-                          .join(', ') || 'reported'}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {pullIn && rates.length > 0 && (
-                <div className="space-y-1.5">
-                  <SectionHeading aside={`At an Estimated ISS of ${pullIn.score}`}>
-                    Weigh-station pull-in rates
-                  </SectionHeading>
-                  <div className="flex flex-wrap gap-1.5">
-                    {rates.map((r) => (
-                      <span
-                        key={r.state}
-                        className="rounded-md border border-slate-200 px-2 py-0.5 text-sm tabular-nums"
-                      >
-                        <span className="font-semibold text-slate-900">{r.state}</span>{' '}
-                        <span className="text-slate-700">{r.percent}%</span>
-                      </span>
-                    ))}
-                  </div>
-                  <p className="text-[11px] text-slate-500">
-                    States where {whose === 'your' ? 'you were' : 'it was'} inspected most; each
-                    state sets its own rate (PrePass, {formatDate(pullIn.effective_date)}). A lower
-                    score lowers them.
-                  </p>
-                </div>
-              )}
+          {crashes.length > 0 && (
+            <div className="space-y-1.5">
+              <SectionHeading aside="FMCSA Crash File · 24 months">Crashes</SectionHeading>
+              <ul className="space-y-0.5 text-sm text-slate-700">
+                {crashes.slice(0, 6).map((c) => (
+                  <li key={c.report_number}>
+                    <span className="tabular-nums text-slate-900">{formatDate(c.report_date)}</span>
+                    {[c.city, c.state].filter(Boolean).length > 0 &&
+                      ` · ${[c.city, c.state].filter(Boolean).join(', ')}`}
+                    {' · '}
+                    {[
+                      c.fatalities > 0 && `${c.fatalities} fatal`,
+                      c.injuries > 0 && `${c.injuries} injured`,
+                      c.tow_away && 'tow-away',
+                    ]
+                      .filter(Boolean)
+                      .join(', ') || 'reported'}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </>
