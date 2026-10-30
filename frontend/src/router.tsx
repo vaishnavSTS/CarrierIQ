@@ -17,6 +17,7 @@ import { DataQsCasePage } from './pages/DataQsCasePage'
 import { DataQsPage } from './pages/DataQsPage'
 import { GoogleSignupPage } from './pages/GoogleSignupPage'
 import { LandingPage } from './pages/LandingPage'
+import { ContactPage } from './pages/ContactPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { LoginPage } from './pages/LoginPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
@@ -50,6 +51,7 @@ export const router = createBrowserRouter([
     element: <PublicLayout />,
     children: [
       { index: true, element: <LandingPage /> },
+      { path: 'contact', element: <ContactPage /> },
       { path: 'try', element: <TryNowPage /> },
       { path: 'try/:usdot', element: <TryCarrierPage /> },
       { path: 'login', element: <LoginPage /> },

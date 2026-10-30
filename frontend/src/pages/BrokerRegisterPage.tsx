@@ -98,6 +98,7 @@ export function BrokerRegisterPage() {
 
   return (
     <AuthCard
+      wide
       audience="broker"
       title="Create a broker account"
       subtitle="For freight brokers. Vet any carrier as soon as you sign up."
@@ -112,61 +113,65 @@ export function BrokerRegisterPage() {
     >
       <GoogleButton label="Sign up with Google" portal="broker" />
       <form onSubmit={submit} className="space-y-4">
-        <Field
-          label="Your name"
-          autoComplete="name"
-          required
-          value={form.full_name}
-          onChange={set('full_name')}
-        />
-        <Field
-          label="Brokerage name"
-          autoComplete="organization"
-          required
-          value={form.company_name}
-          onChange={set('company_name')}
-        />
-        <BrokerIdField
-          kind={idKind}
-          value={form.id_number}
-          onKindChange={setIdKind}
-          onValueChange={(value) => setForm((f) => ({ ...f, id_number: value }))}
-        />
-        <Field
-          label="Work email"
-          type="email"
-          autoComplete="email"
-          required
-          value={form.email}
-          onChange={set('email')}
-        />
-        <Field
-          label="Mobile number"
-          type="tel"
-          autoComplete="tel"
-          required
-          placeholder="(555) 123-4567"
-          hint="STS may call to confirm your account."
-          value={form.phone}
-          onChange={set('phone')}
-        />
-        <Field
-          label="Password"
-          type="password"
-          autoComplete="new-password"
-          required
-          hint={`At least ${MIN_PASSWORD} characters.`}
-          value={form.password}
-          onChange={set('password')}
-        />
-        <Field
-          label="Repeat password"
-          type="password"
-          autoComplete="new-password"
-          required
-          value={form.confirm}
-          onChange={set('confirm')}
-        />
+        <div className="grid items-start gap-4 sm:grid-cols-2">
+          <Field
+            label="Your name"
+            autoComplete="name"
+            required
+            value={form.full_name}
+            onChange={set('full_name')}
+          />
+          <Field
+            label="Brokerage name"
+            autoComplete="organization"
+            required
+            value={form.company_name}
+            onChange={set('company_name')}
+          />
+          <div className="sm:col-span-2">
+            <BrokerIdField
+              kind={idKind}
+              value={form.id_number}
+              onKindChange={setIdKind}
+              onValueChange={(value) => setForm((f) => ({ ...f, id_number: value }))}
+            />
+          </div>
+          <Field
+            label="Work email"
+            type="email"
+            autoComplete="email"
+            required
+            value={form.email}
+            onChange={set('email')}
+          />
+          <Field
+            label="Mobile number"
+            type="tel"
+            autoComplete="tel"
+            required
+            placeholder="(555) 123-4567"
+            hint="STS may call to confirm your account."
+            value={form.phone}
+            onChange={set('phone')}
+          />
+          <Field
+            label="Password"
+            type="password"
+            autoComplete="new-password"
+            required
+            hint={`At least ${MIN_PASSWORD} characters.`}
+            value={form.password}
+            onChange={set('password')}
+          />
+          <Field
+            label="Repeat password"
+            type="password"
+            autoComplete="new-password"
+            required
+            value={form.confirm}
+            onChange={set('confirm')}
+          />
+        </div>
         {human.widget}
         <FormError message={error} />
         <SubmitButton busy={register.isPending}>Create broker account</SubmitButton>

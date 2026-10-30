@@ -151,6 +151,13 @@ class RateLimitedError(CarrierSafetyScanError):
         self.retry_after = retry_after
 
 
+class ContactUnavailableError(CarrierSafetyScanError):
+    """The Contact Us message couldn't be sent; the message gives the phone number instead."""
+
+    status_code = 503
+    code = "contact_unavailable"
+
+
 class TryLimitReachedError(CarrierSafetyScanError):
     """A Try Now visitor has used their free carrier; the page offers to sign up."""
 

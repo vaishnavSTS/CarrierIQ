@@ -7,6 +7,7 @@ import { CompareTray } from '../../features/compare/CompareTray'
 import { SubscriptionGate } from '../../features/billing/SubscriptionGate'
 import { PortalModeContext } from '../../hooks/usePortalMode'
 import { BackgroundSpotlight } from './BackgroundSpotlight'
+import { ScrollToTop } from './ScrollToTop'
 import { Brand } from './Brand'
 import { MobileMenu } from './MobileMenu'
 import { UserMenu } from './UserMenu'
@@ -52,6 +53,7 @@ export function BrokerLayout() {
   return (
     <CompareProvider page="/broker/compare">
       <div className="relative isolate min-h-screen">
+        <ScrollToTop />
         <BackgroundSpotlight />
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-canvas/85 backdrop-blur">
           <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">

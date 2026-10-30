@@ -92,8 +92,9 @@ export function RegisterPage() {
 
   return (
     <AuthCard
-      title="Create a client account"
-      subtitle="For STS clients. Your portal opens as soon as you sign up."
+      wide
+      title="Create a carrier account"
+      subtitle="For carriers. Your portal opens as soon as you sign up."
       footer={
         <>
           Already have an account?{' '}
@@ -105,63 +106,67 @@ export function RegisterPage() {
     >
       <GoogleButton label="Sign up with Google" />
       <form onSubmit={submit} className="space-y-4">
-        <Field
-          label="Your name"
-          autoComplete="name"
-          required
-          value={form.full_name}
-          onChange={set('full_name')}
-        />
-        <Field
-          label="Company name"
-          autoComplete="organization"
-          required
-          value={form.company_name}
-          onChange={set('company_name')}
-        />
-        <Field
-          label="Work email"
-          type="email"
-          autoComplete="email"
-          required
-          value={form.email}
-          onChange={set('email')}
-        />
-        <Field
-          label="Mobile number"
-          type="tel"
-          autoComplete="tel"
-          required
-          placeholder="(555) 123-4567"
-          hint="STS may call to confirm your account."
-          value={form.phone}
-          onChange={set('phone')}
-        />
-        <Field
-          label="USDOT number"
-          inputMode="numeric"
-          required
-          hint="The carrier you operate; it opens in your portal."
-          value={form.usdot}
-          onChange={set('usdot')}
-        />
-        <Field
-          label="Password"
-          type="password"
-          autoComplete="new-password"
-          required
-          hint={`At least ${MIN_PASSWORD} characters.`}
-          value={form.password}
-          onChange={set('password')}
-        />
-        <Field
-          label="Repeat password"
-          type="password"
-          autoComplete="new-password"
-          required
-          value={form.confirm}
-          onChange={set('confirm')}
-        />
+        <div className="grid items-start gap-4 sm:grid-cols-2">
+          <Field
+            label="Your name"
+            autoComplete="name"
+            required
+            value={form.full_name}
+            onChange={set('full_name')}
+          />
+          <Field
+            label="Company name"
+            autoComplete="organization"
+            required
+            value={form.company_name}
+            onChange={set('company_name')}
+          />
+          <Field
+            label="Work email"
+            type="email"
+            autoComplete="email"
+            required
+            value={form.email}
+            onChange={set('email')}
+          />
+          <Field
+            label="Mobile number"
+            type="tel"
+            autoComplete="tel"
+            required
+            placeholder="(555) 123-4567"
+            hint="STS may call to confirm your account."
+            value={form.phone}
+            onChange={set('phone')}
+          />
+          <div className="sm:col-span-2">
+            <Field
+              label="USDOT number"
+              inputMode="numeric"
+              required
+              hint="The carrier you operate; it opens in your portal."
+              value={form.usdot}
+              onChange={set('usdot')}
+            />
+          </div>
+          <Field
+            label="Password"
+            type="password"
+            autoComplete="new-password"
+            required
+            hint={`At least ${MIN_PASSWORD} characters.`}
+            value={form.password}
+            onChange={set('password')}
+          />
+          <Field
+            label="Repeat password"
+            type="password"
+            autoComplete="new-password"
+            required
+            value={form.confirm}
+            onChange={set('confirm')}
+          />
+        </div>
         {human.widget}
         <FormError message={error} />
         <SubmitButton busy={register.isPending}>Create account</SubmitButton>

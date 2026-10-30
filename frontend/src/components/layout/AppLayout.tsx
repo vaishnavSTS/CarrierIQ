@@ -15,6 +15,7 @@ import { CompareTray } from '../../features/compare/CompareTray'
 import { useMe } from '../../hooks/useAuth'
 import { useNewAccountCount } from '../../hooks/useAccounts'
 import { BackgroundSpotlight } from './BackgroundSpotlight'
+import { ScrollToTop } from './ScrollToTop'
 import { Brand } from './Brand'
 import { MobileMenu } from './MobileMenu'
 import { UserMenu } from './UserMenu'
@@ -83,6 +84,7 @@ function AppFrame() {
 
   return (
     <div className="relative isolate min-h-screen">
+      <ScrollToTop />
       <BackgroundSpotlight />
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-canvas/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:gap-6">

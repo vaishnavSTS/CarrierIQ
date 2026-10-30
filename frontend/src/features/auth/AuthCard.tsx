@@ -112,6 +112,7 @@ export function AuthCard({
   children,
   footer,
   audience = 'client',
+  wide = false,
 }: {
   title: string
   subtitle: string
@@ -119,21 +120,23 @@ export function AuthCard({
   footer: ReactNode
   /** Which brand panel to show: clients' own record, or brokers vetting carriers. */
   audience?: Audience
+  /** More room for the form, so a long one fits with its fields side by side */
+  wide?: boolean
 }) {
   return (
     <div className="relative overflow-hidden">
       <AuroraBackdrop />
 
-      <div className="mx-auto max-w-5xl px-4 py-10 md:py-16">
+      <div className={`mx-auto px-4 ${wide ? 'max-w-6xl py-6' : 'max-w-5xl py-10 md:py-16'}`}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease }}
-          className="grid overflow-hidden rounded-3xl border border-slate-200 bg-surface/80 shadow-2xl backdrop-blur lg:grid-cols-[1fr_1.05fr]"
+          className={`grid overflow-hidden rounded-3xl border border-slate-200 bg-surface/80 shadow-2xl backdrop-blur ${wide ? 'lg:grid-cols-[0.7fr_1.3fr]' : 'lg:grid-cols-[1fr_1.05fr]'}`}
         >
           <BrandPanel audience={audience} />
 
-          <section className="min-w-0 p-4 sm:p-10">
+          <section className={`min-w-0 p-4 ${wide ? 'sm:px-10 sm:py-6' : 'sm:p-10'}`}>
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}

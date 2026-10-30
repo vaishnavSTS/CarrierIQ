@@ -20,6 +20,7 @@ import { formatPhone } from '../../utils/format'
 import { STS_CONTACT } from '../carrier-profile/packet/contact'
 import stsLogo from '../carrier-profile/packet/sts-logo.png'
 import { IconBadge, PrimaryLink, reveal, SectionHeading } from './landingParts'
+import { STS_ADDRESS, STS_HOURS } from './stsInfo'
 
 /** Keep in step with MONTHLY_PRICE and TRIAL (backend/app/services/subscription.py). */
 const MONTHLY_PRICE = 49
@@ -29,9 +30,6 @@ const DATAQS_FEE = 50
 
 /** From skytransportsolutions.com. Only what its pages agree on: no client counts or rankings. */
 const STS_FOUNDED = 2013
-const STS_FOUNDER = 'Aakash Nayyar'
-const STS_ADDRESS = '121 E 11th St, Tracy, CA 95376'
-const STS_HOURS = 'Monday–Friday, 9:00 AM – 5:30 PM Pacific'
 const STS_SERVICES = [
   'DOT and MC authority',
   'BOC-3 and MCS-150 filings',
@@ -251,9 +249,9 @@ export function AboutStsSection() {
           <img src={stsLogo} alt="Sky Transport Solutions" className="h-16 w-auto object-contain" />
           <p className="mt-5 text-sm leading-relaxed text-slate-700 md:text-base">
             CarrierSafetyScan is built by Sky Transport Solutions, a trucking compliance company
-            founded in {STS_FOUNDED} by {STS_FOUNDER}. STS helps trucking companies across the
-            United States with registration, permits and DOT compliance, and it’s the team that
-            handles your DataQs challenges.
+            founded in {STS_FOUNDED}. STS helps trucking companies across the United States with
+            registration, permits and DOT compliance, and it’s the team that handles your DataQs
+            challenges.
           </p>
           <ul className="mt-6 grid gap-x-5 gap-y-2 text-sm text-slate-700 sm:grid-cols-2">
             {STS_SERVICES.map((service) => (
@@ -287,6 +285,11 @@ export function AboutStsSection() {
               {STS_HOURS}
             </li>
           </ul>
+          <div className="mt-5">
+            <PrimaryLink to="/contact" small>
+              Contact us
+            </PrimaryLink>
+          </div>
           <p className="mt-5 border-t border-slate-200 pt-4 text-xs text-slate-500">
             Sky Transport Solutions is a private company, not affiliated with FMCSA or any
             government agency.
