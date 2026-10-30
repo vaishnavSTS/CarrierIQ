@@ -11,12 +11,30 @@ const MAX_STEPS = 6
 const MAX_CODES = 10
 const MAX_CODES_OWN_PAGE = 9
 const MAX_INSPECTIONS = 6
-const MAX_INSPECTIONS_OWN_PAGE = 6
+/** On its own page the history table fills the page: inspections are added while their rows fit. */
+const MAX_HISTORY_ROWS_OWN_PAGE = 22
 const MAX_VIOLATIONS_PER_INSPECTION = 5
 const MAX_PULL_IN_STATES = 8
 
 const day = (value: Date) =>
   value.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+
+/** Table rows an inspection takes: its violations shown, plus a "+N lighter" row. */
+const historyRows = (violations: number) =>
+  Math.min(violations, MAX_VIOLATIONS_PER_INSPECTION) +
+  (violations > MAX_VIOLATIONS_PER_INSPECTION ? 1 : 0)
+
+/** How many inspections, newest first, fit in `budget` rows (at least one). */
+function inspectionsThatFit(inspections: { violations: unknown[] }[], budget: number) {
+  let used = 0
+  let count = 0
+  for (const i of inspections) {
+    used += historyRows(i.violations.length)
+    if (used > budget && count > 0) break
+    count += 1
+  }
+  return count
+}
 
 const points = (value: number) => (Number.isInteger(value) ? `${value}` : value.toFixed(1))
 
@@ -38,8 +56,9 @@ export function RecordPage({
   part?: 'all' | 'summary' | 'history'
 }) {
   const maxCodes = part === 'all' ? MAX_CODES : MAX_CODES_OWN_PAGE
-  const maxInspections = part === 'all' ? MAX_INSPECTIONS : MAX_INSPECTIONS_OWN_PAGE
   const inspections = safety.sms_inspections ?? []
+  const maxInspections =
+    part === 'all' ? MAX_INSPECTIONS : inspectionsThatFit(inspections, MAX_HISTORY_ROWS_OWN_PAGE)
   const steps = improvementSteps(inspections).slice(0, MAX_STEPS)
   const codes = violationRows(inspections)
   const heaviest = heaviestViolations(inspections)
@@ -215,55 +234,93 @@ export function RecordPage({
                   : 'No inspection in FMCSA’s 24-month window has a violation.'}
               </p>
             ) : (
-              <div className="grid gap-2 sm:grid-cols-2">
-                {inspections.slice(0, maxInspections).map((i) => (
-                  <div
-                    key={i.inspection_id}
-                    className="break-inside-avoid rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                  >
-                    <div className="flex flex-wrap items-baseline justify-between gap-x-2">
-                      <span className="font-semibold tabular-nums text-slate-900">
-                        {formatDate(i.inspection_date)}
-                        {i.state && ` · ${i.state}`}
-                      </span>
-                      <span className="text-[11px] text-slate-500">
-                        {[
-                          i.report_number && `Report ${i.report_number}`,
-                          i.plate &&
-                            `Plate ${i.plate}${i.plate_state ? ` (${i.plate_state})` : ''}`,
-                          i.level && `Level ${i.level}`,
-                        ]
-                          .filter(Boolean)
-                          .join(' · ')}
-                      </span>
-                    </div>
-                    <ul className="mt-1 space-y-0.5">
-                      {i.violations.slice(0, MAX_VIOLATIONS_PER_INSPECTION).map((v, n) => (
-                        <li
-                          key={`${v.code}-${n}`}
-                          className={`flex justify-between gap-2 text-xs ${v.out_of_service ? 'font-semibold text-red-700' : 'text-slate-700'}`}
-                        >
-                          <span>
-                            {v.description ?? v.code}
-                            <span className="font-normal text-slate-500"> · {v.basic}</span>
-                          </span>
-                          <span className="shrink-0 whitespace-nowrap tabular-nums">
-                            {v.out_of_service
-                              ? `${v.severity_weight}+2 OOS`
-                              : `${v.severity_weight}`}{' '}
-                            × {v.time_weight}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                    {i.violations.length > MAX_VIOLATIONS_PER_INSPECTION && (
-                      <p className="mt-0.5 text-[11px] text-slate-500">
-                        +{i.violations.length - MAX_VIOLATIONS_PER_INSPECTION} lighter violations
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <ScrollX>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-left text-[10px] uppercase tracking-wide text-slate-500">
+                      <th className="py-1 pr-2 font-medium">Date</th>
+                      <th className="py-1 pr-2 font-medium">State</th>
+                      <th className="py-1 pr-2 font-medium">Report</th>
+                      <th className="py-1 pr-2 font-medium">Plate</th>
+                      <th className="py-1 pr-2 text-center font-medium">Level</th>
+                      <th className="py-1 pr-2 font-medium">Violation</th>
+                      <th className="py-1 pr-2 font-medium">BASIC</th>
+                      <th className="py-1 pr-2 text-center font-medium" title="Out of service">
+                        OOS
+                      </th>
+                      <th className="py-1 pr-2 text-center font-medium">Severity</th>
+                      <th className="py-1 text-center font-medium">Time wt.</th>
+                    </tr>
+                  </thead>
+                  {inspections.slice(0, maxInspections).map((i) => {
+                    const shown = i.violations.slice(0, MAX_VIOLATIONS_PER_INSPECTION)
+                    const more = i.violations.length - shown.length
+                    // The inspection's own details span all of its violation rows.
+                    const span = shown.length + (more > 0 ? 1 : 0)
+                    const cell = 'py-1 pr-2 align-top text-xs text-slate-700'
+                    return (
+                      <tbody
+                        key={i.inspection_id}
+                        className="break-inside-avoid border-b border-slate-200 tabular-nums"
+                      >
+                        {shown.map((v, n) => (
+                          <tr
+                            key={`${v.code}-${n}`}
+                            className={n > 0 ? 'border-t border-dashed border-slate-100' : ''}
+                          >
+                            {n === 0 && (
+                              <>
+                                <td
+                                  rowSpan={span}
+                                  className={`${cell} whitespace-nowrap font-semibold text-slate-900`}
+                                >
+                                  {formatDate(i.inspection_date)}
+                                </td>
+                                <td rowSpan={span} className={cell}>
+                                  {i.state ?? '—'}
+                                </td>
+                                <td rowSpan={span} className={`${cell} font-mono text-[11px]`}>
+                                  {i.report_number ?? '—'}
+                                </td>
+                                <td rowSpan={span} className={cell}>
+                                  {i.plate
+                                    ? `${i.plate}${i.plate_state ? ` (${i.plate_state})` : ''}`
+                                    : '—'}
+                                </td>
+                                <td rowSpan={span} className={`${cell} text-center`}>
+                                  {i.level ?? '—'}
+                                </td>
+                              </>
+                            )}
+                            <td
+                              className={`py-1 pr-2 align-top text-xs ${v.out_of_service ? 'font-semibold text-red-700' : 'text-slate-800'}`}
+                            >
+                              {v.description ?? v.code}
+                            </td>
+                            <td className={cell}>{v.basic}</td>
+                            <td
+                              className={`py-1 pr-2 text-center align-top text-xs ${v.out_of_service ? 'font-semibold text-red-700' : 'text-slate-400'}`}
+                            >
+                              {v.out_of_service ? 'Yes' : '—'}
+                            </td>
+                            <td className={`${cell} text-center`}>{v.severity_weight}</td>
+                            <td className="py-1 text-center align-top text-xs text-slate-700">
+                              {v.time_weight}
+                            </td>
+                          </tr>
+                        ))}
+                        {more > 0 && (
+                          <tr>
+                            <td colSpan={5} className="pb-1 text-[11px] text-slate-500">
+                              +{more} lighter violation{more === 1 ? '' : 's'}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    )
+                  })}
+                </table>
+              </ScrollX>
             )}
             {inspections.length > maxInspections && (
               <p className="text-xs text-slate-500">
@@ -272,8 +329,8 @@ export function RecordPage({
               </p>
             )}
             <p className="text-[11px] text-slate-500">
-              Each violation shows FMCSA’s severity weight × time weight; out-of-service violations
-              (red) add 2 to the severity.
+              Severity and time weights are FMCSA’s; an out-of-service violation (red) adds 2 to its
+              severity weight.
             </p>
           </div>
 

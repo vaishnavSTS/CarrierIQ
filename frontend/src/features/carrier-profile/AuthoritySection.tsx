@@ -295,7 +295,11 @@ function FilingsTable({ filings, past }: { filings: InsuranceFiling[]; past: boo
                     {f.termination_date ? (
                       <span className="font-medium">{formatDate(f.termination_date)}</span>
                     ) : (
-                      <span className="text-slate-500">None filed</span>
+                      // A filing has no end date of its own: it stays in force until cancelled.
+                      <span className="text-slate-500">
+                        None filed
+                        <span className="block text-[11px]">Active until cancelled</span>
+                      </span>
                     )}
                   </td>
                 </>
@@ -445,7 +449,11 @@ export function AuthoritySection({
               <p className="mt-2 text-xs text-slate-500">
                 {data.current_insurance.some((f) => f.termination_date)
                   ? 'A cancellation date means the insurer has filed a notice with FMCSA that the policy ends on that date. FMCSA needs a replacement filing before then, or it revokes the authority.'
-                  : 'No insurer has filed a cancellation notice for these policies.'}
+                  : 'No insurer has filed a cancellation notice for these policies.'}{' '}
+                An insurance filing with FMCSA has no end date: it stays in force until the insurer
+                files a cancellation notice, which takes effect no sooner than 30 days after FMCSA
+                receives it (49 CFR 387.313). FMCSA does not record when the policy itself expires;
+                that date is on the carrier’s certificate of insurance.
               </p>
             </>
           )}

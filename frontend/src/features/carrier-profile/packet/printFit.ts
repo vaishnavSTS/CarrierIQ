@@ -24,8 +24,9 @@ const MIN_ZOOM = 0.7
  * the bottom of that page.
  *
  * A zoomed sheet is laid out at the page width divided by its zoom (so it prints exactly the page
- * wide), and text wraps differently at that width, so the scale is found in a few rounds of
- * measuring. The copy is laid out off-screen, so this is measured exactly as it will print.
+ * wide), and text wraps differently at that width (a table can be far taller when narrow), so the
+ * largest scale that fits is found by halving the range a few times. The copy is laid out
+ * off-screen, so this is measured exactly as it will print.
  */
 export function fitSheets(root: HTMLElement) {
   const width = PAGE_WIDTH_MM * PX_PER_MM
@@ -37,19 +38,20 @@ export function fitSheets(root: HTMLElement) {
     sheet.style.width = `${width / zoom}px`
     return sheet.getBoundingClientRect().height
   }
-  // The scale each sheet needs to fit (a few rounds: text rewraps at each width).
+  // Whether the sheet fits on the page at this scale (laid out at the width that scale gives).
+  const fitsAt = (sheet: HTMLElement, zoom: number) => measure(sheet, zoom) * zoom <= height
+  // The largest scale at which the sheet fits, to within 0.005.
   const fits = (sheet: HTMLElement) => {
-    let zoom = 1
-    for (let round = 0; round < 5; round += 1) {
-      const natural = measure(sheet, zoom)
-      if (natural <= 0) return MAX_ZOOM
-      const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, height / natural))
-      const settled = Math.abs(next - zoom) < 0.005
-      zoom = next
-      if (settled) break
+    if (fitsAt(sheet, MAX_ZOOM)) return MAX_ZOOM
+    if (!fitsAt(sheet, MIN_ZOOM)) return MIN_ZOOM
+    let low = MIN_ZOOM
+    let high = MAX_ZOOM
+    while (high - low > 0.005) {
+      const mid = (low + high) / 2
+      if (fitsAt(sheet, mid)) low = mid
+      else high = mid
     }
-    const natural = measure(sheet, zoom)
-    return natural * zoom > height ? Math.max(MIN_ZOOM, height / natural) : zoom
+    return low
   }
   const zoom = Math.min(MAX_ZOOM, ...sheets.map(fits))
   for (const sheet of sheets) {
