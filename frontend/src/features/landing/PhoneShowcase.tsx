@@ -56,13 +56,8 @@ export function PhoneShowcase() {
         className="mx-auto mt-10 grid max-w-4xl items-center gap-8 md:grid-cols-2 md:gap-12"
       >
         <div className="relative mx-auto w-full max-w-[280px] md:order-1">
-          {/* A soft brand glow behind a slim gradient frame. */}
-          <div
-            aria-hidden
-            className="absolute -inset-6 rounded-[3rem] bg-gradient-to-br from-violet-500/40 via-fuchsia-500/25 to-sky-400/30 blur-2xl"
-          />
-          <div className="relative rounded-[2.25rem] bg-gradient-to-br from-violet-500 via-fuchsia-500 to-violet-700 p-[3px] shadow-2xl shadow-violet-500/30">
-            <div className="overflow-hidden rounded-[2.1rem] bg-white">
+          <div className="rounded-[2.25rem] border border-slate-300 bg-surface p-1.5 shadow-xl">
+            <div className="overflow-hidden rounded-[1.8rem] bg-white">
               <div className="flex h-6 items-center justify-center">
                 <span aria-hidden className="h-1.5 w-12 rounded-full bg-slate-300" />
               </div>
