@@ -86,7 +86,7 @@ export function DataQsFeeCard({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
         >
           <div className="w-full max-w-lg overflow-hidden rounded-3xl bg-surface shadow-2xl ring-1 ring-black/5">
             {/* Header: brand gradient, the price large */}
-            <div className="relative bg-gradient-to-br from-violet-600 to-fuchsia-600 px-7 pb-7 pt-6 text-white">
+            <div className="relative bg-gradient-to-br from-panel-a to-panel-b px-7 pb-7 pt-6 text-white">
               <button
                 type="button"
                 onClick={() => setOpen(false)}

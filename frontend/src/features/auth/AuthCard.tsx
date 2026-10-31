@@ -179,22 +179,19 @@ export function AuthCard({
 function BrandPanel({ audience }: { audience: Audience }) {
   const panel = PANEL[audience]
   return (
-    <aside className="relative hidden overflow-hidden bg-gradient-to-br from-violet-600 via-violet-700 to-fuchsia-700 p-10 lg:flex lg:flex-col">
+    <aside className="relative hidden overflow-hidden bg-gradient-to-br from-panel-a to-panel-b p-10 lg:flex lg:flex-col">
       <div
         aria-hidden
-        className="absolute -right-24 -top-24 size-72 rounded-full bg-fuchsia-400/30 blur-3xl"
+        className="absolute -right-24 -top-24 size-72 rounded-full bg-white/10 blur-3xl"
       />
       <div
         aria-hidden
-        className="absolute -bottom-28 -left-20 size-72 rounded-full bg-violet-400/30 blur-3xl"
+        className="absolute -bottom-28 -left-20 size-72 rounded-full bg-white/10 blur-3xl"
       />
 
       <div className="relative">
         <h2 className="text-3xl font-semibold leading-tight tracking-tight text-white">
-          {panel.lead}{' '}
-          <span className="bg-gradient-to-r from-violet-200 via-fuchsia-200 to-violet-300 bg-clip-text text-transparent">
-            {panel.accent}
-          </span>
+          {panel.lead} <span className="text-white/75">{panel.accent}</span>
         </h2>
         <p className="mt-3 text-sm text-white/85">{panel.intro}</p>
       </div>
@@ -222,7 +219,7 @@ function BrandPanel({ audience }: { audience: Audience }) {
       <ul className="relative mt-auto flex flex-wrap gap-x-5 gap-y-2 pt-10 text-xs text-white/85">
         {['Public FMCSA & NHTSA data', 'Source named on every value'].map((point) => (
           <li key={point} className="flex items-center gap-1.5">
-            <CircleCheck className="size-3.5 text-emerald-200" aria-hidden />
+            <CircleCheck className="size-3.5 text-white/80" aria-hidden />
             {point}
           </li>
         ))}
