@@ -174,8 +174,12 @@ export function LandingPage() {
               </motion.article>
               <motion.article
                 {...reveal(0.05)}
-                className="flex flex-col rounded-2xl border border-slate-200 bg-surface/90 p-7"
+                className="group relative flex flex-col overflow-hidden rounded-2xl border border-brand-glow/40 bg-surface/90 p-7 shadow-2xl shadow-brand-glow/15"
               >
+                <div
+                  aria-hidden
+                  className="absolute -right-16 -top-16 size-48 rounded-full bg-violet-500/10 blur-3xl transition-opacity group-hover:opacity-80"
+                />
                 <IconBadge icon={Briefcase} />
                 <h3 className="mt-5 text-lg font-semibold text-slate-900">I’m a freight broker</h3>
                 <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">
@@ -193,8 +197,12 @@ export function LandingPage() {
               </motion.article>
               <motion.article
                 {...reveal(0.1)}
-                className="flex flex-col rounded-2xl border border-slate-200 bg-surface/90 p-7"
+                className="group relative flex flex-col overflow-hidden rounded-2xl border border-brand-glow/40 bg-surface/90 p-7 shadow-2xl shadow-brand-glow/15"
               >
+                <div
+                  aria-hidden
+                  className="absolute -right-16 -top-16 size-48 rounded-full bg-violet-500/10 blur-3xl transition-opacity group-hover:opacity-80"
+                />
                 <IconBadge icon={ShieldCheck} />
                 <h3 className="mt-5 text-lg font-semibold text-slate-900">
                   I’m an insurance agent
