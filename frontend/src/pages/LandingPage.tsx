@@ -24,6 +24,7 @@ import {
   PricingSection,
   ReportPreview,
 } from '../features/landing/LandingSections'
+import { PhoneShowcase } from '../features/landing/PhoneShowcase'
 import { SampleShowcase } from '../features/landing/SampleShowcase'
 import { homeFor, useMe } from '../hooks/useAuth'
 
@@ -56,12 +57,6 @@ const FEATURES: { icon: LucideIcon; title: string; text: string }[] = [
     title: 'A packet you can send',
     text: 'A dated, sourced carrier packet to share with brokers and shippers. Facts from FMCSA, and estimates that follow FMCSA’s own published methods.',
   },
-]
-
-const FACTS = [
-  { value: '20+', label: 'public FMCSA & NHTSA datasets' },
-  { value: '6', label: 'views of every carrier' },
-  { value: '1–100', label: 'Estimated ISS, by FMCSA’s published method' },
 ]
 
 const STEPS: { icon: LucideIcon; title: string; text: string }[] = [
@@ -163,21 +158,6 @@ export function LandingPage() {
           </motion.div>
         </section>
 
-        {/* Facts */}
-        <motion.section
-          {...reveal()}
-          className="grid grid-cols-3 divide-x divide-slate-200 rounded-2xl border border-slate-200 bg-surface/60 py-6 backdrop-blur"
-        >
-          {FACTS.map((f) => (
-            <div key={f.label} className="px-3 text-center">
-              <div className="bg-gradient-to-b from-slate-950 to-slate-600 bg-clip-text text-3xl font-semibold tracking-tight text-transparent md:text-4xl">
-                {f.value}
-              </div>
-              <div className="mt-1 text-xs text-slate-500 md:text-sm">{f.label}</div>
-            </div>
-          ))}
-        </motion.section>
-
         {/* Who it's for (logged-in users already have the button in the hero) */}
         {!user && (
           <section className="py-20">
@@ -269,6 +249,7 @@ export function LandingPage() {
 
         <DataQsSection />
         <ReportPreview />
+        <PhoneShowcase />
 
         {/* How it works */}
         <section className="pb-20">
