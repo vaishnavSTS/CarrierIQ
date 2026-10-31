@@ -240,39 +240,43 @@ body {
 }
 
 /*
- * The rest of the landing page carries the hero's colours down to the footer, so no section sits on
- * a flat page. Quiet enough that all page text keeps 4.5:1 or more. --landing-start is where the
- * hero's gradient ends, so the two meet without a seam.
+ * The rest of the landing page carries the hero's glow down to the footer: one tile that repeats, so
+ * the colour is as strong at the bottom of a long phone page as at the top. Its top and bottom edges
+ * match, so there's no seam. Text sitting directly on it is stronger here than elsewhere, which keeps
+ * it at 4.5:1 or more; --landing-start is where the hero's gradient ends.
  */
 .landing-page {
-  --landing-start: #e4eeff;
-  background: radial-gradient(60% 9% at 88% 34%, rgb(109 40 217 / 0.1), transparent 100%),
-    radial-gradient(60% 10% at 8% 58%, rgb(37 99 235 / 0.12), transparent 100%),
-    radial-gradient(60% 9% at 90% 80%, rgb(109 40 217 / 0.09), transparent 100%),
-    linear-gradient(
-      180deg,
-      var(--landing-start) 0%,
-      #eef3ff 24%,
-      #f3f0ff 48%,
-      #e9f1ff 72%,
-      var(--color-canvas) 100%
-    );
+  --landing-start: #dbe8ff;
+  --color-slate-400: #3e4966;
+  --color-slate-500: #2b3552;
+  --color-slate-600: #2b3552;
+}
+
+/* The tile starts where the hero ends, on the colour the hero ends with. */
+.landing-rest {
+  background-color: var(--landing-start);
+  background-image: radial-gradient(34% 12% at 50% 14%, rgb(109 40 217 / 0.32), transparent 100%),
+    radial-gradient(34% 12% at 50% 86%, rgb(109 40 217 / 0.32), transparent 100%),
+    radial-gradient(48% 42% at 0% 50%, rgb(14 102 255 / 0.42), transparent 100%),
+    radial-gradient(48% 42% at 100% 50%, rgb(14 102 255 / 0.42), transparent 100%),
+    linear-gradient(180deg, var(--landing-start) 0%, #bcd4ff 50%, var(--landing-start) 100%);
+  background-size: 100% 1500px;
+  background-repeat: repeat-y;
 }
 
 :root[data-theme='dark'] .landing-page {
   --landing-start: #03122b;
-  background: repeating-linear-gradient(90deg, rgb(255 255 255 / 0.02) 0 1px, transparent 1px 7px),
-    radial-gradient(55% 8% at 92% 36%, rgb(253 112 78 / 0.1), transparent 100%),
-    radial-gradient(65% 11% at 6% 58%, rgb(3 149 221 / 0.16), transparent 100%),
-    radial-gradient(55% 8% at 92% 82%, rgb(253 112 78 / 0.08), transparent 100%),
-    linear-gradient(
-      180deg,
-      var(--landing-start) 0%,
-      #020d22 26%,
-      #03142f 52%,
-      #020d22 76%,
-      var(--color-canvas) 100%
-    );
+  --color-slate-400: #c4cad4;
+  --color-slate-500: #d1d6de;
+  --color-slate-600: #e5e8ed;
+}
+
+:root[data-theme='dark'] .landing-rest {
+  background-image: radial-gradient(30% 12% at 50% 14%, rgb(253 112 78 / 0.34), transparent 100%),
+    radial-gradient(30% 12% at 50% 86%, rgb(253 112 78 / 0.34), transparent 100%),
+    radial-gradient(50% 44% at 0% 50%, rgb(3 149 221 / 0.5), transparent 100%),
+    radial-gradient(50% 44% at 100% 50%, rgb(3 149 221 / 0.5), transparent 100%),
+    linear-gradient(180deg, var(--landing-start) 0%, #05305f 50%, var(--landing-start) 100%);
 }
 
 .brand-panel {

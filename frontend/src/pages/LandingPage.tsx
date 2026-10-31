@@ -139,172 +139,181 @@ export function LandingPage() {
         </section>
       </div>
 
-      <div className="mx-auto max-w-6xl px-4">
-        {/* Who it's for (logged-in users already have the button in the hero) */}
-        {!user && (
-          <section className="py-20">
-            <SectionHeading eyebrow="Who it’s for" title="One login, the right portal" />
-            <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              <motion.article
-                {...reveal(0)}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border border-brand-glow/40 bg-surface/90 p-7 shadow-2xl shadow-brand-glow/15"
-              >
-                <div
-                  aria-hidden
-                  className="absolute -right-16 -top-16 size-48 rounded-full bg-violet-500/10 blur-3xl transition-opacity group-hover:opacity-80"
-                />
-                <IconBadge icon={Truck} />
-                <h3 className="mt-5 text-lg font-semibold text-slate-900">I’m a carrier</h3>
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">
-                  Create an account with your company and USDOT number and your portal opens right
-                  away: your carrier’s profile, what to improve, and a packet to send brokers.
-                </p>
-                <div className="mt-6 flex flex-wrap items-center gap-4">
-                  <PrimaryLink to="/register" small>
-                    Create a carrier account
-                  </PrimaryLink>
-                  <Link to="/login" className="text-sm text-slate-600 hover:text-slate-900">
-                    Already have one? <span className="font-medium underline">Log in</span>
-                  </Link>
-                </div>
-              </motion.article>
-              <motion.article
-                {...reveal(0.05)}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border border-brand-glow/40 bg-surface/90 p-7 shadow-2xl shadow-brand-glow/15"
-              >
-                <div
-                  aria-hidden
-                  className="absolute -right-16 -top-16 size-48 rounded-full bg-violet-500/10 blur-3xl transition-opacity group-hover:opacity-80"
-                />
-                <IconBadge icon={Briefcase} />
-                <h3 className="mt-5 text-lg font-semibold text-slate-900">I’m a freight broker</h3>
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">
-                  Sign up with your brokerage’s MC number and vet any carrier: authority, insurance,
-                  safety and Estimated ISS, and the registration checks behind fraud screens.
-                </p>
-                <div className="mt-6 flex flex-wrap items-center gap-4">
-                  <PrimaryLink to="/broker/register" small>
-                    Create a broker account
-                  </PrimaryLink>
-                  <Link to="/broker/login" className="text-sm text-slate-600 hover:text-slate-900">
-                    Already have one? <span className="font-medium underline">Log in</span>
-                  </Link>
-                </div>
-              </motion.article>
-              <motion.article
-                {...reveal(0.1)}
-                className="group relative flex flex-col overflow-hidden rounded-2xl border border-brand-glow/40 bg-surface/90 p-7 shadow-2xl shadow-brand-glow/15"
-              >
-                <div
-                  aria-hidden
-                  className="absolute -right-16 -top-16 size-48 rounded-full bg-violet-500/10 blur-3xl transition-opacity group-hover:opacity-80"
-                />
-                <IconBadge icon={ShieldCheck} />
-                <h3 className="mt-5 text-lg font-semibold text-slate-900">
-                  I’m an insurance agent
-                </h3>
-                <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">
-                  Sign up with your National Producer Number and check any carrier: authority,
-                  insurance filings, safety and Estimated ISS, and its inspection and crash record.
-                </p>
-                <div className="mt-6 flex flex-wrap items-center gap-4">
-                  <PrimaryLink to="/insurance/register" small>
-                    Create an agent account
-                  </PrimaryLink>
-                  <Link
-                    to="/insurance/login"
-                    className="text-sm text-slate-600 hover:text-slate-900"
-                  >
-                    Already have one? <span className="font-medium underline">Log in</span>
-                  </Link>
-                </div>
-              </motion.article>
+      <div className="landing-rest">
+        <div className="mx-auto max-w-6xl px-4">
+          {/* Who it's for (logged-in users already have the button in the hero) */}
+          {!user && (
+            <section className="py-20">
+              <SectionHeading eyebrow="Who it’s for" title="One login, the right portal" />
+              <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                <motion.article
+                  {...reveal(0)}
+                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-brand-glow/40 bg-surface/90 p-7 shadow-2xl shadow-brand-glow/15"
+                >
+                  <div
+                    aria-hidden
+                    className="absolute -right-16 -top-16 size-48 rounded-full bg-violet-500/10 blur-3xl transition-opacity group-hover:opacity-80"
+                  />
+                  <IconBadge icon={Truck} />
+                  <h3 className="mt-5 text-lg font-semibold text-slate-900">I’m a carrier</h3>
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">
+                    Create an account with your company and USDOT number and your portal opens right
+                    away: your carrier’s profile, what to improve, and a packet to send brokers.
+                  </p>
+                  <div className="mt-6 flex flex-wrap items-center gap-4">
+                    <PrimaryLink to="/register" small>
+                      Create a carrier account
+                    </PrimaryLink>
+                    <Link to="/login" className="text-sm text-slate-600 hover:text-slate-900">
+                      Already have one? <span className="font-medium underline">Log in</span>
+                    </Link>
+                  </div>
+                </motion.article>
+                <motion.article
+                  {...reveal(0.05)}
+                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-brand-glow/40 bg-surface/90 p-7 shadow-2xl shadow-brand-glow/15"
+                >
+                  <div
+                    aria-hidden
+                    className="absolute -right-16 -top-16 size-48 rounded-full bg-violet-500/10 blur-3xl transition-opacity group-hover:opacity-80"
+                  />
+                  <IconBadge icon={Briefcase} />
+                  <h3 className="mt-5 text-lg font-semibold text-slate-900">
+                    I’m a freight broker
+                  </h3>
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">
+                    Sign up with your brokerage’s MC number and vet any carrier: authority,
+                    insurance, safety and Estimated ISS, and the registration checks behind fraud
+                    screens.
+                  </p>
+                  <div className="mt-6 flex flex-wrap items-center gap-4">
+                    <PrimaryLink to="/broker/register" small>
+                      Create a broker account
+                    </PrimaryLink>
+                    <Link
+                      to="/broker/login"
+                      className="text-sm text-slate-600 hover:text-slate-900"
+                    >
+                      Already have one? <span className="font-medium underline">Log in</span>
+                    </Link>
+                  </div>
+                </motion.article>
+                <motion.article
+                  {...reveal(0.1)}
+                  className="group relative flex flex-col overflow-hidden rounded-2xl border border-brand-glow/40 bg-surface/90 p-7 shadow-2xl shadow-brand-glow/15"
+                >
+                  <div
+                    aria-hidden
+                    className="absolute -right-16 -top-16 size-48 rounded-full bg-violet-500/10 blur-3xl transition-opacity group-hover:opacity-80"
+                  />
+                  <IconBadge icon={ShieldCheck} />
+                  <h3 className="mt-5 text-lg font-semibold text-slate-900">
+                    I’m an insurance agent
+                  </h3>
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">
+                    Sign up with your National Producer Number and check any carrier: authority,
+                    insurance filings, safety and Estimated ISS, and its inspection and crash
+                    record.
+                  </p>
+                  <div className="mt-6 flex flex-wrap items-center gap-4">
+                    <PrimaryLink to="/insurance/register" small>
+                      Create an agent account
+                    </PrimaryLink>
+                    <Link
+                      to="/insurance/login"
+                      className="text-sm text-slate-600 hover:text-slate-900"
+                    >
+                      Already have one? <span className="font-medium underline">Log in</span>
+                    </Link>
+                  </div>
+                </motion.article>
+              </div>
+            </section>
+          )}
+
+          {/* Features */}
+          <section className="pb-20">
+            <SectionHeading eyebrow="What you get" title="Everything a broker checks, explained" />
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {FEATURES.map(({ icon, title, text }, i) => (
+                <motion.article
+                  key={title}
+                  {...reveal(i * 0.08)}
+                  className="group rounded-2xl border border-slate-200 bg-surface/80 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-brand-glow/15"
+                >
+                  <IconBadge icon={icon} />
+                  <h3 className="mt-5 text-sm font-semibold text-slate-900">{title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{text}</p>
+                </motion.article>
+              ))}
             </div>
           </section>
-        )}
 
-        {/* Features */}
-        <section className="pb-20">
-          <SectionHeading eyebrow="What you get" title="Everything a broker checks, explained" />
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {FEATURES.map(({ icon, title, text }, i) => (
-              <motion.article
-                key={title}
-                {...reveal(i * 0.08)}
-                className="group rounded-2xl border border-slate-200 bg-surface/80 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-brand-glow/15"
-              >
-                <IconBadge icon={icon} />
-                <h3 className="mt-5 text-sm font-semibold text-slate-900">{title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600">{text}</p>
-              </motion.article>
-            ))}
-          </div>
-        </section>
+          <DataQsSection />
+          <PhoneShowcase />
+          <ReportPreview />
 
-        <DataQsSection />
-        <PhoneShowcase />
-        <ReportPreview />
-
-        {/* How it works */}
-        <section className="pb-20">
-          <SectionHeading eyebrow="How it works" title="From sign-up to a packet in minutes" />
-          <ol className="mt-10 grid gap-6 md:grid-cols-3">
-            {STEPS.map(({ icon: Icon, title, text }, i) => (
-              <motion.li key={title} {...reveal(i * 0.1)}>
-                <div className="flex items-center gap-3">
-                  <span className="relative grid size-12 shrink-0 place-items-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-900">
-                    <Icon className="size-5" aria-hidden />
-                  </span>
-                  <span className="shrink-0 text-xs font-medium uppercase tracking-wider text-slate-500">
-                    Step {i + 1}
-                  </span>
-                  {/* Connector: starts after the label and runs across the gap (-mr-6 = the
+          {/* How it works */}
+          <section className="pb-20">
+            <SectionHeading eyebrow="How it works" title="From sign-up to a packet in minutes" />
+            <ol className="mt-10 grid gap-6 md:grid-cols-3">
+              {STEPS.map(({ icon: Icon, title, text }, i) => (
+                <motion.li key={title} {...reveal(i * 0.1)}>
+                  <div className="flex items-center gap-3">
+                    <span className="relative grid size-12 shrink-0 place-items-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-900">
+                      <Icon className="size-5" aria-hidden />
+                    </span>
+                    <span className="shrink-0 text-xs font-medium uppercase tracking-wider text-slate-500">
+                      Step {i + 1}
+                    </span>
+                    {/* Connector: starts after the label and runs across the gap (-mr-6 = the
                       grid's gap-6) to the next step's icon. */}
-                  {i < STEPS.length - 1 && (
-                    <span
-                      aria-hidden
-                      className="-mr-6 ml-1 hidden h-0.5 flex-1 rounded-full bg-gradient-to-r from-slate-300 via-brand-glow/40 to-slate-300 md:block"
-                    />
-                  )}
-                </div>
-                <h3 className="mt-4 text-base font-semibold text-slate-900">{title}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{text}</p>
-              </motion.li>
-            ))}
-          </ol>
-        </section>
+                    {i < STEPS.length - 1 && (
+                      <span
+                        aria-hidden
+                        className="-mr-6 ml-1 hidden h-0.5 flex-1 rounded-full bg-gradient-to-r from-slate-300 via-brand-glow/40 to-slate-300 md:block"
+                      />
+                    )}
+                  </div>
+                  <h3 className="mt-4 text-base font-semibold text-slate-900">{title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{text}</p>
+                </motion.li>
+              ))}
+            </ol>
+          </section>
 
-        <PricingSection />
+          <PricingSection />
 
-        {/* Closing call to action */}
-        {!user && (
-          <motion.section
-            {...reveal()}
-            className="relative mb-20 overflow-hidden rounded-3xl border border-brand-glow/30 bg-gradient-to-br from-accent-soft via-surface to-brand-glow-alt/15 px-6 py-12 text-center md:px-12"
-          >
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -bottom-24 left-1/2 size-72 -translate-x-1/2 rounded-full bg-fuchsia-500/10 blur-3xl"
-            />
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-950 md:text-3xl">
-              See your carrier the way brokers do
-            </h2>
-            <p className="mx-auto mt-3 max-w-lg text-sm text-slate-600 md:text-base">
-              Create your account with your USDOT number and your portal opens straight away.
-            </p>
-            <div className="mt-7 flex flex-wrap justify-center gap-3">
-              <PrimaryLink to="/register">Create a carrier account</PrimaryLink>
-              <Link
-                to="/login"
-                className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-50"
-              >
-                Log in
-              </Link>
-            </div>
-          </motion.section>
-        )}
+          {/* Closing call to action */}
+          {!user && (
+            <motion.section
+              {...reveal()}
+              className="relative mb-20 overflow-hidden rounded-3xl border border-brand-glow/30 bg-gradient-to-br from-accent-soft via-surface to-brand-glow-alt/15 px-6 py-12 text-center md:px-12"
+            >
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -bottom-24 left-1/2 size-72 -translate-x-1/2 rounded-full bg-fuchsia-500/10 blur-3xl"
+              />
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-950 md:text-3xl">
+                See your carrier the way brokers do
+              </h2>
+              <p className="mx-auto mt-3 max-w-lg text-sm text-slate-600 md:text-base">
+                Create your account with your USDOT number and your portal opens straight away.
+              </p>
+              <div className="mt-7 flex flex-wrap justify-center gap-3">
+                <PrimaryLink to="/register">Create a carrier account</PrimaryLink>
+                <Link
+                  to="/login"
+                  className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-50"
+                >
+                  Log in
+                </Link>
+              </div>
+            </motion.section>
+          )}
 
-        <AboutStsSection />
+          <AboutStsSection />
+        </div>
       </div>
     </div>
   )
