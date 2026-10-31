@@ -179,7 +179,7 @@ export function AuthCard({
 function BrandPanel({ audience }: { audience: Audience }) {
   const panel = PANEL[audience]
   return (
-    <aside className="relative hidden overflow-hidden bg-gradient-to-br from-panel-a to-panel-b p-10 lg:flex lg:flex-col">
+    <aside className="relative hidden overflow-hidden brand-panel p-10 lg:flex lg:flex-col">
       <div
         aria-hidden
         className="absolute -right-24 -top-24 size-72 rounded-full bg-white/10 blur-3xl"

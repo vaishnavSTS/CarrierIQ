@@ -108,7 +108,7 @@ function SubscribeWall({ price, confirming }: { price: string; confirming: boole
       aria-labelledby="subscribe-title"
     >
       <div className="w-full max-w-lg overflow-hidden rounded-3xl bg-surface shadow-2xl ring-1 ring-black/5">
-        <div className="bg-gradient-to-br from-panel-a to-panel-b px-7 pb-7 pt-6 text-white">
+        <div className="brand-panel px-7 pb-7 pt-6 text-white">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-medium">
             <Lock className="size-3.5" aria-hidden />
             Your free trial has ended

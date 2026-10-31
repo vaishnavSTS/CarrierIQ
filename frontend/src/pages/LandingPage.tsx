@@ -13,7 +13,6 @@ import {
 import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 
-import { AuroraBackdrop } from '../components/layout/AuroraBackdrop'
 import { IconBadge, PrimaryLink, reveal, SectionHeading } from '../features/landing/landingParts'
 import {
   AboutStsSection,
@@ -80,26 +79,21 @@ export function LandingPage() {
 
   return (
     <div className="relative overflow-hidden">
-      {/* Aurora glow and film grain behind the hero; decorative only. */}
-      <AuroraBackdrop className="inset-x-0 top-0 h-[900px]" />
-
-      <div className="mx-auto max-w-6xl px-4">
-        {/* Hero */}
-        <section className="grid items-center gap-12 py-14 md:py-20 lg:grid-cols-[1.05fr_1fr]">
+      {/* Hero */}
+      <div className="hero-gradient">
+        <section className="mx-auto grid max-w-6xl items-center gap-12 relative z-10 px-4 pb-64 pt-14 md:pt-20 lg:grid-cols-[1.05fr_1fr]">
           <div className="text-center lg:text-left">
             <motion.h1
               {...rise(0)}
-              className="text-4xl font-semibold leading-[1.08] tracking-tight text-slate-950 md:text-5xl lg:text-[3.4rem]"
+              className="text-4xl font-semibold leading-[1.08] tracking-tight text-white md:text-5xl lg:text-[3.4rem]"
             >
               See your carrier{' '}
-              <span className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-violet-700 bg-clip-text text-transparent">
-                the way brokers do
-              </span>
-              , and know exactly what to fix
+              <span className="text-[var(--hero-highlight)]">the way brokers do</span>, and know
+              exactly what to fix
             </motion.h1>
             <motion.p
               {...rise(0.1)}
-              className="mx-auto mt-5 max-w-xl text-base text-slate-600 md:text-lg lg:mx-0"
+              className="mx-auto mt-5 max-w-xl text-base text-white/90 md:text-lg lg:mx-0"
             >
               CarrierSafetyScan turns public FMCSA data into a clear picture of a carrier’s
               authority, insurance, safety and registration health, and explains what to do about
@@ -108,7 +102,7 @@ export function LandingPage() {
 
             <motion.div
               {...rise(0.2)}
-              className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start"
+              className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start [&_a]:ring-2 [&_a]:ring-white/70"
             >
               {user ? (
                 <PrimaryLink to={homeFor(user.portal)}>
@@ -123,11 +117,11 @@ export function LandingPage() {
 
             <motion.ul
               {...rise(0.3)}
-              className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-slate-600 lg:justify-start"
+              className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-white/90 lg:justify-start"
             >
               {['Public FMCSA & NHTSA data', 'Source named on every value'].map((point) => (
                 <li key={point} className="flex items-center gap-1.5">
-                  <CircleCheck className="size-4 text-emerald-600" aria-hidden />
+                  <CircleCheck className="size-4 text-white" aria-hidden />
                   {point}
                 </li>
               ))}
@@ -138,12 +132,14 @@ export function LandingPage() {
             initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.25, ease }}
-            className="mx-auto w-full max-w-md lg:mt-8 lg:max-w-none"
+            className="mx-auto mt-14 w-full max-w-md lg:mt-8 lg:max-w-none"
           >
             <SampleShowcase />
           </motion.div>
         </section>
+      </div>
 
+      <div className="mx-auto max-w-6xl px-4">
         {/* Who it's for (logged-in users already have the button in the hero) */}
         {!user && (
           <section className="py-20">

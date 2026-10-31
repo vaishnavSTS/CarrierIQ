@@ -53,12 +53,12 @@ export function HeroTryForm() {
         </label>
         <button
           type="submit"
-          className="rounded-xl bg-cta px-5 py-3 text-sm font-medium text-cta-ink transition-colors hover:bg-cta-hover active:bg-cta-active"
+          className="rounded-xl bg-[var(--hero-cta)] px-5 py-3 text-sm font-medium text-[var(--hero-cta-ink)] transition-colors hover:bg-[var(--hero-cta-hover)]"
         >
           Try Now
         </button>
       </div>
-      <p className="mt-2.5 text-center text-xs text-slate-600 lg:text-left">
+      <p className="mt-2.5 text-center text-xs text-white/90 lg:text-left">
         One free search, no account needed.
       </p>
     </form>

@@ -20,7 +20,7 @@ export function PortalDataQsPage() {
         </p>
       </div>
       {/* The price, made hard to miss: each inspection challenged is its own $50 request. */}
-      <div className="flex flex-col gap-4 rounded-2xl bg-gradient-to-br from-panel-a to-panel-b px-6 py-5 text-white shadow-lg shadow-violet-500/25 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 rounded-2xl brand-panel px-6 py-5 text-white shadow-lg shadow-violet-500/25 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-white/15">
             <Tag className="size-6" aria-hidden />

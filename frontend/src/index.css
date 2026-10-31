@@ -182,6 +182,73 @@ body {
   @apply bg-canvas text-slate-900 antialiased;
 }
 
+/*
+ * The landing hero and brand panels. Text on them is white, so the top of each gradient stays dark
+ * enough for it; the bright part sits below the text (checked at 4.5:1 or more).
+ *
+ * Light: deep blue into bright blue, fading to white, with a violet touch. Dark: black, an electric
+ * blue glow rising from below, and one orange bloom at its centre.
+ */
+.hero-gradient {
+  position: relative;
+  --hero-highlight: #cfe2ff;
+  --hero-cta: #6d28d9;
+  --hero-cta-hover: #5b21b6;
+  --hero-cta-ink: #ffffff;
+  background: radial-gradient(55% 34% at 8% 0%, rgb(109 40 217 / 0.55), transparent 72%),
+    linear-gradient(
+      180deg,
+      #101853 0%,
+      #0a2f9e 34%,
+      #0a4fd6 68%,
+      #0e66ff 79%,
+      #41a0fc 87%,
+      #dcefff 95%,
+      var(--color-canvas) 100%
+    );
+}
+
+:root[data-theme='dark'] .hero-gradient {
+  --hero-highlight: #ff9d45;
+  --hero-cta: #ff8a1f;
+  --hero-cta-hover: #ff9d45;
+  --hero-cta-ink: #0b0b0b;
+  background: repeating-linear-gradient(90deg, rgb(255 255 255 / 0.03) 0 1px, transparent 1px 7px),
+    radial-gradient(
+      24% 20% at 50% 92%,
+      rgb(255 230 218 / 0.95) 0%,
+      rgb(253 112 78 / 0.8) 32%,
+      rgb(253 112 78 / 0) 100%
+    ),
+    radial-gradient(
+      60% 24% at 50% 92%,
+      rgb(103 227 255 / 0.9) 0%,
+      rgb(3 149 221 / 0.75) 45%,
+      rgb(3 149 221 / 0) 100%
+    ),
+    linear-gradient(180deg, #04060c 0%, #020a26 36%, #043a78 68%, #054690 82%, #021a40 100%);
+}
+
+/* Lets the dark hero's glow melt into the black page instead of stopping at an edge. */
+:root[data-theme='dark'] .hero-gradient::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 14%;
+  background: linear-gradient(180deg, transparent, var(--color-canvas));
+  pointer-events: none;
+}
+
+.brand-panel {
+  background: linear-gradient(165deg, #101853 0%, #0a2f9e 55%, #0a4fd6 100%);
+}
+
+:root[data-theme='dark'] .brand-panel {
+  background: repeating-linear-gradient(90deg, rgb(255 255 255 / 0.03) 0 1px, transparent 1px 7px),
+    radial-gradient(38% 20% at 100% 100%, rgb(253 112 78 / 0.75), transparent 100%),
+    linear-gradient(165deg, #04060c 0%, #020d2f 50%, #054690 100%);
+}
+
 ::selection {
   background: var(--color-accent-soft);
   color: var(--color-slate-950);
