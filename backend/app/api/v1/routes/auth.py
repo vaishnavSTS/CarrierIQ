@@ -41,6 +41,7 @@ from app.schemas.auth import (
     ForgotPasswordIn,
     GoogleSignupIn,
     GoogleSignupPendingOut,
+    InsuranceRegisterIn,
     LoginIn,
     RegisterIn,
     ResendVerificationIn,
@@ -197,6 +198,31 @@ def register_broker(
     authority = checker.check(data.id_kind, data.id_number)
     must_confirm = _must_confirm_email(mailer)
     user = service.register_broker(data, authority, verified=not must_confirm)
+    if must_confirm:
+        _send_link(tasks, service, user, mailer)
+    else:
+        _start_session(response, user)
+        _welcome(tasks, user, data.company_name, mailer)
+    return service.user_out(user)
+
+
+@router.post(
+    "/insurance/register",
+    response_model=UserOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(limit_signup), Depends(require_human)],
+)
+def register_insurance_agent(
+    data: InsuranceRegisterIn,
+    response: Response,
+    service: Service,
+    tasks: BackgroundTasks,
+    mailer: Mailer,
+) -> UserOut:
+    """An insurance agent signs up, with the same access as a broker. They have no FMCSA authority
+    to check: the license number they give is shown to STS on the Accounts page."""
+    must_confirm = _must_confirm_email(mailer)
+    user = service.register_insurance_agent(data, verified=not must_confirm)
     if must_confirm:
         _send_link(tasks, service, user, mailer)
     else:

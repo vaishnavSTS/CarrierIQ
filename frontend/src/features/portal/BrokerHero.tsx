@@ -64,7 +64,9 @@ export function BrokerHero({
             <h1 className="text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
               Welcome{firstName ? `, ${firstName}` : ''}.{' '}
               <span className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-indigo-600 bg-clip-text text-transparent">
-                Vet any carrier before you book the load
+                {brokerage?.license_number
+                  ? 'Check any carrier’s safety and insurance record'
+                  : 'Vet any carrier before you book the load'}
               </span>
             </h1>
             <p className="mt-2 text-sm text-slate-600">
@@ -81,7 +83,7 @@ export function BrokerHero({
           >
             <BadgeCheck className="size-4 text-emerald-600" aria-hidden />
             <span className="font-medium text-slate-900">{brokerageName}</span>
-            {brokerage && (
+            {brokerage && !brokerage.license_number && (
               <>
                 · broker authority confirmed with{' '}
                 {SOURCE_LABEL[brokerage.authority_source ?? ''] ?? 'FMCSA'}

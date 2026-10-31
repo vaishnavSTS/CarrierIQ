@@ -126,6 +126,28 @@ class BrokerRegisterIn(BrokerIdIn):
         return value
 
 
+class InsuranceRegisterIn(BaseModel):
+    """An insurance agent signs up their agency. Their NPN is shown to STS, not checked here."""
+
+    full_name: str = Field(min_length=1, max_length=200)
+    company_name: str = Field(min_length=1, max_length=200)
+    email: str = Field(max_length=254)
+    phone: str = Field(max_length=30)
+    password: str = Field(max_length=200)
+    license_number: str = Field(pattern=r"^\d{1,10}$")
+
+    _normalize_email = field_validator("email")(_email)
+    _normalize_phone = field_validator("phone")(normalize_phone)
+
+    @field_validator("full_name", "company_name")
+    @classmethod
+    def _strip(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Required")
+        return value
+
+
 class BrokerGoogleSignupIn(BrokerIdIn):
     """Finishing a broker's Google sign-up."""
 
@@ -245,6 +267,7 @@ class BrokerOut(BaseModel):
     docket_number: str | None  # "MC261603"
     authority_source: str | None  # MOTUS | LEGACY_LI
     authority_checked_at: datetime | None
+    license_number: str | None = None  # insurance agencies: their NPN, as given at sign-up
 
 
 AdminUserOut.model_rebuild()  # BrokerOut is defined after it

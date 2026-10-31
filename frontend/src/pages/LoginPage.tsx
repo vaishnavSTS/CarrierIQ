@@ -46,6 +46,10 @@ const COPY: Record<Audience, { title: string; subtitle: string }> = {
     title: 'Broker login',
     subtitle: 'Vet any carrier: authority, insurance, safety and the Estimated ISS.',
   },
+  insurance: {
+    title: 'Insurance agent login',
+    subtitle: 'Check any carrier: authority, insurance, safety and the Estimated ISS.',
+  },
   staff: {
     title: 'STS team login',
     subtitle: 'For STS admins and analysts. Accounts are created by an STS admin.',
@@ -107,7 +111,10 @@ export function LoginPage({ audience = 'client' }: { audience?: Audience }) {
           Your password was changed. Log in with your new password.
         </p>
       )}
-      <GoogleButton portal={audience === 'broker' ? 'broker' : 'client'} />
+      {/* A new Google user would land in another sign-up: agents sign up with their NPN. */}
+      {audience !== 'insurance' && (
+        <GoogleButton portal={audience === 'broker' ? 'broker' : 'client'} />
+      )}
       <form onSubmit={submit} className="space-y-4">
         <Field
           label="Email"
@@ -159,6 +166,16 @@ function LoginFooter({ audience }: { audience: Audience }) {
         ·{' '}
         <Link to="/broker/login" className={linkClass}>
           Broker login
+        </Link>
+      </>
+    )
+  }
+  if (audience === 'insurance') {
+    return (
+      <>
+        New insurance agent?{' '}
+        <Link to="/insurance/register" className={linkClass}>
+          Create an agent account
         </Link>
       </>
     )

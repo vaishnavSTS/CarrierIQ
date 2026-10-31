@@ -8,4 +8,5 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   CLIENT_USER: 'Viewer',
   BROKER_ADMIN: 'Broker owner',
   BROKER_USER: 'Broker',
+  INSURANCE_AGENT: 'Insurance agent',
 }

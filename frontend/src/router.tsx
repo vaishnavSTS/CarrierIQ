@@ -19,6 +19,7 @@ import { GoogleSignupPage } from './pages/GoogleSignupPage'
 import { LandingPage } from './pages/LandingPage'
 import { ContactPage } from './pages/ContactPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
+import { InsuranceRegisterPage } from './pages/InsuranceRegisterPage'
 import { LoginPage } from './pages/LoginPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { VerifyEmailPage } from './pages/VerifyEmailPage'
@@ -63,6 +64,8 @@ export const router = createBrowserRouter([
       { path: 'broker/login', element: <LoginPage audience="broker" /> },
       { path: 'team/login', element: <LoginPage audience="staff" /> },
       { path: 'broker/register', element: <BrokerRegisterPage /> },
+      { path: 'insurance/login', element: <LoginPage audience="insurance" /> },
+      { path: 'insurance/register', element: <InsuranceRegisterPage /> },
       { path: 'broker/register/google', element: <BrokerGoogleSignupPage /> },
     ],
   },

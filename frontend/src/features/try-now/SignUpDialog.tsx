@@ -63,6 +63,12 @@ export function SignUpDialog({
           >
             Sign up as a broker
           </Link>
+          <Link
+            to="/insurance/register"
+            className="block rounded-xl border border-slate-300 px-4 py-3 text-center text-sm font-medium text-slate-900 transition-colors hover:bg-slate-50"
+          >
+            Sign up as an insurance agent
+          </Link>
         </div>
         <p className="mt-4 text-center text-sm text-slate-500">
           Already have an account?{' '}

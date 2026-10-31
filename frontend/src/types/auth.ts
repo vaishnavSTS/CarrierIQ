@@ -5,6 +5,7 @@ export type UserRole =
   | 'CLIENT_USER'
   | 'BROKER_ADMIN'
   | 'BROKER_USER'
+  | 'INSURANCE_AGENT'
 export type Portal = 'internal' | 'client' | 'broker'
 export type UserStatus = 'PENDING' | 'ACTIVE' | 'DISABLED'
 
@@ -120,6 +121,15 @@ export interface BrokerRegisterInput {
   id_number: number
 }
 
+export interface InsuranceRegisterInput {
+  full_name: string
+  company_name: string
+  email: string
+  phone: string
+  password: string
+  license_number: string
+}
+
 export interface BrokerGoogleSignupInput {
   company_name: string
   phone: string
@@ -136,6 +146,8 @@ export interface Brokerage {
   /** MOTUS | LEGACY_LI */
   authority_source: string | null
   authority_checked_at: string | null
+  /** Insurance agencies: their NPN, as given at sign-up */
+  license_number?: string | null
 }
 
 export interface GoogleSignupInput {

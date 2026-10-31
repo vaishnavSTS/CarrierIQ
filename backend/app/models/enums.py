@@ -67,6 +67,7 @@ class OrganizationKind(StrEnum):
     STS = "STS"  # STS itself: its users get the internal portal
     CLIENT = "CLIENT"  # an STS client: its users get the client portal
     BROKER = "BROKER"  # a freight brokerage: its users get the broker portal
+    INSURANCE = "INSURANCE"  # an insurance agency: its users share the broker portal
 
 
 class UserRole(StrEnum):
@@ -76,6 +77,7 @@ class UserRole(StrEnum):
     CLIENT_USER = "CLIENT_USER"  # client portal, view only
     BROKER_ADMIN = "BROKER_ADMIN"  # broker portal, their brokerage
     BROKER_USER = "BROKER_USER"  # broker portal
+    INSURANCE_AGENT = "INSURANCE_AGENT"  # broker portal: the same access as a broker
 
     @property
     def is_staff(self) -> bool:
@@ -87,7 +89,12 @@ class UserRole(StrEnum):
 
     @property
     def is_broker(self) -> bool:
-        return self in (UserRole.BROKER_ADMIN, UserRole.BROKER_USER)
+        """Uses the broker portal: brokers, and insurance agents, who get the same access."""
+        return self in (UserRole.BROKER_ADMIN, UserRole.BROKER_USER, UserRole.INSURANCE_AGENT)
+
+    @property
+    def is_insurance(self) -> bool:
+        return self == UserRole.INSURANCE_AGENT
 
     @property
     def portal(self) -> str:

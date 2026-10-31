@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   Briefcase,
   CircleCheck,
   FileText,
@@ -9,7 +8,6 @@ import {
   TrendingDown,
   Truck,
   UserPlus,
-  Users,
   type LucideIcon,
 } from 'lucide-react'
 import { motion } from 'motion/react'
@@ -209,19 +207,23 @@ export function LandingPage() {
                 {...reveal(0.1)}
                 className="flex flex-col rounded-2xl border border-slate-200 bg-surface/90 p-7"
               >
-                <IconBadge icon={Users} />
-                <h3 className="mt-5 text-lg font-semibold text-slate-900">STS team member</h3>
+                <IconBadge icon={ShieldCheck} />
+                <h3 className="mt-5 text-lg font-semibold text-slate-900">
+                  I’m an insurance agent
+                </h3>
                 <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">
-                  Log in with your STS account to open the internal dashboard: search any carrier,
-                  review signals with their evidence, and manage data refreshes.
+                  Sign up with your National Producer Number and check any carrier: authority,
+                  insurance filings, safety and Estimated ISS, and its inspection and crash record.
                 </p>
-                <div className="mt-6">
+                <div className="mt-6 flex flex-wrap items-center gap-4">
+                  <PrimaryLink to="/insurance/register" small>
+                    Create an agent account
+                  </PrimaryLink>
                   <Link
-                    to="/team/login"
-                    className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-900 transition-colors hover:border-slate-400 hover:bg-slate-50"
+                    to="/insurance/login"
+                    className="text-sm text-slate-600 hover:text-slate-900"
                   >
-                    STS team login
-                    <ArrowRight className="size-4" aria-hidden />
+                    Already have one? <span className="font-medium underline">Log in</span>
                   </Link>
                 </div>
               </motion.article>

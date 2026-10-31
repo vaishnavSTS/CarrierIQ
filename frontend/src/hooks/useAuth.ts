@@ -12,11 +12,13 @@ import {
   logout,
   register,
   registerBroker,
+  registerInsurance,
 } from '../api/auth'
 import type {
   BrokerGoogleSignupInput,
   BrokerRegisterInput,
   GoogleSignupInput,
+  InsuranceRegisterInput,
   Portal,
   RegisterInput,
   User,
@@ -91,6 +93,26 @@ export function useRegisterBroker() {
       input: BrokerRegisterInput
       humanHeaders: Record<string, string>
     }) => registerBroker(input, humanHeaders),
+    onSuccess: (user: User) => {
+      // Waiting for the emailed link: they aren't logged in yet.
+      if (user.email_verified === false) return
+      queryClient.clear()
+      queryClient.setQueryData(ME_KEY, user)
+    },
+  })
+}
+
+/** Insurance agent sign-up, handled like the broker one. */
+export function useRegisterInsurance() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      input,
+      humanHeaders,
+    }: {
+      input: InsuranceRegisterInput
+      humanHeaders: Record<string, string>
+    }) => registerInsurance(input, humanHeaders),
     onSuccess: (user: User) => {
       // Waiting for the emailed link: they aren't logged in yet.
       if (user.email_verified === false) return

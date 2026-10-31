@@ -29,6 +29,11 @@ BROKER_FEATURES = (
     "- See the red flags broker vetting tools look for\n"
     "- Compare carriers side by side before you book a load"
 )
+INSURANCE_FEATURES = (
+    "- Search any carrier and see its safety record, authority and insurance from FMCSA\n"
+    "- Check the carriers you underwrite or quote: inspections, crashes and out-of-service rates\n"
+    "- Compare carriers side by side"
+)
 
 
 @dataclass(frozen=True)
@@ -47,7 +52,13 @@ def welcome_email(user: User, company: str) -> WelcomeEmail:
     first_name = user.full_name.split()[0] if user.full_name.strip() else "there"
     portal = "/broker" if user.role.is_broker else "/portal"
     link = f"{settings.public_app_url.rstrip('/')}{portal}"
-    features = BROKER_FEATURES if user.role.is_broker else CLIENT_FEATURES
+    features = (
+        INSURANCE_FEATURES
+        if user.role.is_insurance
+        else BROKER_FEATURES
+        if user.role.is_broker
+        else CLIENT_FEATURES
+    )
     body = (
         f"Hi {first_name},\n\n"
         f"Welcome to CarrierSafetyScan, by Sky Transport Solutions. The account for {company} "

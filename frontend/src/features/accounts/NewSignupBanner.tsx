@@ -18,10 +18,12 @@ export function NewSignupBanner() {
   const fresh = data?.filter((a) => a.is_new) ?? []
   if (fresh.length === 0 || pathname === '/accounts') return null
 
-  const brokers = fresh.filter((a) => a.portal === 'broker').length
-  const clients = fresh.length - brokers
+  const agents = fresh.filter((a) => a.role === 'INSURANCE_AGENT').length
+  const brokers = fresh.filter((a) => a.portal === 'broker').length - agents
+  const clients = fresh.length - brokers - agents
   const parts = [
     brokers > 0 ? plural(brokers, 'broker') : null,
+    agents > 0 ? plural(agents, 'insurance agent') : null,
     clients > 0 ? plural(clients, 'client') : null,
   ].filter(Boolean)
 

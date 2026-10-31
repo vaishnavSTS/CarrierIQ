@@ -10,6 +10,7 @@ import { BackgroundSpotlight } from './BackgroundSpotlight'
 import { ScrollToTop } from './ScrollToTop'
 import { SiteFooter } from './SiteFooter'
 import { Brand } from './Brand'
+import { useMe } from '../../hooks/useAuth'
 import { MobileMenu } from './MobileMenu'
 import { UserMenu } from './UserMenu'
 
@@ -38,6 +39,7 @@ function CompareNavLink() {
 
 /** Broker portal frame: search and compare carriers. */
 export function BrokerLayout() {
+  const { data: me } = useMe()
   const links = (
     <>
       <NavLink to="/broker" end className={navClass}>
@@ -60,7 +62,7 @@ export function BrokerLayout() {
           <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">
             <Brand to="/broker" />
             <span className="hidden rounded-md bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 sm:inline">
-              Broker portal
+              {me?.role === 'INSURANCE_AGENT' ? 'Insurance agent portal' : 'Broker portal'}
             </span>
             <nav className="ml-4 hidden items-center gap-1 text-sm lg:flex">{links}</nav>
             <UserMenu />

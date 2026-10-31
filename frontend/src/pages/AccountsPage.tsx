@@ -21,6 +21,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
   CLIENT_USER: 'Client viewer',
   BROKER_ADMIN: 'Broker owner',
   BROKER_USER: 'Broker',
+  INSURANCE_AGENT: 'Insurance agent',
 }
 
 const STATUS_TONES: Record<AdminUser['status'], Tone> = {
@@ -390,6 +391,14 @@ export function AccountsPage() {
 
 /** A broker account's brokerage: the MC / USDOT whose broker authority FMCSA confirmed. */
 function BrokerIdentity({ broker }: { broker: Brokerage }) {
+  if (broker.license_number) {
+    return (
+      <div className="text-xs text-slate-600">
+        NPN {broker.license_number}{' '}
+        <span className="text-amber-700">· as given at sign-up, not checked</span>
+      </div>
+    )
+  }
   return (
     <span className="text-slate-600">
       Broker {broker.docket_number ?? '—'}

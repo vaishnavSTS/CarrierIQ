@@ -25,3 +25,5 @@ class Organization(IdMixin, UpdatedAtMixin, Base):
     docket_number: Mapped[str | None] = mapped_column(String(12))  # e.g. "MC261603"
     authority_source: Mapped[str | None] = mapped_column(String(20))  # MOTUS | LEGACY_LI
     authority_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Insurance agencies: the National Producer Number given at sign-up (not checked automatically).
+    license_number: Mapped[str | None] = mapped_column(String(10))

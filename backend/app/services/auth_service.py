@@ -52,6 +52,7 @@ from app.schemas.auth import (
     BrokerRegisterIn,
     CarrierContactCheckOut,
     GoogleSignupIn,
+    InsuranceRegisterIn,
     LoginIn,
     PortalCarrierOut,
     PortalOverviewOut,
@@ -172,6 +173,34 @@ class AuthService:
             password_hash=hash_password(data.password),
             verified=verified,
         )
+
+    def register_insurance_agent(self, data: InsuranceRegisterIn, verified: bool = True) -> User:
+        """An INSURANCE organization with one account, with the same access as a broker."""
+        check_password_strength(data.password)
+        if self.users.by_email(data.email) is not None:
+            raise ConflictError("An account with this email already exists")
+        organization = Organization(
+            name=data.company_name,
+            kind=OrganizationKind.INSURANCE,
+            license_number=data.license_number,
+        )
+        self.db.add(organization)
+        self.db.flush()
+        user = User(
+            organization_id=organization.id,
+            email=data.email,
+            full_name=data.full_name,
+            phone=data.phone,
+            password_hash=hash_password(data.password),
+            role=UserRole.INSURANCE_AGENT,
+            status=UserStatus.ACTIVE,
+            last_login_at=self.now() if verified else None,
+            email_verified_at=self.now() if verified else None,
+            trial_ends_at=self.now() + TRIAL,  # then $49/month (app/services/subscription.py)
+        )
+        self.db.add(user)
+        self.db.commit()
+        return user
 
     def _create_broker(
         self,
@@ -527,4 +556,5 @@ def _broker_out(organization: Organization) -> BrokerOut:
         docket_number=organization.docket_number,
         authority_source=organization.authority_source,
         authority_checked_at=organization.authority_checked_at,
+        license_number=organization.license_number,
     )

@@ -5,6 +5,7 @@ import type {
   BrokerRegisterInput,
   GoogleSignupInput,
   GoogleSignupPending,
+  InsuranceRegisterInput,
   PortalOverview,
   RegisterInput,
   User,
@@ -87,6 +88,14 @@ export function registerBroker(
   humanHeaders: Record<string, string>,
 ): Promise<User> {
   return postJson<User>('/auth/broker/register', input, humanHeaders)
+}
+
+/** Creates the insurance agent account and logs it in, or asks them to confirm their email. */
+export function registerInsurance(
+  input: InsuranceRegisterInput,
+  humanHeaders: Record<string, string>,
+): Promise<User> {
+  return postJson<User>('/auth/insurance/register', input, humanHeaders)
 }
 
 export function fetchBrokerOverview(): Promise<Brokerage> {

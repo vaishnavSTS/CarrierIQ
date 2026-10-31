@@ -18,7 +18,7 @@ import { useAuthOptions } from '../../hooks/useAuth'
 
 const ease = [0.16, 1, 0.3, 1] as const
 
-export type Audience = 'client' | 'broker' | 'staff'
+export type Audience = 'client' | 'broker' | 'insurance' | 'staff'
 
 interface Benefit {
   icon: LucideIcon
@@ -74,6 +74,28 @@ const PANEL: Record<
       {
         icon: Network,
         title: 'Fraud red flags',
+        text: 'Phones, addresses and VINs shared with other carriers; registration gaps.',
+      },
+    ],
+  },
+  insurance: {
+    lead: 'Know the carrier',
+    accent: 'before you cover it',
+    intro: 'Public FMCSA data on any carrier, with the source named on every value.',
+    benefits: [
+      {
+        icon: ShieldCheck,
+        title: 'Authority and insurance on file',
+        text: 'Active MC, insurance filings and history, revocations, straight from FMCSA.',
+      },
+      {
+        icon: Gauge,
+        title: 'Safety at a glance',
+        text: 'Estimated ISS – Safety score, out-of-service rates, crashes and CSA alerts.',
+      },
+      {
+        icon: Network,
+        title: 'Red flags',
         text: 'Phones, addresses and VINs shared with other carriers; registration gaps.',
       },
     ],
