@@ -300,7 +300,6 @@ export function LandingPage() {
         </section>
 
         <PricingSection />
-        <AboutStsSection />
 
         {/* Closing call to action */}
         {!user && (
@@ -329,6 +328,8 @@ export function LandingPage() {
             </div>
           </motion.section>
         )}
+
+        <AboutStsSection />
       </div>
     </div>
   )

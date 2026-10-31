@@ -1,15 +1,4 @@
-import {
-  BadgeCheck,
-  Check,
-  Clock,
-  FileSearch,
-  Globe,
-  Mail,
-  MapPin,
-  Phone,
-  Scale,
-  Send,
-} from 'lucide-react'
+import { BadgeCheck, Check, FileSearch, Scale, Send } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -20,7 +9,6 @@ import { formatPhone } from '../../utils/format'
 import { STS_CONTACT } from '../carrier-profile/packet/contact'
 import stsLogo from '../carrier-profile/packet/sts-logo.png'
 import { IconBadge, PrimaryLink, reveal, SectionHeading } from './landingParts'
-import { STS_ADDRESS, STS_HOURS } from './stsInfo'
 
 /** Keep in step with MONTHLY_PRICE and TRIAL (backend/app/services/subscription.py). */
 const MONTHLY_PRICE = 49
@@ -227,33 +215,24 @@ export function PricingSection() {
   )
 }
 
-/** Who stands behind the app. */
+/** Who stands behind the app; how to reach them is in the footer. */
 export function AboutStsSection() {
-  const contacts = [
-    {
-      icon: Phone,
-      label: formatPhone(STS_CONTACT.phone),
-      href: `tel:+1${STS_CONTACT.phone}`,
-    },
-    { icon: Mail, label: STS_CONTACT.email, href: `mailto:${STS_CONTACT.email}` },
-    { icon: Globe, label: STS_CONTACT.websiteLabel, href: STS_CONTACT.website },
-  ]
   return (
     <section className="pb-20">
       <SectionHeading eyebrow="Who’s behind this" title="Built by Sky Transport Solutions" />
       <motion.div
         {...reveal()}
-        className="mt-10 grid gap-8 rounded-3xl border border-slate-200 bg-surface/90 p-6 sm:p-10 lg:grid-cols-[1.2fr_1fr]"
+        className="mt-10 grid gap-6 rounded-3xl border border-slate-200 bg-surface/90 p-6 sm:p-10 md:grid-cols-[auto_1fr]"
       >
+        <img src={stsLogo} alt="Sky Transport Solutions" className="h-16 w-auto object-contain" />
         <div>
-          <img src={stsLogo} alt="Sky Transport Solutions" className="h-16 w-auto object-contain" />
-          <p className="mt-5 text-sm leading-relaxed text-slate-700 md:text-base">
+          <p className="text-sm leading-relaxed text-slate-700 md:text-base">
             CarrierSafetyScan is built by Sky Transport Solutions, a trucking compliance company
             founded in {STS_FOUNDED}. STS helps trucking companies across the United States with
             registration, permits and DOT compliance, and it’s the team that handles your DataQs
             challenges.
           </p>
-          <ul className="mt-6 grid gap-x-5 gap-y-2 text-sm text-slate-700 sm:grid-cols-2">
+          <ul className="mt-6 grid gap-x-5 gap-y-2 text-sm text-slate-700 sm:grid-cols-2 lg:grid-cols-4">
             {STS_SERVICES.map((service) => (
               <li key={service} className="flex gap-2">
                 <BadgeCheck className="mt-0.5 size-4 shrink-0 text-accent-strong" aria-hidden />
@@ -261,39 +240,6 @@ export function AboutStsSection() {
               </li>
             ))}
           </ul>
-        </div>
-        <div className="rounded-2xl bg-slate-50 p-6 text-sm text-slate-700">
-          <h3 className="font-semibold text-slate-900">Talk to a specialist</h3>
-          <ul className="mt-4 space-y-3">
-            {contacts.map(({ icon: Icon, label, href }) => (
-              <li key={label}>
-                <a
-                  href={href}
-                  className="flex items-center gap-2.5 break-all font-medium text-accent-strong hover:underline"
-                >
-                  <Icon className="size-4 shrink-0" aria-hidden />
-                  {label}
-                </a>
-              </li>
-            ))}
-            <li className="flex gap-2.5">
-              <MapPin className="mt-0.5 size-4 shrink-0 text-slate-500" aria-hidden />
-              {STS_ADDRESS}
-            </li>
-            <li className="flex gap-2.5">
-              <Clock className="mt-0.5 size-4 shrink-0 text-slate-500" aria-hidden />
-              {STS_HOURS}
-            </li>
-          </ul>
-          <div className="mt-5">
-            <PrimaryLink to="/contact" small>
-              Contact us
-            </PrimaryLink>
-          </div>
-          <p className="mt-5 border-t border-slate-200 pt-4 text-xs text-slate-500">
-            Sky Transport Solutions is a private company, not affiliated with FMCSA or any
-            government agency.
-          </p>
         </div>
       </motion.div>
     </section>
