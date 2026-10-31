@@ -248,8 +248,8 @@ export function LandingPage() {
         </section>
 
         <DataQsSection />
-        <ReportPreview />
         <PhoneShowcase />
+        <ReportPreview />
 
         {/* How it works */}
         <section className="pb-20">

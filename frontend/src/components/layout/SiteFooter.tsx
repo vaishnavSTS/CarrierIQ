@@ -54,7 +54,7 @@ export function SiteFooter() {
         </ul>
       </div>
       <p className="mx-auto mt-6 max-w-7xl border-t border-slate-200 pt-4 text-center text-xs text-slate-500">
-        CarrierSafetyScan by STS · Built on public FMCSA and NHTSA data · Not affiliated with FMCSA
+        CarrierSafetyScan by Sky Transport Solutions · Built on public FMCSA and NHTSA data
       </p>
     </footer>
   )
