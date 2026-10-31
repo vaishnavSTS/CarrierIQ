@@ -6,7 +6,7 @@ import phoneReport from '../../assets/phone-report.webp'
 import phoneSafety from '../../assets/phone-safety.webp'
 import { reveal, SectionHeading } from './landingParts'
 
-const SLIDE_SECONDS = 1
+const SLIDE_SECONDS = 1.5
 
 const SCREENS = [
   {
@@ -30,34 +30,29 @@ const SCREENS = [
 ]
 
 /**
- * Real screens of the app, for a made-up carrier, sliding one after the other in a phone frame. It
- * pauses under the pointer or keyboard, stops once someone picks a screen, and doesn't run for
- * people who asked their device for less motion (they pick screens themselves).
+ * Real screens of the app, for a made-up carrier, sliding one after the other in a phone frame, in
+ * a loop that never stops. Picking a screen jumps to it and the loop carries on from there. People
+ * who asked their device for less motion pick screens themselves.
  */
 export function PhoneShowcase() {
   const [current, setCurrent] = useState(0)
-  const [paused, setPaused] = useState(false)
-  const [chosen, setChosen] = useState(false)
   const reduceMotion = useReducedMotion()
 
   useEffect(() => {
-    if (paused || chosen || reduceMotion) return
-    const timer = window.setInterval(
+    if (reduceMotion) return
+    // Restarts on every change, so a picked screen also gets its full time.
+    const timer = window.setTimeout(
       () => setCurrent((i) => (i + 1) % SCREENS.length),
       SLIDE_SECONDS * 1000,
     )
-    return () => window.clearInterval(timer)
-  }, [paused, chosen, reduceMotion])
+    return () => window.clearTimeout(timer)
+  }, [current, reduceMotion])
 
   return (
     <section className="pb-20">
       <SectionHeading eyebrow="On your phone" title="Check your carrier from anywhere" />
       <motion.div
         {...reveal()}
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-        onFocus={() => setPaused(true)}
-        onBlur={() => setPaused(false)}
         className="mx-auto mt-10 grid max-w-4xl items-center gap-8 md:grid-cols-2 md:gap-12"
       >
         <div className="relative mx-auto w-full max-w-[280px] md:order-1">
@@ -97,10 +92,7 @@ export function PhoneShowcase() {
               <button
                 type="button"
                 aria-current={i === current}
-                onClick={() => {
-                  setChosen(true)
-                  setCurrent(i)
-                }}
+                onClick={() => setCurrent(i)}
                 className={`w-full rounded-2xl border p-4 text-left transition-colors ${
                   i === current
                     ? 'border-accent/40 bg-accent-soft'

@@ -117,14 +117,6 @@ export function LandingPage() {
               ) : (
                 <div className="w-full space-y-4">
                   <HeroTryForm />
-                  <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm lg:justify-start">
-                    <Link to="/register" className="font-medium text-accent-strong hover:underline">
-                      Create a client account
-                    </Link>
-                    <Link to="/login" className="text-slate-600 hover:text-slate-900">
-                      Log in
-                    </Link>
-                  </div>
                 </div>
               )}
             </motion.div>
@@ -133,11 +125,7 @@ export function LandingPage() {
               {...rise(0.3)}
               className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-slate-600 lg:justify-start"
             >
-              {[
-                'Public FMCSA & NHTSA data',
-                'Source named on every value',
-                'Evidence, not a score',
-              ].map((point) => (
+              {['Public FMCSA & NHTSA data', 'Source named on every value'].map((point) => (
                 <li key={point} className="flex items-center gap-1.5">
                   <CircleCheck className="size-4 text-emerald-600" aria-hidden />
                   {point}
@@ -170,14 +158,14 @@ export function LandingPage() {
                   className="absolute -right-16 -top-16 size-48 rounded-full bg-violet-500/10 blur-3xl transition-opacity group-hover:opacity-80"
                 />
                 <IconBadge icon={Truck} />
-                <h3 className="mt-5 text-lg font-semibold text-slate-900">I’m a client</h3>
+                <h3 className="mt-5 text-lg font-semibold text-slate-900">I’m a carrier</h3>
                 <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">
                   Create an account with your company and USDOT number and your portal opens right
                   away: your carrier’s profile, what to improve, and a packet to send brokers.
                 </p>
                 <div className="mt-6 flex flex-wrap items-center gap-4">
                   <PrimaryLink to="/register" small>
-                    Create a client account
+                    Create a carrier account
                   </PrimaryLink>
                   <Link to="/login" className="text-sm text-slate-600 hover:text-slate-900">
                     Already have one? <span className="font-medium underline">Log in</span>
@@ -301,7 +289,7 @@ export function LandingPage() {
               Create your account with your USDOT number and your portal opens straight away.
             </p>
             <div className="mt-7 flex flex-wrap justify-center gap-3">
-              <PrimaryLink to="/register">Create a client account</PrimaryLink>
+              <PrimaryLink to="/register">Create a carrier account</PrimaryLink>
               <Link
                 to="/login"
                 className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-50"
