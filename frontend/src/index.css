@@ -257,6 +257,7 @@ body {
  */
 .landing-page {
   --landing-start: #dbe8ff;
+  --color-accent-strong: #4c1d95;
   --color-slate-400: #3e4966;
   --color-slate-500: #2b3552;
   --color-slate-600: #2b3552;
@@ -276,6 +277,7 @@ body {
 
 :root[data-theme='dark'] .landing-page {
   --landing-start: #03122b;
+  --color-accent-strong: #6cb4ff;
   --color-slate-400: #c4cad4;
   --color-slate-500: #d1d6de;
   --color-slate-600: #e5e8ed;
@@ -336,6 +338,8 @@ body {
 }
 
 @media print {
+  .landing-rest,
+  :root[data-theme='dark'] .landing-rest,
   .portal-page,
   :root[data-theme='dark'] .portal-page {
     background: none;

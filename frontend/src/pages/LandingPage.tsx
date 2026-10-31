@@ -78,7 +78,7 @@ export function LandingPage() {
   const { data: user } = useMe()
 
   return (
-    <div className="landing-page relative overflow-hidden">
+    <div className="relative overflow-hidden">
       {/* Hero */}
       <div className="hero-gradient">
         <section className="mx-auto grid max-w-6xl items-center gap-12 relative z-10 px-4 pb-64 pt-14 md:pt-20 lg:grid-cols-[1.05fr_1fr]">
