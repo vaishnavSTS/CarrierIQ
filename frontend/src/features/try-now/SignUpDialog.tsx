@@ -55,7 +55,7 @@ export function SignUpDialog({
             to="/register"
             className="block rounded-xl bg-cta px-4 py-3 text-center text-sm font-medium text-cta-ink transition-colors hover:bg-cta-hover active:bg-cta-active"
           >
-            Sign up as a client
+            Sign up as a carrier
           </Link>
           <Link
             to="/broker/register"

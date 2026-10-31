@@ -63,7 +63,7 @@ export function TryNowPage() {
       subtitle="Look up one carrier for free: its identity, authority and insurance. No account needed. You get one search, one time only."
       footer={
         <>
-          Want every carrier and every tab?{' '}
+          Want every tab?{' '}
           <Link to="/register" className="font-medium text-accent-strong hover:underline">
             Sign up
           </Link>
@@ -92,8 +92,8 @@ export function TryNowPage() {
       </form>
       {limitReached && (
         <SignUpDialog
-          title="You’ve used your free search"
-          message="Sign up to search any carrier and see its safety record, inspections, Safety Score Report and more."
+          title="Sign up for a 30-day free trial"
+          message="You’ve used your free search. A full account adds the safety record, inspections, Safety Score Report and more."
           onClose={() => setLimitReached(false)}
         />
       )}

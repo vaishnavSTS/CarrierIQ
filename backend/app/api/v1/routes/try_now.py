@@ -41,7 +41,7 @@ TRY_PURPOSE = "try_now"
 TRY_MINUTES = 30
 USED_COOKIE_SECONDS = 400 * 86_400  # the longest browsers keep a cookie
 LOOKUPS_PER_IP = (10, 3600.0)  # each lookup can fetch from FMCSA, including ones not found
-USED_UP = "You've used your free search. Sign up to search any carrier."
+USED_UP = "You've used your free search. Sign up for a 30-day free trial to see more."
 
 ProfileService = Annotated[CarrierProfileService, Depends(get_carrier_profile_service)]
 AuthorityService = Annotated[CarrierAuthorityService, Depends(get_carrier_authority_service)]
@@ -118,7 +118,9 @@ def chosen_carrier(
     token = request.cookies.get(TRY_COOKIE)
     claims = read_purpose_token(token, TRY_PURPOSE) if token else None
     if not claims or claims.get("usdot") != str(usdot_number):
-        raise ForbiddenError("Your free search has been used. Sign up to see this carrier.")
+        raise ForbiddenError(
+            "Your free search has been used. Sign up for a 30-day free trial to see more."
+        )
     return usdot_number
 
 

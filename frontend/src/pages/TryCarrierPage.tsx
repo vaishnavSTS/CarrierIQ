@@ -49,10 +49,10 @@ function TryCarrier() {
         >
           {error instanceof ApiError && error.status !== 403
             ? `Could not load USDOT ${usdot}: ${error.message}`
-            : 'Your free search has been used. Sign up to see this carrier and search any other.'}
+            : 'Your free search has been used. Sign up for a 30-day free trial to see more.'}
         </p>
         <Link to="/register" className="text-sm font-medium text-accent-strong hover:underline">
-          Sign up to see this carrier →
+          Sign up for a 30-day free trial →
         </Link>
       </div>
     )
@@ -121,8 +121,8 @@ function TryCarrier() {
 
       {locked && (
         <SignUpDialog
-          title={`Sign up to see ${locked}`}
-          message="Your free search includes Identity and Authority & Insurance. Create an account to open every tab, for any carrier."
+          title="Sign up for a 30-day free trial"
+          message={`${locked} is part of a full account. Your free search includes Identity and Authority & Insurance.`}
           onClose={closeDialog}
         />
       )}
