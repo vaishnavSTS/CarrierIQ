@@ -173,16 +173,16 @@ export function PricingSection() {
       <div className="mx-auto mt-10 max-w-lg">
         <motion.article
           {...reveal()}
-          className="rounded-2xl border border-brand-glow/40 bg-surface p-7 shadow-lg shadow-brand-glow/10"
+          className="rounded-2xl border border-brand-glow/40 bg-surface p-7 text-center shadow-lg shadow-brand-glow/10"
         >
           <p className="text-sm font-semibold text-accent-strong">{TRIAL_DAYS} days free, then</p>
-          <p className="mt-2 flex items-baseline gap-1.5">
+          <p className="mt-2 flex items-baseline justify-center gap-1.5">
             <span className="text-5xl font-bold tracking-tight text-slate-950">
               ${MONTHLY_PRICE}
             </span>
             <span className="text-sm text-slate-600">/month per login</span>
           </p>
-          <ul className="mt-6 space-y-2.5 text-sm text-slate-700">
+          <ul className="mx-auto mt-6 w-fit space-y-2.5 text-left text-sm text-slate-700">
             {INCLUDED.map((item) => (
               <li key={item} className="flex gap-2.5">
                 <Check className="mt-0.5 size-4 shrink-0 text-emerald-600" aria-hidden />
@@ -190,7 +190,7 @@ export function PricingSection() {
               </li>
             ))}
           </ul>
-          <div className="mt-7">
+          <div className="mt-7 flex justify-center">
             <PrimaryLink to="/register">Start your free trial</PrimaryLink>
           </div>
         </motion.article>

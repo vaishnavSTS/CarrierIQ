@@ -6,7 +6,7 @@ import phoneReport from '../../assets/phone-report.webp'
 import phoneSafety from '../../assets/phone-safety.webp'
 import { reveal, SectionHeading } from './landingParts'
 
-const SLIDE_SECONDS = 4
+const SLIDE_SECONDS = 1
 
 const SCREENS = [
   {
@@ -60,32 +60,35 @@ export function PhoneShowcase() {
         onBlur={() => setPaused(false)}
         className="mx-auto mt-10 grid max-w-4xl items-center gap-8 md:grid-cols-2 md:gap-12"
       >
-        <div className="relative mx-auto w-full max-w-[280px] rounded-[2.25rem] bg-slate-900 p-2 shadow-2xl ring-1 ring-black/20 md:order-1">
-          <span
+        <div className="relative mx-auto w-full max-w-[280px] md:order-1">
+          {/* A soft brand glow behind a slim gradient frame. */}
+          <div
             aria-hidden
-            className="absolute left-1/2 top-3.5 z-10 h-1.5 w-14 -translate-x-1/2 rounded-full bg-slate-700"
+            className="absolute -inset-6 rounded-[3rem] bg-gradient-to-br from-violet-500/40 via-fuchsia-500/25 to-sky-400/30 blur-2xl"
           />
-          <div className="overflow-hidden rounded-[1.75rem] bg-white pt-6">
-            <div
-              className={`flex ${reduceMotion ? '' : 'transition-transform duration-700 ease-in-out'}`}
-              style={{ transform: `translateX(-${current * 100}%)` }}
-            >
-              {SCREENS.map(({ src, alt }, i) => (
-                <img
-                  key={src}
-                  src={src}
-                  alt={i === current ? alt : ''}
-                  aria-hidden={i !== current}
-                  width={780}
-                  height={1560}
-                  className="h-auto w-full shrink-0"
-                />
-              ))}
+          <div className="relative rounded-[2.25rem] bg-gradient-to-br from-violet-500 via-fuchsia-500 to-violet-700 p-[3px] shadow-2xl shadow-violet-500/30">
+            <div className="overflow-hidden rounded-[2.1rem] bg-white">
+              <div className="flex h-6 items-center justify-center">
+                <span aria-hidden className="h-1.5 w-12 rounded-full bg-slate-300" />
+              </div>
+              <div
+                className={`flex ${reduceMotion ? '' : 'transition-transform duration-500 ease-in-out'}`}
+                style={{ transform: `translateX(-${current * 100}%)` }}
+              >
+                {SCREENS.map(({ src, alt }, i) => (
+                  <img
+                    key={src}
+                    src={src}
+                    alt={i === current ? alt : ''}
+                    aria-hidden={i !== current}
+                    width={780}
+                    height={1560}
+                    className="h-auto w-full shrink-0"
+                  />
+                ))}
+              </div>
             </div>
           </div>
-          <span className="absolute right-4 top-9 rounded-md border border-slate-300 bg-white px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-700 shadow-sm">
-            Sample
-          </span>
         </div>
 
         <ul className="space-y-3">
