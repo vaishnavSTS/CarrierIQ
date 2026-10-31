@@ -83,7 +83,7 @@ function AppFrame() {
   )
 
   return (
-    <div className="relative isolate min-h-screen">
+    <div className="portal-page relative isolate min-h-screen">
       <ScrollToTop />
       <BackgroundSpotlight />
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-canvas/85 backdrop-blur">

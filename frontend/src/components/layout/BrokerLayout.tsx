@@ -55,7 +55,7 @@ export function BrokerLayout() {
   )
   return (
     <CompareProvider page="/broker/compare">
-      <div className="relative isolate flex min-h-screen flex-col">
+      <div className="portal-page relative isolate flex min-h-screen flex-col">
         <ScrollToTop />
         <BackgroundSpotlight />
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-canvas/85 backdrop-blur">

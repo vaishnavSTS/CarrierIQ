@@ -189,12 +189,17 @@ body {
  * Light: deep blue into bright blue, fading to white, with a violet touch. Dark: black, an electric
  * blue glow rising from below, and one orange bloom at its centre.
  */
-.hero-gradient {
-  position: relative;
+.hero-gradient,
+.portal-hero {
   --hero-highlight: #cfe2ff;
   --hero-cta: #6d28d9;
   --hero-cta-hover: #5b21b6;
   --hero-cta-ink: #ffffff;
+  --hero-fade: rgb(10 42 130 / 0.88);
+}
+
+.hero-gradient {
+  position: relative;
   background: radial-gradient(55% 34% at 8% 0%, rgb(109 40 217 / 0.55), transparent 72%),
     linear-gradient(
       180deg,
@@ -208,11 +213,16 @@ body {
     );
 }
 
-:root[data-theme='dark'] .hero-gradient {
+:root[data-theme='dark'] .hero-gradient,
+:root[data-theme='dark'] .portal-hero {
   --hero-highlight: #ff9d45;
   --hero-cta: #ff8a1f;
   --hero-cta-hover: #ff9d45;
   --hero-cta-ink: #0b0b0b;
+  --hero-fade: rgb(2 10 38 / 0.88);
+}
+
+:root[data-theme='dark'] .hero-gradient {
   background: repeating-linear-gradient(90deg, rgb(255 255 255 / 0.03) 0 1px, transparent 1px 7px),
     radial-gradient(
       24% 20% at 50% 92%,
@@ -277,6 +287,68 @@ body {
     radial-gradient(50% 44% at 0% 50%, rgb(3 149 221 / 0.5), transparent 100%),
     radial-gradient(50% 44% at 100% 50%, rgb(3 149 221 / 0.5), transparent 100%),
     linear-gradient(180deg, var(--landing-start) 0%, #05305f 50%, var(--landing-start) 100%);
+}
+
+/* The welcome banner at the top of each portal: the landing hero in a card. White text on it. */
+.portal-hero {
+  --color-cta: var(--hero-cta);
+  --color-cta-hover: var(--hero-cta-hover);
+  --color-cta-active: var(--hero-cta-hover);
+  --color-cta-ink: var(--hero-cta-ink);
+  background: radial-gradient(40% 70% at 0% 0%, rgb(109 40 217 / 0.5), transparent 100%),
+    radial-gradient(50% 75% at 85% 115%, rgb(14 102 255 / 0.85), transparent 100%),
+    linear-gradient(180deg, #101853 0%, #0a2f9e 60%, #0a3fb8 100%);
+}
+
+:root[data-theme='dark'] .portal-hero {
+  background: repeating-linear-gradient(90deg, rgb(255 255 255 / 0.03) 0 1px, transparent 1px 7px),
+    radial-gradient(22% 32% at 82% 112%, rgb(253 112 78 / 0.8), transparent 100%),
+    radial-gradient(48% 70% at 82% 115%, rgb(3 149 221 / 0.75), transparent 100%),
+    linear-gradient(180deg, #04060c 0%, #020a26 55%, #043a78 100%);
+}
+
+/*
+ * Behind the logged-in pages: a softer version of the landing page's glow. Tables and data stay on
+ * their solid cards; text directly on this keeps 4.5:1 or more.
+ */
+.portal-page {
+  --color-slate-400: #4e5a77;
+  background-color: var(--color-canvas);
+  background-image: radial-gradient(30% 12% at 50% 16%, rgb(109 40 217 / 0.09), transparent 100%),
+    radial-gradient(45% 40% at 0% 50%, rgb(14 102 255 / 0.13), transparent 100%),
+    radial-gradient(45% 40% at 100% 50%, rgb(14 102 255 / 0.13), transparent 100%),
+    linear-gradient(180deg, var(--color-canvas) 0%, #e4ecff 50%, var(--color-canvas) 100%);
+  background-size: 100% 1400px;
+  background-repeat: repeat-y;
+}
+
+:root[data-theme='dark'] .portal-page {
+  --color-slate-400: #a9b1be;
+  background-image: repeating-linear-gradient(
+      90deg,
+      rgb(255 255 255 / 0.015) 0 1px,
+      transparent 1px 7px
+    ),
+    radial-gradient(28% 12% at 50% 16%, rgb(253 112 78 / 0.1), transparent 100%),
+    radial-gradient(48% 42% at 0% 50%, rgb(3 149 221 / 0.22), transparent 100%),
+    radial-gradient(48% 42% at 100% 50%, rgb(3 149 221 / 0.22), transparent 100%),
+    linear-gradient(180deg, var(--color-canvas) 0%, #03142f 50%, var(--color-canvas) 100%);
+}
+
+@media print {
+  .portal-page,
+  :root[data-theme='dark'] .portal-page {
+    background: none;
+  }
+}
+
+/* The animated board behind the banner is texture: quiet enough that white text stays readable. */
+.portal-hero > :first-child {
+  opacity: 0.22;
+}
+
+:root[data-theme='dark'] .portal-hero > :first-child {
+  opacity: 0.5;
 }
 
 .brand-panel {

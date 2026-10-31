@@ -217,9 +217,7 @@ export function HeroBoard({ signals }: { signals: RecentSignal[] | undefined }) 
         </div>
       </div>
       {/* Keeps the headline and search readable over the board, like Vektor's left fade. */}
-      <div className="absolute inset-0 bg-gradient-to-r from-surface from-35% via-surface/85 via-55% to-surface/10" />
-      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-surface to-transparent" />
-      <div className="absolute -left-24 -top-32 size-96 rounded-full bg-violet-500/10 blur-3xl" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[var(--hero-fade)] from-40% to-transparent to-80%" />
     </div>
   )
 }

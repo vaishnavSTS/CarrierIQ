@@ -29,7 +29,7 @@ function StatTile({
   return (
     <motion.div
       variants={item}
-      className="rounded-xl border border-slate-200/80 bg-canvas/60 px-4 py-3 backdrop-blur"
+      className="rounded-xl border border-slate-200/80 bg-surface px-4 py-3"
     >
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-500">
         <Icon className="size-4 text-slate-500" aria-hidden />
@@ -52,7 +52,7 @@ export function DashboardHero({
   signals: RecentSignal[] | undefined
 }) {
   return (
-    <section className="relative isolate overflow-hidden rounded-2xl border border-slate-200 bg-surface">
+    <section className="portal-hero relative isolate overflow-hidden rounded-2xl border border-white/15">
       <HeroBoard signals={signals} />
 
       <motion.div
@@ -63,7 +63,7 @@ export function DashboardHero({
       >
         <motion.div
           variants={item}
-          className="flex items-center gap-2 text-xs font-medium text-slate-600"
+          className="flex items-center gap-2 text-xs font-medium text-white/90"
         >
           <span className="relative flex size-2">
             <span className="live-ping absolute inline-flex size-full rounded-full bg-emerald-600" />
@@ -73,13 +73,11 @@ export function DashboardHero({
         </motion.div>
 
         <motion.div variants={item} className="max-w-2xl">
-          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
+          <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
             Carrier intelligence,{' '}
-            <span className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-indigo-600 bg-clip-text text-transparent">
-              backed by evidence
-            </span>
+            <span className="text-[var(--hero-highlight)]">backed by evidence</span>
           </h1>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-white/90">
             Look up any motor carrier by USDOT, MC/MX/FF docket or name. Every signal links to the
             federal records behind it.
           </p>
@@ -87,10 +85,10 @@ export function DashboardHero({
 
         <motion.div variants={item} className="max-w-2xl">
           <CarrierSearchBox autoFocus />
-          <p className="mt-2 text-xs text-slate-500">
-            Try <span className="font-mono text-slate-700">297569</span>,{' '}
-            <span className="font-mono text-slate-700">MC139446</span> or{' '}
-            <span className="font-mono text-slate-700">united moving</span>
+          <p className="mt-2 text-xs text-white/90">
+            Try <span className="font-mono text-white">297569</span>,{' '}
+            <span className="font-mono text-white">MC139446</span> or{' '}
+            <span className="font-mono text-white">united moving</span>
           </p>
         </motion.div>
 

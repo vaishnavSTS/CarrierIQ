@@ -51,7 +51,7 @@ export function PortalHero({
   const only = carriers?.length === 1 ? carriers[0] : undefined
 
   return (
-    <section className="relative isolate overflow-hidden rounded-2xl border border-slate-200 bg-surface">
+    <section className="portal-hero relative isolate overflow-hidden rounded-2xl border border-white/15">
       <HeroBoard signals={undefined} />
 
       <motion.div
@@ -63,7 +63,7 @@ export function PortalHero({
         <div className="grid min-w-0 gap-6">
           <motion.div
             variants={item}
-            className="flex items-center gap-2 text-xs font-medium text-slate-600"
+            className="flex items-center gap-2 text-xs font-medium text-white/90"
           >
             <span className="relative flex size-2">
               <span className="live-ping absolute inline-flex size-full rounded-full bg-emerald-600" />
@@ -73,14 +73,14 @@ export function PortalHero({
           </motion.div>
 
           <motion.div variants={item} className="max-w-2xl">
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
+            <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
               Welcome{firstName ? `, ${firstName}` : ''}.{' '}
-              <span className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-indigo-600 bg-clip-text text-transparent">
+              <span className="text-[var(--hero-highlight)]">
                 See your carrier the way brokers do
               </span>
             </h1>
-            <p className="mt-2 text-sm text-slate-600">
-              {organizationName && <span className="text-slate-800">{organizationName} · </span>}
+            <p className="mt-2 text-sm text-white/90">
+              {organizationName && <span className="text-white">{organizationName} · </span>}
               Every value comes from FMCSA’s own records and names its source.
             </p>
           </motion.div>
@@ -89,7 +89,7 @@ export function PortalHero({
             <motion.div variants={item}>
               <Link
                 to={`/portal/carriers/${only.usdot_number}`}
-                className="group inline-flex items-center gap-2 rounded-xl bg-cta px-5 py-3 text-sm font-medium text-cta-ink shadow-lg shadow-brand-glow/30 transition-all hover:bg-cta-hover hover:shadow-xl hover:shadow-brand-glow/40 active:bg-cta-active"
+                className="group inline-flex items-center gap-2 rounded-xl bg-[var(--hero-cta)] px-5 py-3 text-sm font-medium text-[var(--hero-cta-ink)] shadow-lg shadow-brand-glow/30 transition-all hover:bg-cta-hover hover:shadow-xl hover:shadow-brand-glow/40 active:bg-cta-active"
               >
                 Open {only.legal_name ?? `USDOT ${only.usdot_number}`}
                 <ArrowRight
@@ -105,9 +105,9 @@ export function PortalHero({
               <motion.li
                 key={label}
                 variants={item}
-                className="flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-canvas/60 px-3 py-1.5 text-xs text-slate-700 backdrop-blur"
+                className="flex items-center gap-1.5 rounded-full border border-white/25 bg-[var(--hero-fade)] px-3 py-1.5 text-xs text-white backdrop-blur"
               >
-                <Icon className="size-3.5 text-slate-500" aria-hidden />
+                <Icon className="size-3.5 text-white/90" aria-hidden />
                 {label}
               </motion.li>
             ))}

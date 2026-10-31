@@ -39,7 +39,7 @@ export function BrokerHero({
   children: ReactNode
 }) {
   return (
-    <section className="relative isolate overflow-hidden rounded-2xl border border-slate-200 bg-surface">
+    <section className="portal-hero relative isolate overflow-hidden rounded-2xl border border-white/15">
       <HeroBoard signals={undefined} />
 
       <motion.div
@@ -51,7 +51,7 @@ export function BrokerHero({
         <div className="min-w-0 space-y-5">
           <motion.div
             variants={item}
-            className="flex items-center gap-2 text-xs font-medium text-slate-600"
+            className="flex items-center gap-2 text-xs font-medium text-white/90"
           >
             <span className="relative flex size-2">
               <span className="live-ping absolute inline-flex size-full rounded-full bg-emerald-600" />
@@ -61,15 +61,15 @@ export function BrokerHero({
           </motion.div>
 
           <motion.div variants={item}>
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
+            <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
               Welcome{firstName ? `, ${firstName}` : ''}.{' '}
-              <span className="bg-gradient-to-r from-violet-600 via-fuchsia-600 to-indigo-600 bg-clip-text text-transparent">
+              <span className="text-[var(--hero-highlight)]">
                 {brokerage?.license_number
                   ? 'Check any carrier’s safety and insurance record'
                   : 'Vet any carrier before you book the load'}
               </span>
             </h1>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-white/90">
               Enter a USDOT number, MC number or carrier name. CarrierSafetyScan pulls the carrier’s
               FMCSA record and shows what needs a closer look.
             </p>
@@ -79,22 +79,22 @@ export function BrokerHero({
 
           <motion.p
             variants={item}
-            className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-600"
+            className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-white/90"
           >
-            <BadgeCheck className="size-4 text-emerald-600" aria-hidden />
-            <span className="font-medium text-slate-900">{brokerageName}</span>
+            <BadgeCheck className="size-4 text-white" aria-hidden />
+            <span className="font-medium text-white">{brokerageName}</span>
             {brokerage && !brokerage.license_number && (
               <>
                 · broker authority confirmed with{' '}
                 {SOURCE_LABEL[brokerage.authority_source ?? ''] ?? 'FMCSA'}
                 {brokerage.docket_number && (
-                  <span className="font-mono text-slate-900">{brokerage.docket_number}</span>
+                  <span className="font-mono text-white">{brokerage.docket_number}</span>
                 )}
                 {brokerage.usdot_number && (
-                  <span className="font-mono text-slate-900">· USDOT {brokerage.usdot_number}</span>
+                  <span className="font-mono text-white">· USDOT {brokerage.usdot_number}</span>
                 )}
                 {brokerage.authority_checked_at && (
-                  <span className="text-slate-500">
+                  <span className="text-white/90">
                     · checked {formatLocalDate(brokerage.authority_checked_at)}
                   </span>
                 )}
