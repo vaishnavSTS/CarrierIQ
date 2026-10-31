@@ -5,8 +5,6 @@ import { useNavigate } from 'react-router-dom'
 
 import reportPage1 from '../../assets/report-sample-1.webp'
 import reportPage2 from '../../assets/report-sample-2.webp'
-import { formatPhone } from '../../utils/format'
-import { STS_CONTACT } from '../carrier-profile/packet/contact'
 import stsLogo from '../carrier-profile/packet/sts-logo.png'
 import { IconBadge, PrimaryLink, reveal, SectionHeading } from './landingParts'
 
@@ -172,7 +170,7 @@ export function PricingSection() {
   return (
     <section className="pb-20">
       <SectionHeading eyebrow="Pricing" title="Simple, clear pricing" />
-      <div className="mx-auto mt-10 grid max-w-4xl gap-5 md:grid-cols-[1.2fr_1fr]">
+      <div className="mx-auto mt-10 max-w-lg">
         <motion.article
           {...reveal()}
           className="rounded-2xl border border-brand-glow/40 bg-surface p-7 shadow-lg shadow-brand-glow/10"
@@ -195,20 +193,6 @@ export function PricingSection() {
           <div className="mt-7">
             <PrimaryLink to="/register">Start your free trial</PrimaryLink>
           </div>
-        </motion.article>
-        <motion.article
-          {...reveal(0.05)}
-          className="flex flex-col rounded-2xl border border-slate-200 bg-surface/90 p-7"
-        >
-          <p className="text-sm font-semibold text-slate-700">DataQs challenges</p>
-          <p className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-5xl font-bold tracking-tight text-slate-950">${DATAQS_FEE}</span>
-            <span className="text-sm text-slate-600">per inspection</span>
-          </p>
-          <p className="mt-6 flex-1 text-sm leading-relaxed text-slate-600">
-            Filed for you by Sky Transport Solutions. Filing 2 or more? Ask a specialist about our
-            offers at {formatPhone(STS_CONTACT.phone)}.
-          </p>
         </motion.article>
       </div>
     </section>
