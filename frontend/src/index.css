@@ -348,6 +348,27 @@ body {
   }
 }
 
+/* The banner's search button stands out on the gradient, whether or not anything is typed yet. */
+.portal-hero form[role='search'] button {
+  background: #ffffff;
+  color: #1e3a8a;
+  font-weight: 600;
+  opacity: 1;
+}
+
+.portal-hero form[role='search'] button:hover:not(:disabled) {
+  background: #dbe8ff;
+}
+
+:root[data-theme='dark'] .portal-hero form[role='search'] button {
+  background: #ff8a1f;
+  color: #0b0b0b;
+}
+
+:root[data-theme='dark'] .portal-hero form[role='search'] button:hover:not(:disabled) {
+  background: #ff9d45;
+}
+
 /* The animated board behind the banner is texture: quiet enough that white text stays readable. */
 .portal-hero > :first-child {
   opacity: 0.22;
