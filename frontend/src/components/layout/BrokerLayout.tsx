@@ -61,7 +61,7 @@ export function BrokerLayout() {
         <header className="sticky top-0 z-30 border-b border-slate-200 bg-canvas/85 backdrop-blur">
           <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">
             <Brand to="/broker" />
-            <span className="hidden rounded-md bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 sm:inline">
+            <span className="hidden rounded-md bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 xl:inline">
               {me?.role === 'INSURANCE_AGENT' ? 'Insurance agent portal' : 'Broker portal'}
             </span>
             <nav className="ml-4 hidden items-center gap-1 text-sm lg:flex">{links}</nav>

@@ -18,11 +18,13 @@ export function UserMenu({ from = 'lg' }: { from?: HeaderBreakpoint }) {
   if (!user) return null
 
   return (
-    <div className={`ml-auto hidden items-center gap-3 text-sm ${SHOW_FROM[from]}`}>
+    <div
+      className={`ml-auto hidden items-center gap-3 whitespace-nowrap text-sm ${SHOW_FROM[from]}`}
+    >
       <ThemeToggle />
-      <div className="text-right leading-tight">
-        <div className="font-medium text-slate-900">{user.full_name}</div>
-        <div className="text-xs text-slate-500">
+      <div className="max-w-48 truncate text-right leading-tight">
+        <div className="truncate font-medium text-slate-900">{user.full_name}</div>
+        <div className="truncate text-xs text-slate-500">
           {user.organization_name} · {ROLE_LABELS[user.role]}
         </div>
       </div>

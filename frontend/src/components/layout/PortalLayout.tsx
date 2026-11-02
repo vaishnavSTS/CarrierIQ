@@ -47,7 +47,7 @@ export function PortalLayout() {
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-canvas/85 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">
           <Brand to="/portal" />
-          <span className="hidden rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline">
+          <span className="hidden rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 xl:inline">
             Client portal
           </span>
           <nav className="ml-4 hidden items-center gap-1 text-sm lg:flex">{links}</nav>
