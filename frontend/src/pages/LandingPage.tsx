@@ -81,7 +81,7 @@ export function LandingPage() {
     <div className="relative overflow-hidden">
       {/* Hero */}
       <div className="hero-gradient">
-        <section className="mx-auto grid max-w-6xl items-center gap-12 relative z-10 px-4 pb-64 pt-14 md:pt-20 lg:grid-cols-[1.05fr_1fr]">
+        <section className="mx-auto grid max-w-6xl items-center gap-12 relative z-10 px-4 pb-64 pt-14 md:pt-20 lg:pt-32 lg:grid-cols-[1.05fr_1fr]">
           <div className="text-center lg:text-left">
             <motion.h1
               {...rise(0)}
