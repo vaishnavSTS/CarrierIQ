@@ -77,6 +77,17 @@ def test_reasons_name_the_basics_over_threshold() -> None:
     assert by_basic["hos_driv"] is None and by_basic["driv_fit"] is None
 
 
+@pytest.mark.parametrize("usdot", ["2465630", "3373817"])
+def test_high_risk_reason_states_the_actual_count(usdot: str) -> None:
+    result = estimate(sms_of(usdot), REFERENCE)
+
+    over = sum(1 for b in result.basics if b.over_threshold)
+    assert result.group == 1
+    assert result.reason == (
+        f"{over} safety categories over FMCSA's thresholds (FMCSA's high-risk rule)"
+    )
+
+
 def test_no_inspections_is_not_enough_data() -> None:
     result = estimate(row_to_sms(CARRIERS["9125866"]), REFERENCE)  # real ISS 77 (ISS2 rule)
 

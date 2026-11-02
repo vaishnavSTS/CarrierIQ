@@ -541,7 +541,7 @@ def _value_in_band(group: int, total: float, reference: Mapping[str, Any]) -> in
 
 
 REASONS = {
-    1: "Several safety categories well over FMCSA's thresholds (FMCSA's high-risk rule)",
+    1: "{} safety categories over FMCSA's thresholds (FMCSA's high-risk rule)",
     2: "Three or more safety categories over FMCSA's thresholds",
     3: "Two or more safety categories over FMCSA's thresholds",
     4: "Two or more safety categories over FMCSA's thresholds",
@@ -595,4 +595,6 @@ def estimate(
     reason = REASONS[group]
     if group == 12:
         reason = reason.format(next(r.label for r in results if r.over_threshold))
+    elif group == 1:
+        reason = reason.format(sum(1 for r in results if r.over_threshold))
     return IssEstimate(value, _band_of(group), group, reason, results)

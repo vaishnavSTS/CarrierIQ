@@ -28,10 +28,14 @@ export interface PacketItem {
 }
 
 export interface PacketLists {
-  /** Red: what raises the Estimated ISS or what a broker's check is likely to stop on */
+  /** Red: what raises the Estimated ISS (safety categories, FMCSA alerts, a fatal crash) */
   hurting: PacketItem[]
+  /** Red: what a broker's check is likely to stop on. These don't feed the Estimated ISS. */
+  redFlags: PacketItem[]
   /** Amber: worth watching before it becomes a problem */
   watch: PacketItem[]
+  /** Out-of-service rates: how roadside inspections went. They don't feed the Estimated ISS. */
+  roadside: PacketItem[]
   /** Green: what FMCSA's records show in order */
   good: PacketItem[]
 }
@@ -40,6 +44,16 @@ export interface PacketLists {
 export function firstSentence(text: string): string {
   const end = text.search(/\.(\s|$)/)
   return end === -1 ? text : text.slice(0, end + 1)
+}
+
+/** Revocations and suspensions in FMCSA's authority history, newest first. */
+export function authorityEventsToReview(authority: CarrierAuthority) {
+  return authority.authority_history
+    .filter((a) => {
+      const action = a.action.toUpperCase()
+      return /REVOC|REVOK|SUSPEN/.test(action) && !action.includes('DISCONTINUED')
+    })
+    .sort((a, b) => (b.action_date ?? '').localeCompare(a.action_date ?? ''))
 }
 
 /** Fewer inspections than this and an out-of-service rate is shown as a watch item only. */
@@ -67,7 +81,9 @@ export function packetItems(
   fleet: Fleet | null = null,
 ): PacketLists {
   const hurting: PacketItem[] = []
+  const redFlags: PacketItem[] = []
   const watch: PacketItem[] = []
+  const roadside: PacketItem[] = []
   const good: PacketItem[] = []
 
   // More power units on inspections than the MCS-150 lists. FMCSA divides the Unsafe Driving and
@@ -87,6 +103,11 @@ export function packetItems(
 
   // Safety first: it is what a broker looks at first.
   const flagged = new Set<string>()
+  const over = (iss?.basics ?? []).filter((b) => b.over_threshold)
+  // Furthest over its threshold, where percentiles are shown (clients don't see them).
+  const furthest = over
+    .filter((b) => b.percentile !== null)
+    .sort((a, b) => (b.percentile ?? 0) - b.threshold - ((a.percentile ?? 0) - a.threshold))[0]
   for (const b of iss?.basics ?? []) {
     const tip = basicTip(b.label)
     if (b.over_threshold) {
@@ -94,7 +115,13 @@ export function packetItems(
       hurting.push({
         key: `basic-${b.basic}`,
         title: `${b.label} over FMCSA’s intervention threshold`,
-        detail: `${b.percentile !== null ? `Estimated ${ordinal(b.percentile)} percentile; ` : ''}FMCSA’s threshold is ${b.threshold}. This BASIC raises the Estimated ISS the most.`,
+        detail: `${b.percentile !== null ? `Estimated ${ordinal(b.percentile)} percentile; ` : ''}FMCSA’s threshold is ${b.threshold}. ${
+          over.length === 1
+            ? 'The only category over its threshold.'
+            : b === furthest
+              ? `Furthest over its threshold of the ${over.length} categories over.`
+              : `One of ${over.length} categories over their thresholds.`
+        }`,
         fix: tip,
       })
     } else if (b.percentile !== null && b.percentile >= b.threshold - NEAR_THRESHOLD_POINTS) {
@@ -146,8 +173,7 @@ export function packetItems(
           detail: base < FEW_INSPECTIONS ? `${figures} Based on few inspections.` : figures,
           fix: OOS_FIX[unit],
         }
-        if (base < FEW_INSPECTIONS) watch.push(item)
-        else hurting.push(item)
+        roadside.push(item)
       } else {
         good.push({
           key: `${unit}-oos`,
@@ -176,7 +202,7 @@ export function packetItems(
   for (const f of flags) {
     if (f.level === 'info') continue
     const item = { key: f.key, title: f.title, detail: firstSentence(f.why), fix: f.fix || null }
-    if (f.level === 'alert') hurting.push(item)
+    if (f.level === 'alert') redFlags.push(item)
     else watch.push(item)
   }
 
@@ -201,10 +227,7 @@ export function packetItems(
   }
   // FMCSA's authority history can show revocations (since reinstated) that Motus' revocation list
   // doesn't: then "no revocation or suspension orders" would mislead, so it isn't listed as good.
-  const revokedBefore = authority.authority_history.some((a) => {
-    const action = a.action.toUpperCase()
-    return /REVOC|REVOK|SUSPEN/.test(action) && !action.includes('DISCONTINUED')
-  })
+  const revokedBefore = authorityEventsToReview(authority).length > 0
   for (const check of network.registration_checks) {
     if (check.key === 'revocations' && revokedBefore) continue
     if (check.status === 'ok') {
@@ -240,5 +263,5 @@ export function packetItems(
       })
     }
   }
-  return { hurting, watch, good }
+  return { hurting, redFlags, watch, roadside, good }
 }

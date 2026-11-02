@@ -9,9 +9,11 @@ import { usePortalMode } from '../../hooks/usePortalMode'
 export function RequestDataReviewButton({
   usdotNumber,
   inspectionId,
+  label = 'Request data review',
 }: {
   usdotNumber: number
   inspectionId: string
+  label?: string
 }) {
   const { data: me } = useMe()
   const mode = usePortalMode()
@@ -24,7 +26,7 @@ export function RequestDataReviewButton({
       className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md bg-surface px-2.5 py-2.5 text-xs sm:py-1 font-medium text-accent-strong ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
     >
       <FileSearch className="size-3.5" aria-hidden />
-      Request data review
+      {label}
     </Link>
   )
 }

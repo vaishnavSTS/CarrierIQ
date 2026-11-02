@@ -1,5 +1,9 @@
 import { SourceTag } from '../../components/SourceTag'
+import { useMe } from '../../hooks/useAuth'
 import { useCarrierSafety } from '../../hooks/useCarrierSafety'
+import { useIsOwnCarrier } from '../../hooks/useIsOwnCarrier'
+import { usePortalMode } from '../../hooks/usePortalMode'
+import { RequestDataReviewButton } from '../dataqs/RequestDataReviewButton'
 import type { Safety } from '../../types/carrierProfile'
 import { formatDate, humanize } from '../../utils/format'
 import { CrashList } from './safety/CrashList'
@@ -10,7 +14,9 @@ import { InspectionCounts } from './safety/InspectionCounts'
 import { InspectionHistory } from './safety/InspectionHistory'
 import { OosTable } from './safety/OosTable'
 import { PullInCard } from './safety/PullInCard'
+import { RollOffChart } from './safety/RollOffChart'
 import { SafetyTrends } from './safety/SafetyTrends'
+import { TruckRecords } from './safety/TruckRecords'
 import { ViolationBreakdown } from './safety/ViolationBreakdown'
 import { Empty, Section, Stat } from './Section'
 
@@ -34,6 +40,11 @@ export function SafetySection({
   homeState?: string | null
 }) {
   const detail = useCarrierSafety(usdotNumber)
+  const portal = usePortalMode()
+  const own = useIsOwnCarrier(usdotNumber)
+  const { data: me } = useMe()
+  // Only who can open a DataQs request: STS staff, and the owner of the account for its own carrier.
+  const canChallenge = portal === 'internal' || (own && me?.role === 'CLIENT_ADMIN')
   const recent = safety.recent
   const months = recent?.months ?? 24
   const crashes = detail.data?.crashes ?? null
@@ -123,6 +134,18 @@ export function SafetySection({
             rating={safety.safety_rating}
             ratingDate={safety.safety_rating_date}
           />
+          {(detail.data.sms_inspections?.length ?? 0) > 0 && (
+            <>
+              <SubHeading source="FMCSA SMS Input – Violation (FMCSA's weights)">
+                How the violation points roll off
+              </SubHeading>
+              <RollOffChart inspections={detail.data.sms_inspections ?? []} />
+              <SubHeading source="FMCSA SMS Input – Violation; FMCSA Vehicle Inspection File">
+                Violations by truck
+              </SubHeading>
+              <TruckRecords inspections={detail.data.sms_inspections ?? []} />
+            </>
+          )}
           <SubHeading source="FMCSA Crash File (state crash reports)">Crashes</SubHeading>
           <CrashList crashes={detail.data.crashes} />
         </>
@@ -155,7 +178,21 @@ export function SafetySection({
             </>
           )}
           <SubHeading source="FMCSA Vehicle Inspection File">Inspection history</SubHeading>
-          <InspectionHistory usdotNumber={usdotNumber} />
+          <InspectionHistory
+            usdotNumber={usdotNumber}
+            rowAction={
+              canChallenge
+                ? (inspection) =>
+                    inspection.violation_count > 0 ? (
+                      <RequestDataReviewButton
+                        usdotNumber={usdotNumber}
+                        inspectionId={inspection.inspection_id}
+                        label={portal === 'internal' ? undefined : 'Have Sky challenge this'}
+                      />
+                    ) : null
+                : undefined
+            }
+          />
         </>
       )}
     </Section>

@@ -28,6 +28,12 @@ export function SiteFooter() {
             <Mail className="size-4" aria-hidden />
             Contact us
           </Link>
+          <Link
+            to="/methodology"
+            className="mt-3 block text-sm font-medium text-accent-strong hover:underline"
+          >
+            How the Estimated ISS works
+          </Link>
         </div>
         <ul className="space-y-2.5 text-sm">
           {links.map(({ icon: Icon, label, href }) => (

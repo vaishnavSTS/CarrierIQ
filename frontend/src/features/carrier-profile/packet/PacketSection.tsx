@@ -6,7 +6,7 @@ import {
   TriangleAlert,
   type LucideIcon,
 } from 'lucide-react'
-import { useContext, useLayoutEffect, useRef, type ReactNode } from 'react'
+import { useContext, useLayoutEffect, useRef, type ReactNode, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { useCarrierAuthority } from '../../../hooks/useCarrierAuthority'
@@ -36,7 +36,7 @@ import { IssTrend } from './IssTrend'
 import { basicTiles, type BasicTile, type TileTone } from './basicTiles'
 import { ContactStrip } from './ContactStrip'
 import logo from '../../../assets/carriersafetyscan-logo.png'
-import { packetItems, type PacketItem } from './packetItems'
+import { authorityEventsToReview, packetItems, type PacketItem } from './packetItems'
 import { fitSheets, PrintCopy } from './printFit'
 import { PullInRates } from './PullInRates'
 import { RecordPage } from './RecordPage'
@@ -51,17 +51,16 @@ import {
   repeatViolations,
   tileFacts,
   violationCode,
+  violationText,
 } from './recordDetail'
 
 /** Caps that keep each printed page to one A4 page. */
-const MAX_HURTING = 4
-const MAX_WATCH = 3
-const MAX_GOOD = 8
 const MAX_DRIVER_ROWS = 4
 /** Steps in page 2's plan; fewer when the page is already full */
 const PLAN_STEPS = 6
 const PLAN_STEPS_BUSY = 4
 const MAX_EVENTS = 5
+const MAX_HISTORY_EVENTS = 6
 const MAX_LINKED = 4
 
 const TONE: Record<TileTone, { box: string; icon: string; title: string; Icon: LucideIcon }> = {
@@ -229,11 +228,11 @@ function ItemBox({
   )
 }
 
-function More({ count }: { count: number }) {
+function More({ count, url }: { count: number; url: string }) {
   if (count <= 0) return null
   return (
     <p className="text-xs text-slate-500">
-      +{count} more on the carrier’s page in CarrierSafetyScan.
+      +{count} more after logging in: {url}
     </p>
   )
 }
@@ -301,6 +300,8 @@ export interface PacketData {
   equipment: CarrierEquipment
   safety: CarrierSafety | null
   portal: Portal
+  /** A printed page overflowed at the smallest scale: its detail goes on a page of its own */
+  spill?: boolean
 }
 
 /**
@@ -316,6 +317,7 @@ export function PacketDocument({
   equipment,
   safety,
   portal,
+  spill = false,
 }: PacketData) {
   const client = portal === 'client'
   const whose = client ? 'your' : 'this carrier’s'
@@ -324,7 +326,7 @@ export function PacketDocument({
   const crashes = safety?.crashes ?? null
   const iss = safety?.estimated_iss ?? null
   const drivers = safety?.drivers ?? null
-  const { hurting, watch, good } = packetItems(
+  const { hurting, redFlags, watch, roadside, good } = packetItems(
     profile,
     authority,
     network,
@@ -341,7 +343,7 @@ export function PacketDocument({
   const summary = improvementSummary(drivers, recent)
   // Page 2 already full of red and amber items: the plan gets its four most important steps and
   // the patterns move to page 3, so the report keeps a readable size.
-  const busy = Math.min(hurting.length, MAX_HURTING) + Math.min(watch.length, MAX_WATCH) >= 6
+  const busy = hurting.length + redFlags.length + watch.length + roadside.length >= 6
   const plan = solutions({
     iss,
     sms,
@@ -384,17 +386,24 @@ export function PacketDocument({
     : null
   const agents = (authority.process_agents ?? []).filter((a) => a.source_system === 'MOTUS')
   const agent = (agents.length ? agents : (authority.process_agents ?? []))[0]
-  const events = profile.timeline
-    .filter((e) => e.severity === 'HIGH' || e.severity === 'MEDIUM')
-    .slice(0, MAX_EVENTS)
+  const allEvents = profile.timeline.filter((e) => e.severity === 'HIGH' || e.severity === 'MEDIUM')
+  const events = allEvents.slice(0, MAX_EVENTS)
   const linked = network.linked_carriers.filter((c) => c.shares.some((s) => s.kind !== 'building'))
   const generated = new Date()
+  const fullRecordUrl = `${window.location.origin}/c/${profile.usdot_number}`
+  const allToReview = authorityEventsToReview(authority)
+  const toReview = allToReview.slice(0, MAX_HISTORY_EVENTS)
+  const docketStatus = (docket: string) =>
+    authority.dockets.find((d) => `${d.prefix}${d.number}` === docket)?.status ?? null
+  const priorities = [...hurting, ...redFlags, ...roadside].slice(0, 3)
   const carrier = `${profile.legal_name} · USDOT ${profile.usdot_number}`
   // Page 4, FMCSA's record line by line, once its violation file is loaded.
   const record = safety !== null && safety.sms_inspections != null
   // A busy record gets two pages, so nothing is shrunk too small to read.
   const twoRecordPages = record && safety !== null && recordNeedsTwoPages(safety)
-  const total = record ? (twoRecordPages ? 5 : 4) : 3
+  // A page that can't fit even at the smallest print size gives up its detail to a page of its own.
+  const extra = spill && (driverRows.length > 0 || Boolean(truck) || repeats.length > 0) ? 1 : 0
+  const total = (record ? (twoRecordPages ? 5 : 4) : 3) + extra
   // Each page's line in the Sky Transport Solutions strip: what that page is about.
   const ask =
     'Questions about this report? A Sky Transport Solutions specialist can explain any item.'
@@ -406,7 +415,7 @@ export function PacketDocument({
       ? 'Keep your record clean: Sky Transport Solutions handles MCS-150 updates, insurance and BOC-3 filings.'
       : ask,
     fixes: client
-      ? hurting.length + watch.length > 0
+      ? hurting.length + redFlags.length + watch.length > 0
         ? 'Want help fixing these? A Sky Transport Solutions specialist can walk you through each item.'
         : 'Want to keep it this way? A Sky Transport Solutions specialist can help you stay compliant.'
       : ask,
@@ -414,6 +423,51 @@ export function PacketDocument({
       ? 'Found a wrong violation? Sky Transport Solutions files DataQs challenges for $50 per inspection.'
       : ask,
   }
+
+  const whereFrom = driverRows.length > 0 && (
+    <div className="space-y-2">
+      <SectionHeading aside="FMCSA SMS violations, FMCSA’s severity and time weights">
+        Where the violations come from
+      </SectionHeading>
+      {summary && <p className="text-sm text-slate-700">{summary}</p>}
+      <ScrollX>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-200 text-left text-[10px] uppercase tracking-wide text-slate-500">
+              <th className="py-1 font-medium">Violation type</th>
+              <th className="w-20 py-1 pl-3 text-right font-medium">Violations</th>
+              <th className="w-20 py-1 pl-3 text-right font-medium">Out of service</th>
+              <th className="w-20 py-1 pl-3 text-right font-medium">Share of BASIC</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 align-top tabular-nums text-slate-700">
+            {driverRows.map(({ basic, group }) => {
+              const tip = groupTip(group.group)
+              return (
+                <tr key={`${basic}-${group.group}`}>
+                  <td className="py-1.5 pr-3">
+                    <span className="font-medium text-slate-900">{group.group}</span>{' '}
+                    <span className="text-xs text-slate-500">({basic})</span>
+                    {/* The plan above has these in plain words. */}
+                    {tip && plan.length === 0 && (
+                      <span className="block text-xs text-slate-500">{tip}</span>
+                    )}
+                  </td>
+                  <td className="py-1.5 pl-3 text-right">{group.violations}</td>
+                  <td
+                    className={`py-1.5 pl-3 text-right ${group.out_of_service > 0 ? 'font-semibold text-red-700' : ''}`}
+                  >
+                    {group.out_of_service}
+                  </td>
+                  <td className="py-1.5 pl-3 text-right">{formatPercent(group.share)}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </ScrollX>
+    </div>
+  )
 
   // Patterns in the violations: on page 2, or at the top of page 3 when page 2 is full.
   const patterns = (truck || repeats.length > 0) && (
@@ -445,7 +499,7 @@ export function PacketDocument({
             {repeats.map((r) => (
               <li key={r.code} className="flex justify-between gap-3">
                 <span>
-                  {r.description ?? violationCode(r.code)}{' '}
+                  {violationText(r.description, violationCode(r.code))}{' '}
                   <span className="text-xs text-slate-500">
                     ({violationCode(r.code)} · {r.basic})
                   </span>
@@ -481,7 +535,6 @@ export function PacketDocument({
               {[`USDOT ${profile.usdot_number}`, ...dockets, address].filter(Boolean).join(' · ')}
             </p>
           </div>
-          <img src={logo} alt="CarrierSafetyScan" className="size-20 shrink-0 object-contain" />
         </div>
 
         <div className="grid items-center gap-5 sm:grid-cols-[auto_1fr]">
@@ -500,9 +553,16 @@ export function PacketDocument({
             )}
             <IssTrend iss={iss} history={safety?.iss_history ?? []} />
             {safety && <PullInRates safety={safety} client={client} />}
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className={`grid gap-2 ${redFlags.length ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}>
               <CountPill tone="red" count={hurting.length} label={`Hurting ${whose} score`} />
-              <CountPill tone="amber" count={watch.length} label="Worth watching" />
+              {redFlags.length > 0 && (
+                <CountPill tone="red" count={redFlags.length} label="Broker red flags" />
+              )}
+              <CountPill
+                tone="amber"
+                count={watch.length + roadside.length}
+                label="Worth watching"
+              />
               <CountPill tone="green" count={good.length} label="In good standing" />
             </div>
           </div>
@@ -559,20 +619,26 @@ export function PacketDocument({
               {crashes ? `${crashes.recent_fatal} · ${crashes.recent_injury}` : null}
             </Fact>
             {clean && (
-              <Fact label="Clean inspections · SMS 24 mo">
+              <Fact label="Clean inspections (24 mo)">
                 {`${clean.clean} of ${clean.total} (${formatPercent(clean.clean / clean.total)})`}
               </Fact>
             )}
           </dl>
+          <p className="text-[11px] text-slate-500 sm:col-span-2">
+            Why these counts differ: Inspections counts every inspection FMCSA has loaded for the
+            last 24 months. Out-of-service rates count only those that examined the vehicle or the
+            driver. Clean inspections use FMCSA’s monthly SMS results, which can leave out the most
+            recent inspections.
+          </p>
         </div>
 
         <div className="break-inside-avoid rounded-xl border border-slate-200 px-4 py-3">
           <div className="text-sm font-semibold text-slate-900">
-            {hurting.length > 0 ? 'Start here: top priorities' : 'Start here'}
+            {priorities.length > 0 ? 'Start here: top priorities' : 'Start here'}
           </div>
-          {hurting.length > 0 ? (
+          {priorities.length > 0 ? (
             <ol className="mt-1.5 space-y-1 text-sm">
-              {hurting.slice(0, 3).map((item, i) => (
+              {priorities.map((item, i) => (
                 <li key={item.key} className="flex items-start gap-2">
                   <span className="grid size-5 shrink-0 place-items-center rounded-full bg-red-600 text-[11px] font-bold text-surface">
                     {i + 1}
@@ -588,7 +654,7 @@ export function PacketDocument({
             </p>
           )}
           <p className="mt-1.5 text-xs text-slate-500">
-            {hurting.length + watch.length > 0
+            {hurting.length + redFlags.length + watch.length + roadside.length > 0
               ? 'Page 2 explains each item and what usually fixes it.'
               : 'Page 3 lists what is in good standing.'}
           </p>
@@ -622,19 +688,54 @@ export function PacketDocument({
                 item={{
                   key: 'none',
                   title: 'Nothing in CarrierSafetyScan’s checks is hurting the score',
-                  detail: 'No BASIC is over its threshold and no record a broker’s check stops on.',
+                  detail:
+                    'No BASIC is over its threshold or under an FMCSA alert, and FMCSA’s Crash File lists no fatal crash in the last 24 months.',
                 }}
               />
             </ul>
           ) : (
             <ul className="space-y-2">
-              {hurting.slice(0, MAX_HURTING).map((item) => (
+              {hurting.map((item) => (
                 <ItemBox key={item.key} tone="red" item={item} hideFix={planned(item)} />
               ))}
             </ul>
           )}
-          <More count={hurting.length - MAX_HURTING} />
         </div>
+
+        {redFlags.length > 0 && (
+          <div className="space-y-2">
+            <SectionHeading
+              aside="Doesn’t feed the Estimated ISS; a broker’s check may stop on these"
+              tone="red"
+            >
+              <span className="flex items-center gap-2 text-red-700">
+                <OctagonX className="size-5" aria-hidden />
+                Broker red flags
+              </span>
+            </SectionHeading>
+            <ul className="space-y-2">
+              {redFlags.map((item) => (
+                <ItemBox key={item.key} tone="red" item={item} hideFix={planned(item)} />
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {roadside.length > 0 && (
+          <div className="space-y-2">
+            <SectionHeading aside="Doesn’t feed the Estimated ISS directly" tone="amber">
+              <span className="flex items-center gap-2 text-amber-700">
+                <TriangleAlert className="size-5" aria-hidden />
+                Roadside risk
+              </span>
+            </SectionHeading>
+            <ul className="space-y-2">
+              {roadside.map((item) => (
+                <ItemBox key={item.key} tone="amber" item={item} hideFix={planned(item)} />
+              ))}
+            </ul>
+          </div>
+        )}
 
         {watch.length > 0 && (
           <div className="space-y-2">
@@ -645,62 +746,18 @@ export function PacketDocument({
               </span>
             </SectionHeading>
             <ul className="space-y-2">
-              {watch.slice(0, MAX_WATCH).map((item) => (
+              {watch.map((item) => (
                 <ItemBox key={item.key} tone="amber" item={item} hideFix={planned(item)} />
               ))}
             </ul>
-            <More count={watch.length - MAX_WATCH} />
           </div>
         )}
 
         <SolutionsBox steps={plan} />
 
-        {driverRows.length > 0 && (
-          <div className="space-y-2">
-            <SectionHeading aside="FMCSA SMS violations, FMCSA’s severity and time weights">
-              Where the violations come from
-            </SectionHeading>
-            {summary && <p className="text-sm text-slate-700">{summary}</p>}
-            <ScrollX>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 text-left text-[10px] uppercase tracking-wide text-slate-500">
-                    <th className="py-1 font-medium">Violation type</th>
-                    <th className="w-20 py-1 pl-3 text-right font-medium">Violations</th>
-                    <th className="w-20 py-1 pl-3 text-right font-medium">Out of service</th>
-                    <th className="w-20 py-1 pl-3 text-right font-medium">Share of BASIC</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 align-top tabular-nums text-slate-700">
-                  {driverRows.map(({ basic, group }) => {
-                    const tip = groupTip(group.group)
-                    return (
-                      <tr key={`${basic}-${group.group}`}>
-                        <td className="py-1.5 pr-3">
-                          <span className="font-medium text-slate-900">{group.group}</span>{' '}
-                          <span className="text-xs text-slate-500">({basic})</span>
-                          {/* The plan above has these in plain words. */}
-                          {tip && plan.length === 0 && (
-                            <span className="block text-xs text-slate-500">{tip}</span>
-                          )}
-                        </td>
-                        <td className="py-1.5 pl-3 text-right">{group.violations}</td>
-                        <td
-                          className={`py-1.5 pl-3 text-right ${group.out_of_service > 0 ? 'font-semibold text-red-700' : ''}`}
-                        >
-                          {group.out_of_service}
-                        </td>
-                        <td className="py-1.5 pl-3 text-right">{formatPercent(group.share)}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </ScrollX>
-          </div>
-        )}
+        {!spill && whereFrom}
 
-        {!busy && patterns}
+        {!spill && !busy && patterns}
       </Sheet>
 
       {/* Page 3: strengths and the record */}
@@ -711,13 +768,41 @@ export function PacketDocument({
         carrier={carrier}
         contact={contact.record}
       >
-        {busy && patterns}
+        {!spill && busy && patterns}
+        {toReview.length > 0 && (
+          <div className="space-y-2">
+            <SectionHeading aside="FMCSA authority history" tone="amber">
+              <span className="text-amber-700">History to review</span>
+            </SectionHeading>
+            <p className="text-xs text-slate-600">
+              Past actions on this carrier’s authority. A past action doesn’t show today’s status,
+              so each line gives the status FMCSA lists now.
+            </p>
+            <ul className="divide-y divide-slate-100 text-sm text-slate-700">
+              {toReview.map((a) => (
+                <li
+                  key={`${a.docket}-${a.action_date}-${a.action}`}
+                  className="flex flex-wrap justify-between gap-x-3 py-1"
+                >
+                  <span>
+                    <span className="tabular-nums text-slate-900">{formatDate(a.action_date)}</span>{' '}
+                    · {a.docket} · {a.action}
+                  </span>
+                  <span className="text-xs">
+                    Status now: {docketStatus(a.docket) ?? 'not listed'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <More count={allToReview.length - toReview.length} url={fullRecordUrl} />
+          </div>
+        )}
         <div className="space-y-2">
           <SectionHeading
             tone="green"
             aside={
               hurting.length > 0
-                ? `These records are in order; the safety problems are on pages 1 and 2${busy && patterns ? ' and above' : ''}`
+                ? `These records are in order; the safety problems are on pages 1 and 2${!spill && busy && patterns ? ' and above' : ''}`
                 : 'Each item names its FMCSA record'
             }
           >
@@ -727,7 +812,7 @@ export function PacketDocument({
             </span>
           </SectionHeading>
           <ul className="grid gap-2 sm:grid-cols-2">
-            {good.slice(0, MAX_GOOD).map((item) => (
+            {good.map((item) => (
               <li
                 key={item.key}
                 className="flex break-inside-avoid items-start gap-2 rounded-lg border-l-4 border-emerald-600 bg-emerald-50 px-3 py-1.5 text-sm"
@@ -737,7 +822,6 @@ export function PacketDocument({
               </li>
             ))}
           </ul>
-          <More count={good.length - MAX_GOOD} />
         </div>
 
         <div className="space-y-2">
@@ -840,6 +924,7 @@ export function PacketDocument({
                     </li>
                   ))}
                 </ul>
+                <More count={allEvents.length - events.length} url={fullRecordUrl} />
               </div>
             )}
             {linked.length > 0 && (
@@ -865,7 +950,7 @@ export function PacketDocument({
                     </li>
                   ))}
                 </ul>
-                <More count={linked.length - MAX_LINKED} />
+                <More count={linked.length - MAX_LINKED} url={fullRecordUrl} />
               </div>
             )}
           </div>
@@ -896,16 +981,29 @@ export function PacketDocument({
         </footer>
       </Sheet>
 
+      {extra > 0 && (
+        <Sheet
+          page={4}
+          total={total}
+          title="Where the violations come from"
+          carrier={carrier}
+          contact={contact.fixes}
+        >
+          {whereFrom}
+          {patterns}
+        </Sheet>
+      )}
       {/* Page 4: the SMS record line by line, and when the score improves */}
       {record && safety && (
         <Sheet
-          page={4}
+          page={4 + extra}
           total={total}
           title="Inspection record"
           carrier={carrier}
           contact={contact.inspections}
         >
           <RecordPage
+            fullRecordUrl={fullRecordUrl}
             safety={safety}
             client={client}
             whose={whose}
@@ -916,13 +1014,19 @@ export function PacketDocument({
       {/* Page 5, for a busy record: the inspection history, crashes and pull-in rates */}
       {twoRecordPages && safety && (
         <Sheet
-          page={5}
+          page={5 + extra}
           total={total}
           title="Inspection history"
           carrier={carrier}
           contact={contact.inspections}
         >
-          <RecordPage safety={safety} client={client} whose={whose} part="history" />
+          <RecordPage
+            fullRecordUrl={fullRecordUrl}
+            safety={safety}
+            client={client}
+            whose={whose}
+            part="history"
+          />
         </Sheet>
       )}
     </>
@@ -937,13 +1041,17 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
   const safety = useCarrierSafety(profile.usdot_number)
   const portal = usePortalMode()
   const printCopy = useRef<HTMLDivElement>(null)
+  const [spillFor, setSpillFor] = useState<number | null>(null)
+  const spill = spillFor === profile.usdot_number
 
   // Fit each printed sheet to one A4 page whenever the report changes, once fonts have loaded,
   // and again just before printing.
   useLayoutEffect(() => {
     const root = printCopy.current
     if (!root) return
-    const fit = () => fitSheets(root)
+    const fit = () => {
+      if (fitSheets(root) && !spill) setSpillFor(profile.usdot_number)
+    }
     fit()
     void document.fonts?.ready.then(fit)
     window.addEventListener('beforeprint', fit)
@@ -980,6 +1088,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
       equipment={equipment.data}
       safety={safety.data ?? null}
       portal={portal}
+      spill={spill}
     />
   )
   return (

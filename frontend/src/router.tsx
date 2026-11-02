@@ -10,6 +10,7 @@ import { BrokerGoogleSignupPage } from './pages/BrokerGoogleSignupPage'
 import { BrokerHomePage } from './pages/BrokerHomePage'
 import { BrokerInvoicesPage } from './pages/BrokerInvoicesPage'
 import { BrokerRegisterPage } from './pages/BrokerRegisterPage'
+import { CarrierLinkPage } from './pages/CarrierLinkPage'
 import { CarrierProfilePage } from './pages/CarrierProfilePage'
 import { ComparePage } from './pages/ComparePage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -18,6 +19,7 @@ import { DataQsPage } from './pages/DataQsPage'
 import { GoogleSignupPage } from './pages/GoogleSignupPage'
 import { LandingPage } from './pages/LandingPage'
 import { ContactPage } from './pages/ContactPage'
+import { MethodologyPage } from './pages/MethodologyPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { InsuranceRegisterPage } from './pages/InsuranceRegisterPage'
 import { LoginPage } from './pages/LoginPage'
@@ -53,6 +55,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <LandingPage /> },
       { path: 'contact', element: <ContactPage /> },
+      { path: 'methodology', element: <MethodologyPage /> },
+      { path: 'c/:usdot', element: <CarrierLinkPage /> },
       { path: 'try', element: <TryNowPage /> },
       { path: 'try/:usdot', element: <TryCarrierPage /> },
       { path: 'login', element: <LoginPage /> },

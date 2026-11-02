@@ -14,7 +14,8 @@ import { ProfileHeader } from '../features/carrier-profile/ProfileHeader'
 import { SafetySection } from '../features/carrier-profile/SafetySection'
 import { TimelineSection } from '../features/carrier-profile/TimelineSection'
 import { CarrierInvoicesSection } from '../features/invoices/CarrierInvoicesSection'
-import { useClientSearchEnabled } from '../hooks/useAuth'
+import { BrokerVerdict } from '../features/compare/BrokerVerdict'
+import { useClientSearchEnabled, useMe } from '../hooks/useAuth'
 import { useCarrierProfile } from '../hooks/useCarrierProfile'
 import { useIsOwnCarrier } from '../hooks/useIsOwnCarrier'
 import { usePortalMode, useSearchPath } from '../hooks/usePortalMode'
@@ -62,6 +63,7 @@ export function CarrierProfilePage() {
   const { usdot = '' } = useParams()
   const usdotNumber = Number(usdot)
   const portal = usePortalMode()
+  const { data: me } = useMe()
   // null: every tab (STS staff)
   const allowed = portal === 'broker' ? BROKER_TABS : portal === 'client' ? CLIENT_TABS : null
   const ownCarrier = useIsOwnCarrier(usdotNumber)
@@ -130,6 +132,9 @@ export function CarrierProfilePage() {
         ← Back
       </button>
       <ProfileHeader profile={profile} />
+      {portal === 'broker' && me?.role !== 'INSURANCE_AGENT' && (
+        <BrokerVerdict usdotNumber={profile.usdot_number} />
+      )}
 
       <div
         role="tablist"

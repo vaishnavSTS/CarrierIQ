@@ -99,7 +99,7 @@ export function basicTiles(
         label,
         tone: 'amber',
         status: 'Out-of-service violations',
-        note: note(counts, estimate?.assessed ? 'below threshold' : ''),
+        note: note(counts, estimate?.assessed ? 'below threshold' : 'no FMCSA percentile'),
       }
     }
     if (key === 'crash') {

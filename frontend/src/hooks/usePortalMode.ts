@@ -50,6 +50,11 @@ const PAGE_BASE: Record<Portal, string> = {
   broker: '/broker/carriers',
 }
 
+/** Where a carrier's profile page lives in a given portal. */
+export function carrierPathIn(portal: Portal, usdotNumber: number): string {
+  return `${PAGE_BASE[portal]}/${usdotNumber}`
+}
+
 /** Where a carrier's profile page lives in the current portal. */
 export function useCarrierPath(): (usdotNumber: number) => string {
   const base = PAGE_BASE[usePortalMode()]

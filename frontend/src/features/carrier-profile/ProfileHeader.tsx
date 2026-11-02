@@ -7,6 +7,7 @@ import { censusLabel, formatDateTime, formatDocket, sourceLabel } from '../../ut
 import { saferUrl, smsUrl } from '../../utils/sources'
 import { useIsClientPortal, useIsTryMode } from '../../hooks/usePortalMode'
 import { reviewLabel } from '../../utils/review'
+import { carrierSummary } from './carrierSummary'
 import { HeaderCard } from './HeaderCard'
 import { LinkedHeadsUp } from './network/LinkedHeadsUp'
 import { RefreshButton } from './RefreshButton'
@@ -74,6 +75,16 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
           )}
         </div>
       </div>
+
+      <p className="mt-3 text-sm text-slate-700">
+        {carrierSummary(
+          profile,
+          profile.insurance.status
+            ? (INSURANCE_LABEL[profile.insurance.status] ?? profile.insurance.status)
+            : null,
+          trying,
+        )}
+      </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <HeaderCard

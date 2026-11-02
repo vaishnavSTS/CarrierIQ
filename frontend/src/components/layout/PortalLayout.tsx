@@ -7,6 +7,7 @@ import { useClientSearchEnabled } from '../../hooks/useAuth'
 import { BackgroundSpotlight } from './BackgroundSpotlight'
 import { ScrollToTop } from './ScrollToTop'
 import { SiteFooter } from './SiteFooter'
+import { TalkToSky } from './TalkToSky'
 import { Brand } from './Brand'
 import { MobileMenu } from './MobileMenu'
 import { UserMenu } from './UserMenu'
@@ -63,6 +64,7 @@ export function PortalLayout() {
         </PortalModeContext.Provider>
       </main>
       <SiteFooter />
+      <TalkToSky />
     </div>
   )
 }

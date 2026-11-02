@@ -9,6 +9,7 @@ import { PortalModeContext } from '../../hooks/usePortalMode'
 import { BackgroundSpotlight } from './BackgroundSpotlight'
 import { ScrollToTop } from './ScrollToTop'
 import { SiteFooter } from './SiteFooter'
+import { TalkToSky } from './TalkToSky'
 import { Brand } from './Brand'
 import { useMe } from '../../hooks/useAuth'
 import { MobileMenu } from './MobileMenu'
@@ -77,6 +78,7 @@ export function BrokerLayout() {
           </PortalModeContext.Provider>
         </main>
         <SiteFooter />
+        <TalkToSky />
         <CompareTray />
       </div>
     </CompareProvider>

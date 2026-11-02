@@ -152,6 +152,121 @@ export function improvementSteps(
   return steps.sort((a, b) => a.date.getTime() - b.date.getTime())
 }
 
+/** FMCSA's time weight on a given day: 3 for 6 months after the inspection, 2 until 12, 1 until 24. */
+export function timeWeightOn(inspectionDate: string, on: Date): number {
+  if (on < addMonths(inspectionDate, 6)) return 3
+  if (on < addMonths(inspectionDate, 12)) return 2
+  if (on < addMonths(inspectionDate, 24)) return 1
+  return 0
+}
+
+export interface RollOffMonth {
+  date: Date
+  /** Severity × time weight still counting on that date, if there are no new violations */
+  points: number
+}
+
+/** Today, then the first of each of the next 24 months: after that, nothing here still counts. */
+export function rollOff(
+  inspections: SmsInspection[],
+  today = new Date(),
+  months = 24,
+): RollOffMonth[] {
+  const dates = [today]
+  for (let i = 1; i <= months; i += 1) {
+    dates.push(new Date(today.getFullYear(), today.getMonth() + i, 1))
+  }
+  return dates.map((date) => ({
+    date,
+    points: inspections.reduce((sum, inspection) => {
+      const weight = timeWeightOn(inspection.inspection_date, date)
+      return (
+        sum + inspection.violations.reduce((s, v) => s + cappedSeverity(inspection, v) * weight, 0)
+      )
+    }, 0),
+  }))
+}
+
+export interface TruckRecord {
+  /** The VIN, or the plate when FMCSA's inspection has no VIN on file */
+  id: string
+  vin: string | null
+  plates: string[]
+  inspections: number
+  violations: number
+  outOfService: number
+  points: number
+  /** The same violation on two or more of this truck's inspections */
+  repeats: { code: string; description: string | null; inspections: number }[]
+}
+
+/**
+ * The carrier's trucks by the Vehicle Maintenance violations FMCSA records on unit 1 (the power
+ * unit), most points first. Trailer and driver violations aren't a truck's. An inspection with
+ * neither a VIN nor a plate on file can't be matched to a truck, so it is only counted.
+ */
+export function truckRecords(inspections: SmsInspection[]): {
+  trucks: TruckRecord[]
+  unmatched: number
+} {
+  const byTruck = new Map<string, TruckRecord & { codes: Map<string, Set<string>> }>()
+  const descriptions = new Map<string, string | null>()
+  let unmatched = 0
+  for (const inspection of inspections) {
+    const own = inspection.violations.filter(
+      (v) => v.unit === '1' && basicKey(v.basic) === 'veh_maint',
+    )
+    if (own.length === 0) continue
+    const plate = inspection.plate
+      ? [inspection.plate_state, inspection.plate].filter(Boolean).join(' ')
+      : null
+    const id = inspection.vin ?? plate
+    if (!id) {
+      unmatched += 1
+      continue
+    }
+    const row = byTruck.get(id) ?? {
+      id,
+      vin: inspection.vin ?? null,
+      plates: [],
+      inspections: 0,
+      violations: 0,
+      outOfService: 0,
+      points: 0,
+      repeats: [],
+      codes: new Map<string, Set<string>>(),
+    }
+    if (plate && !row.plates.includes(plate)) row.plates.push(plate)
+    row.inspections += 1
+    row.violations += own.length
+    row.outOfService += own.filter((v) => v.out_of_service).length
+    for (const v of own) {
+      row.points += smsPoints(inspection, v)
+      descriptions.set(v.code, v.description)
+      const seen = row.codes.get(v.code) ?? new Set<string>()
+      seen.add(inspection.inspection_id)
+      row.codes.set(v.code, seen)
+    }
+    byTruck.set(id, row)
+  }
+  const trucks = [...byTruck.values()]
+    .map(({ codes, ...row }) => ({
+      ...row,
+      repeats: [...codes.entries()]
+        .filter(([, ids]) => ids.size >= 2)
+        .map(([code, ids]) => ({
+          code,
+          description: descriptions.get(code) ?? null,
+          inspections: ids.size,
+        }))
+        .sort((a, b) => b.inspections - a.inspections),
+    }))
+    .sort((a, b) => b.points - a.points)
+  return { trucks, unmatched }
+}
+
+const FMCSA_DESCRIPTION_LIMIT = 158
+
 export interface ViolationRow {
   code: string
   description: string | null
@@ -211,6 +326,17 @@ export function heaviestViolations(inspections: SmsInspection[], limit = 3): Cha
 }
 
 /** FMCSA's violation code as FMCSA prints it: "3958EHOSPDOOS" → "395.8EHOSPDOOS" (49 CFR part.section). */
+/**
+ * A violation's description in whole words. FMCSA's file cuts long descriptions off at about 160
+ * characters, often mid-word: those end at the last whole word, with "…".
+ */
+export function violationText(description: string | null, fallback: string): string {
+  if (!description) return fallback
+  const text = description.trim()
+  if (text.length < FMCSA_DESCRIPTION_LIMIT) return text
+  return `${text.slice(0, text.lastIndexOf(' ')).replace(/[\s,;:.(-]+$/, '')}…`
+}
+
 export function violationCode(code: string): string {
   return /^\d{4}/.test(code) ? `${code.slice(0, 3)}.${code.slice(3)}` : code
 }

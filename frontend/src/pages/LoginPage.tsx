@@ -31,6 +31,7 @@ function portalOf(path: string): Portal {
 function safeNext(next: string | null, portal: Portal): string {
   if (!next || !next.startsWith('/') || next.startsWith('//')) return homeFor(portal)
   const path = next.split(/[?#]/)[0]
+  if (/^\/c\/\d+$/.test(path)) return next // a report's link: opens in whichever portal this is
   if (portalOf(path) !== portal || path.startsWith('/broker/register')) return homeFor(portal)
   return next
 }

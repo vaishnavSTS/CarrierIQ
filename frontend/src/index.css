@@ -597,6 +597,11 @@ body {
   #carrier-packet-print .print-page:last-child {
     break-after: auto;
   }
+  /* Too long for one page even at the smallest scale: never cut it off, run on to the next page. */
+  #carrier-packet-print .print-page.print-flow {
+    height: auto;
+    overflow: visible;
+  }
   /* The Safety Score Report prints alone: the app (and its wide menu bar) is left out entirely,
      so nothing makes the browser shrink the report to fit. */
   body:has(#carrier-packet-print) > #root {

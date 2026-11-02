@@ -27,8 +27,11 @@ const MIN_ZOOM = 0.7
  * wide), and text wraps differently at that width (a table can be far taller when narrow), so the
  * largest scale that fits is found by halving the range a few times. The copy is laid out
  * off-screen, so this is measured exactly as it will print.
+ *
+ * Returns whether a sheet is too long even at MIN_ZOOM. Such a sheet runs on to another page
+ * instead of being cut off (print-flow in index.css), and the report can move detail off it.
  */
-export function fitSheets(root: HTMLElement) {
+export function fitSheets(root: HTMLElement): boolean {
   const width = PAGE_WIDTH_MM * PX_PER_MM
   const height = PAGE_HEIGHT_MM * PX_PER_MM
   const sheets = [...root.querySelectorAll<HTMLElement>('.packet-sheet')]
@@ -54,10 +57,16 @@ export function fitSheets(root: HTMLElement) {
     return low
   }
   const zoom = Math.min(MAX_ZOOM, ...sheets.map(fits))
+  let overflowing = false
   for (const sheet of sheets) {
     measure(sheet, zoom)
     sheet.style.zoom = String(zoom)
     // min-height is in the sheet's own (unzoomed) units: after the zoom it is exactly a page.
     sheet.style.minHeight = `${height / zoom}px`
+    // Measured after the zoom: text rounds differently once it is scaled.
+    const tooLong = sheet.scrollHeight * zoom > height + 1
+    sheet.closest('.print-page')?.classList.toggle('print-flow', tooLong)
+    overflowing ||= tooLong
   }
+  return overflowing
 }

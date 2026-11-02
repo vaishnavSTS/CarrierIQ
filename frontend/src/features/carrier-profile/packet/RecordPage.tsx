@@ -2,12 +2,19 @@ import { CalendarClock, Scale } from 'lucide-react'
 
 import type { CarrierSafety } from '../../../types/carrierSafety'
 import { formatDate } from '../../../utils/format'
-import { heaviestViolations, improvementSteps, violationCode, violationRows } from './recordDetail'
+import {
+  heaviestViolations,
+  improvementSteps,
+  violationCode,
+  violationRows,
+  violationText,
+} from './recordDetail'
 import { ScrollX } from './ScrollX'
 import { SectionHeading } from './SectionHeading'
 
 /** Caps that keep the record to about one A4 page; more when it has two pages (`part`). */
 const MAX_STEPS = 6
+const MAX_CRASHES = 6
 const MAX_CODES = 10
 const MAX_CODES_OWN_PAGE = 9
 const MAX_INSPECTIONS = 6
@@ -47,12 +54,15 @@ export function RecordPage({
   client,
   whose,
   part = 'all',
+  fullRecordUrl,
 }: {
   safety: CarrierSafety
   client: boolean
   whose: string
   /** A busy record takes two pages (recordNeedsTwoPages): 'summary', then 'history'. */
   part?: 'all' | 'summary' | 'history'
+  /** This carrier's page in the app, for what a printed page can't list */
+  fullRecordUrl: string
 }) {
   const maxCodes = part === 'all' ? MAX_CODES : MAX_CODES_OWN_PAGE
   const inspections = safety.sms_inspections ?? []
@@ -143,7 +153,7 @@ export function RecordPage({
                       </span>
                       <span>
                         <span className="font-semibold text-slate-900">
-                          {v.description ?? v.code}
+                          {violationText(v.description, v.code)}
                         </span>{' '}
                         <span className="text-xs text-slate-500">
                           ({violationCode(v.code)} · {formatDate(i.inspection_date)}
@@ -189,10 +199,7 @@ export function RecordPage({
                         <td className="whitespace-nowrap py-1 pr-2 font-mono text-[11px] text-slate-900">
                           {violationCode(r.code)}
                         </td>
-                        <td className="py-1 pr-2">
-                          {/* One line here: the inspection history below has each one in full. */}
-                          <span className="line-clamp-1">{r.description ?? '—'}</span>
-                        </td>
+                        <td className="py-1 pr-2">{violationText(r.description, '—')}</td>
                         <td className="py-1 pl-3 pr-2 text-xs">{r.basic}</td>
                         <td className="py-1 pl-3 text-center">{r.count}</td>
                         <td
@@ -208,7 +215,7 @@ export function RecordPage({
               </ScrollX>
               {codes.length > maxCodes && (
                 <p className="text-xs text-slate-500">
-                  +{codes.length - maxCodes} more codes on the Safety tab in CarrierSafetyScan.
+                  +{codes.length - maxCodes} more codes after logging in: {fullRecordUrl}
                 </p>
               )}
             </div>
@@ -291,7 +298,7 @@ export function RecordPage({
                             <td
                               className={`py-1 pr-2 align-top text-xs ${v.out_of_service ? 'font-semibold text-red-700' : 'text-slate-800'}`}
                             >
-                              {v.description ?? v.code}
+                              {violationText(v.description, v.code)}
                             </td>
                             <td className={cell}>{v.basic}</td>
                             <td
@@ -320,13 +327,13 @@ export function RecordPage({
             )}
             {inspections.length > maxInspections && (
               <p className="text-xs text-slate-500">
-                +{inspections.length - maxInspections} more inspections with violations on the
-                Safety tab in CarrierSafetyScan.
+                +{inspections.length - maxInspections} more inspections with violations after
+                logging in: {fullRecordUrl}
               </p>
             )}
             <p className="text-[11px] text-slate-500">
-              Severity and time weights are FMCSA’s; an out-of-service violation (red) adds 2 to its
-              severity weight.
+              A description ending in “…” is cut off in FMCSA’s own file. Severity and time weights
+              are FMCSA’s; an out-of-service violation (red) adds 2 to its severity weight.
             </p>
           </div>
 
@@ -334,7 +341,7 @@ export function RecordPage({
             <div className="space-y-1.5">
               <SectionHeading aside="FMCSA Crash File · 24 months">Crashes</SectionHeading>
               <ul className="space-y-0.5 text-sm text-slate-700">
-                {crashes.slice(0, 6).map((c) => (
+                {crashes.slice(0, MAX_CRASHES).map((c) => (
                   <li key={c.report_number}>
                     <span className="tabular-nums text-slate-900">{formatDate(c.report_date)}</span>
                     {[c.city, c.state].filter(Boolean).length > 0 &&
@@ -350,6 +357,11 @@ export function RecordPage({
                   </li>
                 ))}
               </ul>
+              {crashes.length > MAX_CRASHES && (
+                <p className="text-xs text-slate-500">
+                  +{crashes.length - MAX_CRASHES} more after logging in: {fullRecordUrl}
+                </p>
+              )}
             </div>
           )}
         </>
