@@ -54,7 +54,8 @@ export function SiteFooter() {
         </ul>
       </div>
       <p className="mx-auto mt-6 max-w-7xl border-t border-slate-200 pt-4 text-center text-xs text-slate-500">
-        CarrierSafetyScan by Sky Transport Solutions
+        © {new Date().getFullYear()} Sky Transport Solutions. All rights reserved.
+        CarrierSafetyScan™ is a trademark of Sky Transport Solutions.
       </p>
     </footer>
   )
