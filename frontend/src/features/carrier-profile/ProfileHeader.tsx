@@ -9,6 +9,7 @@ import { useIsClientPortal, useIsTryMode } from '../../hooks/usePortalMode'
 import { reviewLabel } from '../../utils/review'
 import { carrierSummary } from './carrierSummary'
 import { HeaderCard } from './HeaderCard'
+import { IssHeaderCard } from './IssHeaderCard'
 import { LinkedHeadsUp } from './network/LinkedHeadsUp'
 import { RefreshButton } from './RefreshButton'
 import { CompareButton } from '../compare/CompareButton'
@@ -65,7 +66,7 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
           <div className="mb-2 flex justify-end empty:hidden">
             <CompareButton usdotNumber={profile.usdot_number} />
           </div>
-          Data refreshed {formatDateTime(profile.last_refreshed_at)}
+          FMCSA data refreshed {formatDateTime(profile.last_refreshed_at)}
           {!client && <RefreshButton usdotNumber={profile.usdot_number} />}
           {profile.stale && (
             <div className="mt-1 text-amber-700">
@@ -87,6 +88,7 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
       </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {!trying && <IssHeaderCard usdotNumber={profile.usdot_number} />}
         <HeaderCard
           label="Authority"
           source={

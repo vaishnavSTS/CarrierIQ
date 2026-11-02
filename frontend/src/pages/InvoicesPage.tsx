@@ -26,7 +26,7 @@ export function InvoicesPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Invoices</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Created when a client pays for a service on the Compliance tab, and paid through Stripe.
+          Created when a client pays for a service on the What to fix tab, and paid through Stripe.
           Refunds are made in Stripe and show here on their own.
         </p>
       </div>

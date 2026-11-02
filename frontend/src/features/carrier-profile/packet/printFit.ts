@@ -64,7 +64,7 @@ export function fitSheets(root: HTMLElement): boolean {
     // min-height is in the sheet's own (unzoomed) units: after the zoom it is exactly a page.
     sheet.style.minHeight = `${height / zoom}px`
     // Measured after the zoom: text rounds differently once it is scaled.
-    const tooLong = sheet.scrollHeight * zoom > height + 1
+    const tooLong = sheet.scrollHeight * zoom > height + PX_PER_MM // half the 2mm to spare
     sheet.closest('.print-page')?.classList.toggle('print-flow', tooLong)
     overflowing ||= tooLong
   }

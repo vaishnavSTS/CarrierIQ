@@ -37,6 +37,7 @@ import { basicTiles, type BasicTile, type TileTone } from './basicTiles'
 import { ContactStrip } from './ContactStrip'
 import logo from '../../../assets/carriersafetyscan-logo.png'
 import { authorityEventsToReview, packetItems, type PacketItem } from './packetItems'
+import { FixWithSky } from '../FixWithSky'
 import { fitSheets, PrintCopy } from './printFit'
 import { PullInRates } from './PullInRates'
 import { RecordPage } from './RecordPage'
@@ -222,6 +223,7 @@ function ItemBox({
               {item.fix}
             </p>
           )}
+          {tone !== 'green' && <FixWithSky topic={item.title} />}
         </div>
       </div>
     </li>

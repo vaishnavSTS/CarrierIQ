@@ -19,7 +19,7 @@ const SCREENS = [
     src: phoneSafety,
     title: 'Your safety record',
     text: 'Safety rating, inspections, crashes and out-of-service rates.',
-    alt: 'The Safety tab on a phone: safety rating, inspections, crashes and out-of-service rates',
+    alt: 'The Inspections tab on a phone: safety rating, inspections, crashes and out-of-service rates',
   },
   {
     src: phoneReport,

@@ -18,6 +18,15 @@ export function formatDate(value: string | null): string {
   return value ? dateOnly.format(new Date(`${value}T00:00:00Z`)) : '—'
 }
 
+/** "2026-10-01" -> "Oct 2026". */
+export function formatMonth(value: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${value.slice(0, 10)}T00:00:00Z`))
+}
+
 /** 0.0748 -> "7.5%"; "—" when there is nothing to divide. */
 export function formatPercent(value: number | null): string {
   return value === null ? '—' : `${(value * 100).toFixed(1)}%`

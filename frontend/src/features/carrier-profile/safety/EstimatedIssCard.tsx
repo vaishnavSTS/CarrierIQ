@@ -1,7 +1,7 @@
 import { AlertTriangle, CircleAlert, CircleCheck, Minus } from 'lucide-react'
 
 import type { EstimatedIss, IssHistoryEntry } from '../../../types/carrierSafety'
-import { formatLocalDate, ordinal } from '../../../utils/format'
+import { formatLocalDate, formatMonth, ordinal } from '../../../utils/format'
 import { Empty } from '../Section'
 import { IssGauge } from './IssGauge'
 import { ISS_BAND, NEAR_THRESHOLD_POINTS } from './issBand'
@@ -41,7 +41,8 @@ export function EstimatedIssCard({
           </div>
           <p className="mt-1 text-xs text-slate-500">
             CarrierSafetyScan’s estimate from public FMCSA data, not FMCSA’s official ISS. Bands:
-            1–49 Satisfactory · 50–74 At risk · 75–100 High risk.
+            1–49 Satisfactory · 50–74 At risk · 75–100 High risk. FMCSA data:{' '}
+            {formatMonth(iss.data_month)}.
           </p>
           <p className="mt-3 text-sm text-slate-800">
             <span className="text-slate-500">Why: </span>

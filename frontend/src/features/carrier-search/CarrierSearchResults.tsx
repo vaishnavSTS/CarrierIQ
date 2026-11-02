@@ -26,6 +26,16 @@ function DocketList({ result }: { result: CarrierSearchResult }) {
   )
 }
 
+/** Under the results: where they come from. */
+export function SearchSource() {
+  return (
+    <p className="text-xs text-slate-500">
+      Source: FMCSA Company Census and operating authority records. Each row shows when it was
+      refreshed.
+    </p>
+  )
+}
+
 export function CarrierSearchResults({ results }: { results: CarrierSearchResult[] }) {
   const navigate = useNavigate()
   const carrierPath = useCarrierPath()

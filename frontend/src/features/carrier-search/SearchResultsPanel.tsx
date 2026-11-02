@@ -1,7 +1,7 @@
 import { ApiError } from '../../api/client'
 import { useCarrierSearch } from '../../hooks/useCarrierSearch'
 import type { SearchKind } from '../../types/carrier'
-import { CarrierSearchResults } from './CarrierSearchResults'
+import { CarrierSearchResults, SearchSource } from './CarrierSearchResults'
 
 const KIND_LABEL: Record<SearchKind, string> = {
   usdot: 'USDOT number',
@@ -38,6 +38,7 @@ export function SearchResultsPanel({ query }: { query: string }) {
               : `${data.results.length} result${data.results.length === 1 ? '' : 's'} for ${KIND_LABEL[data.query_type]} “${data.query}”.`}
           </p>
           {data.results.length > 0 && <CarrierSearchResults results={data.results} />}
+          {data.results.length > 0 && <SearchSource />}
         </>
       )}
     </section>

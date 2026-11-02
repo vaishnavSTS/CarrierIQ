@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { Clock, Globe, Mail, MapPin, Phone } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 import { ApiError } from '../api/client'
 import { sendContactMessage } from '../api/contact'
@@ -15,7 +16,16 @@ const EMPTY = { full_name: '', email: '', phone: '', company: '', usdot: '', mes
 
 /** Contact Us: how to reach Sky Transport Solutions, and a form that emails the team. */
 export function ContactPage() {
-  const [form, setForm] = useState(EMPTY)
+  const [params] = useSearchParams()
+  // "Fix it with Sky Transport Solutions" on a carrier's page says which carrier and what for.
+  const [form, setForm] = useState(() => {
+    const topic = params.get('topic')?.slice(0, 200)
+    return {
+      ...EMPTY,
+      usdot: /^\d{1,8}$/.test(params.get('usdot') ?? '') ? (params.get('usdot') ?? '') : '',
+      message: topic ? `I’d like help fixing: ${topic}` : '',
+    }
+  })
   const [localError, setLocalError] = useState<string | null>(null)
   const human = useTurnstile()
   const send = useMutation({

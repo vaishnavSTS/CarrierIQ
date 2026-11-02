@@ -11,12 +11,18 @@ import { useCarrierProfile } from '../hooks/useCarrierProfile'
 import { PortalModeContext, TryModeContext } from '../hooks/usePortalMode'
 
 const FREE_TABS = [
-  ['identity', 'Identity'],
+  ['identity', 'Overview'],
   ['authority', 'Authority & Insurance'],
 ] as const
 type FreeTab = (typeof FREE_TABS)[number][0]
 
-const LOCKED_TABS = ['Safety', 'Equipment', 'Network', 'Chameleon check', 'Safety Score Report']
+const LOCKED_TABS = [
+  'Inspections',
+  'Equipment',
+  'Linked carriers',
+  'Chameleon check',
+  'Safety Score Report',
+]
 
 /** The carrier a Try Now visitor chose: two tabs to read, the rest ask them to sign up. */
 export function TryCarrierPage() {
@@ -122,7 +128,7 @@ function TryCarrier() {
       {locked && (
         <SignUpDialog
           title="Sign up for a 30-day free trial"
-          message={`${locked} is part of a full account. Your free search includes Identity and Authority & Insurance.`}
+          message={`${locked} is part of a full account. Your free search includes Overview and Authority & Insurance.`}
           onClose={closeDialog}
         />
       )}

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
 import { StatusBadge } from '../../components/StatusBadge'
-import { formatDate, formatMoney, formatPercent } from '../../utils/format'
+import { formatDate, formatDateTime, formatMoney, formatPercent } from '../../utils/format'
 import { INSURANCE_LABEL, insuranceTone, statusTone } from '../../utils/status'
 import { brokerFlags, type BrokerFlag } from '../carrier-profile/network/brokerFlags'
 import { ISS_BAND } from '../carrier-profile/safety/issBand'
@@ -281,6 +281,12 @@ export const COMPARE_ROWS: CompareRow[] = [
         : undefined
     },
     better: 'low',
+  },
+  {
+    key: 'refreshed',
+    label: 'FMCSA data refreshed',
+    hint: 'When this carrier was last refreshed from FMCSA',
+    value: (f) => (f.profile ? formatDateTime(f.profile.last_refreshed_at) : undefined),
   },
   {
     key: 'age',

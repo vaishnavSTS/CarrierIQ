@@ -21,17 +21,17 @@ import { useIsOwnCarrier } from '../hooks/useIsOwnCarrier'
 import { usePortalMode, useSearchPath } from '../hooks/usePortalMode'
 
 const TABS = [
-  ['identity', 'Identity'],
+  ['identity', 'Overview'],
   ['authority', 'Authority & Insurance'],
-  ['safety', 'Safety'],
+  ['safety', 'Inspections'],
   ['equipment', 'Equipment'],
-  ['network', 'Network'],
+  ['network', 'Linked carriers'],
   ['chameleon', 'Chameleon check'],
   ['safety-score-report', 'Safety Score Report'],
   ['compliance', 'Compliance'],
   ['invoices', 'Invoices'],
   ['intelligence', 'Intelligence'],
-  ['timeline', 'Timeline'],
+  ['timeline', 'History'],
 ] as const
 
 type TabId = (typeof TABS)[number][0]
@@ -51,6 +51,7 @@ const CLIENT_TABS: readonly TabId[] = [
 const BROKER_TABS: readonly TabId[] = [...CLIENT_TABS, 'chameleon']
 const CLIENT_LABELS: Partial<Record<TabId, string>> = {
   network: 'How brokers see you',
+  compliance: 'What to fix',
 }
 
 const DEFAULT_TAB: TabId = 'identity'

@@ -1,6 +1,7 @@
 import { Ban, CircleAlert, CircleCheck, TriangleAlert } from 'lucide-react'
 
 import { StatusBadge } from '../../components/StatusBadge'
+import { formatDateTime } from '../../utils/format'
 import { useComparison } from './useComparison'
 import { VERDICT, vetCarrier } from './vetting'
 
@@ -39,6 +40,8 @@ export function BrokerVerdict({ usdotNumber }: { usdotNumber: number }) {
       <p className="mt-2 text-xs text-slate-500">
         CarrierSafetyScan’s reading of public FMCSA records, to help you vet. It isn’t a safety
         rating or a guarantee, and the booking decision is yours.
+        {facts.profile?.last_refreshed_at &&
+          ` FMCSA data refreshed ${formatDateTime(facts.profile.last_refreshed_at)}.`}
       </p>
     </section>
   )

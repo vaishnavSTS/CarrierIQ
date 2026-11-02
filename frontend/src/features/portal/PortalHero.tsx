@@ -26,9 +26,9 @@ const item = {
 
 /** The six tabs a client sees for their carrier (docs/client-internal-portal-plan.md, 4a). */
 const VIEWS: { icon: LucideIcon; label: string }[] = [
-  { icon: IdCard, label: 'Identity' },
+  { icon: IdCard, label: 'Overview' },
   { icon: ScrollText, label: 'Authority & insurance' },
-  { icon: TrendingDown, label: 'Safety & how to improve' },
+  { icon: TrendingDown, label: 'Inspections & how to improve' },
   { icon: Truck, label: 'Equipment' },
   { icon: ShieldCheck, label: 'How brokers see you' },
   { icon: FileText, label: 'Safety Score Report' },

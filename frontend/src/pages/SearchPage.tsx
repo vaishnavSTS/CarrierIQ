@@ -2,7 +2,7 @@ import { useSearchParams } from 'react-router-dom'
 
 import { ApiError } from '../api/client'
 import { CarrierSearchBox } from '../features/carrier-search/CarrierSearchBox'
-import { CarrierSearchResults } from '../features/carrier-search/CarrierSearchResults'
+import { CarrierSearchResults, SearchSource } from '../features/carrier-search/CarrierSearchResults'
 import { useCarrierSearch } from '../hooks/useCarrierSearch'
 import type { SearchKind } from '../types/carrier'
 
@@ -49,6 +49,7 @@ export function SearchPage() {
               : `${data.results.length} result${data.results.length === 1 ? '' : 's'} for ${KIND_LABEL[data.query_type]} “${data.query}”.`}
           </p>
           {data.results.length > 0 && <CarrierSearchResults results={data.results} />}
+          {data.results.length > 0 && <SearchSource />}
         </>
       )}
     </div>

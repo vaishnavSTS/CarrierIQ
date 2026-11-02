@@ -2,6 +2,7 @@ import type { OosWindow } from '../../../types/carrierProfile'
 import type { BasicDriver } from '../../../types/carrierSafety'
 import { Disclosure } from '../../../components/Disclosure'
 import { NotLoaded } from '../../../components/NotLoaded'
+import { FixWithSky } from '../FixWithSky'
 import { formatDate, formatPercent } from '../../../utils/format'
 import { basicTip, DATAQS_URL, groupTip, improvementSummary } from './improvementTips'
 
@@ -132,6 +133,7 @@ export function ImprovementGuide({
                       {basicTip(b.basic)}
                     </p>
                   )}
+                  <FixWithSky topic={`${b.basic} violations`} />
                 </Disclosure>
               </li>
             ))}

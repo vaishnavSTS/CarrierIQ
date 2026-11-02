@@ -15,7 +15,7 @@ import { INVOICE_STATUS } from './status'
  */
 export function CarrierInvoicesSection({
   usdotNumber,
-  empty = 'No invoices for this carrier yet. Paying for a service on the Compliance tab or the subscription creates one.',
+  empty = 'No invoices for this carrier yet. Paying for a service or the subscription creates one.',
 }: {
   usdotNumber: number | null
   empty?: string

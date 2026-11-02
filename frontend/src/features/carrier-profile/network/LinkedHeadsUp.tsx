@@ -68,7 +68,7 @@ export function LinkedHeadsUp({ usdotNumber }: { usdotNumber: number }) {
           ))}
           {linked.length > NAMED && ` and ${linked.length - NAMED} more`}
         </span>
-        <span className="text-slate-500">→ Network tab</span>
+        <span className="text-slate-500">→ Linked carriers</span>
       </Link>
     </HeaderCard>
   )

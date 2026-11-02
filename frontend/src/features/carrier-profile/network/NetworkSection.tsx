@@ -16,6 +16,7 @@ import { formatDate, formatDateTime, formatPhone } from '../../../utils/format'
 import type { Tone } from '../../../utils/status'
 import { Empty, Section } from '../Section'
 import { cellClass, headClass, tableClass } from '../styles'
+import { FixWithSky } from '../FixWithSky'
 import { attributeLabel } from './attributeLabel'
 import { type FlagLevel, brokerFlags } from './brokerFlags'
 import { TeamNotes } from './TeamNotes'
@@ -245,6 +246,7 @@ function NetworkBody({
                       {f.fix}
                     </p>
                   )}
+                  <FixWithSky topic={f.title} />
                 </Disclosure>
               </li>
             )

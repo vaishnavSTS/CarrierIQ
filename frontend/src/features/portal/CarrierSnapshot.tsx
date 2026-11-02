@@ -7,7 +7,8 @@ import { useCarrierProfile } from '../../hooks/useCarrierProfile'
 import { useCarrierSafety } from '../../hooks/useCarrierSafety'
 import { useCarrierNetwork } from '../../hooks/useNetwork'
 import type { CheckStatus } from '../../types/network'
-import { formatPercent } from '../../utils/format'
+import { formatDateTime, formatMonth, formatPercent } from '../../utils/format'
+import { FixWithSky } from '../carrier-profile/FixWithSky'
 import { brokerFlags } from '../carrier-profile/network/brokerFlags'
 import { ISS_BAND } from '../carrier-profile/safety/issBand'
 
@@ -74,6 +75,9 @@ export function CarrierSnapshot({ usdotNumber }: { usdotNumber: number }) {
           <p className="text-sm text-slate-600">
             {carrier.legal_name} · USDOT <span className="font-mono">{carrier.usdot_number}</span> ·
             the same FMCSA records brokers check
+            {carrier.last_refreshed_at && (
+              <> · FMCSA data refreshed {formatDateTime(carrier.last_refreshed_at)}</>
+            )}
           </p>
         </div>
         <Link
@@ -104,6 +108,9 @@ export function CarrierSnapshot({ usdotNumber }: { usdotNumber: number }) {
                 </span>
                 <StatusBadge label={band.status} tone={band.tone} />
               </div>
+              <p className="mt-1 text-xs text-slate-500">
+                Source: CarrierSafetyScan estimate from FMCSA data · {formatMonth(iss.data_month)}
+              </p>
               <p className="mt-1 text-xs text-slate-500">{band.range} of 1–100 · lower is better</p>
               <p className="mt-3 text-sm text-slate-700">{iss.reason}.</p>
             </>
@@ -151,7 +158,12 @@ export function CarrierSnapshot({ usdotNumber }: { usdotNumber: number }) {
                         aria-hidden
                       />
                     )}
-                    {f.title}
+                    <span className="min-w-0">
+                      {f.title}
+                      <span className="block">
+                        <FixWithSky topic={f.title} usdotNumber={carrier.usdot_number} />
+                      </span>
+                    </span>
                   </li>
                 ))}
               </ul>

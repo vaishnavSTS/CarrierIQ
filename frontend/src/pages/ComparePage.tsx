@@ -135,7 +135,8 @@ export function ComparePage() {
           </div>
           <p className="text-xs text-slate-500">
             The Estimated ISS is CarrierSafetyScan’s estimate of FMCSA’s Inspection Selection System
-            score, not an FMCSA figure. Open a carrier for the source and date of every value.
+            score, not an FMCSA figure. Source: FMCSA records, refreshed on the date in the table.
+            Open a carrier for the source of every value.
           </p>
         </>
       )}
