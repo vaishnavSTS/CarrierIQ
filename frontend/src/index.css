@@ -200,6 +200,8 @@ body {
 
 .hero-gradient {
   position: relative;
+  --hero-cta: #1e3a8a; /* on the search box's pale background, like the page's other buttons */
+  --hero-cta-hover: #172f73;
   background: radial-gradient(55% 34% at 8% 0%, rgb(109 40 217 / 0.55), transparent 72%),
     linear-gradient(
       180deg,
