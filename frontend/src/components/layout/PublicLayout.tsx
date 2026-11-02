@@ -25,7 +25,7 @@ export function PublicLayout() {
             </span>
             <Link
               to="/contact"
-              className="hidden rounded-lg px-3 py-1.5 text-slate-500 hover:bg-slate-50 hover:text-slate-900 sm:block"
+              className="hidden rounded-lg px-3 py-1.5 text-slate-500 hover:bg-slate-50 hover:text-slate-900 md:block"
             >
               Contact
             </Link>
