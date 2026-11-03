@@ -191,7 +191,7 @@ body {
  */
 .hero-gradient,
 .portal-hero {
-  --hero-highlight: #cfe2ff;
+  --hero-highlight: #fbbf24; /* gold: stands out from the white heading on the deep blue */
   --hero-cta: #6d28d9;
   --hero-cta-hover: #5b21b6;
   --hero-cta-ink: #ffffff;
