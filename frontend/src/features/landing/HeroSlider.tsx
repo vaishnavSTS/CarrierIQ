@@ -7,7 +7,7 @@ import { PrimaryLink } from './landingParts'
 import { HeroTryForm } from './LandingSections'
 import { SampleShowcase, type ShowcaseAudience } from './SampleShowcase'
 
-const INTERVAL_MS = 3000
+const INTERVAL_MS = 5000
 const SWIPE_PX = 50
 
 const highlight = (text: string) => <span className="text-[var(--hero-highlight)]">{text}</span>
@@ -100,7 +100,7 @@ export function HeroSlider() {
             onClick={() => go(i)}
             className={`min-h-11 rounded-full px-4 py-2 text-sm font-medium ring-1 ring-white/50 transition-colors ${
               i === index
-                ? 'bg-[var(--hero-cta)] text-[var(--hero-cta-ink)]'
+                ? 'bg-[var(--hero-highlight)] text-[#0b1440] ring-[var(--hero-highlight)]'
                 : 'text-white hover:bg-white/15'
             }`}
           >
