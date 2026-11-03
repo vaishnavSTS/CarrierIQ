@@ -46,6 +46,7 @@ const CLIENT_TABS: readonly TabId[] = [
   'safety-score-report',
   'compliance',
   'invoices',
+  'timeline',
 ]
 /** Brokers also get the Chameleon check (they vet carriers before giving them loads). */
 const BROKER_TABS: readonly TabId[] = [...CLIENT_TABS, 'chameleon']

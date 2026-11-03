@@ -91,7 +91,7 @@ export function solutions({
     out.push({
       key: 'dataqs',
       title: 'Challenge violations that are wrong',
-      how: `Check the heaviest violations in this report. If one was cited by mistake, file a DataQs challenge to have it reviewed; if the challenge is accepted, the violation is removed and stops counting.${client ? ' Sky Transport Solutions can file it for you.' : ''}`,
+      how: `Check the heaviest violations. If one was cited by mistake, file a DataQs challenge to have it reviewed; if the challenge is accepted, the violation is removed and stops counting.${client ? ' Sky Transport Solutions can file it for you.' : ''}`,
     })
   }
 

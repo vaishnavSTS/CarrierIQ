@@ -8,12 +8,18 @@ import type { Solution } from './solutions'
  * Page 2's plan in plain English: numbered steps, each with what to do and how. Two columns on
  * paper (the printed copy is laid out at the A4 width whatever the screen), one on a phone.
  */
-export function SolutionsBox({ steps }: { steps: Solution[] }) {
+export function SolutionsBox({
+  steps,
+  aside = 'Suggestions from this report’s FMCSA records',
+}: {
+  steps: Solution[]
+  aside?: string
+}) {
   const printed = useContext(PrintCopy)
   if (steps.length === 0) return null
   return (
     <div className="space-y-2">
-      <SectionHeading aside="Suggestions from this report’s FMCSA records" tone="green">
+      <SectionHeading aside={aside} tone="green">
         <span className="text-emerald-800">Solutions on improving the Safety Score</span>
       </SectionHeading>
       <ol

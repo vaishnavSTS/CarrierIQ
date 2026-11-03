@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { StatusBadge } from '../../components/StatusBadge'
 import type { Change, TimelineEvent } from '../../types/carrierProfile'
+import { usePortalMode } from '../../hooks/usePortalMode'
 import { formatDate } from '../../utils/format'
 import { eventSource } from '../../utils/sources'
 import { severityTone } from '../../utils/status'
@@ -61,6 +62,7 @@ export function TimelineSection({
   events: TimelineEvent[]
   changes: Change[]
 }) {
+  const staff = usePortalMode() === 'internal'
   const [significantOnly, setSignificantOnly] = useState(false)
   const [kind, setKind] = useState<Kind | null>(null)
   const [showAll, setShowAll] = useState(false)
@@ -98,8 +100,12 @@ export function TimelineSection({
   return (
     <Section
       id="timeline"
-      title="Timeline"
-      source="FMCSA authority, insurance and census records; your team"
+      title="History"
+      source={
+        staff
+          ? 'FMCSA authority, insurance and census records; your team'
+          : 'FMCSA authority, insurance and census records'
+      }
     >
       <div className="mb-3 space-y-2">
         <p className="text-xs text-slate-500">
@@ -167,7 +173,7 @@ export function TimelineSection({
               </span>
               <span className="col-span-2 min-w-0 break-words sm:col-span-1">
                 <span className="font-medium text-slate-900">{r.title}</span>
-                {r.signalId !== null && (
+                {staff && r.signalId !== null && (
                   <Link
                     to={`?tab=intelligence&signal=${r.signalId}`}
                     className="ml-2 text-xs text-slate-600 underline hover:text-slate-900"

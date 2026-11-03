@@ -31,6 +31,7 @@ import type {
 import { formatLocalDate } from '../../../utils/format'
 import type { Tone } from '../../../utils/status'
 import { Section } from '../Section'
+import { ImprovementSteps } from './ImprovementSteps'
 import { PayDialog } from './PayDialog'
 import { SERVICE_LINKS } from './serviceLinks'
 
@@ -179,9 +180,15 @@ export function ComplianceSection({ profile }: { profile: CarrierProfile }) {
   return (
     <Section
       id="compliance"
-      title="Compliance"
-      source="Authority: FMCSA · UCR: FMCSA SAFER UCR query"
+      title={staff ? 'Compliance' : 'What to fix'}
+      source="Steps: FMCSA safety data and inspections · Authority: FMCSA · UCR: FMCSA SAFER UCR query"
     >
+      <div className="mb-6">
+        <ImprovementSteps profile={profile} />
+      </div>
+      <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+        Sky Transport Solutions services
+      </h3>
       <p className="mb-4 text-sm text-slate-600">
         {staff
           ? 'What the client sees, and any help they asked STS for. Requests are handled on the Service requests page.'
