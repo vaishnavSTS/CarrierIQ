@@ -8,7 +8,7 @@ created by an admin. (PENDING is no longer given to new accounts.)
 
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, String
+from sqlalchemy import BigInteger, DateTime, ForeignKey, String, false
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -47,3 +47,7 @@ class User(IdMixin, UpdatedAtMixin, Base):
     subscription_period_end: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     stripe_customer_id: Mapped[str | None] = mapped_column(String(64))
     stripe_subscription_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    # Cancelled by the user: Stripe stops at the end of the paid month, and access lasts till then
+    subscription_cancel_at_period_end: Mapped[bool] = mapped_column(
+        default=False, server_default=false()
+    )

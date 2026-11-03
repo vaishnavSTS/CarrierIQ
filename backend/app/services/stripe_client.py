@@ -124,6 +124,35 @@ class StripeClient:
         form = {"customer": customer_id, "return_url": return_url}
         return self._post("billing_portal/sessions", form, key)
 
+    def set_cancel_at_period_end(self, subscription_id: str, cancel: bool) -> dict[str, Any]:
+        """Stop the subscription at the end of the paid month (no more charges), or undo that.
+        Returns Stripe's subscription."""
+        key = get_settings().stripe_secret_key
+        if not key:
+            raise PaymentUnavailableError("Online payment isn't set up yet. Please contact STS.")
+        try:
+            with httpx.Client(transport=self.transport, timeout=30.0) as client:
+                response = client.post(
+                    f"{API}/subscriptions/{subscription_id}",
+                    data={"cancel_at_period_end": "true" if cancel else "false"},
+                    auth=(key, ""),
+                )
+            data = response.json()
+        except (httpx.HTTPError, ValueError) as exc:
+            logger.warning("Stripe subscription update failed: %s", type(exc).__name__)
+            raise PaymentUnavailableError(
+                "Stripe couldn't be reached. Please try again in a minute."
+            ) from exc
+        if response.status_code >= 400:
+            error = (data.get("error") or {}).get("message") or f"HTTP {response.status_code}"
+            logger.warning(
+                "Stripe refused the subscription update (%s): %s", response.status_code, error
+            )
+            raise PaymentUnavailableError(
+                "Stripe couldn't change the subscription. Please contact STS."
+            )
+        return dict(data)
+
     def _post(self, path: str, form: dict[str, str], key: str) -> CheckoutSession:
         try:
             with httpx.Client(transport=self.transport, timeout=30.0) as client:

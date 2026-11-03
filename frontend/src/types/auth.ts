@@ -23,6 +23,10 @@ export interface Billing {
   current_period_end: string | null
   /** Stripe's billing page can open (change card, cancel) */
   can_manage: boolean
+  /** Cancelled: no more charges, open until current_period_end, then it locks */
+  ending: boolean
+  /** A running subscription that isn't cancelled yet */
+  can_cancel: boolean
 }
 
 export interface User {

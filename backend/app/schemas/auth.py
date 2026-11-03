@@ -187,6 +187,9 @@ class BillingOut(BaseModel):
     subscription_status: str | None  # Stripe's: active, past_due, canceled, ...
     current_period_end: datetime | None  # paid up to (Stripe charges again then)
     can_manage: bool  # has a Stripe customer: Stripe's billing page can open
+    # Cancelled: no more charges, open until current_period_end, then it locks
+    ending: bool = False
+    can_cancel: bool = False  # a running subscription that isn't cancelled yet
 
 
 class BillingLinkOut(BaseModel):

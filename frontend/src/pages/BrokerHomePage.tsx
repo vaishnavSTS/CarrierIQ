@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router-dom'
 
+import { SubscriptionPanel } from '../features/billing/SubscriptionPanel'
 import { CarrierSearchBox } from '../features/carrier-search/CarrierSearchBox'
 import { SearchResultsPanel } from '../features/carrier-search/SearchResultsPanel'
 import { BrokerGuide } from '../features/portal/BrokerGuide'
@@ -28,6 +29,7 @@ export function BrokerHomePage() {
       </BrokerHero>
 
       {query ? <SearchResultsPanel query={query} /> : <BrokerGuide />}
+      <SubscriptionPanel />
     </div>
   )
 }

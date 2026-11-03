@@ -1,6 +1,7 @@
 import { ChevronRight, Clock, Truck } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
+import { SubscriptionPanel } from '../features/billing/SubscriptionPanel'
 import { CarrierSearchBox } from '../features/carrier-search/CarrierSearchBox'
 import { CarrierSnapshot } from '../features/portal/CarrierSnapshot'
 import { ClientGuide } from '../features/portal/ClientGuide'
@@ -94,6 +95,7 @@ export function PortalHomePage() {
       )}
 
       <ClientGuide />
+      <SubscriptionPanel />
     </div>
   )
 }

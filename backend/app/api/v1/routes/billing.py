@@ -32,6 +32,19 @@ def subscribe(user: CurrentUser, db: Db, stripe: Stripe) -> BillingLinkOut:
     return BillingLinkOut(url=SubscriptionService(db, stripe).subscribe(user))
 
 
+@router.post("/cancel", response_model=BillingOut | None)
+def cancel(user: CurrentUser, db: Db, stripe: Stripe) -> BillingOut | None:
+    """Cancel: Stripe charges no more and the subscription ends with the paid month; the app
+    stays open until then."""
+    return SubscriptionService(db, stripe).cancel(user)
+
+
+@router.post("/resume", response_model=BillingOut | None)
+def resume(user: CurrentUser, db: Db, stripe: Stripe) -> BillingOut | None:
+    """Undo a cancellation before the paid month ends."""
+    return SubscriptionService(db, stripe).resume(user)
+
+
 @router.post("/manage", response_model=BillingLinkOut)
 def manage(user: CurrentUser, db: Db, stripe: Stripe) -> BillingLinkOut:
     """Stripe's billing page: change the card, see receipts, cancel."""

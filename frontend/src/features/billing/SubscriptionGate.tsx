@@ -4,7 +4,8 @@ import { useEffect, type ReactNode } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { ME_KEY, useLogout, useMe } from '../../hooks/useAuth'
-import { useSubscribe } from '../../hooks/useBilling'
+import { useResumeSubscription, useSubscribe } from '../../hooks/useBilling'
+import { formatDate } from '../../utils/format'
 
 /** What the subscription unlocks, shown in the pop-up. */
 const INCLUDED = [
@@ -46,6 +47,12 @@ export function SubscriptionGate({ children }: { children: ReactNode }) {
   }
   return (
     <>
+      {billing.state === 'active' && billing.ending && (
+        <EndingBanner
+          until={billing.current_period_end}
+          canResume={billing.subscription_status !== 'canceled'}
+        />
+      )}
       {billing.state === 'trial' && (
         <TrialBanner daysLeft={billing.trial_days_left ?? 0} price={billing.monthly_price} />
       )}
@@ -60,6 +67,31 @@ export function SubscriptionGate({ children }: { children: ReactNode }) {
       )}
       {children}
     </>
+  )
+}
+
+/** A cancelled subscription: open until the paid month ends, then the login locks. */
+function EndingBanner({ until, canResume }: { until: string | null; canResume: boolean }) {
+  const resume = useResumeSubscription()
+  return (
+    <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-amber-950">
+        <span className="font-semibold">Your subscription is cancelled.</span> You won’t be charged
+        again, and you keep full access
+        {until ? <> until {formatDate(until.slice(0, 10))}</> : ' until the end of the paid month'}.
+      </p>
+      {canResume && (
+        <button
+          type="button"
+          disabled={resume.isPending}
+          onClick={() => resume.mutate()}
+          title={resume.isError ? resume.error.message : undefined}
+          className="tap shrink-0 rounded-lg bg-cta px-3 py-1.5 text-sm font-medium text-cta-ink hover:bg-cta-hover disabled:opacity-50"
+        >
+          {resume.isPending ? 'Keeping it…' : 'Keep my subscription'}
+        </button>
+      )}
+    </div>
   )
 }
 

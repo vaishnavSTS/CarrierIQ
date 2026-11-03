@@ -24,6 +24,7 @@ from tests.dataqs.test_compliance_tab import FakeSender
 from tests.dataqs.test_invoices import SECRET, signed
 
 STRIPE_PAGE = "https://checkout.stripe.com/c/pay/cs_test_sub"
+PERIOD_END = int((datetime.now(UTC) + timedelta(days=20)).timestamp())  # the paid month runs on
 
 
 class FakeStripe:
@@ -33,6 +34,16 @@ class FakeStripe:
     def __call__(self, request: httpx.Request) -> httpx.Response:
         form = {k: v[0] for k, v in parse_qs(request.content.decode()).items()}
         self.calls.append((request.url.path, form))
+        if request.url.path.startswith("/v1/subscriptions/"):
+            return httpx.Response(
+                200,
+                json={
+                    "id": request.url.path.rsplit("/", 1)[-1],
+                    "status": "active",
+                    "cancel_at_period_end": form.get("cancel_at_period_end") == "true",
+                    "items": {"data": [{"current_period_end": PERIOD_END}]},
+                },
+            )
         return httpx.Response(200, json={"id": "cs_test_sub", "url": STRIPE_PAGE})
 
 
@@ -170,7 +181,16 @@ def test_stripes_webhook_starts_and_ends_the_subscription(
     assert signed(api, renewed).json() == {"result": "subscription past_due"}
     assert api.get("/api/v1/portal/overview").status_code == 200
 
-    ended = {**renewed, "id": "evt_3", "type": "customer.subscription.deleted"}
+    ended_obj = {
+        **renewed["data"]["object"],
+        "items": {"data": [{"current_period_end": int(datetime.now(UTC).timestamp()) - 60}]},
+    }
+    ended = {
+        **renewed,
+        "id": "evt_3",
+        "type": "customer.subscription.deleted",
+        "data": {"object": ended_obj},
+    }
     assert signed(api, ended).json() == {"result": "subscription canceled"}
     db.refresh(user)
     assert user.subscription_status == "canceled"
@@ -286,3 +306,106 @@ def test_a_non_subscription_stripe_invoice_is_left_alone(
 ) -> None:
     event = {"id": "evt_x", "type": "invoice.paid", "data": {"object": {"id": "in_x"}}}
     assert signed(api, event).json() == {"result": "ignored"}
+
+
+def subscribed(api: TestClient, db: Session) -> User:  # noqa: F811
+    user = signed_up(api, db)
+    end_trial(db, user)
+    user.stripe_customer_id = "cus_1"
+    user.stripe_subscription_id = "sub_1"
+    user.subscription_status = "active"
+    user.subscription_period_end = datetime.fromtimestamp(PERIOD_END, UTC)
+    db.commit()
+    return user
+
+
+def test_cancelling_stops_charges_but_keeps_the_paid_month(
+    api: TestClient,  # noqa: F811
+    db: Session,
+    stripe: FakeStripe,
+) -> None:
+    user = subscribed(api, db)
+    assert api.get("/api/v1/auth/me").json()["billing"]["can_cancel"] is True
+
+    billing = api.post("/api/v1/billing/cancel").json()
+
+    # Stripe is told to stop at the end of the paid month, not now.
+    assert stripe.calls[-1] == ("/v1/subscriptions/sub_1", {"cancel_at_period_end": "true"})
+    assert billing["state"] == "active" and billing["ending"] is True
+    assert billing["can_cancel"] is False
+    assert billing["current_period_end"].startswith(
+        datetime.fromtimestamp(PERIOD_END, UTC).strftime("%Y-%m-%d")
+    )
+    db.refresh(user)
+    assert user.subscription_cancel_at_period_end is True
+    assert api.get("/api/v1/portal/overview").status_code == 200  # still fully open
+    assert api.post("/api/v1/billing/cancel").status_code == 422  # already cancelled
+
+
+def test_a_cancellation_can_be_undone_before_the_month_ends(
+    api: TestClient,  # noqa: F811
+    db: Session,
+    stripe: FakeStripe,
+) -> None:
+    subscribed(api, db)
+    api.post("/api/v1/billing/cancel")
+
+    billing = api.post("/api/v1/billing/resume").json()
+
+    assert stripe.calls[-1] == ("/v1/subscriptions/sub_1", {"cancel_at_period_end": "false"})
+    assert billing["ending"] is False and billing["can_cancel"] is True
+    assert api.post("/api/v1/billing/resume").status_code == 422  # nothing left to undo
+
+
+def test_the_login_locks_only_when_the_paid_month_is_over(
+    api: TestClient,  # noqa: F811
+    db: Session,
+    stripe: FakeStripe,
+) -> None:
+    user = subscribed(api, db)
+    api.post("/api/v1/billing/cancel")
+    # Stripe ends it at the end of the month (or someone ended it at once on Stripe's page).
+    user.subscription_status = "canceled"
+    db.commit()
+    assert api.get("/api/v1/portal/overview").status_code == 200
+    assert api.get("/api/v1/auth/me").json()["billing"]["ending"] is True
+
+    user.subscription_period_end = datetime.now(UTC) - timedelta(minutes=1)
+    db.commit()
+    assert api.get("/api/v1/portal/overview").status_code == 402
+
+
+def test_stripes_update_marks_a_cancellation_made_on_stripes_page(
+    api: TestClient,  # noqa: F811
+    db: Session,
+    stripe: FakeStripe,
+) -> None:
+    user = subscribed(api, db)
+    event = {
+        "id": "evt_9",
+        "type": "customer.subscription.updated",
+        "data": {
+            "object": {
+                "id": "sub_1",
+                "customer": "cus_1",
+                "status": "active",
+                "cancel_at_period_end": True,
+                "items": {"data": [{"current_period_end": PERIOD_END}]},
+                "metadata": {"user_id": str(user.id)},
+            }
+        },
+    }
+    signed(api, event)
+    db.refresh(user)
+    assert user.subscription_cancel_at_period_end is True
+    assert api.get("/api/v1/auth/me").json()["billing"]["ending"] is True
+
+
+def test_there_is_nothing_to_cancel_without_a_subscription(
+    api: TestClient,  # noqa: F811
+    db: Session,
+    stripe: FakeStripe,
+) -> None:
+    signed_up(api, db)  # on the trial, never subscribed
+    assert api.post("/api/v1/billing/cancel").status_code == 422
+    assert stripe.calls == []

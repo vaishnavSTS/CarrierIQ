@@ -11,9 +11,12 @@ and invoices they already owe (app/api/auth.py), and the portal shows only the s
 Stripe's webhook keeps `subscription_status` current: checkout.session.completed (mode
 subscription) starts it; customer.subscription.created / updated / deleted follow it. Stripe
 retries a failed monthly charge; while it does the status is past_due and the app stays open. When
-Stripe gives up (unpaid) or the subscription is cancelled, the login locks again. Each month Stripe
-charges (invoice.paid) becomes a PAID CarrierSafetyScan invoice, emailed with its PDF and listed in
-the client's carrier Invoices tab / the broker's Invoices page, and for STS on Invoices.
+Stripe gives up (unpaid) or the subscription is cancelled, the login locks again, but never before
+the end of the month already paid for: a user who cancels (`cancel`) is not charged again, Stripe
+stops the subscription at the end of that month, and the app stays fully open until then. Each
+month Stripe charges (invoice.paid) becomes a PAID CarrierSafetyScan invoice, emailed with its PDF
+and listed in the client's carrier Invoices tab / the broker's Invoices page, and for STS on
+Invoices.
 """
 
 import logging
@@ -53,6 +56,13 @@ def billing_state(user: User, now: datetime) -> str:
         return "free"
     if user.subscription_status in LIVE_STATUSES:
         return "active"
+    # Cancelled, even at once, but the month is paid for: open until it ends.
+    if (
+        user.subscription_status == "canceled"
+        and user.subscription_period_end is not None
+        and now < user.subscription_period_end
+    ):
+        return "active"
     if now < user.trial_ends_at:
         return "trial"
     return "locked"
@@ -76,6 +86,12 @@ def billing_out(user: User, now: datetime) -> BillingOut | None:
         subscription_status=user.subscription_status,
         current_period_end=user.subscription_period_end,
         can_manage=user.stripe_customer_id is not None,
+        ending=state == "active"
+        and (user.subscription_cancel_at_period_end or user.subscription_status == "canceled"),
+        can_cancel=state == "active"
+        and user.stripe_subscription_id is not None
+        and user.subscription_status in LIVE_STATUSES
+        and not user.subscription_cancel_at_period_end,
     )
 
 
@@ -137,6 +153,45 @@ class SubscriptionService:
         )
         return session.url
 
+    def cancel(self, user: User) -> BillingOut | None:
+        """Cancel: Stripe charges no more and stops at the end of the paid month; the app stays
+        fully open until then (the user isn't locked out at once)."""
+        self._billed(user)
+        if not user.stripe_subscription_id or user.subscription_status not in LIVE_STATUSES:
+            raise ValidationError("There's no subscription to cancel")
+        if user.subscription_cancel_at_period_end:
+            raise ValidationError("Your subscription is already cancelled")
+        self._apply(user, self.stripe.set_cancel_at_period_end(user.stripe_subscription_id, True))
+        user.subscription_cancel_at_period_end = True
+        self.db.commit()
+        logger.info("User %s cancelled; open until %s", user.id, user.subscription_period_end)
+        return billing_out(user, self.now())
+
+    def resume(self, user: User) -> BillingOut | None:
+        """Keep the subscription after all, while the paid month is still running."""
+        self._billed(user)
+        if not (
+            user.stripe_subscription_id
+            and user.subscription_cancel_at_period_end
+            and user.subscription_status in LIVE_STATUSES
+        ):
+            raise ValidationError("There's no cancellation to undo")
+        self._apply(user, self.stripe.set_cancel_at_period_end(user.stripe_subscription_id, False))
+        user.subscription_cancel_at_period_end = False
+        self.db.commit()
+        return billing_out(user, self.now())
+
+    def _apply(self, user: User, subscription: dict[str, Any]) -> None:
+        """Stripe's answer: its status and the end of the paid month."""
+        if subscription.get("status"):
+            user.subscription_status = str(subscription["status"])
+        items = (subscription.get("items") or {}).get("data") or [{}]
+        end = _timestamp(
+            subscription.get("current_period_end") or items[0].get("current_period_end")
+        )
+        if end is not None:
+            user.subscription_period_end = end
+
     def _billed(self, user: User) -> str:
         state = billing_state(user, self.now())
         if state == "free":
@@ -183,6 +238,9 @@ class SubscriptionService:
             user.stripe_subscription_id = sub_id or user.stripe_subscription_id
             user.stripe_customer_id = obj.get("customer") or user.stripe_customer_id
             user.subscription_status = status
+            user.subscription_cancel_at_period_end = not kind.endswith("deleted") and bool(
+                obj.get("cancel_at_period_end") or obj.get("cancel_at")
+            )
             # Newer Stripe API versions keep the billing period on the subscription's items.
             items = (obj.get("items") or {}).get("data") or [{}]
             user.subscription_period_end = _timestamp(
