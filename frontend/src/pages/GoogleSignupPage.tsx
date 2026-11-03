@@ -4,6 +4,7 @@ import { Link, Navigate } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { AuthCard, Field, FormError, GoogleButton, SubmitButton } from '../features/auth/AuthCard'
 import { ConfirmDetailsDialog } from '../features/auth/ConfirmDetailsDialog'
+import { AgreeToTerms, MUST_AGREE } from '../features/legal/AgreeToTerms'
 import { homeFor, useCompleteGoogleSignup, useGoogleSignup, useMe } from '../hooks/useAuth'
 
 /**
@@ -16,6 +17,7 @@ export function GoogleSignupPage() {
   const complete = useCompleteGoogleSignup()
   const [form, setForm] = useState({ phone: '', usdot: '', company: '' })
   const [localError, setLocalError] = useState<string | null>(null)
+  const [agreed, setAgreed] = useState(false) // "I agree to the Terms … and Privacy Policy"
   const [checked, setChecked] = useState<{
     company_name: string
     phone: string
@@ -54,6 +56,10 @@ export function GoogleSignupPage() {
   function submit(event: FormEvent) {
     event.preventDefault()
     setLocalError(null)
+    if (!agreed) {
+      setLocalError(MUST_AGREE)
+      return
+    }
     const company = form.company.trim()
     if (!company) {
       setLocalError('Enter your company name.')
@@ -126,6 +132,7 @@ export function GoogleSignupPage() {
           value={form.usdot}
           onChange={set('usdot')}
         />
+        <AgreeToTerms checked={agreed} onChange={setAgreed} />
         <FormError message={error} />
         <SubmitButton busy={complete.isPending}>Open my portal</SubmitButton>
       </form>
@@ -137,7 +144,7 @@ export function GoogleSignupPage() {
             { label: 'Your name', value: pending.data.full_name },
           ]}
           onConfirm={() => {
-            complete.mutate(checked)
+            complete.mutate({ ...checked, accept_terms: agreed })
             setChecked(null)
           }}
           onCancel={() => setChecked(null)}

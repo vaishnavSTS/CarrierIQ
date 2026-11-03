@@ -81,6 +81,7 @@ def broker_sign_up(**changes: object) -> dict[str, object]:
         "password": PASSWORD,
         "id_kind": "MC",
         "id_number": 261603,
+        "accept_terms": True,
     }
     body.update(changes)
     return body
@@ -216,6 +217,7 @@ def test_new_google_user_from_the_broker_page_finishes_as_a_broker(api: TestClie
             "phone": "5036477474",
             "id_kind": "MC",
             "id_number": 261603,
+            "accept_terms": True,
         },
     )
 

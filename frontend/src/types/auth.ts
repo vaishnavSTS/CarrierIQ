@@ -55,6 +55,8 @@ export interface RegisterInput {
   phone: string
   password: string
   usdot_number: number
+  /** Ticked "I agree to the Terms of Service and Privacy Policy"; required by the API */
+  accept_terms: boolean
 }
 
 export interface PortalCarrier {
@@ -125,6 +127,7 @@ export interface BrokerRegisterInput {
   password: string
   id_kind: BrokerIdKind
   id_number: number
+  accept_terms: boolean
 }
 
 export interface InsuranceRegisterInput {
@@ -134,6 +137,7 @@ export interface InsuranceRegisterInput {
   phone: string
   password: string
   license_number: string
+  accept_terms: boolean
 }
 
 export interface BrokerGoogleSignupInput {
@@ -141,6 +145,7 @@ export interface BrokerGoogleSignupInput {
   phone: string
   id_kind: BrokerIdKind
   id_number: number
+  accept_terms: boolean
 }
 
 /** A brokerage's FMCSA identity, as checked at sign-up. */
@@ -161,4 +166,5 @@ export interface GoogleSignupInput {
   usdot_number: number
   /** Compared with FMCSA's legal / DBA name on the Accounts page */
   company_name: string
+  accept_terms: boolean
 }

@@ -4,6 +4,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { AuthCard, Field, FormError, SubmitButton } from '../features/auth/AuthCard'
 import { useTurnstile } from '../features/auth/useTurnstile'
+import { AgreeToTerms, MUST_AGREE } from '../features/legal/AgreeToTerms'
 import { homeFor, useMe, useRegisterInsurance } from '../hooks/useAuth'
 
 const MIN_PASSWORD = 10 // matches the API's AUTH_MIN_PASSWORD_LENGTH default
@@ -20,6 +21,7 @@ export function InsuranceRegisterPage() {
     confirm: '',
   })
   const [localError, setLocalError] = useState<string | null>(null)
+  const [agreed, setAgreed] = useState(false) // "I agree to the Terms … and Privacy Policy"
   const { data: current } = useMe()
   const human = useTurnstile()
   const navigate = useNavigate()
@@ -33,6 +35,10 @@ export function InsuranceRegisterPage() {
   function submit(event: FormEvent) {
     event.preventDefault()
     setLocalError(null)
+    if (!agreed) {
+      setLocalError(MUST_AGREE)
+      return
+    }
     if (form.password.length < MIN_PASSWORD) {
       setLocalError(`Password must be at least ${MIN_PASSWORD} characters.`)
       return
@@ -68,6 +74,7 @@ export function InsuranceRegisterPage() {
           phone,
           password: form.password,
           license_number: license,
+          accept_terms: agreed,
         },
         humanHeaders: human.headers,
       },
@@ -168,6 +175,7 @@ export function InsuranceRegisterPage() {
             onChange={set('confirm')}
           />
         </div>
+        <AgreeToTerms checked={agreed} onChange={setAgreed} />
         {human.widget}
         <FormError message={error} />
         <SubmitButton busy={register.isPending}>Create agent account</SubmitButton>

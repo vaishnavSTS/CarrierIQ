@@ -4,6 +4,7 @@ import { Link, Navigate } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { AuthCard, Field, FormError, GoogleButton, SubmitButton } from '../features/auth/AuthCard'
 import { BrokerIdField } from '../features/auth/BrokerIdField'
+import { AgreeToTerms, MUST_AGREE } from '../features/legal/AgreeToTerms'
 import { homeFor, useCompleteBrokerGoogleSignup, useGoogleSignup, useMe } from '../hooks/useAuth'
 import type { BrokerIdKind } from '../types/auth'
 import { parseBrokerId } from '../utils/brokerId'
@@ -19,6 +20,7 @@ export function BrokerGoogleSignupPage() {
   const [form, setForm] = useState({ phone: '', id_number: '', company: '' })
   const [idKind, setIdKind] = useState<BrokerIdKind>('MC')
   const [localError, setLocalError] = useState<string | null>(null)
+  const [agreed, setAgreed] = useState(false) // "I agree to the Terms … and Privacy Policy"
 
   if (current) return <Navigate to={homeFor(current.portal)} replace />
 
@@ -52,6 +54,10 @@ export function BrokerGoogleSignupPage() {
   function submit(event: FormEvent) {
     event.preventDefault()
     setLocalError(null)
+    if (!agreed) {
+      setLocalError(MUST_AGREE)
+      return
+    }
     const company = form.company.trim()
     if (!company) {
       setLocalError('Enter your brokerage name.')
@@ -68,7 +74,13 @@ export function BrokerGoogleSignupPage() {
       setLocalError(`Enter your ${idKind} number: digits only, up to 8 of them.`)
       return
     }
-    complete.mutate({ company_name: company, phone, id_kind: idKind, id_number: idNumber })
+    complete.mutate({
+      company_name: company,
+      phone,
+      id_kind: idKind,
+      id_number: idNumber,
+      accept_terms: agreed,
+    })
   }
 
   const error =
@@ -122,6 +134,7 @@ export function BrokerGoogleSignupPage() {
           value={form.phone}
           onChange={set('phone')}
         />
+        <AgreeToTerms checked={agreed} onChange={setAgreed} />
         <FormError message={error} />
         <SubmitButton busy={complete.isPending}>Open my broker portal</SubmitButton>
       </form>

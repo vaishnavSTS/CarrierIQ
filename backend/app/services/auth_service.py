@@ -48,6 +48,7 @@ from app.models import CarrierClaim, Organization, OrganizationCarrier, User
 from app.models.enums import OrganizationKind, UserRole, UserStatus
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import (
+    TERMS_VERSION,
     AdminUserOut,
     BrokerGoogleSignupIn,
     BrokerOut,
@@ -160,6 +161,8 @@ class AuthService:
             last_login_at=self.now() if verified else None,
             email_verified_at=self.now() if verified else None,
             trial_ends_at=self.now() + TRIAL,  # then $49/month (app/services/subscription.py)
+            terms_accepted_at=self.now(),  # every sign-up form requires "I agree"
+            terms_version=TERMS_VERSION,
         )
         self.db.add(user)
         self.db.add(OrganizationCarrier(organization_id=organization.id, usdot_number=usdot_number))
@@ -223,6 +226,8 @@ class AuthService:
             last_login_at=self.now() if verified else None,
             email_verified_at=self.now() if verified else None,
             trial_ends_at=self.now() + TRIAL,  # then $49/month (app/services/subscription.py)
+            terms_accepted_at=self.now(),  # every sign-up form requires "I agree"
+            terms_version=TERMS_VERSION,
         )
         self.db.add(user)
         self.db.commit()
@@ -262,6 +267,8 @@ class AuthService:
             last_login_at=self.now() if verified else None,
             email_verified_at=self.now() if verified else None,
             trial_ends_at=self.now() + TRIAL,  # then $49/month (app/services/subscription.py)
+            terms_accepted_at=self.now(),  # every sign-up form requires "I agree"
+            terms_version=TERMS_VERSION,
         )
         self.db.add(user)
         self.db.commit()

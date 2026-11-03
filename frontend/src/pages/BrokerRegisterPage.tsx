@@ -4,6 +4,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { AuthCard, Field, FormError, GoogleButton, SubmitButton } from '../features/auth/AuthCard'
 import { BrokerIdField } from '../features/auth/BrokerIdField'
+import { AgreeToTerms, MUST_AGREE } from '../features/legal/AgreeToTerms'
 import { useTurnstile } from '../features/auth/useTurnstile'
 import { homeFor, useMe, useRegisterBroker } from '../hooks/useAuth'
 import type { BrokerIdKind } from '../types/auth'
@@ -24,6 +25,7 @@ export function BrokerRegisterPage() {
   })
   const [idKind, setIdKind] = useState<BrokerIdKind>('MC')
   const [localError, setLocalError] = useState<string | null>(null)
+  const [agreed, setAgreed] = useState(false) // "I agree to the Terms … and Privacy Policy"
   const { data: current } = useMe()
   const human = useTurnstile()
   const navigate = useNavigate()
@@ -38,6 +40,10 @@ export function BrokerRegisterPage() {
   function submit(event: FormEvent) {
     event.preventDefault()
     setLocalError(null)
+    if (!agreed) {
+      setLocalError(MUST_AGREE)
+      return
+    }
     if (form.password.length < MIN_PASSWORD) {
       setLocalError(`Password must be at least ${MIN_PASSWORD} characters.`)
       return
@@ -74,6 +80,7 @@ export function BrokerRegisterPage() {
           password: form.password,
           id_kind: idKind,
           id_number: idNumber,
+          accept_terms: agreed,
         },
         humanHeaders: human.headers,
       },
@@ -172,6 +179,7 @@ export function BrokerRegisterPage() {
             onChange={set('confirm')}
           />
         </div>
+        <AgreeToTerms checked={agreed} onChange={setAgreed} />
         {human.widget}
         <FormError message={error} />
         <SubmitButton busy={register.isPending}>Create broker account</SubmitButton>

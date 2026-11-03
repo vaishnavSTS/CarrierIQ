@@ -58,7 +58,25 @@ class ResetPasswordIn(BaseModel):
     password: str = Field(max_length=200)  # minimum length is a setting, checked by the service
 
 
-class RegisterIn(BaseModel):
+# The Terms of Service and Privacy Policy shown at sign-up (frontend/src/features/legal). Change it
+# when either text changes, so each account records the version its owner agreed to.
+TERMS_VERSION = "2026-11-03"
+
+
+class AcceptTermsIn(BaseModel):
+    """Every sign-up form: the person ticked "I agree" to the Terms and the Privacy Policy."""
+
+    accept_terms: bool = Field(default=False, validate_default=True)
+
+    @field_validator("accept_terms")
+    @classmethod
+    def _must_agree(cls, value: bool) -> bool:
+        if not value:
+            raise ValueError("Please agree to the Terms of Service and Privacy Policy")
+        return value
+
+
+class RegisterIn(AcceptTermsIn):
     """A client signs up their company. The account waits for STS approval."""
 
     full_name: str = Field(min_length=1, max_length=200)
@@ -80,7 +98,7 @@ class RegisterIn(BaseModel):
         return value
 
 
-class GoogleSignupIn(BaseModel):
+class GoogleSignupIn(AcceptTermsIn):
     """Finishing a Google sign-up: Google gave the name and a verified email; we need the rest."""
 
     company_name: str = Field(min_length=1, max_length=200)  # compared with FMCSA's name
@@ -105,7 +123,7 @@ class BrokerIdIn(BaseModel):
     id_number: int = Field(gt=0, lt=100_000_000)
 
 
-class BrokerRegisterIn(BrokerIdIn):
+class BrokerRegisterIn(BrokerIdIn, AcceptTermsIn):
     """A freight broker signs up their brokerage."""
 
     full_name: str = Field(min_length=1, max_length=200)
@@ -126,7 +144,7 @@ class BrokerRegisterIn(BrokerIdIn):
         return value
 
 
-class InsuranceRegisterIn(BaseModel):
+class InsuranceRegisterIn(AcceptTermsIn):
     """An insurance agent signs up their agency. Their NPN is shown to STS, not checked here."""
 
     full_name: str = Field(min_length=1, max_length=200)
@@ -148,7 +166,7 @@ class InsuranceRegisterIn(BaseModel):
         return value
 
 
-class BrokerGoogleSignupIn(BrokerIdIn):
+class BrokerGoogleSignupIn(BrokerIdIn, AcceptTermsIn):
     """Finishing a broker's Google sign-up."""
 
     company_name: str = Field(min_length=1, max_length=200)

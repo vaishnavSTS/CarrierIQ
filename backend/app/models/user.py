@@ -51,3 +51,7 @@ class User(IdMixin, UpdatedAtMixin, Base):
     subscription_cancel_at_period_end: Mapped[bool] = mapped_column(
         default=False, server_default=false()
     )
+    # Ticked "I agree" to the Terms of Service and Privacy Policy at sign-up, and which version
+    # (app/schemas/auth.py TERMS_VERSION). None: made by STS, or signed up before the box existed.
+    terms_accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    terms_version: Mapped[str | None] = mapped_column(String(20))

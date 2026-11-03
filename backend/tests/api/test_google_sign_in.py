@@ -134,8 +134,9 @@ def test_new_google_user_finishes_sign_up_and_is_logged_in(api: TestClient, db: 
         "company_name": "Vanek Brothers Trucking Co.",
         "phone": "(610) 590-0223",
         "usdot_number": 297569,
+        "accept_terms": True,
     }
-    for required in details:  # company, mobile and USDOT are all required
+    for required in details:  # company, mobile, USDOT and "I agree" are all required
         partial = {k: v for k, v in details.items() if k != required}
         assert api.post("/api/v1/auth/google/signup", json=partial).status_code == 422, required
     done = api.post("/api/v1/auth/google/signup", json=details)

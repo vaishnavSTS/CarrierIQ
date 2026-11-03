@@ -25,6 +25,7 @@ BODY = {
     "phone": "(610) 590-0223",
     "password": PASSWORD,
     "license_number": "1234567",
+    "accept_terms": True,
 }
 
 

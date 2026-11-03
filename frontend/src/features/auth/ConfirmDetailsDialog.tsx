@@ -1,5 +1,6 @@
 import { ShieldCheck } from 'lucide-react'
 import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 
 /**
  * Before a carrier account is created: the carrier checks its company name, USDOT number and name,
@@ -25,7 +26,8 @@ export function ConfirmDetailsDialog({
     return () => document.removeEventListener('keydown', onKey)
   }, [onCancel])
 
-  return (
+  // On the page itself: inside the sign-up card a fixed overlay is boxed in by the card's styling.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/60 p-4"
       role="dialog"
@@ -72,6 +74,7 @@ export function ConfirmDetailsDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

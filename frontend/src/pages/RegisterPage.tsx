@@ -4,6 +4,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { AuthCard, Field, FormError, GoogleButton, SubmitButton } from '../features/auth/AuthCard'
 import { ConfirmDetailsDialog } from '../features/auth/ConfirmDetailsDialog'
+import { AgreeToTerms, MUST_AGREE } from '../features/legal/AgreeToTerms'
 import { useTurnstile } from '../features/auth/useTurnstile'
 import { homeFor, useMe, useRegister } from '../hooks/useAuth'
 
@@ -20,6 +21,7 @@ export function RegisterPage() {
     confirm: '',
   })
   const [localError, setLocalError] = useState<string | null>(null)
+  const [agreed, setAgreed] = useState(false) // "I agree to the Terms … and Privacy Policy"
   // Checked, waiting for the carrier to confirm its company, USDOT and name
   const [checked, setChecked] = useState<{ usdot: string; phone: string } | null>(null)
   const { data: current } = useMe()
@@ -36,6 +38,10 @@ export function RegisterPage() {
   function submit(event: FormEvent) {
     event.preventDefault()
     setLocalError(null)
+    if (!agreed) {
+      setLocalError(MUST_AGREE)
+      return
+    }
     if (form.password.length < MIN_PASSWORD) {
       setLocalError(`Password must be at least ${MIN_PASSWORD} characters.`)
       return
@@ -78,6 +84,7 @@ export function RegisterPage() {
           phone: checked.phone,
           password: form.password,
           usdot_number: Number(checked.usdot),
+          accept_terms: agreed,
         },
         humanHeaders: human.headers,
       },
@@ -177,6 +184,7 @@ export function RegisterPage() {
             onChange={set('confirm')}
           />
         </div>
+        <AgreeToTerms checked={agreed} onChange={setAgreed} />
         {human.widget}
         <FormError message={error} />
         <SubmitButton busy={register.isPending}>Create account</SubmitButton>

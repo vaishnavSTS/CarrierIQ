@@ -109,6 +109,7 @@ def sign_up(email: str = "Owner@Client.com", **changes: object) -> dict[str, obj
         "phone": "(610) 590-0223",
         "password": PASSWORD,
         "usdot_number": 295017,
+        "accept_terms": True,  # ticked "I agree to the Terms of Service and Privacy Policy"
     }
     return {**body, **changes}
 
@@ -184,6 +185,32 @@ def test_register_rejects_duplicate_email_and_short_password(api: TestClient) ->
 
     short = api.post("/api/v1/auth/register", json=sign_up("x@y.com", password="short"))
     assert short.status_code == 422
+
+
+def test_sign_up_records_the_terms_the_person_agreed_to(api: TestClient, db: Session) -> None:
+    from app.schemas.auth import TERMS_VERSION
+
+    register(api)
+
+    user = db.scalar(select(User).where(User.email == "owner@client.com"))
+    assert user is not None and user.terms_accepted_at is not None
+    assert datetime.now(UTC) - user.terms_accepted_at < timedelta(minutes=1)
+    assert user.terms_version == TERMS_VERSION
+
+
+@pytest.mark.parametrize("accept", [False, None])
+def test_no_account_without_agreeing_to_the_terms(
+    api: TestClient, db: Session, accept: bool | None
+) -> None:
+    body = sign_up("x@y.com", accept_terms=accept)
+    if accept is None:
+        del body["accept_terms"]  # an old form that never asked
+
+    answer = api.post("/api/v1/auth/register", json=body)
+
+    assert answer.status_code == 422
+    assert "agree to the Terms of Service and Privacy Policy" in answer.text
+    assert db.scalar(select(func.count()).select_from(User)) == 0
 
 
 @pytest.mark.parametrize(
