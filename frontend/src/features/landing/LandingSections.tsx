@@ -12,9 +12,6 @@ import { FileArt, FindArt, FollowArt } from './RoleArt'
 /** Keep in step with MONTHLY_PRICE and TRIAL (backend/app/services/subscription.py). */
 const MONTHLY_PRICE = 49
 const TRIAL_DAYS = 30
-/** Keep in step with the DataQs filing fee (backend DATAQS fee). */
-const DATAQS_FEE = 50
-
 /** From skytransportsolutions.com. Only what its pages agree on: no client counts or rankings. */
 const STS_FOUNDED = 2013
 const STS_SERVICES = [
@@ -113,10 +110,6 @@ export function DataQsSection() {
           </motion.article>
         ))}
       </div>
-      <motion.p {...reveal()} className="mt-5 text-center text-xs text-slate-500">
-        ${DATAQS_FEE} per inspection. No outcome can be guaranteed: only a wrong record can be
-        corrected.
-      </motion.p>
     </section>
   )
 }
