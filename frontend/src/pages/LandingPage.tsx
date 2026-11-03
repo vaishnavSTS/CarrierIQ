@@ -1,11 +1,9 @@
 import {
-  Briefcase,
   FileText,
   Network,
   Search,
   ShieldCheck,
   TrendingDown,
-  Truck,
   UserPlus,
   type LucideIcon,
 } from 'lucide-react'
@@ -13,6 +11,7 @@ import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 
 import { HeroSlider } from '../features/landing/HeroSlider'
+import { AgentArt, BrokerArt, CarrierArt } from '../features/landing/RoleArt'
 import { IconBadge, PrimaryLink, reveal, SectionHeading } from '../features/landing/landingParts'
 import {
   AboutStsSection,
@@ -89,7 +88,9 @@ export function LandingPage() {
                     aria-hidden
                     className="absolute -right-16 -top-16 size-48 rounded-full bg-violet-500/10 blur-3xl transition-opacity group-hover:opacity-80"
                   />
-                  <IconBadge icon={Truck} />
+                  <div className="-mx-7 -mt-7 mb-1 h-36 overflow-hidden">
+                    <CarrierArt />
+                  </div>
                   <h3 className="mt-5 text-lg font-semibold text-slate-900">I’m a carrier</h3>
                   <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600">
                     Create an account with your company and USDOT number and your portal opens right
@@ -112,7 +113,9 @@ export function LandingPage() {
                     aria-hidden
                     className="absolute -right-16 -top-16 size-48 rounded-full bg-violet-500/10 blur-3xl transition-opacity group-hover:opacity-80"
                   />
-                  <IconBadge icon={Briefcase} />
+                  <div className="-mx-7 -mt-7 mb-1 h-36 overflow-hidden">
+                    <BrokerArt />
+                  </div>
                   <h3 className="mt-5 text-lg font-semibold text-slate-900">
                     I’m a freight broker
                   </h3>
@@ -141,7 +144,9 @@ export function LandingPage() {
                     aria-hidden
                     className="absolute -right-16 -top-16 size-48 rounded-full bg-violet-500/10 blur-3xl transition-opacity group-hover:opacity-80"
                   />
-                  <IconBadge icon={ShieldCheck} />
+                  <div className="-mx-7 -mt-7 mb-1 h-36 overflow-hidden">
+                    <AgentArt />
+                  </div>
                   <h3 className="mt-5 text-lg font-semibold text-slate-900">
                     I’m an insurance agent
                   </h3>

@@ -215,6 +215,28 @@ body {
     );
 }
 
+/* The pictures on the "Who it's for" cards (features/landing/RoleArt.tsx). */
+.role-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  --art-sky-from: #101853;
+  --art-sky-to: #0a4fd6;
+  --art-glow: #a78bfa;
+  --art-light: #eaf2ff;
+  --art-mid: #2f6bea;
+  --art-dark: #0b1440;
+}
+
+:root[data-theme='dark'] .role-art {
+  --art-sky-from: #03060f;
+  --art-sky-to: #0a3a7a;
+  --art-glow: #ff8a1f;
+  --art-light: #e8eefb;
+  --art-mid: #2a7fd9;
+  --art-dark: #05080f;
+}
+
 :root[data-theme='dark'] .hero-gradient,
 :root[data-theme='dark'] .portal-hero {
   --hero-highlight: #ff9d45;

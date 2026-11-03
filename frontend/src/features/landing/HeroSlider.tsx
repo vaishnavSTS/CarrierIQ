@@ -40,21 +40,29 @@ const PAGES: {
   },
 ]
 
+/** Where a page sits: 0 on screen, 1 waiting to the right, -1 just left to the left. */
+function offsetFrom(page: number, current: number, count: number): number {
+  return ((page - current + count + 1) % count) - 1
+}
+
 /** The homepage's opening: one full page each for carriers, brokers and insurance agents. */
 export function HeroSlider() {
   const { data: user } = useMe()
-  const [index, setIndex] = useState(0)
-  const [hovered, setHovered] = useState(false)
-  const [focused, setFocused] = useState(false)
+  const [{ index, previous }, setPlace] = useState({ index: 0, previous: 0 })
+  const [typing, setTyping] = useState(false)
   const touchStart = useRef<number | null>(null)
   const reduceMotion = useReducedMotion()
   const count = PAGES.length
-  const go = (next: number) => setIndex((next + count) % count)
-  const paused = hovered || focused || reduceMotion
+  const go = (next: number) =>
+    setPlace((place) => ({ index: (next + count) % count, previous: place.index }))
+  const paused = typing || reduceMotion
 
   useEffect(() => {
     if (paused) return
-    const timer = window.setTimeout(() => setIndex((i) => (i + 1) % count), INTERVAL_MS)
+    const timer = window.setTimeout(
+      () => setPlace((place) => ({ index: (place.index + 1) % count, previous: place.index })),
+      INTERVAL_MS,
+    )
     return () => window.clearTimeout(timer)
   }, [index, paused, count])
 
@@ -66,10 +74,8 @@ export function HeroSlider() {
       className="relative touch-pan-y"
       aria-roledescription="carousel"
       aria-label="Who CarrierSafetyScan is for"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
+      onFocus={(e) => setTyping(e.target instanceof HTMLInputElement)}
+      onBlur={() => setTyping(false)}
       onTouchStart={(e) => {
         touchStart.current = e.touches[0].clientX
       }}
@@ -121,14 +127,23 @@ export function HeroSlider() {
       </button>
 
       <div className="overflow-hidden">
-        <div
-          className={`flex ${reduceMotion ? '' : 'transition-transform duration-700 ease-out'}`}
-          style={{ transform: `translateX(-${index * 100}%)` }}
-        >
+        {/* All in one grid cell, so the tallest page sets the height and nothing jumps. */}
+        <div className="grid">
           {PAGES.map((page, i) => {
             const Heading = i === 0 ? 'h1' : 'h2' // one h1 on the page
+            const offset = offsetFrom(i, index, count)
+            // The page crossing from one side to the other does so unseen, so the slide always
+            // carries on in the same direction, past the last page into the first.
+            const crossing = Math.abs(offset - offsetFrom(i, previous, count)) > 1
             return (
-              <div key={page.audience} className="w-full shrink-0" inert={i !== index}>
+              <div
+                key={page.audience}
+                className={`w-full [grid-area:1/1] ${
+                  reduceMotion || crossing ? '' : 'transition-transform duration-700 ease-out'
+                }`}
+                style={{ transform: `translateX(${offset * 100}%)` }}
+                inert={i !== index}
+              >
                 <section className="mx-auto grid max-w-6xl items-center gap-12 relative z-10 px-4 pb-64 pt-8 md:pt-10 lg:pt-14 lg:grid-cols-[1.05fr_1fr]">
                   <div className="text-center lg:text-left">
                     <Heading className="text-4xl font-semibold leading-[1.08] tracking-tight text-white md:text-5xl lg:text-[3.4rem]">
