@@ -12,6 +12,7 @@ from app.api.bot_protection import get_turnstile_verifier
 from app.api.v1.routes.carriers import (
     get_carrier_authority_service,
     get_carrier_profile_service,
+    get_carrier_search_service,
 )
 from app.api.v1.routes.try_now import TryUses, get_try_uses
 from app.core.config import get_settings
@@ -32,6 +33,7 @@ from app.schemas.carrier_profile import (
 KNOWN = 111
 OTHER = 222
 START = "/api/v1/try/start"
+FIND = "/api/v1/try/find"
 ME = {"X-Forwarded-For": "203.0.113.5"}
 
 
@@ -132,6 +134,30 @@ class FakeUses:
         return True
 
 
+class FakeSearch:
+    """Answers with everything a full account sees, for 15 carriers."""
+
+    def search(self, text: str) -> SimpleNamespace:
+        if text == "NOBODY":
+            return SimpleNamespace(results=[])
+        return SimpleNamespace(
+            results=[
+                SimpleNamespace(
+                    usdot_number=KNOWN + i,
+                    legal_name=f"CARRIER {KNOWN + i}",
+                    dba_name=None,
+                    city="TRACY",
+                    state="CA",
+                    authority_status="ACTIVE",
+                    insurance_status="ON_FILE",
+                    review_status="OPEN_SIGNALS",
+                    open_signal_count=3,
+                )
+                for i in range(15)
+            ]
+        )
+
+
 @pytest.fixture
 def uses() -> FakeUses:
     return FakeUses()
@@ -151,8 +177,10 @@ def api(
     app.dependency_overrides[get_carrier_profile_service] = lambda: profiles
     app.dependency_overrides[get_carrier_authority_service] = lambda: FakeAuthority()
     app.dependency_overrides[get_try_uses] = lambda: uses
+    app.dependency_overrides[get_carrier_search_service] = lambda: FakeSearch()
     yield TestClient(app)
     app.dependency_overrides.pop(get_try_uses, None)
+    app.dependency_overrides.pop(get_carrier_search_service, None)
     app.dependency_overrides.pop(get_carrier_profile_service, None)
     app.dependency_overrides.pop(get_carrier_authority_service, None)
     app.dependency_overrides.pop(get_turnstile_verifier, None)
@@ -283,3 +311,61 @@ def test_the_bot_checks_apply(api: TestClient, monkeypatch: pytest.MonkeyPatch) 
     assert api.post(START, json=body, headers=ME).status_code == 400
     with_token = {**ME, "X-Turnstile-Token": "good"}
     assert api.post(START, json=body, headers=with_token).status_code == 200
+
+
+def test_finding_a_carrier_does_not_use_up_the_search(api: TestClient, uses: FakeUses) -> None:
+    found = api.post(FIND, json={"query": "MC 852168"}, headers=ME)
+
+    assert found.status_code == 200
+    assert uses.visitors == {}
+    assert (
+        api.post(
+            START, json={"usdot_number": found.json()[0]["usdot_number"]}, headers=ME
+        ).status_code
+        == 200
+    )
+
+
+def test_finding_shows_only_what_tells_carriers_apart(api: TestClient) -> None:
+    found = api.post(FIND, json={"query": "ACME"}, headers=ME).json()
+
+    assert len(found) == 10
+    assert set(found[0]) == {"usdot_number", "legal_name", "dba_name", "city", "state"}
+
+
+def test_finding_nothing_is_an_empty_list(api: TestClient) -> None:
+    assert api.post(FIND, json={"query": "NOBODY"}, headers=ME).json() == []
+
+
+def test_finding_opens_no_carrier(api: TestClient) -> None:
+    api.post(FIND, json={"query": "ACME"}, headers=ME)
+
+    assert api.get(f"/api/v1/try/carriers/{KNOWN}").status_code != 200
+
+
+def test_finding_stops_once_the_search_is_used(api: TestClient) -> None:
+    api.post(START, json={"usdot_number": KNOWN}, headers=ME)
+    assert api.post(FIND, json={"query": "ACME"}, headers=ME).status_code == 429
+
+    api.cookies.clear()  # the stored search blocks it without the browser's cookie too
+    assert api.post(FIND, json={"query": "ACME"}, headers=ME).status_code == 429
+
+
+def test_finding_has_its_own_limit(api: TestClient) -> None:
+    for _ in range(10):
+        assert api.post(FIND, json={"query": "ACME"}, headers=ME).status_code == 200
+    assert api.post(FIND, json={"query": "ACME"}, headers=ME).status_code == 429
+
+
+def test_the_bot_checks_apply_to_finding(api: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    trap = {**ME, "X-Form-Trap": "http://spam.example"}
+    assert api.post(FIND, json={"query": "ACME"}, headers=trap).status_code == 400
+
+    monkeypatch.setattr(get_settings(), "turnstile_site_key", "site")
+    monkeypatch.setattr(get_settings(), "turnstile_secret_key", "secret")
+    app.dependency_overrides[get_turnstile_verifier] = lambda: SimpleNamespace(
+        verify=lambda token: token == "good"
+    )
+    assert api.post(FIND, json={"query": "ACME"}, headers=ME).status_code == 400
+    with_token = {**ME, "X-Turnstile-Token": "good"}
+    assert api.post(FIND, json={"query": "ACME"}, headers=with_token).status_code == 200

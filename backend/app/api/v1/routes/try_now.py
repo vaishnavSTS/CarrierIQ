@@ -5,6 +5,10 @@ their address (table try_uses) and marked in their browser with a long-lived coo
 blocks them from then on, even for the same carrier. It also sets a short pass naming that USDOT,
 so they can read the two free tabs during this visit. The two GETs answer only for the USDOT in the
 pass, and the profile leaves out what the other tabs show (inspections, VINs, history).
+
+POST /try/find looks a carrier up by MC number or company name so the visitor can pick one. It
+doesn't use the search up, so it only answers with what tells carriers apart, passes the same bot
+checks, has its own limit and stops once the search is used.
 """
 
 import hashlib
@@ -20,6 +24,7 @@ from app.api.bot_protection import client_ip, require_human
 from app.api.v1.routes.carriers import (
     get_carrier_authority_service,
     get_carrier_profile_service,
+    get_carrier_search_service,
 )
 from app.core.config import get_settings
 from app.core.exceptions import ForbiddenError, TryLimitReachedError
@@ -31,6 +36,7 @@ from app.schemas.carrier_authority import CarrierAuthorityOut
 from app.schemas.carrier_profile import CarrierProfile, SafetyOut
 from app.services.carrier_authority_service import CarrierAuthorityService
 from app.services.carrier_profile_service import CarrierProfileService
+from app.services.carrier_search_service import CarrierSearchService
 from app.services.client_view import client_profile
 
 router = APIRouter(prefix="/try", tags=["try"])
@@ -41,6 +47,8 @@ TRY_PURPOSE = "try_now"
 TRY_MINUTES = 30
 USED_COOKIE_SECONDS = 400 * 86_400  # the longest browsers keep a cookie
 LOOKUPS_PER_IP = (10, 3600.0)  # each lookup can fetch from FMCSA, including ones not found
+FINDS_PER_IP = (10, 3600.0)  # a name search reads FMCSA's census, and it costs no search
+MAX_MATCHES = 10
 USED_UP = "You've used your free search. Sign up for a 30-day free trial to see more."
 
 ProfileService = Annotated[CarrierProfileService, Depends(get_carrier_profile_service)]
@@ -49,6 +57,20 @@ AuthorityService = Annotated[CarrierAuthorityService, Depends(get_carrier_author
 
 class TryStartIn(BaseModel):
     usdot_number: int = Field(gt=0, lt=100_000_000)
+
+
+class TryFindIn(BaseModel):
+    query: str = Field(min_length=1, max_length=100)
+
+
+class TryMatch(BaseModel):
+    """Enough to tell carriers apart, and nothing a full account pays for."""
+
+    usdot_number: int
+    legal_name: str
+    dba_name: str | None
+    city: str | None
+    state: str | None
 
 
 class TryUses:
@@ -125,6 +147,32 @@ def chosen_carrier(
 
 
 Chosen = Annotated[int, Depends(chosen_carrier)]
+
+
+@router.post("/find", response_model=list[TryMatch], dependencies=[Depends(require_human)])
+def find(
+    data: TryFindIn,
+    request: Request,
+    search: Annotated[CarrierSearchService, Depends(get_carrier_search_service)],
+    uses: Uses,
+) -> list[TryMatch]:
+    """Carriers matching an MC number or a name. Doesn't use up the search: opening one does."""
+    ip = client_ip(request)
+    if request.cookies.get(USED_COOKIE) or uses.used(_visitor(ip)):
+        raise TryLimitReachedError(USED_UP)
+    if get_settings().rate_limit_enabled:
+        limit, window = FINDS_PER_IP
+        limiter.hit(f"try-find:{ip}", limit, window)
+    return [
+        TryMatch(
+            usdot_number=r.usdot_number,
+            legal_name=r.legal_name,
+            dba_name=r.dba_name,
+            city=r.city,
+            state=r.state,
+        )
+        for r in search.search(data.query).results[:MAX_MATCHES]
+    ]
 
 
 @router.post("/start", response_model=CarrierProfile, dependencies=[Depends(require_human)])

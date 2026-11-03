@@ -27,6 +27,23 @@ export function fetchCarrierProfile(
 }
 
 /** Try Now: opens a visitor's one free carrier (bot checks in `humanHeaders`). */
+export interface TryMatch {
+  usdot_number: number
+  legal_name: string
+  dba_name: string | null
+  city: string | null
+  state: string | null
+}
+
+/** Try Now: carriers matching an MC number or a name. Doesn't use up the free search. */
+export function findTry(query: string, humanHeaders: Record<string, string>): Promise<TryMatch[]> {
+  return apiRequest<TryMatch[]>('/try/find', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...humanHeaders },
+    body: JSON.stringify({ query }),
+  })
+}
+
 export function startTry(
   usdotNumber: number,
   humanHeaders: Record<string, string>,

@@ -29,25 +29,24 @@ const STS_SERVICES = [
 
 /** The hero's search: goes on to Try Now, where the security check and the search itself run. */
 export function HeroTryForm() {
-  const [usdot, setUsdot] = useState('')
+  const [query, setQuery] = useState('')
   const navigate = useNavigate()
 
   function submit(event: FormEvent) {
     event.preventDefault()
-    const value = usdot.trim()
-    navigate(/^\d{1,8}$/.test(value) ? `/try?usdot=${value}` : '/try')
+    const value = query.trim()
+    navigate(value ? `/try?q=${encodeURIComponent(value)}` : '/try')
   }
 
   return (
     <form onSubmit={submit} className="mx-auto w-full max-w-md lg:mx-0">
       <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-surface/90 p-2 shadow-lg backdrop-blur sm:flex-row">
         <label className="min-w-0 flex-1">
-          <span className="sr-only">USDOT number</span>
+          <span className="sr-only">USDOT number, MC number or company name</span>
           <input
-            inputMode="numeric"
-            placeholder="Enter a USDOT number"
-            value={usdot}
-            onChange={(e) => setUsdot(e.target.value)}
+            placeholder="USDOT, MC number or company name"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
             className="w-full rounded-xl bg-transparent px-3.5 py-3 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-accent/30"
           />
         </label>
