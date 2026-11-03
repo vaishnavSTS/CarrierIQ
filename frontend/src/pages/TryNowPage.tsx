@@ -91,7 +91,7 @@ export function TryNowPage() {
   return (
     <AuthCard
       title="Try CarrierSafetyScan"
-      subtitle="Look up one carrier for free: its identity, authority and insurance. No account needed. You get one search, one time only."
+      subtitle="Look up one carrier for free and see every tab, from its authority and insurance to its inspections and Safety Score Report. No account needed. You get one search, one time only."
       footer={
         <>
           Want every tab?{' '}

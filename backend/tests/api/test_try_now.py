@@ -11,8 +11,12 @@ from sqlalchemy.orm import Session
 from app.api.bot_protection import get_turnstile_verifier
 from app.api.v1.routes.carriers import (
     get_carrier_authority_service,
+    get_carrier_equipment_service,
     get_carrier_profile_service,
+    get_carrier_safety_service,
     get_carrier_search_service,
+    get_chameleon_service,
+    get_network_service,
 )
 from app.api.v1.routes.try_now import TryUses, get_try_uses
 from app.core.config import get_settings
@@ -134,6 +138,16 @@ class FakeUses:
         return True
 
 
+class Missing:
+    """A carrier service that finds nothing, whatever it is asked."""
+
+    def __getattr__(self, name: str) -> object:
+        def missing(*args: object, **kwargs: object) -> None:
+            raise CarrierNotFoundError("No such carrier")
+
+        return missing
+
+
 class FakeSearch:
     """Answers with everything a full account sees, for 15 carriers."""
 
@@ -196,17 +210,37 @@ def test_a_visitor_opens_one_carrier_without_an_account(api: TestClient) -> None
     assert api.get(f"/api/v1/try/carriers/{KNOWN}/authority").status_code == 200
 
 
-def test_the_answer_leaves_out_what_the_locked_tabs_show(api: TestClient) -> None:
+def test_the_answer_is_the_client_view(api: TestClient) -> None:
     body = api.post(START, json={"usdot_number": KNOWN}, headers=ME).json()
 
-    assert body["officers"] == ["PAT OWNER"]  # Identity stays
-    assert body["equipment"]["power_units"] == 4
-    assert "SECRETVIN" not in str(body)
-    assert body["equipment"]["vehicles"] == []
-    assert body["safety"]["inspection_count"] == 0
-    assert body["safety"]["safety_rating"] is None
-    assert body["recent_changes"] == [] and body["timeline"] == []
-    assert body["review_status"] is None and body["open_signal_count"] == 0
+    assert body["officers"] == ["PAT OWNER"]
+    assert body["safety"]["inspection_count"] == 9  # every tab now, not only two
+    assert body["review_status"] is None and body["open_signal_count"] == 0  # nothing STS-internal
+
+
+def test_every_tab_answers_for_the_chosen_carrier(api: TestClient) -> None:
+    """The pass lets each tab's request through (the fake services then say no such carrier)."""
+    for dependency in (
+        get_carrier_safety_service,
+        get_carrier_equipment_service,
+        get_network_service,
+        get_chameleon_service,
+    ):
+        app.dependency_overrides[dependency] = lambda: Missing()
+    try:
+        assert api.get(f"/api/v1/try/carriers/{KNOWN}/safety").status_code == 403
+        api.post(START, json={"usdot_number": KNOWN}, headers=ME)
+        for path in ("/safety", "/inspections", "/equipment", "/network", "/chameleon"):
+            assert api.get(f"/api/v1/try/carriers/{KNOWN}{path}").status_code == 404, path
+            assert api.get(f"/api/v1/try/carriers/{OTHER}{path}").status_code == 403, path
+    finally:
+        for dependency in (
+            get_carrier_safety_service,
+            get_carrier_equipment_service,
+            get_network_service,
+            get_chameleon_service,
+        ):
+            app.dependency_overrides.pop(dependency, None)
 
 
 def test_a_second_carrier_needs_an_account(api: TestClient, profiles: FakeProfiles) -> None:
@@ -285,8 +319,8 @@ def test_no_cookie_or_another_carrier_is_refused(api: TestClient) -> None:
 def test_the_cookie_opens_nothing_else(real_auth: None, api: TestClient) -> None:
     api.post(START, json={"usdot_number": KNOWN}, headers=ME)
 
-    for path in ("/safety", "/network", "/equipment", "/chameleon", "/inspections"):
-        assert api.get(f"/api/v1/try/carriers/{KNOWN}{path}").status_code == 404, path
+    for path in ("", "/safety", "/network", "/equipment", "/chameleon", "/inspections"):
+        assert api.get(f"/api/v1/try/carriers/{OTHER}{path}").status_code == 403, path
     assert api.get(f"/api/v1/carriers/{KNOWN}").status_code in (401, 403)
     assert api.get(f"/api/v1/broker/carriers/{KNOWN}/safety").status_code == 401
     assert api.get("/api/v1/auth/me").status_code == 401

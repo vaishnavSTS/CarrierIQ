@@ -59,7 +59,7 @@ def any_carrier(
     return usdot_number
 
 
-def _add_carrier_routes(router: APIRouter, resolve: Callable[..., int]) -> None:
+def add_carrier_routes(router: APIRouter, resolve: Callable[..., int]) -> None:
     """The client view of a carrier's tabs; `resolve` checks the USDOT (and who may open it)."""
 
     @router.get("/carriers/{usdot_number}", response_model=CarrierProfile)
@@ -136,7 +136,7 @@ def client_carrier_search(
     return client_search(service.search(q))
 
 
-_add_carrier_routes(router, require_own_carrier)
+add_carrier_routes(router, require_own_carrier)
 
 
 # --- Broker portal -------------------------------------------------------------------------------
@@ -161,7 +161,7 @@ def broker_search(
     return client_search(service.search(q))
 
 
-_add_carrier_routes(broker_router, any_carrier)
+add_carrier_routes(broker_router, any_carrier)
 
 
 @broker_router.get("/carriers/{usdot_number}/chameleon", response_model=ChameleonOut)

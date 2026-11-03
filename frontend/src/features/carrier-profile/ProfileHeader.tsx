@@ -5,7 +5,7 @@ import type { CarrierProfile } from '../../types/carrierProfile'
 import { needsForHireAuthority } from '../../utils/classification'
 import { censusLabel, formatDateTime, formatDocket, sourceLabel } from '../../utils/format'
 import { saferUrl, smsUrl } from '../../utils/sources'
-import { useIsClientPortal, useIsTryMode } from '../../hooks/usePortalMode'
+import { useIsClientPortal } from '../../hooks/usePortalMode'
 import { reviewLabel } from '../../utils/review'
 import { carrierSummary } from './carrierSummary'
 import { HeaderCard } from './HeaderCard'
@@ -18,7 +18,6 @@ import { INSURANCE_LABEL, insuranceTone, severityTone, statusTone } from '../../
 export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
   const dockets = profile.authority.dockets
   const client = useIsClientPortal()
-  const trying = useIsTryMode()
   return (
     <header className="rounded-lg border border-slate-200 bg-surface p-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -83,12 +82,12 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
           profile.insurance.status
             ? (INSURANCE_LABEL[profile.insurance.status] ?? profile.insurance.status)
             : null,
-          trying,
+          false,
         )}
       </p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {!trying && <IssHeaderCard usdotNumber={profile.usdot_number} />}
+        <IssHeaderCard usdotNumber={profile.usdot_number} />
         <HeaderCard
           label="Authority"
           source={
@@ -163,7 +162,7 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
             )}
           </HeaderCard>
         )}
-        {!trying && <LinkedHeadsUp usdotNumber={profile.usdot_number} />}
+        <LinkedHeadsUp usdotNumber={profile.usdot_number} />
       </div>
     </header>
   )

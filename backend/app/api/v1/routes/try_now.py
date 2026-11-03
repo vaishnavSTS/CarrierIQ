@@ -3,8 +3,8 @@
 POST /try/start spends the visitor's one search, for good: it is stored against a keyed hash of
 their address (table try_uses) and marked in their browser with a long-lived cookie, and either one
 blocks them from then on, even for the same carrier. It also sets a short pass naming that USDOT,
-so they can read the two free tabs during this visit. The two GETs answer only for the USDOT in the
-pass, and the profile leaves out what the other tabs show (inspections, VINs, history).
+so they can read every tab of it during this visit: the same carrier routes a broker has, answering
+only for the USDOT in the pass, with no STS-internal data.
 
 POST /try/find looks a carrier up by MC number or company name so the visitor can pick one. It
 doesn't use the search up, so it only answers with what tells carriers apart, passes the same bot
@@ -22,21 +22,22 @@ from sqlalchemy.orm import Session
 
 from app.api.bot_protection import client_ip, require_human
 from app.api.v1.routes.carriers import (
-    get_carrier_authority_service,
     get_carrier_profile_service,
     get_carrier_search_service,
+    get_chameleon_service,
 )
+from app.api.v1.routes.portal import add_carrier_routes
 from app.core.config import get_settings
 from app.core.exceptions import ForbiddenError, TryLimitReachedError
 from app.core.rate_limit import limiter
 from app.core.security import create_purpose_token, read_purpose_token
 from app.db.session import get_db
 from app.models import TryUse
-from app.schemas.carrier_authority import CarrierAuthorityOut
-from app.schemas.carrier_profile import CarrierProfile, SafetyOut
-from app.services.carrier_authority_service import CarrierAuthorityService
+from app.schemas.carrier_profile import CarrierProfile
+from app.schemas.chameleon import ChameleonOut
 from app.services.carrier_profile_service import CarrierProfileService
 from app.services.carrier_search_service import CarrierSearchService
+from app.services.chameleon_service import ChameleonService
 from app.services.client_view import client_profile
 
 router = APIRouter(prefix="/try", tags=["try"])
@@ -52,7 +53,6 @@ MAX_MATCHES = 10
 USED_UP = "You've used your free search. Sign up for a 30-day free trial to see more."
 
 ProfileService = Annotated[CarrierProfileService, Depends(get_carrier_profile_service)]
-AuthorityService = Annotated[CarrierAuthorityService, Depends(get_carrier_authority_service)]
 
 
 class TryStartIn(BaseModel):
@@ -105,32 +105,6 @@ def _visitor(ip: str) -> str:
     """The address as a keyed hash: enough to know them again, without storing the address."""
     key = get_settings().auth_secret_key.encode()
     return hmac.new(key, f"try-now:{ip}".encode(), hashlib.sha256).hexdigest()
-
-
-def _preview(profile: CarrierProfile) -> CarrierProfile:
-    """The client view without what the locked tabs show."""
-    return client_profile(profile).model_copy(
-        update={
-            "safety": SafetyOut(
-                inspection_count=0,
-                vehicle_oos_count=0,
-                driver_oos_count=0,
-                vehicle_oos_rate=None,
-                driver_oos_rate=None,
-                first_inspection_date=None,
-                last_inspection_date=None,
-                by_year=[],
-                recent_inspections=[],
-                safety_rating=None,
-                safety_rating_date=None,
-            ),
-            "equipment": profile.equipment.model_copy(
-                update={"observed_vehicle_count": 0, "vehicles": []}
-            ),
-            "recent_changes": [],
-            "timeline": [],
-        }
-    )
 
 
 def chosen_carrier(
@@ -188,7 +162,7 @@ def start(
     if get_settings().rate_limit_enabled:
         limit, window = LOOKUPS_PER_IP
         limiter.hit(f"try-lookup:{ip}", limit, window)
-    profile = _preview(service.get(data.usdot_number))
+    profile = client_profile(service.get(data.usdot_number))
     if not uses.claim(visitor, data.usdot_number):
         raise TryLimitReachedError(USED_UP)
     secure = get_settings().auth_cookie_secure
@@ -213,11 +187,11 @@ def start(
     return profile
 
 
-@router.get("/carriers/{usdot_number}", response_model=CarrierProfile)
-def carrier_profile(usdot_number: Chosen, service: ProfileService) -> CarrierProfile:
-    return _preview(service.get(usdot_number))
+add_carrier_routes(router, chosen_carrier)
 
 
-@router.get("/carriers/{usdot_number}/authority", response_model=CarrierAuthorityOut)
-def carrier_authority(usdot_number: Chosen, service: AuthorityService) -> CarrierAuthorityOut:
+@router.get("/carriers/{usdot_number}/chameleon", response_model=ChameleonOut)
+def carrier_chameleon(
+    usdot_number: Chosen, service: Annotated[ChameleonService, Depends(get_chameleon_service)]
+) -> ChameleonOut:
     return service.get(usdot_number)

@@ -1,35 +1,37 @@
-import { Lock } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { ApiError } from '../api/client'
 import { AuthoritySection } from '../features/carrier-profile/AuthoritySection'
+import { ChameleonSection } from '../features/carrier-profile/chameleon/ChameleonSection'
+import { EquipmentSection } from '../features/carrier-profile/EquipmentSection'
 import { IdentitySection } from '../features/carrier-profile/IdentitySection'
+import { NetworkSection } from '../features/carrier-profile/network/NetworkSection'
+import { PacketSection } from '../features/carrier-profile/packet/PacketSection'
 import { ProfileHeader } from '../features/carrier-profile/ProfileHeader'
-import { SignUpDialog } from '../features/try-now/SignUpDialog'
+import { SafetySection } from '../features/carrier-profile/SafetySection'
+import { TimelineSection } from '../features/carrier-profile/TimelineSection'
 import { useCarrierProfile } from '../hooks/useCarrierProfile'
 import { PortalModeContext, TryModeContext } from '../hooks/usePortalMode'
 
-const FREE_TABS = [
+const TABS = [
   ['identity', 'Overview'],
   ['authority', 'Authority & Insurance'],
+  ['safety', 'Inspections'],
+  ['equipment', 'Equipment'],
+  ['network', 'Linked carriers'],
+  ['chameleon', 'Chameleon check'],
+  ['safety-score-report', 'Safety Score Report'],
+  ['timeline', 'History'],
 ] as const
-type FreeTab = (typeof FREE_TABS)[number][0]
+type Tab = (typeof TABS)[number][0]
 
-const LOCKED_TABS = [
-  'Inspections',
-  'Equipment',
-  'Linked carriers',
-  'Chameleon check',
-  'Safety Score Report',
-]
-
-/** The carrier a Try Now visitor chose: two tabs to read, the rest ask them to sign up. */
+/** The carrier a Try Now visitor chose: every tab, for this one carrier. */
 export function TryCarrierPage() {
   return (
     <TryModeContext.Provider value={true}>
-      {/* The client view: no staff controls. */}
-      <PortalModeContext.Provider value="client">
+      {/* What a broker sees about any carrier: no staff controls, and "this carrier" wording. */}
+      <PortalModeContext.Provider value="broker">
         <div className="mx-auto max-w-7xl px-4 py-6">
           <TryCarrier />
         </div>
@@ -42,9 +44,7 @@ function TryCarrier() {
   const { usdot = '' } = useParams()
   const usdotNumber = Number(usdot)
   const { data: profile, error, isPending } = useCarrierProfile(usdotNumber)
-  const [tab, setTab] = useState<FreeTab>('identity')
-  const [locked, setLocked] = useState<string | null>(null)
-  const closeDialog = useCallback(() => setLocked(null), [])
+  const [tab, setTab] = useState<Tab>('identity')
 
   if (error || !Number.isInteger(usdotNumber) || usdotNumber <= 0) {
     return (
@@ -71,15 +71,15 @@ function TryCarrier() {
     )
   }
 
-  const tabClass = (active: boolean) =>
-    `-mb-px border-b-2 px-3 py-2 text-sm ${
-      active
-        ? 'border-accent-strong font-medium text-slate-900'
-        : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
-    }`
-
   return (
     <div className="space-y-4">
+      <p className="rounded-lg border border-slate-200 bg-surface px-4 py-3 text-sm text-slate-700">
+        This is your one free search: every tab of this carrier, for the next 30 minutes.{' '}
+        <Link to="/register" className="font-medium text-accent-strong hover:underline">
+          Sign up for a 30-day free trial
+        </Link>{' '}
+        to look up any carrier.
+      </p>
       <ProfileHeader profile={profile} />
 
       <div
@@ -87,7 +87,7 @@ function TryCarrier() {
         aria-label="Profile sections"
         className="flex flex-wrap gap-1 border-b border-slate-200"
       >
-        {FREE_TABS.map(([id, label]) => (
+        {TABS.map(([id, label]) => (
           <button
             key={id}
             id={`tab-${id}`}
@@ -96,20 +96,12 @@ function TryCarrier() {
             aria-selected={tab === id}
             aria-controls={`panel-${id}`}
             onClick={() => setTab(id)}
-            className={tabClass(tab === id)}
+            className={`-mb-px border-b-2 px-3 py-2 text-sm ${
+              tab === id
+                ? 'border-accent-strong font-medium text-slate-900'
+                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
+            }`}
           >
-            {label}
-          </button>
-        ))}
-        {LOCKED_TABS.map((label) => (
-          <button
-            key={label}
-            type="button"
-            aria-haspopup="dialog"
-            onClick={() => setLocked(label)}
-            className={`${tabClass(false)} inline-flex items-center gap-1.5`}
-          >
-            <Lock className="size-3.5" aria-hidden />
             {label}
           </button>
         ))}
@@ -123,15 +115,21 @@ function TryCarrier() {
             classification={profile.operation_classification}
           />
         )}
+        {tab === 'safety' && (
+          <SafetySection
+            usdotNumber={profile.usdot_number}
+            safety={profile.safety}
+            homeState={profile.addresses.find((a) => a.address_type === 'PHYSICAL')?.state ?? null}
+          />
+        )}
+        {tab === 'equipment' && <EquipmentSection usdotNumber={profile.usdot_number} />}
+        {tab === 'network' && <NetworkSection profile={profile} />}
+        {tab === 'chameleon' && <ChameleonSection usdotNumber={profile.usdot_number} />}
+        {tab === 'safety-score-report' && <PacketSection profile={profile} />}
+        {tab === 'timeline' && (
+          <TimelineSection events={profile.timeline} changes={profile.recent_changes} />
+        )}
       </div>
-
-      {locked && (
-        <SignUpDialog
-          title="Sign up for a 30-day free trial"
-          message={`${locked} is part of a full account. Your free search includes Overview and Authority & Insurance.`}
-          onClose={closeDialog}
-        />
-      )}
     </div>
   )
 }
