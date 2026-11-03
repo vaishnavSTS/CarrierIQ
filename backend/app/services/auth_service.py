@@ -23,6 +23,8 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import TypedDict
 
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
@@ -42,7 +44,7 @@ from app.core.security import (
     read_purpose_token,
     verify_password,
 )
-from app.models import Organization, OrganizationCarrier, User
+from app.models import CarrierClaim, Organization, OrganizationCarrier, User
 from app.models.enums import OrganizationKind, UserRole, UserStatus
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import (
@@ -80,6 +82,10 @@ def company_key(name: str | None) -> str:
     return " ".join(w for w in words if w not in _COMPANY_ENDINGS)
 
 
+USDOT_CLAIMED = (
+    "This USDOT number is already in use. Please contact Sky Transport Solutions for more "
+    "information."
+)
 PASSWORD_RESET_PURPOSE = "password_reset"
 PASSWORD_RESET_MINUTES = 30
 EMAIL_VERIFY_PURPOSE = "email_verify"
@@ -135,7 +141,10 @@ class AuthService:
         verified: bool = True,
     ) -> User:
         """A new CLIENT organization with one ACTIVE account, ready to log in, and its USDOT
-        (unconfirmed: `verified` marks carriers STS itself linked or checked)."""
+        (unconfirmed: `verified` marks carriers STS itself linked or checked). The USDOT is
+        claimed for this account: one account per number (models/carrier_claim.py)."""
+        if self._claim_of(usdot_number) is not None:
+            raise ConflictError(USDOT_CLAIMED)
         organization = Organization(name=company_name, kind=OrganizationKind.CLIENT)
         self.db.add(organization)
         self.db.flush()
@@ -154,8 +163,25 @@ class AuthService:
         )
         self.db.add(user)
         self.db.add(OrganizationCarrier(organization_id=organization.id, usdot_number=usdot_number))
-        self.db.commit()
+        self.db.flush()
+        self.db.add(
+            CarrierClaim(
+                usdot_number=usdot_number,
+                organization_id=organization.id,
+                claimed_by_id=user.id,
+                company_name=company_name,
+                contact_name=full_name,
+            )
+        )
+        try:
+            self.db.commit()
+        except IntegrityError:  # claimed by someone else a moment ago
+            self.db.rollback()
+            raise ConflictError(USDOT_CLAIMED) from None
         return user
+
+    def _claim_of(self, usdot_number: int) -> CarrierClaim | None:
+        return self.db.scalar(select(CarrierClaim).where(CarrierClaim.usdot_number == usdot_number))
 
     def register_broker(
         self, data: BrokerRegisterIn, authority: BrokerAuthority, verified: bool = True
@@ -439,8 +465,29 @@ class AuthService:
             )
         else:
             existing.verified = True
+        if self._claim_of(usdot_number) is None:
+            self.db.add(
+                CarrierClaim(
+                    usdot_number=usdot_number,
+                    organization_id=user.organization_id,
+                    claimed_by_id=user.id,
+                    company_name=self.db.get(Organization, user.organization_id).name,
+                    contact_name=user.full_name,
+                )
+            )
         self.db.flush()
         DataQsCaseService(self.db).hand_over_held_cases(usdot_number, user.organization_id, admin)
+        self.db.commit()
+        return self._admin_out(user)
+
+    def release_claim(self, user_id: int, usdot_number: int) -> AdminUserOut:
+        """STS frees a USDOT number this account claimed, so another carrier account can sign up
+        with it. The account keeps the carrier in its portal; only the claim goes."""
+        user = self._get(user_id)
+        claim = self._claim_of(usdot_number)
+        if claim is None or claim.organization_id != user.organization_id:
+            raise NotFoundError(f"USDOT {usdot_number} is not claimed by this account")
+        self.db.delete(claim)
         self.db.commit()
         return self._admin_out(user)
 
@@ -458,6 +505,13 @@ class AuthService:
             **_user_fields(user, organization),
             usdot_numbers=usdots,
             verified_usdot_numbers=[link.usdot_number for link in links if link.verified],
+            claimed_usdot_numbers=sorted(
+                self.db.scalars(
+                    select(CarrierClaim.usdot_number).where(
+                        CarrierClaim.organization_id == user.organization_id
+                    )
+                )
+            ),
             is_new=user.seen_at is None and not user.role.is_staff,
             carrier_checks=self._contact_checks(user, usdots),
             broker=_broker_out(organization) if user.role.is_broker and organization else None,

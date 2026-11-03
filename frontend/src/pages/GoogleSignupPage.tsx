@@ -3,6 +3,7 @@ import { Link, Navigate } from 'react-router-dom'
 
 import { ApiError } from '../api/client'
 import { AuthCard, Field, FormError, GoogleButton, SubmitButton } from '../features/auth/AuthCard'
+import { ConfirmDetailsDialog } from '../features/auth/ConfirmDetailsDialog'
 import { homeFor, useCompleteGoogleSignup, useGoogleSignup, useMe } from '../hooks/useAuth'
 
 /**
@@ -15,6 +16,11 @@ export function GoogleSignupPage() {
   const complete = useCompleteGoogleSignup()
   const [form, setForm] = useState({ phone: '', usdot: '', company: '' })
   const [localError, setLocalError] = useState<string | null>(null)
+  const [checked, setChecked] = useState<{
+    company_name: string
+    phone: string
+    usdot_number: number
+  } | null>(null)
 
   // Finishing the sign-up logs them in, so this then sends them to their portal.
   if (current) return <Navigate to={homeFor(current.portal)} replace />
@@ -64,7 +70,7 @@ export function GoogleSignupPage() {
       setLocalError('Enter your USDOT number: digits only, up to 8 of them.')
       return
     }
-    complete.mutate({ company_name: company, phone, usdot_number: Number(usdot) })
+    setChecked({ company_name: company, phone, usdot_number: Number(usdot) })
   }
 
   const error =
@@ -123,6 +129,20 @@ export function GoogleSignupPage() {
         <FormError message={error} />
         <SubmitButton busy={complete.isPending}>Open my portal</SubmitButton>
       </form>
+      {checked && (
+        <ConfirmDetailsDialog
+          details={[
+            { label: 'Company name', value: checked.company_name },
+            { label: 'USDOT number', value: String(checked.usdot_number) },
+            { label: 'Your name', value: pending.data.full_name },
+          ]}
+          onConfirm={() => {
+            complete.mutate(checked)
+            setChecked(null)
+          }}
+          onCancel={() => setChecked(null)}
+        />
+      )}
     </AuthCard>
   )
 }

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
   addAccountCarrier,
+  releaseClaim,
   disableAccount,
   fetchAccounts,
   markAccountsSeen,
@@ -41,6 +42,15 @@ export function useAddAccountCarrier() {
   return useMutation({
     mutationFn: ({ id, usdotNumber }: { id: number; usdotNumber: number }) =>
       addAccountCarrier(id, usdotNumber),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY }),
+  })
+}
+
+export function useReleaseClaim() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, usdotNumber }: { id: number; usdotNumber: number }) =>
+      releaseClaim(id, usdotNumber),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY }),
   })
 }

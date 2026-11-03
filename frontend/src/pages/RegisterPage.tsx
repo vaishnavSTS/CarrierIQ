@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 
 import { ApiError } from '../api/client'
 import { AuthCard, Field, FormError, GoogleButton, SubmitButton } from '../features/auth/AuthCard'
+import { ConfirmDetailsDialog } from '../features/auth/ConfirmDetailsDialog'
 import { useTurnstile } from '../features/auth/useTurnstile'
 import { homeFor, useMe, useRegister } from '../hooks/useAuth'
 
@@ -19,6 +20,8 @@ export function RegisterPage() {
     confirm: '',
   })
   const [localError, setLocalError] = useState<string | null>(null)
+  // Checked, waiting for the carrier to confirm its company, USDOT and name
+  const [checked, setChecked] = useState<{ usdot: string; phone: string } | null>(null)
   const { data: current } = useMe()
   const human = useTurnstile()
   const navigate = useNavigate()
@@ -59,15 +62,22 @@ export function RegisterPage() {
       )
       return
     }
+    setChecked({ usdot, phone })
+  }
+
+  /** After the carrier confirms: a USDOT number can belong to one account only. */
+  function send() {
+    if (!checked) return
+    setChecked(null)
     register.mutate(
       {
         input: {
           full_name: form.full_name,
           company_name: form.company_name,
           email: form.email,
-          phone,
+          phone: checked.phone,
           password: form.password,
-          usdot_number: Number(usdot),
+          usdot_number: Number(checked.usdot),
         },
         humanHeaders: human.headers,
       },
@@ -171,6 +181,17 @@ export function RegisterPage() {
         <FormError message={error} />
         <SubmitButton busy={register.isPending}>Create account</SubmitButton>
       </form>
+      {checked && (
+        <ConfirmDetailsDialog
+          details={[
+            { label: 'Company name', value: form.company_name.trim() },
+            { label: 'USDOT number', value: checked.usdot },
+            { label: 'Your name', value: form.full_name.trim() },
+          ]}
+          onConfirm={send}
+          onCancel={() => setChecked(null)}
+        />
+      )}
     </AuthCard>
   )
 }

@@ -5,6 +5,7 @@ from app.models.authority import Authority
 from app.models.authority_history import AuthorityHistory
 from app.models.carrier import Carrier
 from app.models.carrier_attribute_history import CarrierAttributeHistory
+from app.models.carrier_claim import CarrierClaim
 from app.models.carrier_snapshot import CarrierSnapshot
 from app.models.compliance_request import ComplianceRequest
 from app.models.crash import Crash
@@ -104,6 +105,7 @@ __all__ = [
     "SmsViolation",
     "TimelineEvent",
     "TryUse",
+    "CarrierClaim",
     "User",
     "Vehicle",
     "WorkerHeartbeat",

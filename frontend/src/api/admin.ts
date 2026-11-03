@@ -22,6 +22,13 @@ export function disableAccount(id: number): Promise<AdminUser> {
 }
 
 /** Links a USDOT number to a client's company, already verified; it shows in their portal. */
+/** Free a USDOT number this account claimed, so another carrier account can sign up with it. */
+export function releaseClaim(id: number, usdotNumber: number): Promise<AdminUser> {
+  return apiRequest<AdminUser>(`/admin/users/${id}/claims/${usdotNumber}/release`, {
+    method: 'POST',
+  })
+}
+
 export function addAccountCarrier(id: number, usdotNumber: number): Promise<AdminUser> {
   return apiRequest<AdminUser>(`/admin/users/${id}/carriers`, {
     method: 'POST',

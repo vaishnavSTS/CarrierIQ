@@ -57,3 +57,14 @@ def add_carrier(
 ) -> AdminUserOut:
     """Link a USDOT number to the client's organization, verified; it shows in their portal."""
     return service.add_carrier(user_id, data.usdot_number, admin)
+
+
+@router.post("/users/{user_id}/claims/{usdot_number}/release", response_model=AdminUserOut)
+def release_claim(
+    user_id: Annotated[int, Path(gt=0)],
+    usdot_number: Annotated[int, Path(gt=0, lt=100_000_000)],
+    _: StsAdmin,
+    service: Service,
+) -> AdminUserOut:
+    """Free a USDOT number this account claimed, so another carrier can sign up with it."""
+    return service.release_claim(user_id, usdot_number)

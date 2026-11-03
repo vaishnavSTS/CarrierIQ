@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.security import (
@@ -15,7 +16,7 @@ from app.core.security import (
 )
 from app.db.session import get_db
 from app.main import app
-from app.models import Carrier, Organization, User
+from app.models import Carrier, CarrierClaim, Organization, User
 from app.models.enums import OrganizationKind, UserRole, UserStatus
 
 PASSWORD = "correct-horse-battery"
@@ -112,8 +113,8 @@ def sign_up(email: str = "Owner@Client.com", **changes: object) -> dict[str, obj
     return {**body, **changes}
 
 
-def register(api: TestClient, email: str = "Owner@Client.com") -> None:
-    response = api.post("/api/v1/auth/register", json=sign_up(email))
+def register(api: TestClient, email: str = "Owner@Client.com", usdot: int = 295017) -> None:
+    response = api.post("/api/v1/auth/register", json=sign_up(email, usdot_number=usdot))
     assert response.status_code == 201, response.text
     assert (response.json()["status"], response.json()["portal"]) == ("ACTIVE", "client")
 
@@ -138,7 +139,7 @@ def test_client_signs_up_and_sees_portal_at_once(api: TestClient, db: Session) -
 def test_admin_sees_new_sign_ups_until_marked_seen(api: TestClient, db: Session) -> None:
     make_user(db, "admin@sts.test", UserRole.STS_ADMIN, UserStatus.ACTIVE)
     register(api)
-    register(api, "second@client.com")
+    register(api, "second@client.com", usdot=295018)
 
     log_in(api, "admin@sts.test")
     accounts = api.get("/api/v1/admin/users").json()
@@ -150,6 +151,30 @@ def test_admin_sees_new_sign_ups_until_marked_seen(api: TestClient, db: Session)
     assert api.post("/api/v1/admin/users/seen").json() == {"marked": 2}
     assert not any(a["is_new"] for a in api.get("/api/v1/admin/users").json())
     assert api.post("/api/v1/admin/users/seen").json() == {"marked": 0}
+
+
+def test_a_usdot_number_belongs_to_one_carrier_account(api: TestClient, db: Session) -> None:
+    register(api)
+    api.post("/api/v1/auth/logout")
+
+    again = api.post("/api/v1/auth/register", json=sign_up("someone@else.com"))
+    assert again.status_code == 409
+    assert again.json()["error"]["message"] == (
+        "This USDOT number is already in use. Please contact Sky Transport Solutions for more "
+        "information."
+    )
+    assert db.scalar(select(func.count()).select_from(User)) == 1  # nothing was created
+
+    claim = db.scalar(select(CarrierClaim).where(CarrierClaim.usdot_number == 295017))
+    assert (claim.company_name, claim.contact_name) == ("Client Trucking LLC", "Pat Owner")
+
+
+def test_a_claim_changes_nothing_fmcsa_shows(api: TestClient, db: Session) -> None:
+    db.add(Carrier(usdot_number=295017, legal_name="CLIENT TRUCKING LLC"))
+    register(api, usdot=295017)
+    # What the carrier typed is kept with the claim only; the carrier's record is FMCSA's.
+    carrier = db.scalar(select(Carrier).where(Carrier.usdot_number == 295017))
+    assert carrier.legal_name == "CLIENT TRUCKING LLC"
 
 
 def test_register_rejects_duplicate_email_and_short_password(api: TestClient) -> None:
@@ -276,3 +301,29 @@ def test_session_cookie_is_http_only(api: TestClient, db: Session) -> None:
     assert "carrieriq_session=" in cookie
     assert "httponly" in cookie
     assert "samesite=lax" in cookie
+
+
+def test_sts_admin_releases_a_claim(api: TestClient, db: Session) -> None:
+    make_user(db, "admin@sts.test", UserRole.STS_ADMIN, UserStatus.ACTIVE)
+    register(api)
+    api.post("/api/v1/auth/logout")
+    owner = db.scalar(select(User).where(User.email == "owner@client.com"))
+
+    # Not just anyone: a carrier account can't free its own number.
+    log_in(api, "owner@client.com")
+    assert api.post(f"/api/v1/admin/users/{owner.id}/claims/295017/release").status_code == 403
+    api.post("/api/v1/auth/logout")
+
+    log_in(api, "admin@sts.test")
+    accounts = {a["email"]: a for a in api.get("/api/v1/admin/users").json()}
+    assert accounts["owner@client.com"]["claimed_usdot_numbers"] == [295017]
+    assert api.post(f"/api/v1/admin/users/{owner.id}/claims/111/release").status_code == 404
+
+    released = api.post(f"/api/v1/admin/users/{owner.id}/claims/295017/release")
+    assert released.status_code == 200
+    assert released.json()["claimed_usdot_numbers"] == []
+    assert released.json()["usdot_numbers"] == [295017]  # the account keeps the carrier
+    api.post("/api/v1/auth/logout")
+
+    # The number is free for another carrier account now.
+    register(api, "new@owner.com")

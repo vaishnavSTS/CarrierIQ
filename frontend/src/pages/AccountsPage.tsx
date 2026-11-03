@@ -7,6 +7,7 @@ import {
   useAccountAction,
   useAccounts,
   useAddAccountCarrier,
+  useReleaseClaim,
   useMarkAccountsSeen,
 } from '../hooks/useAccounts'
 import { useMe } from '../hooks/useAuth'
@@ -52,6 +53,9 @@ function UsdotLinks({ numbers }: { numbers: number[] }) {
  */
 function AccountCarriers({ account }: { account: AdminUser }) {
   const verify = useAddAccountCarrier()
+  const release = useReleaseClaim()
+  // The number whose "Release claim" was pressed once: a second press confirms
+  const [releasing, setReleasing] = useState<number | null>(null)
   const canVerify = account.role.startsWith('CLIENT_') && account.status !== 'DISABLED'
   if (account.usdot_numbers.length === 0) return <UsdotLinks numbers={[]} />
   return (
@@ -77,10 +81,49 @@ function AccountCarriers({ account }: { account: AdminUser }) {
                 {pending ? 'Verifying…' : 'Verify'}
               </button>
             )}
+            {account.claimed_usdot_numbers?.includes(n) &&
+              (releasing === n ? (
+                <>
+                  <span className="text-slate-600">Let another carrier sign up with {n}?</span>
+                  <button
+                    type="button"
+                    disabled={release.isPending}
+                    onClick={() =>
+                      release.mutate(
+                        { id: account.id, usdotNumber: n },
+                        { onSettled: () => setReleasing(null) },
+                      )
+                    }
+                    className="rounded bg-red-700 px-2 py-0.5 font-medium text-white hover:bg-red-800 disabled:opacity-50"
+                  >
+                    {release.isPending ? 'Releasing…' : 'Yes, release'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReleasing(null)}
+                    className="rounded px-2 py-0.5 font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <StatusBadge label="Claimed" tone="neutral" />
+                  <button
+                    type="button"
+                    onClick={() => setReleasing(n)}
+                    title="Free this USDOT number so another carrier account can sign up with it. This account keeps the carrier in its portal."
+                    className="rounded px-2 py-0.5 font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50"
+                  >
+                    Release claim
+                  </button>
+                </>
+              ))}
           </li>
         )
       })}
       {verify.isError && <li className="text-red-700">{verify.error.message}</li>}
+      {release.isError && <li className="text-red-700">{release.error.message}</li>}
     </ul>
   )
 }

@@ -40,6 +40,7 @@ TABLES = {
     # Accounts (client and internal portals)
     "organizations",
     "try_uses",
+    "carrier_claims",
     "users",
     "organization_carriers",
     # Estimated ISS lookup tables

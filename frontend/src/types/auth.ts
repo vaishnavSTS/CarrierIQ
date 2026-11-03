@@ -74,6 +74,8 @@ export interface AdminUser extends User {
   usdot_numbers: number[]
   /** The ones STS has verified as the company's: only these can be used for DataQs */
   verified_usdot_numbers: number[]
+  /** Claimed by this account: no other carrier account can sign up with them */
+  claimed_usdot_numbers: number[]
   /** A client sign-up STS hasn't seen yet (shown in the Accounts pop-up) */
   is_new: boolean
   carrier_checks: CarrierContactCheck[]
