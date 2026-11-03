@@ -99,6 +99,9 @@ class Settings(BaseSettings):
     auth_secret_key: str = DEV_AUTH_SECRET_KEY
     auth_token_hours: float = 8.0
     auth_cookie_name: str = "carrieriq_session"
+    # Partner API (routes/partner.py): SHA-256 hashes of the keys given out, comma-separated.
+    # Empty: the partner API answers 401 to everyone.
+    partner_api_key_hashes: str = ""
     auth_min_password_length: int = 10
 
     # Off: clients see only their own carriers, with no search. CLIENT_SEARCH_ENABLED=true lets
