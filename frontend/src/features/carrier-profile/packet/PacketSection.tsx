@@ -33,11 +33,12 @@ import { brokerFlags } from '../network/brokerFlags'
 import { groupTip, improvementSummary } from '../safety/improvementTips'
 import { IssGauge } from '../safety/IssGauge'
 import { IssTrend } from './IssTrend'
-import { basicTiles, type BasicTile, type TileTone } from './basicTiles'
+import { basicName, basicTiles, type BasicTile, type TileTone } from './basicTiles'
 import { ContactStrip } from './ContactStrip'
 import logo from '../../../assets/carriersafetyscan-logo.png'
 import { authorityEventsToReview, packetItems, type PacketItem } from './packetItems'
 import { FixWithSky } from '../FixWithSky'
+import { afterLabel, plainGroup } from './plainLabels'
 import { fitSheets, PrintCopy } from './printFit'
 import { PullInRates } from './PullInRates'
 import { RecordPage } from './RecordPage'
@@ -402,7 +403,7 @@ export function PacketDocument({
   // Page 4, FMCSA's record line by line, once its violation file is loaded.
   const record = safety !== null && safety.sms_inspections != null
   // A busy record gets two pages, so nothing is shrunk too small to read.
-  const twoRecordPages = record && safety !== null && recordNeedsTwoPages(safety)
+  const twoRecordPages = record && safety !== null && (spill || recordNeedsTwoPages(safety))
   // A page that can't fit even at the smallest print size gives up its detail to a page of its own.
   const extra = spill && (driverRows.length > 0 || Boolean(truck) || repeats.length > 0) ? 1 : 0
   const total = (record ? (twoRecordPages ? 5 : 4) : 3) + extra
@@ -414,7 +415,7 @@ export function PacketDocument({
       ? 'Want a lower safety score? Talk to a Sky Transport Solutions specialist.'
       : ask,
     record: client
-      ? 'Keep your record clean: Sky Transport Solutions handles MCS-150 updates, insurance and BOC-3 filings.'
+      ? 'Keep your record clean: Sky Transport Solutions handles company updates (MCS-150), insurance and process agent (BOC-3) filings.'
       : ask,
     fixes: client
       ? hurting.length + redFlags.length + watch.length > 0
@@ -428,7 +429,7 @@ export function PacketDocument({
 
   const whereFrom = driverRows.length > 0 && (
     <div className="space-y-2">
-      <SectionHeading aside="FMCSA SMS violations, FMCSA’s severity and time weights">
+      <SectionHeading aside="FMCSA safety data: how serious each violation is and how recent">
         Where the violations come from
       </SectionHeading>
       {summary && <p className="text-sm text-slate-700">{summary}</p>}
@@ -439,7 +440,7 @@ export function PacketDocument({
               <th className="py-1 font-medium">Violation type</th>
               <th className="w-20 py-1 pl-3 text-right font-medium">Violations</th>
               <th className="w-20 py-1 pl-3 text-right font-medium">Out of service</th>
-              <th className="w-20 py-1 pl-3 text-right font-medium">Share of BASIC</th>
+              <th className="w-20 py-1 pl-3 text-right font-medium">Share of category</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 align-top tabular-nums text-slate-700">
@@ -448,8 +449,8 @@ export function PacketDocument({
               return (
                 <tr key={`${basic}-${group.group}`}>
                   <td className="py-1.5 pr-3">
-                    <span className="font-medium text-slate-900">{group.group}</span>{' '}
-                    <span className="text-xs text-slate-500">({basic})</span>
+                    <span className="font-medium text-slate-900">{plainGroup(group.group)}</span>{' '}
+                    <span className="text-xs text-slate-500">({basicName(basic)})</span>
                     {/* The plan above has these in plain words. */}
                     {tip && plan.length === 0 && (
                       <span className="block text-xs text-slate-500">{tip}</span>
@@ -474,7 +475,7 @@ export function PacketDocument({
   // Patterns in the violations: on page 2, or at the top of page 3 when page 2 is full.
   const patterns = (truck || repeats.length > 0) && (
     <div className="space-y-2">
-      <SectionHeading aside="FMCSA SMS violations, last 24 months" tone="amber">
+      <SectionHeading aside="FMCSA safety data, last 24 months" tone="amber">
         Patterns in the violations
       </SectionHeading>
       {truck && (
@@ -501,9 +502,15 @@ export function PacketDocument({
             {repeats.map((r) => (
               <li key={r.code} className="flex justify-between gap-3">
                 <span>
-                  {violationText(r.description, violationCode(r.code))}{' '}
+                  {plainGroup(r.group) && (
+                    <span className="font-medium">{plainGroup(r.group)}: </span>
+                  )}
+                  {afterLabel(
+                    violationText(r.description, violationCode(r.code)),
+                    plainGroup(r.group),
+                  )}{' '}
                   <span className="text-xs text-slate-500">
-                    ({violationCode(r.code)} · {r.basic})
+                    ({basicName(r.basic)} · {violationCode(r.code)})
                   </span>
                 </span>
                 <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums">
@@ -572,7 +579,7 @@ export function PacketDocument({
 
         <div className="space-y-2">
           <SectionHeading
-            aside={`FMCSA SMS${sms?.snapshot_month ? ` ${new Date(`${sms.snapshot_month}T00:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} results` : ''} · 24 months · thresholds are FMCSA’s`}
+            aside={`FMCSA safety data (SMS)${sms?.snapshot_month ? ` ${new Date(`${sms.snapshot_month}T00:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} results` : ''} · 24 months · thresholds are FMCSA’s`}
           >
             Safety categories (CSA BASICs)
           </SectionHeading>
@@ -581,6 +588,11 @@ export function PacketDocument({
               <Tile key={t.key} tile={t} facts={tileFacts(t.key, sms, drivers)} />
             ))}
           </div>
+          <p className="text-[11px] text-slate-500">
+            Percentile: how the carrier ranks against similar carriers; 0 is best, 100 is worst.
+            Threshold: the percentile at which FMCSA may step in. Measure: violation points divided
+            by inspections, or by fleet size and miles.
+          </p>
         </div>
 
         <div className="grid gap-5 sm:grid-cols-[1.4fr_1fr]">
@@ -629,8 +641,8 @@ export function PacketDocument({
           <p className="text-[11px] text-slate-500 sm:col-span-2">
             Why these counts differ: Inspections counts every inspection FMCSA has loaded for the
             last 24 months. Out-of-service rates count only those that examined the vehicle or the
-            driver. Clean inspections use FMCSA’s monthly SMS results, which can leave out the most
-            recent inspections.
+            driver. Clean inspections use FMCSA’s monthly safety results, which can leave out the
+            most recent inspections.
           </p>
         </div>
 
@@ -691,7 +703,7 @@ export function PacketDocument({
                   key: 'none',
                   title: 'Nothing in CarrierSafetyScan’s checks is hurting the score',
                   detail:
-                    'No BASIC is over its threshold or under an FMCSA alert, and FMCSA’s Crash File lists no fatal crash in the last 24 months.',
+                    'No safety category is over its threshold or under an FMCSA alert, and FMCSA’s Crash File lists no fatal crash in the last 24 months.',
                 }}
               />
             </ul>
@@ -872,7 +884,9 @@ export function PacketDocument({
                 .map(classificationLabel)
                 .join(', ') || null}
             </Fact>
-            <Fact label="Last MCS-150">{formatDate(profile.last_mcs150_date)}</Fact>
+            <Fact label="Last company update (MCS-150)">
+              {formatDate(profile.last_mcs150_date)}
+            </Fact>
             <Fact label="Power units · drivers">
               {`${fleet.registered_power_units ?? '—'} · ${profile.driver_count ?? '—'}`}
             </Fact>
@@ -880,7 +894,7 @@ export function PacketDocument({
               {fleet.recent_power_units}
             </Fact>
             <Fact label="Avg truck age">{avgAge && `${avgAge} yr`}</Fact>
-            <Fact label="BI&PD on file / required">
+            <Fact label="Liability insurance (BI&PD) on file / required">
               {docket
                 ? `${docket.bipd_on_file ? formatMoney(docket.bipd_on_file) : 'None'} / ${
                     docket.bipd_required ? formatMoney(docket.bipd_required) : 'None'
@@ -915,7 +929,7 @@ export function PacketDocument({
           <div className="grid gap-5 sm:grid-cols-2">
             {events.length > 0 && (
               <div className="space-y-1.5">
-                <SectionHeading>Recent significant events</SectionHeading>
+                <SectionHeading aside="FMCSA records">Recent significant events</SectionHeading>
                 <ul className="space-y-1 text-sm text-slate-700">
                   {events.map((e) => (
                     <li key={`${e.event_type}-${e.event_date}-${e.title}`}>
@@ -972,6 +986,13 @@ export function PacketDocument({
             or driver out of service); newer ones weigh more, and after 24 months they no longer
             count. Clean inspections lower the measures. A wrong inspection or violation can be
             challenged in FMCSA’s DataQs (dataqs.fmcsa.dot.gov).
+          </p>
+          <p>
+            Words used: BASIC is FMCSA’s name for a safety category. MCS-150 is the company update
+            form every carrier files with FMCSA. BOC-3 is the filing that names a carrier’s process
+            agents, who accept legal papers for it. BI&amp;PD is liability insurance for injuries
+            and property damage. Out of service means FMCSA’s inspector stopped the truck or driver
+            until the problem was fixed. SMS is FMCSA’s Safety Measurement System.
           </p>
           <p>
             Sources: FMCSA Company Census, inspections, SMS and Crash File, Motus and L&I authority,

@@ -7,6 +7,8 @@ import type { CarrierNetwork } from '../../../types/network'
 import { carrierSummary } from '../carrierSummary'
 import type { BrokerFlag } from '../network/brokerFlags'
 import { packetItems } from './packetItems'
+import { basicName } from './basicTiles'
+import { plainGroup } from './plainLabels'
 import { rollOff, timeWeightOn, truckRecords, violationText } from './recordDetail'
 
 const TODAY = new Date('2026-11-02T12:00:00')
@@ -91,7 +93,9 @@ describe('truckRecords', () => {
     expect(trucks[0].inspections).toBe(2)
     expect(trucks[0].violations).toBe(2)
     expect(trucks[0].outOfService).toBe(1)
-    expect(trucks[0].repeats).toEqual([{ code: '393.47', description: 'Brakes', inspections: 2 }])
+    expect(trucks[0].repeats).toEqual([
+      { code: '393.47', description: 'Brakes', group: null, inspections: 2 },
+    ])
     expect(trucks[1].repeats).toEqual([])
   })
 
@@ -233,5 +237,22 @@ describe('carrierSummary', () => {
     expect(carrierSummary(none, null, false)).toBe(
       'FMCSA lists registration status unknown, no operating authority listed, no insurance filing listed. No roadside inspections in the last 24 months.',
     )
+  })
+})
+
+describe('plain labels', () => {
+  it('gives FMCSA groups everyday names and keeps ones it doesn’t know', () => {
+    expect(plainGroup('Brakes All Others')).toBe('Brakes')
+    expect(plainGroup('Speeding 4')).toBe('Speeding')
+    expect(plainGroup('Tires')).toBe('Tires')
+    expect(plainGroup('A new FMCSA group')).toBe('A new FMCSA group')
+    expect(plainGroup(null)).toBeNull()
+  })
+
+  it('names FMCSA’s BASICs the same way whatever file they came from', () => {
+    expect(basicName('HOS Compliance')).toBe('Hours of Service')
+    expect(basicName('Hours-of-Service Compliance')).toBe('Hours of Service')
+    expect(basicName('Vehicle Maint.')).toBe('Vehicle Maintenance')
+    expect(basicName('Something else')).toBe('Something else')
   })
 })

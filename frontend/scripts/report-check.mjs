@@ -37,6 +37,12 @@ const PAGE_WIDTH = (190 * 96) / 25.4
 /** The printed page keeps 2mm to spare below that, so this much over still prints whole. */
 const TOLERANCE = (2 * 96) / 25.4
 
+/** The report's everyday names for FMCSA's categories (src/.../packet/basicTiles.ts). */
+const PLAIN_NAME = {
+  'Hours-of-Service Compliance': 'Hours of Service',
+  'Controlled Substances/Alcohol': 'Drugs & Alcohol',
+}
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const login = await fetch(`${BASE}/api/v1/auth/login`, {
@@ -205,7 +211,8 @@ function problemsIn(report, profile, safety, pdfPages) {
   }
   if (iss?.reason && !text.includes(iss.reason)) problems.push(`ISS reason missing: ${iss.reason}`)
   for (const b of iss?.basics ?? []) {
-    if (b.over_threshold && !text.includes(`${b.label} over FMCSA`)) {
+    const name = PLAIN_NAME[b.label] ?? b.label
+    if (b.over_threshold && !text.includes(`${name} over FMCSA`)) {
       problems.push(`${b.label} is over its threshold but not listed`)
     }
   }

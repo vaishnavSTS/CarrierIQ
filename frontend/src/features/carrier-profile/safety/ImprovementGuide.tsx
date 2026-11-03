@@ -2,6 +2,8 @@ import type { OosWindow } from '../../../types/carrierProfile'
 import type { BasicDriver } from '../../../types/carrierSafety'
 import { Disclosure } from '../../../components/Disclosure'
 import { NotLoaded } from '../../../components/NotLoaded'
+import { basicName } from '../packet/basicTiles'
+import { plainGroup } from '../packet/plainLabels'
 import { FixWithSky } from '../FixWithSky'
 import { formatDate, formatPercent } from '../../../utils/format'
 import { basicTip, DATAQS_URL, groupTip, improvementSummary } from './improvementTips'
@@ -97,12 +99,12 @@ export function ImprovementGuide({
                   defaultOpen={expanded}
                   summary={
                     <>
-                      <span className="font-medium text-slate-900">{b.basic}</span>
+                      <span className="font-medium text-slate-900">{basicName(b.basic)}</span>
                       <span className="text-xs text-slate-500">
                         {b.violations} violation{b.violations === 1 ? '' : 's'} in 24 months
                         {b.out_of_service > 0 && ` · ${b.out_of_service} out of service`} ·{' '}
                         {b.recent_violations} in the last 6 months · weighted score{' '}
-                        {Math.round(b.weight)} (severity × time weight)
+                        {Math.round(b.weight)} (how serious × how recent)
                       </span>
                     </>
                   }
@@ -112,9 +114,9 @@ export function ImprovementGuide({
                       const tip = groupTip(g.group)
                       return (
                         <li key={g.group}>
-                          <span className="font-medium text-slate-900">{g.group}</span>:{' '}
+                          <span className="font-medium text-slate-900">{plainGroup(g.group)}</span>:{' '}
                           {g.violations} violation{g.violations === 1 ? '' : 's'},{' '}
-                          {formatPercent(g.share)} of the {b.basic} weight
+                          {formatPercent(g.share)} of the {basicName(b.basic)} weight
                           {g.examples[0] && (
                             <span className="text-slate-500"> (e.g. {g.examples[0]})</span>
                           )}
@@ -129,7 +131,7 @@ export function ImprovementGuide({
                   </ul>
                   {basicTip(b.basic) && (
                     <p className="mt-1.5 text-xs text-slate-600">
-                      <span className="font-medium">For {b.basic} overall:</span>{' '}
+                      <span className="font-medium">For {basicName(b.basic)} overall:</span>{' '}
                       {basicTip(b.basic)}
                     </p>
                   )}

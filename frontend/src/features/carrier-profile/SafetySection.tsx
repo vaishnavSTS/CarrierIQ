@@ -173,7 +173,9 @@ export function SafetySection({
                 {`Violations · all loaded inspections${loaded ? ` (${loaded})` : ''}`}
               </SubHeading>
               <ViolationBreakdown summary={detail.data.violations} />
-              <SubHeading>Where and how the carrier was inspected</SubHeading>
+              <SubHeading source="FMCSA Vehicle Inspection File">
+                Where and how the carrier was inspected
+              </SubHeading>
               <InspectionCounts byLevel={detail.data.by_level} byState={detail.data.by_state} />
             </>
           )}

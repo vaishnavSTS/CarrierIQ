@@ -43,13 +43,13 @@ function eventGroup(key: string, sms: Sms, withViolation: number): string | null
   // Below FMCSA's minimum (e.g. fewer than 5 relevant inspections): FMCSA shows no grouping. With
   // enough relevant inspections FMCSA shows the group even without violations (checked on FMCSA's
   // SMS profile of USDOT 2763257: Driver Fitness, 0 of 14, "11-20 relevant driver inspections").
-  if (count < rule.edges[0]) return 'No safety event group'
+  if (count < rule.edges[0]) return 'Not ranked against other carriers'
   let i = 0
   while (i + 1 < rule.edges.length && count >= rule.edges[i + 1]) i += 1
   const low = rule.edges[i]
   const high = rule.edges[i + 1]
   const range = high === undefined ? `${low}+` : high - 1 === low ? `${low}` : `${low}–${high - 1}`
-  return `Safety event group: ${range} ${rule.noun}`
+  return `Compared with carriers that have ${range} ${rule.noun}`
 }
 
 /**
@@ -197,7 +197,12 @@ export interface TruckRecord {
   outOfService: number
   points: number
   /** The same violation on two or more of this truck's inspections */
-  repeats: { code: string; description: string | null; inspections: number }[]
+  repeats: {
+    code: string
+    description: string | null
+    group: string | null
+    inspections: number
+  }[]
 }
 
 /**
@@ -210,7 +215,7 @@ export function truckRecords(inspections: SmsInspection[]): {
   unmatched: number
 } {
   const byTruck = new Map<string, TruckRecord & { codes: Map<string, Set<string>> }>()
-  const descriptions = new Map<string, string | null>()
+  const described = new Map<string, SmsViolation>()
   let unmatched = 0
   for (const inspection of inspections) {
     const own = inspection.violations.filter(
@@ -242,7 +247,7 @@ export function truckRecords(inspections: SmsInspection[]): {
     row.outOfService += own.filter((v) => v.out_of_service).length
     for (const v of own) {
       row.points += smsPoints(inspection, v)
-      descriptions.set(v.code, v.description)
+      described.set(v.code, v)
       const seen = row.codes.get(v.code) ?? new Set<string>()
       seen.add(inspection.inspection_id)
       row.codes.set(v.code, seen)
@@ -256,7 +261,8 @@ export function truckRecords(inspections: SmsInspection[]): {
         .filter(([, ids]) => ids.size >= 2)
         .map(([code, ids]) => ({
           code,
-          description: descriptions.get(code) ?? null,
+          description: described.get(code)?.description ?? null,
+          group: described.get(code)?.group ?? null,
           inspections: ids.size,
         }))
         .sort((a, b) => b.inspections - a.inspections),
@@ -270,6 +276,8 @@ const FMCSA_DESCRIPTION_LIMIT = 158
 export interface ViolationRow {
   code: string
   description: string | null
+  /** FMCSA's violation group */
+  group: string | null
   basic: string
   count: number
   outOfService: number
@@ -286,6 +294,7 @@ export function violationRows(inspections: SmsInspection[]): ViolationRow[] {
     const row = rows.get(v.code) ?? {
       code: v.code,
       description: v.description,
+      group: v.group,
       basic: v.basic,
       count: 0,
       outOfService: 0,
@@ -368,8 +377,8 @@ function measureLine(key: string, measure: number, drivers: BasicDriver[] | null
   const divisor = unsafe ? points / measure : Math.round(points / measure)
   if (divisor <= 0) return shown
   const exact = Math.abs(points / divisor - measure) < 0.005
-  return `${shown} ${exact ? '=' : '≈'} ${number(points, 1)} points ÷ ${number(divisor)}${
-    unsafe ? ' (power units × utilization)' : ''
+  return `${shown} ${exact ? '=' : '≈'} ${number(points, 1)} violation points ÷ ${number(divisor)}${
+    unsafe ? ' (fleet size and miles)' : ' (inspections, newer ones counting more)'
   }`
 }
 
@@ -432,6 +441,7 @@ export function heaviestTruck(inspections: SmsInspection[]): TruckShare | null {
 export interface RepeatViolation {
   code: string
   description: string | null
+  group: string | null
   basic: string
   inspections: number
 }
@@ -444,6 +454,7 @@ export function repeatViolations(inspections: SmsInspection[], limit = 3): Repea
       const row = seen.get(v.code) ?? {
         code: v.code,
         description: v.description,
+        group: v.group,
         basic: v.basic,
         inspections: 0,
         ids: new Set<string>(),
@@ -457,9 +468,10 @@ export function repeatViolations(inspections: SmsInspection[], limit = 3): Repea
     .filter((r) => r.inspections >= 2)
     .sort((a, b) => b.inspections - a.inspections)
     .slice(0, limit)
-    .map(({ code, description, basic, inspections: n }) => ({
+    .map(({ code, description, group, basic, inspections: n }) => ({
       code,
       description,
+      group,
       basic,
       inspections: n,
     }))

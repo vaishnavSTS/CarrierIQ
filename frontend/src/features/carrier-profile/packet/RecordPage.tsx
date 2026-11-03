@@ -2,6 +2,8 @@ import { CalendarClock, Scale } from 'lucide-react'
 
 import type { CarrierSafety } from '../../../types/carrierSafety'
 import { formatDate } from '../../../utils/format'
+import { basicName } from './basicTiles'
+import { afterLabel, plainGroup } from './plainLabels'
 import {
   heaviestViolations,
   improvementSteps,
@@ -19,7 +21,7 @@ const MAX_CODES = 10
 const MAX_CODES_OWN_PAGE = 9
 const MAX_INSPECTIONS = 6
 /** On its own page the history table fills the page: inspections are added while their rows fit. */
-const MAX_HISTORY_ROWS_OWN_PAGE = 22
+const MAX_HISTORY_ROWS_OWN_PAGE = 20
 const MAX_VIOLATIONS_PER_INSPECTION = 5
 
 const day = (value: Date) =>
@@ -84,7 +86,7 @@ export function RecordPage({
             <div className="space-y-2">
               <SectionHeading
                 tone="green"
-                aside="FMCSA time weights: 3× for 6 months, 2× to 12, 1× to 24; applied at FMCSA’s next monthly update"
+                aside="Newer violations count more: 3× for 6 months, 2× to 12 months, 1× to 24 months; applied at FMCSA’s next monthly update"
               >
                 <span className="flex items-center gap-2">
                   <CalendarClock className="size-5 text-emerald-600" aria-hidden />
@@ -116,7 +118,7 @@ export function RecordPage({
                             {formatDate(s.inspection.inspection_date)}
                             {s.inspection.state && ` · ${s.inspection.state}`}
                             <span className="block text-[11px] text-slate-500">
-                              {s.basics.join(', ')}
+                              {[...new Set(s.basics.map(basicName))].join(', ')}
                             </span>
                           </td>
                           <td className="py-1 pr-2">
@@ -153,8 +155,15 @@ export function RecordPage({
                       </span>
                       <span>
                         <span className="font-semibold text-slate-900">
-                          {violationText(v.description, v.code)}
+                          {plainGroup(v.group)
+                            ? `${plainGroup(v.group)}:`
+                            : violationText(v.description, v.code)}
                         </span>{' '}
+                        {plainGroup(v.group) && (
+                          <span className="text-slate-700">
+                            {afterLabel(violationText(v.description, v.code), plainGroup(v.group))}{' '}
+                          </span>
+                        )}
                         <span className="text-xs text-slate-500">
                           ({violationCode(v.code)} · {formatDate(i.inspection_date)}
                           {i.state && ` ${i.state}`} · {points(worth)} points
@@ -175,7 +184,7 @@ export function RecordPage({
           {codes.length > 0 && (
             <div className="space-y-2">
               <SectionHeading
-                aside={`FMCSA SMS · ${codes.reduce((n, r) => n + r.count, 0)} violations`}
+                aside={`FMCSA safety data · ${codes.reduce((n, r) => n + r.count, 0)} violations`}
               >
                 Violation summary
               </SectionHeading>
@@ -183,24 +192,26 @@ export function RecordPage({
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-slate-200 text-left text-[10px] uppercase tracking-wide text-slate-500">
-                      <th className="py-1 font-medium">Code</th>
-                      <th className="py-1 font-medium">Description</th>
-                      <th className="py-1 pl-3 font-medium">BASIC</th>
+                      <th className="py-1 font-medium">Violation</th>
+                      <th className="py-1 pl-3 font-medium">Safety category</th>
                       <th className="w-16 py-1 pl-3 text-center font-medium">Count</th>
-                      <th className="w-16 py-1 pl-3 text-center font-medium" title="Out of service">
-                        OOS
-                      </th>
+                      <th className="w-16 py-1 pl-3 text-center font-medium">Out of service</th>
                       <th className="w-16 py-1 pl-3 text-center font-medium">Severity</th>
+                      <th className="py-1 pl-3 font-medium">FMCSA code</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 align-top tabular-nums text-slate-700">
                     {codes.slice(0, maxCodes).map((r) => (
                       <tr key={r.code}>
-                        <td className="whitespace-nowrap py-1 pr-2 font-mono text-[11px] text-slate-900">
-                          {violationCode(r.code)}
+                        <td className="py-1 pr-2">
+                          {plainGroup(r.group) && (
+                            <span className="font-semibold text-slate-900">
+                              {plainGroup(r.group)}:{' '}
+                            </span>
+                          )}
+                          {afterLabel(violationText(r.description, '—'), plainGroup(r.group))}
                         </td>
-                        <td className="py-1 pr-2">{violationText(r.description, '—')}</td>
-                        <td className="py-1 pl-3 pr-2 text-xs">{r.basic}</td>
+                        <td className="py-1 pl-3 pr-2 text-xs">{basicName(r.basic)}</td>
                         <td className="py-1 pl-3 text-center">{r.count}</td>
                         <td
                           className={`py-1 pl-3 text-center ${r.outOfService > 0 ? 'font-semibold text-red-700' : ''}`}
@@ -208,6 +219,9 @@ export function RecordPage({
                           {r.outOfService}
                         </td>
                         <td className="py-1 pl-3 text-center">{r.severity}</td>
+                        <td className="whitespace-nowrap py-1 pl-3 font-mono text-[11px] text-slate-500">
+                          {violationCode(r.code)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -247,10 +261,8 @@ export function RecordPage({
                       <th className="py-1 pr-2 font-medium">Plate</th>
                       <th className="py-1 pr-2 text-center font-medium">Level</th>
                       <th className="py-1 pr-2 font-medium">Violation</th>
-                      <th className="py-1 pr-2 font-medium">BASIC</th>
-                      <th className="py-1 pr-2 text-center font-medium" title="Out of service">
-                        OOS
-                      </th>
+                      <th className="py-1 pr-2 font-medium">Safety category</th>
+                      <th className="py-1 pr-2 text-center font-medium">Out of service</th>
                       <th className="py-1 pr-2 text-center font-medium">Severity</th>
                       <th className="py-1 text-center font-medium">Time wt.</th>
                     </tr>
@@ -298,9 +310,15 @@ export function RecordPage({
                             <td
                               className={`py-1 pr-2 align-top text-xs ${v.out_of_service ? 'font-semibold text-red-700' : 'text-slate-800'}`}
                             >
-                              {violationText(v.description, v.code)}
+                              {plainGroup(v.group) && (
+                                <span className="font-semibold">{plainGroup(v.group)}: </span>
+                              )}
+                              {afterLabel(
+                                violationText(v.description, v.code),
+                                plainGroup(v.group),
+                              )}
                             </td>
-                            <td className={cell}>{v.basic}</td>
+                            <td className={cell}>{basicName(v.basic)}</td>
                             <td
                               className={`py-1 pr-2 text-center align-top text-xs ${v.out_of_service ? 'font-semibold text-red-700' : 'text-slate-400'}`}
                             >
@@ -332,8 +350,9 @@ export function RecordPage({
               </p>
             )}
             <p className="text-[11px] text-slate-500">
-              A description ending in “…” is cut off in FMCSA’s own file. Severity and time weights
-              are FMCSA’s; an out-of-service violation (red) adds 2 to its severity weight.
+              A description ending in “…” is cut off in FMCSA’s own file. Severity is how serious
+              FMCSA rates a violation, and an out-of-service violation (red) adds 2 to it. Time
+              weight is how much FMCSA counts it for its age.
             </p>
           </div>
 

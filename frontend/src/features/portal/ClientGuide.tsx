@@ -15,12 +15,12 @@ const FEATURES: GuideItem[] = [
   {
     icon: ShieldCheck,
     title: 'Know before brokers do',
-    text: 'The items broker vetting tools usually flag on your record, such as a shared phone or address, an old MCS-150 or a missing BOC-3, before a broker sees them.',
+    text: 'The items broker vetting tools usually flag on your record, such as a shared phone or address, an old company update (MCS-150) or a missing process agent filing (BOC-3), before a broker sees them.',
   },
   {
     icon: Wrench,
     title: 'Fix it the right way',
-    text: 'Each flag comes with how it is usually resolved: an MCS-150 update, a BOC-3 filing or a current insurance certificate.',
+    text: 'Each flag comes with how it is usually resolved: a company update (MCS-150), a process agent filing (BOC-3) or a current insurance certificate.',
   },
   {
     icon: Gauge,
@@ -35,7 +35,7 @@ const FEATURES: GuideItem[] = [
   {
     icon: CalendarClock,
     title: 'Stay current',
-    text: 'When your MCS-150 update is due and when your insurance usually renews, so nothing lapses without you noticing.',
+    text: 'When your company update (MCS-150) is due and when your insurance usually renews, so nothing lapses without you noticing.',
   },
   {
     icon: Send,
@@ -53,7 +53,7 @@ const STEPS: GuideItem[] = [
   {
     icon: Wrench,
     title: 'Fix',
-    text: 'Work through what is flagged: an MCS-150 update, a BOC-3 filing, or a DataQs challenge for a wrong violation.',
+    text: 'Work through what is flagged: a company update (MCS-150), a process agent filing (BOC-3), or a DataQs challenge for a wrong violation.',
   },
   {
     icon: Send,

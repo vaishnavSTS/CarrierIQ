@@ -15,7 +15,7 @@ const FEATURES: GuideItem[] = [
   {
     icon: ShieldCheck,
     title: 'Authority and insurance',
-    text: 'Is the MC active, is liability and cargo insurance on file, is there a BOC-3, any revocations.',
+    text: 'Is the MC active, is liability and cargo insurance on file, is there a process agent filing (BOC-3), any revocations.',
   },
   {
     icon: Gauge,

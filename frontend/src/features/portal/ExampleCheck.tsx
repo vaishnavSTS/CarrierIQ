@@ -5,7 +5,7 @@ const ease = [0.16, 1, 0.3, 1] as const
 
 const CHECKS: { label: string; value: string; tone: 'ok' | 'warn' }[] = [
   { label: 'Operating authority', value: 'Active', tone: 'ok' },
-  { label: 'Insurance on file', value: '$1,000,000 BI&PD', tone: 'ok' },
+  { label: 'Insurance on file', value: '$1,000,000 liability (BI&PD)', tone: 'ok' },
   { label: 'Process agent (BOC-3)', value: 'On file', tone: 'ok' },
   { label: 'Out-of-service orders', value: 'None', tone: 'ok' },
   { label: 'Linked carriers', value: 'Same phone as 1 other', tone: 'warn' },

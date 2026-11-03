@@ -16,7 +16,7 @@ export function RollOffChart({ inspections }: { inspections: SmsInspection[] }) 
   return (
     <ChartCard
       title="Violation points still counting, if there are no new violations"
-      subtitle="Severity × FMCSA's time weight, summed over all safety categories"
+      subtitle="How serious each violation is × how recent it is, added up across all safety categories"
       note="These are weight points, not a percentile or a score: FMCSA's percentiles also depend on clean inspections and on other carriers, and crashes aren't included here. So this shows the direction, not a promised result."
       chart={
         <ColumnChart

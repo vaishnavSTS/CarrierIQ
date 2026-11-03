@@ -53,7 +53,7 @@ export function CsaBasics({ sms }: { sms: Sms | null }) {
               <th className={`${cellClass} text-right`}>Measure</th>
               <th className={`${cellClass} text-right`}>Percentile</th>
               {sms.passenger && <th className={cellClass}>FMCSA alert</th>}
-              <th className={cellClass}>Acute / critical</th>
+              <th className={cellClass}>Serious violation (acute / critical)</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 tabular-nums">

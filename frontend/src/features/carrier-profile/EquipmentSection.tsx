@@ -65,11 +65,11 @@ function FleetNote({ fleet }: { fleet: Fleet }) {
   const recent = fleet.recent_power_units
   let text: string
   if (recent < registered) {
-    text = `Inspections in the last ${fleet.recent_months} months saw ${recent} of the ${registered} registered power units. Not every truck gets inspected, so this does not mean trucks are missing.`
+    text = `Inspections in the last ${fleet.recent_months} months saw ${recent} of the ${registered} registered trucks (power units). Not every truck gets inspected, so this does not mean trucks are missing.`
   } else if (recent > registered) {
-    text = `Inspections in the last ${fleet.recent_months} months saw ${recent} power units, more than the ${registered} registered. The fleet may have grown since the last MCS-150, or trucks may be leased or replaced.`
+    text = `Inspections in the last ${fleet.recent_months} months saw ${recent} trucks (power units), more than the ${registered} registered. The fleet may have grown since the last MCS-150, or trucks may be leased or replaced.`
   } else {
-    text = `Inspections in the last ${fleet.recent_months} months saw all ${registered} registered power units.`
+    text = `Inspections in the last ${fleet.recent_months} months saw all ${registered} registered trucks (power units).`
   }
   return (
     <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">

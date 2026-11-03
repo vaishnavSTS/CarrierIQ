@@ -39,6 +39,13 @@ export function basicKey(name: string): string | null {
   return null
 }
 
+/** FMCSA's name for a BASIC in everyday words ("HOS Compliance" -> "Hours of Service"). */
+export function basicName(name: string): string {
+  const key = basicKey(name)
+  if (key === 'hazmat') return 'Hazardous Materials'
+  return BASICS.find(([k]) => k === key)?.[1] ?? name
+}
+
 function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? '' : 's'}`
 }
@@ -82,8 +89,8 @@ export function basicTiles(
         key,
         label,
         tone: 'red',
-        status: 'Acute / critical violation',
-        note: 'Found in an FMCSA investigation in the last 12 months',
+        status: 'Serious violation in an investigation',
+        note: 'FMCSA calls this acute / critical. Found in an FMCSA investigation in the last 12 months',
       }
     }
     if (

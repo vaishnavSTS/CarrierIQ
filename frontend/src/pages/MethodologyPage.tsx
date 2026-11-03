@@ -37,6 +37,21 @@ const SOURCES = [
   { name: 'FMCSA out-of-service orders', href: 'https://data.transportation.gov/d/p2mt-9ige' },
 ]
 
+const WORDS = [
+  ['BASIC', 'FMCSA’s name for a safety category, such as Unsafe Driving or Vehicle Maintenance.'],
+  ['Percentile', 'How a carrier ranks against similar carriers. 0 is best and 100 is worst.'],
+  ['Threshold', 'The percentile at which FMCSA may step in.'],
+  ['Measure', 'Violation points divided by inspections, or by fleet size and miles.'],
+  ['Severity', 'How serious FMCSA rates a violation, from 1 to 10. Out of service adds 2.'],
+  ['Time weight', 'How much a violation counts for its age: 3× for 6 months, 2× to 12, 1× to 24.'],
+  ['Out of service', 'FMCSA’s inspector stopped the truck or driver until the problem was fixed.'],
+  ['MCS-150', 'The company update form every carrier files with FMCSA.'],
+  ['BOC-3', 'The filing that names a carrier’s process agents, who accept legal papers for it.'],
+  ['BI&PD', 'Liability insurance for injuries and property damage.'],
+  ['SMS', 'FMCSA’s Safety Measurement System, where most of the safety data comes from.'],
+  ['DataQs', 'FMCSA’s system for challenging a wrong inspection or violation.'],
+]
+
 function Block({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-surface p-6">
@@ -139,6 +154,17 @@ export function MethodologyPage() {
             </tbody>
           </table>
         </div>
+      </Block>
+
+      <Block title="Words used">
+        <dl className="space-y-2">
+          {WORDS.map(([word, meaning]) => (
+            <div key={word}>
+              <dt className="inline font-medium text-slate-900">{word}: </dt>
+              <dd className="inline">{meaning}</dd>
+            </div>
+          ))}
+        </dl>
       </Block>
 
       <Block title="How close it is">

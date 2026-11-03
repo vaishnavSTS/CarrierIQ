@@ -23,7 +23,7 @@ import { Empty, Section } from './Section'
 import { cellClass, headClass, tableClass } from './styles'
 
 const TYPE_LABEL: Record<string, string> = {
-  BIPD: 'BI&PD (liability)',
+  BIPD: 'Liability (BI&PD)',
   CARGO: 'Cargo',
   BOND: 'Surety bond',
   TRUST_FUND: 'Trust fund',
@@ -184,11 +184,11 @@ function DocketCard({
       </div>
       {docket.status_source !== 'CENSUS' && (
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-          <dt className="text-slate-500">BI&PD (liability) required</dt>
+          <dt className="text-slate-500">Liability insurance (BI&PD) required</dt>
           <dd>
             {docket.bipd_required === null ? 'Unknown' : required ? formatMoney(required) : 'None'}
           </dd>
-          <dt className="text-slate-500">BI&PD (liability) on file</dt>
+          <dt className="text-slate-500">Liability insurance (BI&PD) on file</dt>
           <dd className={short ? 'font-medium text-red-700' : ''}>
             {onFile ? formatMoney(onFile) : 'None on file'}
             {short && ' (below required)'}

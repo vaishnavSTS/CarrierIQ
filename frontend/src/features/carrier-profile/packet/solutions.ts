@@ -129,8 +129,8 @@ export function solutions({
   ) {
     out.push({
       key: 'mcs150',
-      title: 'Update the MCS-150 truck count',
-      how: `Inspections show ${fleet.recent_power_units} trucks but the MCS-150 lists ${fleet.registered_power_units}. FMCSA divides the Unsafe Driving and Crash measures by the truck count and miles, so a count that is too low makes them higher.`,
+      title: 'Update the truck count on your MCS-150',
+      how: `Inspections show ${fleet.recent_power_units} trucks but the MCS-150 lists ${fleet.registered_power_units}. FMCSA divides Unsafe Driving and crash points by the truck count and miles, so a count that is too low makes them higher.`,
     })
   }
 
@@ -138,7 +138,7 @@ export function solutions({
   out.push({
     key: 'clean',
     title: 'Aim for clean inspections',
-    how: 'Every inspection with no violations lowers the Hours-of-Service, Vehicle Maintenance and Driver Fitness measures, because FMCSA divides the violation points by the number of inspections.',
+    how: 'Every inspection with no violations lowers the Hours of Service, Vehicle Maintenance and Driver Fitness measures, because FMCSA divides the violation points by the number of inspections.',
   })
 
   // 8. Time: violations weigh less as they age and stop counting after 24 months.

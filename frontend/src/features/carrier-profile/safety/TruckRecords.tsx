@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import type { SmsInspection } from '../../../types/carrierSafety'
+import { plainGroup } from '../packet/plainLabels'
 import { truckRecords } from '../packet/recordDetail'
 import { Empty } from '../Section'
 import { cellClass, headClass, tableClass } from '../styles'
@@ -55,9 +56,12 @@ export function TruckRecords({ inspections }: { inspections: SmsInspection[] }) 
                       <ul className="space-y-0.5 text-xs text-slate-700">
                         {t.repeats.map((r) => (
                           <li key={r.code}>
-                            <span className="font-mono">{r.code}</span> on {r.inspections}{' '}
-                            inspections
-                            {r.description ? ` · ${r.description}` : ''}
+                            <span className="font-semibold text-slate-900">
+                              {plainGroup(r.group) ?? r.description ?? r.code}
+                            </span>{' '}
+                            on {r.inspections} inspections
+                            {plainGroup(r.group) && r.description ? ` · ${r.description}` : ''}{' '}
+                            <span className="font-mono text-slate-500">({r.code})</span>
                           </li>
                         ))}
                       </ul>
