@@ -25,7 +25,7 @@ export function ServiceRequestsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Service requests</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Clients asking STS for help from a carrier’s What to fix tab. Each one is also emailed to
+          Clients asking STS for help from a carrier’s Compliance tab. Each one is also emailed to
           STS. Follow up with the client, then mark it handled.
         </p>
       </div>

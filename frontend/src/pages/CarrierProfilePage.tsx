@@ -52,7 +52,6 @@ const CLIENT_TABS: readonly TabId[] = [
 const BROKER_TABS: readonly TabId[] = [...CLIENT_TABS, 'chameleon']
 const CLIENT_LABELS: Partial<Record<TabId, string>> = {
   network: 'How brokers see you',
-  compliance: 'What to fix',
 }
 
 const DEFAULT_TAB: TabId = 'identity'
