@@ -1,12 +1,13 @@
-import { BadgeCheck, Check, FileSearch, Scale, Send } from 'lucide-react'
+import { BadgeCheck, Check } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type ReactElement } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import reportPage1 from '../../assets/report-sample-1.webp'
 import reportPage2 from '../../assets/report-sample-2.webp'
 import stsLogo from '../carrier-profile/packet/sts-logo.png'
-import { IconBadge, PrimaryLink, reveal, SectionHeading } from './landingParts'
+import { PrimaryLink, reveal, SectionHeading } from './landingParts'
+import { FileArt, FindArt, FollowArt } from './RoleArt'
 
 /** Keep in step with MONTHLY_PRICE and TRIAL (backend/app/services/subscription.py). */
 const MONTHLY_PRICE = 49
@@ -64,19 +65,19 @@ export function HeroTryForm() {
   )
 }
 
-const DATAQS_STEPS = [
+const DATAQS_STEPS: { art: () => ReactElement; title: string; text: string }[] = [
   {
-    icon: FileSearch,
+    art: FindArt,
     title: 'Find it',
     text: 'See every inspection and violation on your record, with the ones weighing most on your score first.',
   },
   {
-    icon: Send,
+    art: FileArt,
     title: 'We file it',
     text: 'Choose the inspection and an STS specialist prepares and files the DataQs challenge with you.',
   },
   {
-    icon: Scale,
+    art: FollowArt,
     title: 'Follow it',
     text: 'Track your case in your portal. The agency reviewing the record makes the final decision.',
   },
@@ -98,13 +99,15 @@ export function DataQsSection() {
         challenge is accepted, the violation is removed and stops counting.
       </motion.p>
       <div className="mt-10 grid gap-5 md:grid-cols-3">
-        {DATAQS_STEPS.map(({ icon, title, text }, i) => (
+        {DATAQS_STEPS.map(({ art: Art, title, text }, i) => (
           <motion.article
             key={title}
             {...reveal(i * 0.05)}
             className="rounded-2xl border border-slate-200 bg-surface/90 p-6"
           >
-            <IconBadge icon={icon} />
+            <div className="-mx-6 -mt-6 mb-1 h-32 overflow-hidden rounded-t-2xl">
+              <Art />
+            </div>
             <h3 className="mt-5 text-sm font-semibold text-slate-900">{title}</h3>
             <p className="mt-2 text-sm leading-relaxed text-slate-600">{text}</p>
           </motion.article>

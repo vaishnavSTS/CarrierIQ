@@ -1,45 +1,46 @@
 import {
   FileText,
-  Network,
   Search,
-  ShieldCheck,
-  TrendingDown,
   UserPlus,
   type LucideIcon,
 } from 'lucide-react'
 import { motion } from 'motion/react'
+import type { ReactElement } from 'react'
 import { Link } from 'react-router-dom'
 
 import { HeroSlider } from '../features/landing/HeroSlider'
-import { AgentArt, BrokerArt, CarrierArt } from '../features/landing/RoleArt'
-import { IconBadge, PrimaryLink, reveal, SectionHeading } from '../features/landing/landingParts'
 import {
-  AboutStsSection,
-  DataQsSection,
-  PricingSection,
-  ReportPreview,
-} from '../features/landing/LandingSections'
+  AgentArt,
+  BrokerArt,
+  BrokerCheckArt,
+  CarrierArt,
+  FixArt,
+  PacketArt,
+  RegistrationArt,
+} from '../features/landing/RoleArt'
+import { PrimaryLink, reveal, SectionHeading } from '../features/landing/landingParts'
+import { AboutStsSection, DataQsSection, ReportPreview } from '../features/landing/LandingSections'
 import { PhoneShowcase } from '../features/landing/PhoneShowcase'
 import { useMe } from '../hooks/useAuth'
 
-const FEATURES: { icon: LucideIcon; title: string; text: string }[] = [
+const FEATURES: { art: () => ReactElement; title: string; text: string }[] = [
   {
-    icon: ShieldCheck,
+    art: BrokerCheckArt,
     title: 'See what a broker’s check sees',
     text: 'Authority, insurance, BOC-3, safety and inspection history from FMCSA, in one place, with the source named on every value.',
   },
   {
-    icon: TrendingDown,
+    art: FixArt,
     title: 'Know what to fix',
     text: 'Which violation groups weigh most in each CSA BASIC, the 49 CFR rule behind them, and how DataQs corrections work.',
   },
   {
-    icon: Network,
+    art: RegistrationArt,
     title: 'Catch registration problems early',
     text: 'Motus and legacy L&I gaps, stale MCS-150 updates, shared addresses or phones that can trip a broker’s fraud screen.',
   },
   {
-    icon: FileText,
+    art: PacketArt,
     title: 'A packet you can send',
     text: 'A dated, sourced carrier packet to share with brokers and shippers. Facts from FMCSA, and estimates that follow FMCSA’s own published methods.',
   },
@@ -175,13 +176,15 @@ export function LandingPage() {
           <section className="pb-20">
             <SectionHeading eyebrow="What you get" title="Everything a broker checks, explained" />
             <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {FEATURES.map(({ icon, title, text }, i) => (
+              {FEATURES.map(({ art: Art, title, text }, i) => (
                 <motion.article
                   key={title}
                   {...reveal(i * 0.08)}
                   className="group rounded-2xl border border-slate-200 bg-surface/80 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-brand-glow/15"
                 >
-                  <IconBadge icon={icon} />
+                  <div className="-mx-6 -mt-6 mb-1 h-32 overflow-hidden rounded-t-2xl">
+                    <Art />
+                  </div>
                   <h3 className="mt-5 text-sm font-semibold text-slate-900">{title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-slate-600">{text}</p>
                 </motion.article>
@@ -221,8 +224,6 @@ export function LandingPage() {
               ))}
             </ol>
           </section>
-
-          <PricingSection />
 
           {/* Closing call to action */}
           {!user && (
