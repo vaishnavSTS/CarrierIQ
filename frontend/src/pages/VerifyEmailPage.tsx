@@ -115,7 +115,7 @@ export function VerifyEmailPage() {
 
 function LogIn() {
   return (
-    <Link to="/login" className="font-medium text-accent-strong hover:underline">
+    <Link to="/login" className="tap font-medium text-accent-strong hover:underline">
       Back to log in
     </Link>
   )

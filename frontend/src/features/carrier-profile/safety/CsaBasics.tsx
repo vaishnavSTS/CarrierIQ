@@ -1,3 +1,4 @@
+import { StackTable } from '../../../components/StackTable'
 import { NotLoaded } from '../../../components/NotLoaded'
 import { StatusBadge } from '../../../components/StatusBadge'
 import type { Basic, Sms } from '../../../types/carrierSafety'
@@ -45,7 +46,7 @@ export function CsaBasics({ sms }: { sms: Sms | null }) {
         violations.
       </p>
       <div className="relative overflow-x-auto">
-        <table className={tableClass}>
+        <StackTable className={tableClass}>
           <thead className={headClass}>
             <tr>
               <th className={cellClass}>Category</th>
@@ -88,7 +89,7 @@ export function CsaBasics({ sms }: { sms: Sms | null }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </StackTable>
       </div>
       <p className="mt-2 text-xs text-slate-500">
         {sms.passenger

@@ -664,3 +664,92 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 180px 180px;
 }
+
+/*
+ * Phones: everything you tap is at least 44px (Apple's and Google's guidance), and tables marked
+ * .stack-table (components/StackTable.tsx) become a list of small cards. Wider screens unchanged.
+ */
+/* In the base layer, so a component's own classes (hidden, block, min-h-…) still win. */
+@layer base {
+  @media (max-width: 639px) {
+    button,
+    [role='tab'],
+    select,
+    input:not([type='checkbox'], [type='radio'], [type='hidden'], [type='range']),
+    header a,
+    nav a,
+    footer a,
+    .tap {
+      min-height: 44px;
+    }
+    button,
+    [role='tab'] {
+      min-width: 44px;
+    }
+    label:has(> input[type='checkbox']) {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+    }
+    header a,
+    nav a,
+    footer a,
+    .tap {
+      display: inline-flex;
+      align-items: center;
+    }
+  }
+}
+
+@media (max-width: 639px) {
+  .stack-table,
+  .stack-table tbody,
+  .stack-table tr,
+  .stack-table td {
+    display: block;
+    width: 100%;
+  }
+  .stack-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .stack-table tbody {
+    border: 0;
+  }
+  .stack-table tr {
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--color-slate-200);
+    border-radius: 0.5rem;
+    padding: 0.25rem 0;
+  }
+  .stack-table td {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.375rem 0.75rem;
+    text-align: right;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .stack-table td > * {
+    min-width: 0;
+  }
+  .stack-table td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    max-width: 45%;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-slate-500);
+  }
+  .stack-table td[data-label='']::before {
+    content: none;
+  }
+}

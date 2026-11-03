@@ -1,3 +1,4 @@
+import { StackTable } from '../../../components/StackTable'
 import { SERIES } from '../../../components/charts/chartTheme'
 import type { ViolationSummary } from '../../../types/carrierSafety'
 import { formatDate } from '../../../utils/format'
@@ -62,7 +63,7 @@ export function ViolationBreakdown({ summary }: { summary: ViolationSummary }) {
           <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
             Most frequent violations
           </h3>
-          <table className={tableClass}>
+          <StackTable className={tableClass}>
             <thead className={headClass}>
               <tr>
                 <th className={cellClass}>Violation</th>
@@ -84,7 +85,7 @@ export function ViolationBreakdown({ summary }: { summary: ViolationSummary }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </StackTable>
         </div>
       </div>
     </div>

@@ -89,7 +89,7 @@ export function ContactPage() {
               <li key={label}>
                 <a
                   href={href}
-                  className="flex items-center gap-2.5 break-all font-medium text-accent-strong hover:underline"
+                  className="tap flex items-center gap-2.5 break-all font-medium text-accent-strong hover:underline"
                 >
                   <Icon className="size-4 shrink-0" aria-hidden />
                   {label}

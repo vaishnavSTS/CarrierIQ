@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 
+import { StackTable } from '../../../components/StackTable'
 import { CarrierLink } from '../../../components/CarrierLink'
 import { SourceTag } from '../../../components/SourceTag'
 import { StatusBadge } from '../../../components/StatusBadge'
@@ -98,7 +99,7 @@ function Shutdown({ c }: { c: ChameleonLinked }) {
 function LinkedTable({ carriers }: { carriers: ChameleonLinked[] }) {
   return (
     <div className="relative overflow-x-auto">
-      <table className={tableClass}>
+      <StackTable className={tableClass}>
         <thead className={headClass}>
           <tr>
             <th className={cellClass}>Carrier</th>
@@ -175,7 +176,7 @@ function LinkedTable({ carriers }: { carriers: ChameleonLinked[] }) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </StackTable>
     </div>
   )
 }

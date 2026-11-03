@@ -1,6 +1,7 @@
 import { SOURCES } from '../../utils/sources'
 import { useState, type ReactNode } from 'react'
 
+import { StackTable } from '../../components/StackTable'
 import { NotLoaded } from '../../components/NotLoaded'
 import { SourceTag } from '../../components/SourceTag'
 import { StatusBadge } from '../../components/StatusBadge'
@@ -238,7 +239,7 @@ function filingSources(filings: InsuranceFiling[]): string {
 function FilingsTable({ filings, past }: { filings: InsuranceFiling[]; past: boolean }) {
   return (
     <div className="relative overflow-x-auto">
-      <table className={tableClass}>
+      <StackTable className={tableClass}>
         <thead className={headClass}>
           <tr>
             <th className={cellClass}>Type</th>
@@ -310,7 +311,7 @@ function FilingsTable({ filings, past }: { filings: InsuranceFiling[]; past: boo
             </tr>
           ))}
         </tbody>
-      </table>
+      </StackTable>
     </div>
   )
 }
@@ -488,7 +489,7 @@ export function AuthoritySection({
           ) : (
             <>
               <div className="relative overflow-x-auto">
-                <table className={tableClass}>
+                <StackTable className={tableClass}>
                   <thead className={headClass}>
                     <tr>
                       <th className={cellClass}>Date</th>
@@ -522,7 +523,7 @@ export function AuthoritySection({
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </StackTable>
               </div>
               {!allActions && (
                 <ShowMore

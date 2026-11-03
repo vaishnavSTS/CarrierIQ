@@ -15,7 +15,7 @@ export function CarrierLink({ usdotNumber }: { usdotNumber: number }) {
   return (
     <Link
       to={carrierPath(usdotNumber)}
-      className="font-mono text-slate-900 underline hover:text-slate-600"
+      className="tap font-mono text-slate-900 underline hover:text-slate-600"
     >
       USDOT {usdotNumber}
     </Link>

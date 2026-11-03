@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { StackTable } from '../../../components/StackTable'
 import type { SmsInspection } from '../../../types/carrierSafety'
 import { plainGroup } from '../packet/plainLabels'
 import { truckRecords } from '../packet/recordDetail'
@@ -19,7 +20,7 @@ export function TruckRecords({ inspections }: { inspections: SmsInspection[] }) 
         <Empty>No Vehicle Maintenance violations on a power unit in FMCSA’s current window.</Empty>
       ) : (
         <div className="overflow-x-auto rounded-md border border-slate-200 bg-surface">
-          <table className={tableClass}>
+          <StackTable className={tableClass}>
             <thead>
               <tr className={headClass}>
                 <th className={cellClass}>Truck</th>
@@ -70,7 +71,7 @@ export function TruckRecords({ inspections }: { inspections: SmsInspection[] }) 
                 </tr>
               ))}
             </tbody>
-          </table>
+          </StackTable>
         </div>
       )}
       {trucks.length > FIRST && (

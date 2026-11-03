@@ -3,6 +3,7 @@ import { AlertTriangle, CircleAlert, CircleCheck, Info, type LucideIcon } from '
 import { type ReactNode, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { StackTable } from '../../../components/StackTable'
 import { CarrierLink } from '../../../components/CarrierLink'
 import { Disclosure } from '../../../components/Disclosure'
 import { SourceTag } from '../../../components/SourceTag'
@@ -78,7 +79,7 @@ function LinkedTable({ carriers }: { carriers: LinkedCarrier[] }) {
   const client = useIsClientPortal()
   return (
     <div className="relative overflow-x-auto">
-      <table className={tableClass}>
+      <StackTable className={tableClass}>
         <thead className={headClass}>
           <tr>
             <th className={cellClass}>Carrier</th>
@@ -139,7 +140,7 @@ function LinkedTable({ carriers }: { carriers: LinkedCarrier[] }) {
             </tr>
           ))}
         </tbody>
-      </table>
+      </StackTable>
     </div>
   )
 }

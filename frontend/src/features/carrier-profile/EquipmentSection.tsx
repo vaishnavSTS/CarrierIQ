@@ -1,3 +1,4 @@
+import { StackTable } from '../../components/StackTable'
 import { SOURCES } from '../../utils/sources'
 import { Fragment, useMemo, useState } from 'react'
 
@@ -309,7 +310,7 @@ export function EquipmentSection({ usdotNumber }: { usdotNumber: number }) {
                 </div>
               ) : (
                 <div className="mt-2 relative overflow-x-auto">
-                  <table className={tableClass}>
+                  <StackTable className={tableClass}>
                     <thead className={headClass}>
                       <tr>
                         <th className={cellClass}>VIN</th>
@@ -331,7 +332,7 @@ export function EquipmentSection({ usdotNumber }: { usdotNumber: number }) {
                         />
                       ))}
                     </tbody>
-                  </table>
+                  </StackTable>
                   {!showAll && rows.length > PREVIEW_ROWS && (
                     <button
                       type="button"

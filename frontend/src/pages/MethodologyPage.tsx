@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
+import { StackTable } from '../components/StackTable'
+
 const BANDS = [
   ['1–49', 'Pass', 'Satisfactory'],
   ['50–74', 'Optional', 'At risk'],
@@ -87,7 +89,7 @@ export function MethodologyPage() {
       <Block title="What the number means">
         <p>Lower is better. An active out-of-service order means 100.</p>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <StackTable className="w-full text-sm">
             <thead>
               <tr>
                 <th className={HEAD}>Value</th>
@@ -104,7 +106,7 @@ export function MethodologyPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </StackTable>
         </div>
       </Block>
 
@@ -137,7 +139,7 @@ export function MethodologyPage() {
           </li>
         </ol>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <StackTable className="w-full text-sm">
             <thead>
               <tr>
                 <th className={HEAD}>Safety category</th>
@@ -152,7 +154,7 @@ export function MethodologyPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </StackTable>
         </div>
       </Block>
 
@@ -200,7 +202,7 @@ export function MethodologyPage() {
                 href={s.href}
                 target="_blank"
                 rel="noreferrer"
-                className="font-medium text-accent-strong hover:underline"
+                className="tap font-medium text-accent-strong hover:underline"
               >
                 {s.name}
               </a>

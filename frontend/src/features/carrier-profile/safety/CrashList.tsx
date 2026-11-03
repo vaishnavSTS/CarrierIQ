@@ -1,3 +1,4 @@
+import { StackTable } from '../../../components/StackTable'
 import { NotLoaded } from '../../../components/NotLoaded'
 import type { CrashSummary } from '../../../types/carrierSafety'
 import { formatDate } from '../../../utils/format'
@@ -27,7 +28,7 @@ export function CrashList({ crashes }: { crashes: CrashSummary | null }) {
         fault: the Crash File does not record fault.
       </p>
       <div className="relative overflow-x-auto">
-        <table className={tableClass}>
+        <StackTable className={tableClass}>
           <thead className={headClass}>
             <tr>
               <th className={cellClass}>Date</th>
@@ -58,7 +59,7 @@ export function CrashList({ crashes }: { crashes: CrashSummary | null }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </StackTable>
       </div>
       {crashes.total > crashes.crashes.length && (
         <p className="mt-2 text-xs text-slate-500">

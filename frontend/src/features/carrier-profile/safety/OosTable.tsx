@@ -1,3 +1,4 @@
+import { StackTable } from '../../../components/StackTable'
 import type { OosWindow } from '../../../types/carrierProfile'
 import { formatPercent } from '../../../utils/format'
 import { Empty } from '../Section'
@@ -39,7 +40,7 @@ export function OosTable({ recent }: { recent: OosWindow | null }) {
   return (
     <div>
       <div className="relative overflow-x-auto">
-        <table className={tableClass}>
+        <StackTable className={tableClass}>
           <thead className={headClass}>
             <tr>
               <th className={cellClass}>Last {recent.months} months</th>
@@ -64,7 +65,7 @@ export function OosTable({ recent }: { recent: OosWindow | null }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </StackTable>
       </div>
       <p className="mt-2 text-xs text-slate-500">
         FMCSA’s method: the vehicle rate counts only inspections that examined the vehicle (Levels

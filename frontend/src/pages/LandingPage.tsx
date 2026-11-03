@@ -1,9 +1,4 @@
-import {
-  FileText,
-  Search,
-  UserPlus,
-  type LucideIcon,
-} from 'lucide-react'
+import { FileText, Search, UserPlus, type LucideIcon } from 'lucide-react'
 import { motion } from 'motion/react'
 import type { ReactElement } from 'react'
 import { Link } from 'react-router-dom'
@@ -101,7 +96,7 @@ export function LandingPage() {
                     <PrimaryLink to="/register" small>
                       Create a carrier account
                     </PrimaryLink>
-                    <Link to="/login" className="text-sm text-slate-600 hover:text-slate-900">
+                    <Link to="/login" className="tap text-sm text-slate-600 hover:text-slate-900">
                       Already have one? <span className="font-medium underline">Log in</span>
                     </Link>
                   </div>
@@ -131,7 +126,7 @@ export function LandingPage() {
                     </PrimaryLink>
                     <Link
                       to="/broker/login"
-                      className="text-sm text-slate-600 hover:text-slate-900"
+                      className="tap text-sm text-slate-600 hover:text-slate-900"
                     >
                       Already have one? <span className="font-medium underline">Log in</span>
                     </Link>
@@ -162,7 +157,7 @@ export function LandingPage() {
                     </PrimaryLink>
                     <Link
                       to="/insurance/login"
-                      className="text-sm text-slate-600 hover:text-slate-900"
+                      className="tap text-sm text-slate-600 hover:text-slate-900"
                     >
                       Already have one? <span className="font-medium underline">Log in</span>
                     </Link>

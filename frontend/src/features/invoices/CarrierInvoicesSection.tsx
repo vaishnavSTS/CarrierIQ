@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 
+import { StackTable } from '../../components/StackTable'
 import { StatusBadge } from '../../components/StatusBadge'
 import { useInvoices } from '../../hooks/useInvoices'
 import { usePortalMode } from '../../hooks/usePortalMode'
@@ -40,7 +41,7 @@ export function CarrierInvoicesSection({
         <Empty>{empty}</Empty>
       ) : (
         <div className="relative overflow-x-auto">
-          <table className={tableClass}>
+          <StackTable className={tableClass}>
             <thead className={headClass}>
               <tr>
                 <th className={cellClass}>Invoice</th>
@@ -59,7 +60,7 @@ export function CarrierInvoicesSection({
                   <td className={cellClass}>
                     <Link
                       to={`${base}/invoices/${inv.id}`}
-                      className="font-medium text-accent-strong hover:underline"
+                      className="tap font-medium text-accent-strong hover:underline"
                     >
                       {inv.number}
                     </Link>
@@ -82,7 +83,7 @@ export function CarrierInvoicesSection({
                   <td className={`${cellClass} text-right`}>
                     <Link
                       to={`${base}/invoices/${inv.id}`}
-                      className="inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
+                      className="tap inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50"
                     >
                       View invoice
                     </Link>
@@ -90,7 +91,7 @@ export function CarrierInvoicesSection({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </StackTable>
         </div>
       )}
     </Section>

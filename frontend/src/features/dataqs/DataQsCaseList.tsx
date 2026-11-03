@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 
+import { StackTable } from '../../components/StackTable'
 import { StatusBadge } from '../../components/StatusBadge'
 import { useDataQsCasePath, useDataQsCases } from '../../hooks/useDataQs'
 import { formatDate, formatDateTime } from '../../utils/format'
@@ -33,7 +34,7 @@ export function DataQsCaseList({ showCompany, empty }: { showCompany: boolean; e
         ))}
       </ul>
       <div className="hidden relative overflow-x-auto rounded-2xl border border-slate-200 bg-surface sm:block">
-        <table className={tableClass}>
+        <StackTable className={tableClass}>
           <thead className={headClass}>
             <tr>
               <th className={cellClass}>Case</th>
@@ -87,7 +88,7 @@ export function DataQsCaseList({ showCompany, empty }: { showCompany: boolean; e
               </tr>
             ))}
           </tbody>
-        </table>
+        </StackTable>
       </div>
     </>
   )

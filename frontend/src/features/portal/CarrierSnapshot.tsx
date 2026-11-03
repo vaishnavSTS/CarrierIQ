@@ -82,7 +82,7 @@ export function CarrierSnapshot({ usdotNumber }: { usdotNumber: number }) {
         </div>
         <Link
           to={page}
-          className="inline-flex items-center gap-1 text-sm font-medium text-accent-strong hover:underline"
+          className="tap inline-flex items-center gap-1 text-sm font-medium text-accent-strong hover:underline"
         >
           Open full profile
           <ArrowRight className="size-4" aria-hidden />
@@ -121,7 +121,7 @@ export function CarrierSnapshot({ usdotNumber }: { usdotNumber: number }) {
           )}
           <Link
             to={`${page}?tab=safety`}
-            className="mt-auto pt-4 text-sm font-medium text-accent-strong hover:underline"
+            className="tap mt-auto pt-4 text-sm font-medium text-accent-strong hover:underline"
           >
             What drives it and how to improve ›
           </Link>
@@ -174,7 +174,7 @@ export function CarrierSnapshot({ usdotNumber }: { usdotNumber: number }) {
           )}
           <Link
             to={`${page}?tab=network`}
-            className="mt-auto pt-4 text-sm font-medium text-accent-strong hover:underline"
+            className="tap mt-auto pt-4 text-sm font-medium text-accent-strong hover:underline"
           >
             How each is usually fixed ›
           </Link>
@@ -219,7 +219,7 @@ export function CarrierSnapshot({ usdotNumber }: { usdotNumber: number }) {
           )}
           <Link
             to={`${page}?tab=safety`}
-            className="mt-auto pt-4 text-sm font-medium text-accent-strong hover:underline"
+            className="tap mt-auto pt-4 text-sm font-medium text-accent-strong hover:underline"
           >
             Inspections and violations ›
           </Link>
@@ -235,7 +235,7 @@ export function CarrierSnapshot({ usdotNumber }: { usdotNumber: number }) {
             </div>
             <Link
               to={`${page}?tab=network`}
-              className="text-sm font-medium text-accent-strong hover:underline"
+              className="tap text-sm font-medium text-accent-strong hover:underline"
             >
               Details ›
             </Link>

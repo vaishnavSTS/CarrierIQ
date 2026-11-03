@@ -135,7 +135,7 @@ export function LoginPage({ audience = 'client' }: { audience?: Audience }) {
           onChange={(e) => setPassword(e.target.value)}
         />
         <p className="text-right text-sm">
-          <Link to="/forgot-password" className={linkClass}>
+          <Link to="/forgot-password" className={`tap ${linkClass}`}>
             Forgot password?
           </Link>
         </p>
