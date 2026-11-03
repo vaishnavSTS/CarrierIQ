@@ -7,7 +7,7 @@ import { PrimaryLink } from './landingParts'
 import { HeroTryForm } from './LandingSections'
 import { SampleShowcase, type ShowcaseAudience } from './SampleShowcase'
 
-const INTERVAL_MS = 5000
+const INTERVAL_MS = 6000
 const SWIPE_PX = 50
 
 const highlight = (text: string) => <span className="text-[var(--hero-highlight)]">{text}</span>
