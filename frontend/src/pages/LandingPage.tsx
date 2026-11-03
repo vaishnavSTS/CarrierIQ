@@ -1,6 +1,5 @@
 import {
   Briefcase,
-  CircleCheck,
   FileText,
   Network,
   Search,
@@ -13,25 +12,16 @@ import {
 import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 
+import { HeroSlider } from '../features/landing/HeroSlider'
 import { IconBadge, PrimaryLink, reveal, SectionHeading } from '../features/landing/landingParts'
 import {
   AboutStsSection,
   DataQsSection,
-  HeroTryForm,
   PricingSection,
   ReportPreview,
 } from '../features/landing/LandingSections'
 import { PhoneShowcase } from '../features/landing/PhoneShowcase'
-import { SampleShowcase } from '../features/landing/SampleShowcase'
-import { homeFor, useMe } from '../hooks/useAuth'
-
-const ease = [0.16, 1, 0.3, 1] as const
-
-const rise = (delay: number) => ({
-  initial: { opacity: 0, y: 18 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.6, delay, ease },
-})
+import { useMe } from '../hooks/useAuth'
 
 const FEATURES: { icon: LucideIcon; title: string; text: string }[] = [
   {
@@ -81,62 +71,7 @@ export function LandingPage() {
     <div className="relative overflow-hidden">
       {/* Hero */}
       <div className="hero-gradient">
-        <section className="mx-auto grid max-w-6xl items-center gap-12 relative z-10 px-4 pb-64 pt-14 md:pt-20 lg:pt-32 lg:grid-cols-[1.05fr_1fr]">
-          <div className="text-center lg:text-left">
-            <motion.h1
-              {...rise(0)}
-              className="text-4xl font-semibold leading-[1.08] tracking-tight text-white md:text-5xl lg:text-[3.4rem]"
-            >
-              See your carrier{' '}
-              <span className="text-[var(--hero-highlight)]">the way brokers do</span>, and know
-              exactly what to fix
-            </motion.h1>
-            <motion.p
-              {...rise(0.1)}
-              className="mx-auto mt-5 max-w-xl text-base text-white/90 md:text-lg lg:mx-0"
-            >
-              CarrierSafetyScan turns public FMCSA data into a clear picture of a carrier’s
-              authority, insurance, safety and registration health, and explains what to do about
-              it.
-            </motion.p>
-
-            <motion.div
-              {...rise(0.2)}
-              className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start [&_a]:ring-2 [&_a]:ring-white/70"
-            >
-              {user ? (
-                <PrimaryLink to={homeFor(user.portal)}>
-                  Open {user.portal === 'internal' ? 'the dashboard' : 'my portal'}
-                </PrimaryLink>
-              ) : (
-                <div className="w-full space-y-4">
-                  <HeroTryForm />
-                </div>
-              )}
-            </motion.div>
-
-            <motion.ul
-              {...rise(0.3)}
-              className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-white/90 lg:justify-start"
-            >
-              {['Public FMCSA & NHTSA data', 'Source named on every value'].map((point) => (
-                <li key={point} className="flex items-center gap-1.5">
-                  <CircleCheck className="size-4 text-white" aria-hidden />
-                  {point}
-                </li>
-              ))}
-            </motion.ul>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 28 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.25, ease }}
-            className="mx-auto mt-14 w-full max-w-md lg:mt-8 lg:max-w-none"
-          >
-            <SampleShowcase />
-          </motion.div>
-        </section>
+        <HeroSlider />
       </div>
 
       <div className="landing-rest">

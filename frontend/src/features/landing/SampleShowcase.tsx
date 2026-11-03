@@ -1,11 +1,14 @@
 import {
   AlertTriangle,
   CircleCheck,
+  Columns3,
   Download,
   FileText,
+  Link2,
   ScrollText,
   ShieldCheck,
   TrendingDown,
+  Truck,
   Wrench,
   type LucideIcon,
 } from 'lucide-react'
@@ -49,8 +52,8 @@ const SLIDES: Slide[] = [
           { ok: true, label: 'Insurance on file', detail: 'Usual renewal: March' },
           { ok: true, label: 'Process agent (BOC-3)', detail: 'On file in Motus' },
           { ok: false, label: 'MCS-150 update', detail: 'Over 2 years old' },
-          { ok: true, label: 'Vehicle out-of-service rate', detail: 'Below national average' },
-          { ok: false, label: 'Shared phone number', detail: 'Also listed by 1 other carrier' },
+          { ok: true, label: 'Vehicle out-of-service rate', detail: 'Below average' },
+          { ok: false, label: 'Shared phone number', detail: '1 other carrier' },
         ]}
       />
     ),
@@ -142,11 +145,183 @@ const SLIDES: Slide[] = [
   },
 ]
 
-export function SampleShowcase() {
+function ReportBody({ sections, note }: { sections: string[]; note: string }) {
+  return (
+    <div className="py-1">
+      <div className="grid grid-cols-2 gap-2">
+        {sections.map((section) => (
+          <div
+            key={section}
+            className="flex items-center gap-2 rounded-lg border border-slate-200 bg-canvas px-2.5 py-2 text-xs text-slate-700"
+          >
+            <CircleCheck className="size-3.5 shrink-0 text-emerald-600" aria-hidden />
+            {section}
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+        <span className="text-xs text-slate-700">{note}</span>
+        <span className="inline-flex items-center gap-1.5 rounded-md bg-cta px-2.5 py-1 text-xs font-medium text-cta-ink">
+          <Download className="size-3.5" aria-hidden />
+          Save as PDF
+        </span>
+      </div>
+    </div>
+  )
+}
+
+const REPORT_SECTIONS = [
+  'Estimated ISS',
+  'Safety categories',
+  'Authority & insurance',
+  'Out-of-service rates',
+  'Fleet & equipment',
+  'Linked carriers',
+]
+
+const BROKER_SLIDES: Slide[] = [
+  {
+    title: 'Booking check',
+    icon: ShieldCheck,
+    body: (
+      <Rows
+        rows={[
+          { ok: true, label: 'Operating authority', detail: 'Active · 6 years old' },
+          { ok: true, label: 'Liability insurance', detail: '$1,000,000 on file' },
+          { ok: true, label: 'Vehicle out-of-service rate', detail: 'Below average' },
+          { ok: true, label: 'Estimated ISS', detail: '42 · Satisfactory' },
+          { ok: false, label: 'Shared phone number', detail: '1 other carrier' },
+        ]}
+      />
+    ),
+    footer: <Note tone="warn">Book with review: 1 item to look at.</Note>,
+  },
+  {
+    title: 'Linked carriers',
+    icon: Link2,
+    body: (
+      <Rows
+        rows={[
+          { ok: false, label: 'Same phone number', detail: '1 other carrier' },
+          { ok: true, label: 'Same officer', detail: 'None found' },
+          { ok: true, label: 'Same address', detail: 'None found' },
+          { ok: true, label: 'Link to a revoked USDOT', detail: 'None found' },
+          { ok: true, label: 'VINs under other USDOT numbers', detail: 'None found' },
+        ]}
+      />
+    ),
+    footer: (
+      <Note tone="info">
+        Searched across FMCSA’s census. A link has to be explained, not assumed.
+      </Note>
+    ),
+  },
+  {
+    title: 'Compare carriers',
+    icon: Columns3,
+    body: (
+      <Rows
+        rows={[
+          { ok: true, label: 'Example Freight LLC', detail: 'Ready to book · ISS 24' },
+          { ok: false, label: 'Sample Hauling Inc', detail: 'Book with review · ISS 58' },
+          { ok: false, label: 'Demo Transport Co', detail: 'High risk · ISS 91' },
+        ]}
+      />
+    ),
+    footer: (
+      <Note tone="info">
+        Up to 3 carriers side by side, with the best value on each line marked.
+      </Note>
+    ),
+  },
+  {
+    title: 'Safety Score Report',
+    icon: FileText,
+    body: <ReportBody sections={REPORT_SECTIONS} note="Dated and sourced" />,
+    footer: <Note tone="ok">Save it with the load, to show what you checked and when.</Note>,
+  },
+]
+
+const AGENT_SLIDES: Slide[] = [
+  {
+    title: 'Insurance filings',
+    icon: ScrollText,
+    body: (
+      <Rows
+        rows={[
+          { ok: true, label: 'Liability (BI&PD)', detail: '$750,000 on file' },
+          { ok: true, label: 'Required by FMCSA', detail: '$750,000' },
+          { ok: true, label: 'Cargo', detail: '$100,000 on file' },
+          { ok: true, label: 'Next insurance renewal', detail: 'Usually around March' },
+          { ok: true, label: 'Operating authority', detail: 'Active since 2019' },
+        ]}
+      />
+    ),
+    footer: <Note tone="info">The renewal month is estimated from FMCSA’s filing dates.</Note>,
+  },
+  {
+    title: 'Safety record · last 24 months',
+    icon: TrendingDown,
+    body: (
+      <div className="space-y-6 py-1">
+        <RateBar label="Vehicle" rate={14.8} national={22.3} inspections={27} />
+        <RateBar label="Driver" rate={3.2} national={6.7} inspections={31} />
+      </div>
+    ),
+    footer: (
+      <Note tone="info">
+        1 crash, no fatalities. FMCSA’s Crash File doesn’t say who was at fault.
+      </Note>
+    ),
+  },
+  {
+    title: 'Fleet',
+    icon: Truck,
+    body: (
+      <Rows
+        rows={[
+          { ok: true, label: 'Trucks on the MCS-150', detail: '12' },
+          { ok: false, label: 'Trucks seen on inspections', detail: '14 · more than listed' },
+          { ok: true, label: 'Trailers seen on inspections', detail: '16' },
+          { ok: true, label: 'Drivers on the MCS-150', detail: '14' },
+          { ok: true, label: 'VINs under other USDOT numbers', detail: 'None found' },
+        ]}
+      />
+    ),
+    footer: (
+      <Note tone="warn">1 item to look at. Some trucks may be leased or no longer in use.</Note>
+    ),
+  },
+  {
+    title: 'Safety Score Report',
+    icon: FileText,
+    body: <ReportBody sections={REPORT_SECTIONS} note="Dated and sourced" />,
+    footer: <Note tone="ok">A dated copy of what FMCSA’s records showed, for your file.</Note>,
+  },
+]
+
+export type ShowcaseAudience = 'carrier' | 'broker' | 'agent'
+
+const CARDS: Record<ShowcaseAudience, Slide[]> = {
+  carrier: SLIDES,
+  broker: BROKER_SLIDES,
+  agent: AGENT_SLIDES,
+}
+
+export function SampleShowcase({
+  audience = 'carrier',
+  active = true,
+}: {
+  audience?: ShowcaseAudience
+  /** False while its page of the homepage is off screen */
+  active?: boolean
+}) {
+  const slides = CARDS[audience]
   const [index, setIndex] = useState(0)
-  const [paused, setPaused] = useState(false)
+  const [hovered, setHovered] = useState(false)
+  const paused = hovered || !active
   const reduceMotion = useReducedMotion()
-  const count = SLIDES.length
+  const count = slides.length
 
   useEffect(() => {
     if (paused || reduceMotion) return
@@ -157,8 +332,8 @@ export function SampleShowcase() {
   return (
     <div
       className="relative"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       aria-roledescription="carousel"
       aria-label="What CarrierSafetyScan shows, sample cards"
     >
@@ -168,8 +343,8 @@ export function SampleShowcase() {
       />
 
       {/* Room for the cards peeking out below the front one. */}
-      <div className="relative h-[442px]">
-        {SLIDES.map((slide, i) => {
+      <div className="relative h-[502px] sm:h-[442px]">
+        {slides.map((slide, i) => {
           // 0 = front, 1-2 = peeking behind, count-1 = the one that just slid away.
           const depth = (i - index + count) % count
           const justLeft = depth === count - 1
@@ -205,7 +380,7 @@ export function SampleShowcase() {
 function SlideCard({ slide, replayKey }: { slide: Slide; replayKey: number }) {
   const Icon = slide.icon
   return (
-    <div className="flex h-[410px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-surface p-5 shadow-2xl md:p-6">
+    <div className="flex h-[470px] flex-col sm:h-[410px] overflow-hidden rounded-2xl border border-slate-200 bg-surface p-5 shadow-2xl md:p-6">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-base font-semibold text-slate-900">EXAMPLE FREIGHT LLC</div>
@@ -236,7 +411,7 @@ function Rows({ rows }: { rows: { ok: boolean; label: string; detail: string }[]
           initial={{ opacity: 0, x: 12 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.35, delay: 0.1 + i * 0.06, ease }}
-          className="flex items-center gap-3 py-2.5"
+          className="flex items-center gap-3 py-2"
         >
           {r.ok ? (
             <CircleCheck className="size-4 shrink-0 text-emerald-600" aria-hidden />
