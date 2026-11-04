@@ -5,7 +5,7 @@ import type { Audience } from '../audience/audience'
 import { PrimaryLink } from './landingParts'
 import { HeroTryForm } from './LandingSections'
 import { HERO_PHOTO } from './photos'
-import { SampleShowcase } from './SampleShowcase'
+import { HeroTool } from './HeroTools'
 
 const highlight = (text: string) => (
   <span className="font-accent text-[var(--hero-highlight)]">{text}</span>
@@ -73,7 +73,7 @@ export function AudienceHero({ audience }: { audience: Audience }) {
         </div>
 
         <div className="mx-auto mt-14 w-full max-w-md lg:mt-8 lg:max-w-none">
-          <SampleShowcase audience={audience} active />
+          <HeroTool audience={audience} />
         </div>
       </section>
     </div>

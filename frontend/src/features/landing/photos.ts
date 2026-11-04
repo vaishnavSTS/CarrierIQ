@@ -18,7 +18,8 @@ import carrierRegistration from '../../assets/photos/carrier-registration.jpg' /
 import carrierReport from '../../assets/photos/carrier-report.jpg' // 6720550
 import chooseAgent from '../../assets/photos/choose-agent.jpg' // 7821707
 import chooseBroker from '../../assets/photos/choose-broker.jpg' // 3992926
-import chooseCarrier from '../../assets/photos/choose-carrier.jpg' // 17377416
+// iStock 1215704434, licensed by Sky Transport Solutions (not covered by the Pexels note above).
+import chooseCarrier from '../../assets/photos/choose-carrier-istock.jpg'
 import heroAgent from '../../assets/photos/hero-agent.jpg' // 11053641
 import heroBroker from '../../assets/photos/hero-broker.jpg' // Unsplash tv53M6u2bAQ, by LEDC
 import heroCarrier from '../../assets/hero-trucks.webp'
@@ -35,7 +36,7 @@ export const HERO_PHOTO: Record<Audience, string> = {
 
 /** The front door's three cards. */
 export const CHOOSER_PHOTO: Record<Audience, Photo> = {
-  carrier: { src: chooseCarrier, alt: 'A truck driver smiling and waving from his cab' },
+  carrier: { src: chooseCarrier, alt: 'A smiling truck driver at the wheel of his cab' },
   broker: { src: chooseBroker, alt: 'A dispatcher at a desk with several screens' },
   agent: { src: chooseAgent, alt: 'An agent going over a document with a client' },
 }

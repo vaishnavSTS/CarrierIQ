@@ -36,12 +36,9 @@ const CHOICES: {
   },
 ]
 
-/**
- * How each photo sits in a tall card: the person stays in view above the text. The driver is low
- * in his photo, so it's taller than the card and lifted.
- */
+/** How each photo sits in a tall card: the person stays in view above the text. */
 const CHOOSER_PHOTO_FIT: Record<Audience, string> = {
-  carrier: 'inset-x-0 bottom-0 h-[150%] w-full object-[42%_50%]',
+  carrier: 'inset-0 size-full object-[42%_30%]',
   broker: 'inset-0 size-full object-[35%_50%]',
   agent: 'inset-0 size-full object-[70%_50%]',
 }
@@ -67,7 +64,7 @@ export function AudienceChooserPage() {
           Welcome to Carrier Safety Scan
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-center text-base text-white/90 md:text-lg">
-          Tell us who you are and we’ll show you what matters to you.
+          Choose one of the options below to see what Carrier Safety Scan does for you.
         </p>
 
         <div className="mt-12 grid gap-5 md:grid-cols-3">
