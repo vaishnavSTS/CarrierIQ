@@ -332,7 +332,7 @@ function CaseSummary({ dataqsCase: c, staff }: { dataqsCase: DataQsCase; staff: 
   return (
     <section className="rounded-2xl border border-slate-200 bg-surface p-5">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">DataQs case {c.id}</h1>
+        <h1 className="text-3xl font-semibold text-slate-950">DataQs case {c.id}</h1>
         <StatusBadge {...WORK_STATUS[c.work_status]} />
         {staff && c.organization_name && !c.held_by_sts && (
           <span className="text-sm text-slate-600">for {c.organization_name}</span>

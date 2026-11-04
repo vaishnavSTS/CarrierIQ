@@ -16,10 +16,13 @@ export function PortalDataQsIntakePage() {
   return (
     <div className="space-y-5">
       <div>
-        <Link to={back} className="text-sm text-accent-strong hover:underline">
+        <Link to={back} className="tap text-sm font-medium text-accent-strong hover:underline">
           ← Back
         </Link>
-        <h1 className="mt-2 text-xl font-semibold tracking-tight">Request a data review</h1>
+        <div className="font-label mt-3 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+          {staff ? 'DataQs' : 'DataQs · $50 per inspection'}
+        </div>
+        <h1 className="mt-1 text-2xl font-semibold text-slate-950">Request a data review</h1>
         <p className="mt-1 text-sm text-slate-600">
           {staff
             ? 'Record what is wrong with this inspection for the carrier. This opens a draft case; the carrier’s account owner adds evidence, signs the authorization and submits it. Nothing is sent to FMCSA until they approve the exact request.'
@@ -33,7 +36,7 @@ export function PortalDataQsIntakePage() {
           inspectionId={inspection}
         />
       ) : (
-        <p className="text-sm text-slate-600">
+        <p className="rounded-2xl border border-dashed border-slate-300 bg-surface p-5 text-sm text-slate-600">
           Start from an inspection on the DataQs {staff ? '“Start a request” tab' : 'tab'}.
         </p>
       )}

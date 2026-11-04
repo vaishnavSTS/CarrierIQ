@@ -40,7 +40,7 @@ const SYSTEM_LABEL: Record<string, string> = { MOTUS: 'Motus', LEGACY_LI: 'L&I (
 
 /** "MC123456" or "MC 123456" -> "MC 123456" */
 function docketText(docket: string): string {
-  const match = /^([A-Za-z]+)s*(d+)$/.exec(docket.trim())
+  const match = /^([A-Za-z]+)\s*(\d+)$/.exec(docket.trim())
   return match ? formatDocket(match[1].toUpperCase(), match[2]) : docket
 }
 

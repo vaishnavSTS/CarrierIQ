@@ -1,268 +1,126 @@
-import { AlertTriangle, ArrowRight, CircleAlert, CircleCheck, Info, Minus } from 'lucide-react'
-import { motion, useReducedMotion } from 'motion/react'
+import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { StatusBadge } from '../../components/StatusBadge'
+import { useCarrierAuthority } from '../../hooks/useCarrierAuthority'
 import { useCarrierProfile } from '../../hooks/useCarrierProfile'
 import { useCarrierSafety } from '../../hooks/useCarrierSafety'
+import { useDataQsCases } from '../../hooks/useDataQs'
 import { useCarrierNetwork } from '../../hooks/useNetwork'
-import type { CheckStatus } from '../../types/network'
-import { formatDateTime, formatMonth, formatPercent } from '../../utils/format'
-import { FixWithSky } from '../carrier-profile/FixWithSky'
-import { brokerFlags } from '../carrier-profile/network/brokerFlags'
-import { ISS_BAND } from '../carrier-profile/safety/issBand'
-
-const ease = [0.16, 1, 0.3, 1] as const
-
-const CHECK_ICON: Record<CheckStatus, { icon: typeof CircleCheck; className: string }> = {
-  ok: { icon: CircleCheck, className: 'text-emerald-600' },
-  attention: { icon: AlertTriangle, className: 'text-amber-600' },
-  alert: { icon: CircleAlert, className: 'text-red-600' },
-  info: { icon: Info, className: 'text-slate-500' },
-  unknown: { icon: Minus, className: 'text-slate-400' },
-}
+import { formatDateTime } from '../../utils/format'
+import { statusTone } from '../../utils/status'
+import { ActionCenter } from './carrier/ActionCenter'
+import { actionItems } from './carrier/actionItems'
+import { IssCard } from './carrier/IssCard'
+import { RegistrationCard } from './carrier/RegistrationCard'
+import { RoadsideCard } from './carrier/RoadsideCard'
+import { TabLinks } from './carrier/TabLinks'
+import { CARD, LABEL } from './carrier/ui'
 
 /**
- * Client home: their own carrier's standing right now, from the same records brokers check.
- * The Estimated ISS, what a broker's check would flag, the registration checks one by one, and
- * out-of-service rates against the national average, each linking to the tab with the detail.
+ * Carrier portal home: one of the company's carriers as it stands right now, from the same FMCSA
+ * records brokers check. What needs them first (action center), then the Estimated ISS,
+ * out-of-service rates and registration at a glance, each linking to the tab with the detail.
  */
 export function CarrierSnapshot({ usdotNumber }: { usdotNumber: number }) {
   const profile = useCarrierProfile(usdotNumber)
   const network = useCarrierNetwork(usdotNumber)
   const safety = useCarrierSafety(usdotNumber)
-  const reduce = useReducedMotion()
+  const authority = useCarrierAuthority(usdotNumber)
+  const dataqs = useDataQsCases()
   const page = `/portal/carriers/${usdotNumber}`
 
   if (profile.isPending) {
     return (
-      <section className="rounded-2xl border border-slate-200 bg-surface p-5 text-sm text-slate-500">
+      <section className={`${CARD} animate-pulse text-sm text-slate-500`}>
         Loading your carrier’s FMCSA record…
       </section>
     )
   }
   if (!profile.data) {
     return (
-      <section className="rounded-2xl border border-slate-200 bg-surface p-5 text-sm text-red-700">
-        Couldn’t load your carrier’s record. Try again shortly.
+      <section className={`${CARD} text-sm text-red-700`}>
+        Couldn’t load the FMCSA record for USDOT {usdotNumber}. Try again shortly.
       </section>
     )
   }
 
   const carrier = profile.data
-  const iss = safety.data?.estimated_iss ?? null
-  const band = iss?.band ? ISS_BAND[iss.band] : null
-  const flags = network.data
-    ? brokerFlags(network.data, carrier).filter((f) => f.level !== 'info')
-    : null
-  const recent = carrier.safety.recent
-  const rise = (i: number) =>
-    reduce
-      ? {}
-      : {
-          initial: { opacity: 0, y: 14 },
-          animate: { opacity: 1, y: 0 },
-          transition: { duration: 0.5, delay: 0.1 + i * 0.08, ease },
-        }
+  const items = actionItems({
+    profile: carrier,
+    network: network.data,
+    renewals: authority.data?.renewals,
+    cases: (dataqs.data?.cases ?? []).filter((c) => c.usdot_number === usdotNumber),
+    page,
+  })
 
   return (
-    <section className="space-y-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight text-slate-900">
-            Your carrier right now
+    <section id={`carrier-${usdotNumber}`} className="scroll-mt-20 space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0">
+          <div className={`${LABEL} text-slate-500`}>Your carrier right now</div>
+          <h2 className="mt-1 text-2xl font-semibold text-slate-950 [overflow-wrap:anywhere]">
+            {carrier.legal_name}
           </h2>
-          <p className="text-sm text-slate-600">
-            {carrier.legal_name} · USDOT <span className="font-mono">{carrier.usdot_number}</span> ·
-            the same FMCSA records brokers check
+          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-600">
+            <span>
+              USDOT <span className="font-mono">{carrier.usdot_number}</span>
+            </span>
+            {carrier.registration_status && (
+              <StatusBadge
+                label={carrier.registration_status}
+                tone={statusTone(carrier.registration_status)}
+              />
+            )}
             {carrier.last_refreshed_at && (
-              <> · FMCSA data refreshed {formatDateTime(carrier.last_refreshed_at)}</>
+              <span className="text-xs text-slate-500">
+                FMCSA data refreshed {formatDateTime(carrier.last_refreshed_at)}
+              </span>
             )}
           </p>
         </div>
         <Link
           to={page}
-          className="tap inline-flex items-center gap-1 text-sm font-medium text-accent-strong hover:underline"
+          className="tap inline-flex items-center gap-1.5 rounded-xl bg-[#101853] px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-[#1a2470]"
         >
-          Open full profile
+          Open carrier page
           <ArrowRight className="size-4" aria-hidden />
         </Link>
       </div>
 
+      <ActionCenter
+        items={items}
+        records={network.isPending ? 'checking' : network.isError ? 'failed' : 'ready'}
+        usdotNumber={usdotNumber}
+      />
+
       <div className="grid gap-4 lg:grid-cols-3">
-        {/* Estimated ISS */}
-        <motion.div
-          {...rise(0)}
-          className="flex flex-col rounded-2xl border border-slate-200 bg-surface p-5"
-        >
-          <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Estimated ISS – Safety score
-          </div>
-          {safety.isPending ? (
-            <p className="mt-3 text-sm text-slate-500">Loading…</p>
-          ) : iss?.value != null && band ? (
-            <>
-              <div className="mt-2 flex items-center gap-3">
-                <span className="text-4xl font-semibold tabular-nums text-slate-950">
-                  {iss.value}
-                </span>
-                <StatusBadge label={band.status} tone={band.tone} />
-              </div>
-              <p className="mt-1 text-xs text-slate-500">
-                Source: Carrier Safety Scan estimate from FMCSA data · {formatMonth(iss.data_month)}
-              </p>
-              <p className="mt-1 text-xs text-slate-500">{band.range} of 1–100 · lower is better</p>
-              <p className="mt-3 text-sm text-slate-700">{iss.reason}.</p>
-            </>
-          ) : (
-            <p className="mt-3 text-sm text-slate-600">
-              Not enough inspection data for an estimate yet.
-            </p>
-          )}
-          <Link
-            to={`${page}?tab=safety`}
-            className="tap mt-auto pt-4 text-sm font-medium text-accent-strong hover:underline"
-          >
-            What drives it and how to improve ›
-          </Link>
-        </motion.div>
-
-        {/* What a broker's check would flag */}
-        <motion.div
-          {...rise(1)}
-          className="flex flex-col rounded-2xl border border-slate-200 bg-surface p-5"
-        >
-          <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            What a broker’s check would flag
-          </div>
-          {flags === null ? (
-            <p className="mt-3 text-sm text-slate-500">Checking FMCSA records…</p>
-          ) : flags.length === 0 ? (
-            <p className="mt-3 flex items-start gap-2 text-sm text-slate-800">
-              <CircleCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" aria-hidden />
-              Nothing in your FMCSA records that brokers usually flag.
-            </p>
-          ) : (
-            <>
-              <p className="mt-2 text-2xl font-semibold text-slate-950">
-                {flags.length} item{flags.length === 1 ? '' : 's'} to look at
-              </p>
-              <ul className="mt-2 space-y-1.5">
-                {flags.slice(0, 3).map((f) => (
-                  <li key={f.key} className="flex items-start gap-2 text-sm text-slate-800">
-                    {f.level === 'alert' ? (
-                      <CircleAlert className="mt-0.5 size-4 shrink-0 text-red-600" aria-hidden />
-                    ) : (
-                      <AlertTriangle
-                        className="mt-0.5 size-4 shrink-0 text-amber-600"
-                        aria-hidden
-                      />
-                    )}
-                    <span className="min-w-0">
-                      {f.title}
-                      <span className="block">
-                        <FixWithSky topic={f.title} usdotNumber={carrier.usdot_number} />
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              {flags.length > 3 && (
-                <p className="mt-1 text-xs text-slate-500">and {flags.length - 3} more</p>
-              )}
-            </>
-          )}
-          <Link
-            to={`${page}?tab=network`}
-            className="tap mt-auto pt-4 text-sm font-medium text-accent-strong hover:underline"
-          >
-            How each is usually fixed ›
-          </Link>
-        </motion.div>
-
-        {/* Out-of-service rates */}
-        <motion.div
-          {...rise(2)}
-          className="flex flex-col rounded-2xl border border-slate-200 bg-surface p-5"
-        >
-          <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
-            Out-of-service rates · last {recent?.months ?? 24} months
-          </div>
-          {recent ? (
-            <dl className="mt-3 space-y-3">
-              {(
-                [
-                  ['Vehicle', recent.vehicle_oos_rate, recent.national_vehicle_oos_rate],
-                  ['Driver', recent.driver_oos_rate, recent.national_driver_oos_rate],
-                ] as const
-              ).map(([label, rate, national]) => {
-                const above = rate !== null && rate > national
-                return (
-                  <div key={label} className="flex items-baseline justify-between gap-3">
-                    <dt className="text-sm text-slate-700">{label}</dt>
-                    <dd className="text-right">
-                      <span
-                        className={`text-xl font-semibold tabular-nums ${above ? 'text-amber-600' : 'text-slate-950'}`}
-                      >
-                        {formatPercent(rate)}
-                      </span>
-                      <span className="block text-xs text-slate-500">
-                        national average {formatPercent(national)}
-                      </span>
-                    </dd>
-                  </div>
-                )
-              })}
-            </dl>
-          ) : (
-            <p className="mt-3 text-sm text-slate-600">No roadside inspections recently.</p>
-          )}
-          <Link
-            to={`${page}?tab=safety`}
-            className="tap mt-auto pt-4 text-sm font-medium text-accent-strong hover:underline"
-          >
-            Inspections and violations ›
-          </Link>
-        </motion.div>
+        <IssCard
+          iss={safety.data?.estimated_iss}
+          loading={safety.isPending}
+          to={`${page}?tab=safety`}
+          index={1}
+        />
+        <RoadsideCard
+          safety={carrier.safety}
+          crashes={safety.data?.crashes}
+          to={`${page}?tab=safety`}
+          index={2}
+        />
+        <RegistrationCard
+          profile={carrier}
+          network={network.data}
+          to={`${page}?tab=authority`}
+          index={3}
+        />
       </div>
 
-      {/* Registration checks, one row each */}
-      {network.data && network.data.registration_checks.length > 0 && (
-        <motion.div {...rise(3)} className="rounded-2xl border border-slate-200 bg-surface p-5">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
-              Registration checks
-            </div>
-            <Link
-              to={`${page}?tab=network`}
-              className="tap text-sm font-medium text-accent-strong hover:underline"
-            >
-              Details ›
-            </Link>
-          </div>
-          <ul className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2.5 md:grid-cols-2">
-            {network.data.registration_checks.map((c, i) => {
-              const { icon: Icon, className } = CHECK_ICON[c.status]
-              return (
-                <motion.li
-                  key={c.key}
-                  initial={reduce ? false : { opacity: 0, x: 10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: 0.4 + i * 0.07, ease }}
-                  className="flex items-start gap-2.5 text-sm"
-                  title={c.detail}
-                >
-                  <Icon className={`mt-0.5 size-4 shrink-0 ${className}`} aria-hidden />
-                  <span className="min-w-0">
-                    <span className="font-medium text-slate-900">{c.label}</span>
-                    <span className="block text-xs text-slate-500 md:truncate">{c.detail}</span>
-                  </span>
-                </motion.li>
-              )
-            })}
-          </ul>
-        </motion.div>
-      )}
+      <TabLinks page={page} index={4} />
+
+      <p className="text-xs text-slate-500">
+        The same FMCSA records brokers check. Flags are what brokers’ checks commonly react to, not
+        a finding about your company.
+      </p>
     </section>
   )
 }
