@@ -1,13 +1,14 @@
-import { FileText, Search, UserPlus, type LucideIcon } from 'lucide-react'
+import { ArrowRight, FileText, Search, UserPlus, type LucideIcon } from 'lucide-react'
 import { motion } from 'motion/react'
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import type { Audience } from '../features/audience/audience'
 import { AudienceHero } from '../features/landing/AudienceHero'
-import { PrimaryLink, reveal, SectionHeading } from '../features/landing/landingParts'
+import { Accent, Band, reveal, SectionHeading } from '../features/landing/landingParts'
 import { AboutStsSection, DataQsSection, ReportPreview } from '../features/landing/LandingSections'
 import { PhoneShowcase } from '../features/landing/PhoneShowcase'
+import { PortalFeatures } from '../features/landing/PortalFeatures'
 import { BrokerCheckArt, FixArt, PacketArt, RegistrationArt } from '../features/landing/RoleArt'
 import { useMe } from '../hooks/useAuth'
 
@@ -18,16 +19,23 @@ type Step = { icon: LucideIcon; title: string; text: string }
 const CONTENT: Record<
   Audience,
   {
-    featuresTitle: string
+    featuresTitle: ReactNode
+    featuresAside: string
     features: Feature[]
-    phoneTitle: string
+    phoneTitle: ReactNode
     steps: Step[]
-    stepsTitle: string
+    stepsTitle: ReactNode
     cta: { title: string; text: string; signUp: string; signUpTo: string; logInTo: string }
   }
 > = {
   carrier: {
-    featuresTitle: 'Everything a broker checks, explained',
+    featuresTitle: (
+      <>
+        Everything a broker checks, <Accent>explained</Accent>
+      </>
+    ),
+    featuresAside:
+      'Your carrier the way a broker’s check sees it, in plain English, with what to do about each item.',
     features: [
       {
         art: BrokerCheckArt,
@@ -50,8 +58,16 @@ const CONTENT: Record<
         text: 'A dated Safety Score Report to share with brokers and shippers, with estimates that follow FMCSA’s own published methods.',
       },
     ],
-    phoneTitle: 'Check your carrier from anywhere',
-    stepsTitle: 'From sign-up to a report in minutes',
+    phoneTitle: (
+      <>
+        Check your carrier <Accent>from anywhere</Accent>
+      </>
+    ),
+    stepsTitle: (
+      <>
+        From sign-up to a report <Accent>in minutes</Accent>
+      </>
+    ),
     steps: [
       {
         icon: UserPlus,
@@ -78,7 +94,13 @@ const CONTENT: Record<
     },
   },
   broker: {
-    featuresTitle: 'Vet a carrier in one place',
+    featuresTitle: (
+      <>
+        Vet a carrier <Accent>in one place</Accent>
+      </>
+    ),
+    featuresAside:
+      'Authority, insurance, safety and the red flags a fraud screen looks for, on one page, before you book.',
     features: [
       {
         art: BrokerCheckArt,
@@ -101,8 +123,16 @@ const CONTENT: Record<
         text: 'Save a dated Safety Score Report on the carrier you booked, and compare up to 3 carriers side by side.',
       },
     ],
-    phoneTitle: 'Check any carrier from anywhere',
-    stepsTitle: 'From sign-up to a vetted carrier in minutes',
+    phoneTitle: (
+      <>
+        Check any carrier <Accent>from anywhere</Accent>
+      </>
+    ),
+    stepsTitle: (
+      <>
+        From sign-up to a vetted carrier <Accent>in minutes</Accent>
+      </>
+    ),
     steps: [
       {
         icon: UserPlus,
@@ -129,7 +159,13 @@ const CONTENT: Record<
     },
   },
   agent: {
-    featuresTitle: 'Everything you check before quoting',
+    featuresTitle: (
+      <>
+        Everything you check <Accent>before quoting</Accent>
+      </>
+    ),
+    featuresAside:
+      'Filings, safety record, crashes and fleet together, so you quote with the full picture.',
     features: [
       {
         art: BrokerCheckArt,
@@ -152,8 +188,16 @@ const CONTENT: Record<
         text: 'Save a dated Safety Score Report on the carrier you quote, so your file shows what the record said and when.',
       },
     ],
-    phoneTitle: 'Check any carrier from anywhere',
-    stepsTitle: 'From sign-up to a quote-ready file in minutes',
+    phoneTitle: (
+      <>
+        Check any carrier <Accent>from anywhere</Accent>
+      </>
+    ),
+    stepsTitle: (
+      <>
+        From sign-up to a quote-ready file <Accent>in minutes</Accent>
+      </>
+    ),
     steps: [
       {
         icon: UserPlus,
@@ -186,94 +230,127 @@ export function LandingPage({ audience }: { audience: Audience }) {
   const { data: user } = useMe()
   const content = CONTENT[audience]
 
+  // Section numbers run on down the page (the DataQs section is for carriers only).
+  const numbers =
+    audience === 'carrier'
+      ? ['01', '02', '03', '04', '05', '06']
+      : ['01', '02', '', '03', '04', '05']
+  const [nFeatures, nPortal, nDataQs, nPhone, nReport, nSteps] = numbers
+
   return (
     <div className="relative overflow-hidden">
       <div className="hero-gradient">
         <AudienceHero audience={audience} />
       </div>
-      <div className="landing-rest">
-        <div className="mx-auto max-w-6xl px-4">
-          <section className="py-20">
-            <SectionHeading eyebrow="What you get" title={content.featuresTitle} />
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {content.features.map(({ art: Art, title, text }, i) => (
-                <motion.article
-                  key={title}
-                  {...reveal(i * 0.08)}
-                  className="group rounded-2xl border border-slate-200 bg-surface/80 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-brand-glow/15"
-                >
-                  <div className="-mx-6 -mt-6 mb-1 h-32 overflow-hidden rounded-t-2xl">
-                    <Art />
-                  </div>
-                  <h3 className="mt-5 text-sm font-semibold text-slate-900">{title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{text}</p>
-                </motion.article>
-              ))}
-            </div>
-          </section>
 
-          {audience === 'carrier' && <DataQsSection />}
-          <PhoneShowcase title={content.phoneTitle} />
-          <ReportPreview />
-
-          <section className="pb-20">
-            <SectionHeading eyebrow="How it works" title={content.stepsTitle} />
-            <ol className="mt-10 grid gap-6 md:grid-cols-3">
-              {content.steps.map(({ icon: Icon, title, text }, i) => (
-                <motion.li key={title} {...reveal(i * 0.1)}>
-                  <div className="flex items-center gap-3">
-                    <span className="relative grid size-12 shrink-0 place-items-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-900">
-                      <Icon className="size-5" aria-hidden />
-                    </span>
-                    <span className="shrink-0 text-xs font-medium uppercase tracking-wider text-slate-500">
-                      Step {i + 1}
-                    </span>
-                    {/* Connector: starts after the label and runs across the gap (-mr-6 = the
-                      grid's gap-6) to the next step's icon. */}
-                    {i < content.steps.length - 1 && (
-                      <span
-                        aria-hidden
-                        className="-mr-6 ml-1 hidden h-0.5 flex-1 rounded-full bg-gradient-to-r from-slate-300 via-brand-glow/40 to-slate-300 md:block"
-                      />
-                    )}
-                  </div>
-                  <h3 className="mt-4 text-base font-semibold text-slate-900">{title}</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{text}</p>
-                </motion.li>
-              ))}
-            </ol>
-          </section>
-
-          {!user && (
-            <motion.section
-              {...reveal()}
-              className="relative mb-20 overflow-hidden rounded-3xl border border-brand-glow/30 bg-gradient-to-br from-accent-soft via-surface to-brand-glow-alt/15 px-6 py-12 text-center md:px-12"
+      <Band tone="dots">
+        <SectionHeading
+          number={nFeatures}
+          eyebrow="What you get"
+          title={content.featuresTitle}
+          aside={content.featuresAside}
+        />
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {content.features.map(({ art: Art, title, text }, i) => (
+            <motion.article
+              key={title}
+              {...reveal(i * 0.08)}
+              className="group rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-brand-glow/15"
             >
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -bottom-24 left-1/2 size-72 -translate-x-1/2 rounded-full bg-fuchsia-500/10 blur-3xl"
-              />
-              <h2 className="text-2xl font-semibold tracking-tight text-slate-950 md:text-3xl">
-                {content.cta.title}
-              </h2>
-              <p className="mx-auto mt-3 max-w-lg text-sm text-slate-600 md:text-base">
-                {content.cta.text}
-              </p>
-              <div className="mt-7 flex flex-wrap justify-center gap-3">
-                <PrimaryLink to={content.cta.signUpTo}>{content.cta.signUp}</PrimaryLink>
-                <Link
-                  to={content.cta.logInTo}
-                  className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-medium text-slate-900 transition-colors hover:bg-slate-50"
-                >
-                  Log in
-                </Link>
+              <div className="-mx-6 -mt-6 mb-1 h-32 overflow-hidden rounded-t-2xl">
+                <Art />
               </div>
-            </motion.section>
-          )}
-
-          <AboutStsSection />
+              <h3 className="mt-5 text-base font-semibold text-slate-900">{title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">{text}</p>
+            </motion.article>
+          ))}
         </div>
-      </div>
+      </Band>
+
+      <Band tone="plain">
+        <PortalFeatures audience={audience} number={nPortal} />
+      </Band>
+
+      {audience === 'carrier' && (
+        <Band tone="dark">
+          <DataQsSection number={nDataQs} />
+        </Band>
+      )}
+
+      <Band tone="tint">
+        <PhoneShowcase number={nPhone} title={content.phoneTitle} />
+      </Band>
+
+      <Band tone="plain">
+        <ReportPreview number={nReport} />
+      </Band>
+
+      <Band tone="dark">
+        <SectionHeading number={nSteps} eyebrow="How it works" title={content.stepsTitle} />
+        <ol className="mt-12 grid gap-8 md:grid-cols-3">
+          {content.steps.map(({ icon: Icon, title, text }, i) => (
+            <motion.li key={title} {...reveal(i * 0.1)}>
+              <div className="flex items-center gap-3">
+                <span className="relative grid size-12 shrink-0 place-items-center rounded-2xl border border-white/20 bg-white/10 text-white">
+                  <Icon className="size-5" aria-hidden />
+                </span>
+                <span className="shrink-0 text-xs font-medium uppercase tracking-wider text-white/70">
+                  Step {i + 1}
+                </span>
+                {/* Connector: starts after the label and runs across the gap (-mr-8 = the
+                  grid's gap-8) to the next step's icon. */}
+                {i < content.steps.length - 1 && (
+                  <span
+                    aria-hidden
+                    className="-mr-8 ml-1 hidden h-0.5 flex-1 rounded-full bg-gradient-to-r from-white/30 via-amber-300/60 to-white/30 md:block"
+                  />
+                )}
+              </div>
+              <h3 className="mt-4 text-lg font-semibold text-white">{title}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-white/80">{text}</p>
+            </motion.li>
+          ))}
+        </ol>
+      </Band>
+
+      {!user && (
+        <Band tone="dots">
+          <motion.div
+            {...reveal()}
+            className="band-dark relative overflow-hidden rounded-3xl px-6 py-14 text-center shadow-2xl shadow-brand-glow/20 md:px-12"
+          >
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -bottom-24 left-1/2 size-80 -translate-x-1/2 rounded-full bg-amber-300/20 blur-3xl"
+            />
+            <h2 className="relative text-3xl font-semibold tracking-tight text-white md:text-4xl">
+              {content.cta.title}
+            </h2>
+            <p className="relative mx-auto mt-3 max-w-lg text-sm text-white/80 md:text-base">
+              {content.cta.text}
+            </p>
+            <div className="relative mt-8 flex flex-wrap justify-center gap-3">
+              <Link
+                to={content.cta.signUpTo}
+                className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg transition-colors hover:bg-amber-300"
+              >
+                {content.cta.signUp}
+                <ArrowRight className="size-4" aria-hidden />
+              </Link>
+              <Link
+                to={content.cta.logInTo}
+                className="rounded-xl px-5 py-3 text-sm font-semibold text-white ring-1 ring-white/50 transition-colors hover:bg-white/10"
+              >
+                Log in
+              </Link>
+            </div>
+          </motion.div>
+        </Band>
+      )}
+
+      <Band tone="plain">
+        <AboutStsSection />
+      </Band>
     </div>
   )
 }

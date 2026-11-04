@@ -251,6 +251,17 @@ body {
   --art-dark: #05080f;
 }
 
+/* The hero's photo: grey and faint, so the blue and the white text stay on top. */
+.hero-photo {
+  opacity: 0.22;
+  mix-blend-mode: luminosity;
+  -webkit-mask-image: linear-gradient(to bottom, black 35%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 35%, transparent 100%);
+}
+:root[data-theme='dark'] .hero-photo {
+  opacity: 0.16;
+}
+
 :root[data-theme='dark'] .hero-gradient,
 :root[data-theme='dark'] .portal-hero {
   --hero-highlight: #ff9d45;
@@ -310,6 +321,41 @@ body {
     linear-gradient(180deg, var(--landing-start) 0%, #bcd4ff 50%, var(--landing-start) 100%);
   background-size: 100% 1500px;
   background-repeat: repeat-y;
+}
+
+/* The landing pages' bands (landingParts.tsx Band): each section has its own background, so the page
+   changes as it scrolls. */
+.band-plain {
+  background: var(--color-surface);
+}
+.band-dots {
+  background-color: var(--color-surface);
+  background-image: radial-gradient(rgb(30 41 82 / 0.16) 1px, transparent 1.6px);
+  background-size: 22px 22px;
+}
+.band-tint {
+  background: radial-gradient(45% 60% at 100% 0%, rgb(109 40 217 / 0.14), transparent 70%),
+    linear-gradient(180deg, #eef3ff 0%, #e6e8ff 100%);
+}
+.band-dark {
+  background: radial-gradient(50% 60% at 90% 0%, rgb(109 40 217 / 0.45), transparent 70%),
+    radial-gradient(40% 50% at 0% 100%, rgb(14 102 255 / 0.35), transparent 70%),
+    linear-gradient(180deg, #0b1440 0%, #0a2672 100%);
+}
+:root[data-theme='dark'] .band-plain {
+  background: #03122b;
+}
+:root[data-theme='dark'] .band-dots {
+  background-color: #03122b;
+  background-image: radial-gradient(rgb(255 255 255 / 0.09) 1px, transparent 1.6px);
+}
+:root[data-theme='dark'] .band-tint {
+  background: radial-gradient(45% 60% at 100% 0%, rgb(253 112 78 / 0.16), transparent 70%),
+    linear-gradient(180deg, #061a3d 0%, #082552 100%);
+}
+:root[data-theme='dark'] .band-dark {
+  background: radial-gradient(50% 60% at 90% 0%, rgb(253 112 78 / 0.25), transparent 70%),
+    linear-gradient(180deg, #020a1f 0%, #031634 100%);
 }
 
 :root[data-theme='dark'] .landing-page {

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
+import heroTrucks from '../../assets/hero-trucks.webp'
 import { homeFor, useMe } from '../../hooks/useAuth'
 import { AUDIENCE_PATH, AUDIENCES, type Audience } from '../audience/audience'
 import { PrimaryLink } from './landingParts'
@@ -38,6 +39,14 @@ export function AudienceHero({ audience }: { audience: Audience }) {
   const page = HERO[audience]
   return (
     <div className="relative">
+      {/* Trucks on the highway, faint under the blue and fading out before the page turns light.
+        Photo: Bhargav Panchal, Unsplash (unsplash.com/photos/P0bVatS8Jdw), Unsplash License. */}
+      <img
+        src={heroTrucks}
+        alt=""
+        aria-hidden
+        className="hero-photo pointer-events-none absolute inset-x-0 top-0 h-[72%] w-full select-none object-cover object-[50%_60%]"
+      />
       <nav
         aria-label="Who Carrier Safety Scan is for"
         className="relative z-20 mx-auto flex max-w-6xl flex-wrap justify-center gap-2 px-4 pt-8 lg:justify-start"

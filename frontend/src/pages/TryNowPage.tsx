@@ -119,7 +119,7 @@ export function TryNowPage() {
         )}
         {find.isPending && (
           <p role="status" className="text-sm text-slate-600">
-            Searching FMCSA’s records…
+            Searching…
           </p>
         )}
         <SubmitButton busy={open.isPending || find.isPending}>Search</SubmitButton>
@@ -154,8 +154,7 @@ export function TryNowPage() {
             ))}
           </ul>
           <p className="mt-2 text-xs text-slate-500">
-            Source: FMCSA Company Census. Shows up to 10 matches; add more of the name if yours
-            isn’t here.
+            Shows up to 10 matches; add more of the name if yours isn’t here.
           </p>
         </div>
       )}

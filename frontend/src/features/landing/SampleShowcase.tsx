@@ -19,10 +19,14 @@ import { useEffect, useState, type ReactNode } from 'react'
  * Landing-page illustration: sample cards of what Carrier Safety Scan shows, as a stack of papers. Every
  * 6 seconds the front card slides up and away and the next one comes forward. Every
  * card is a made-up carrier and labelled SAMPLE; the national OOS averages are FMCSA's published
- * figures. Holds still for people who prefer reduced motion.
+ * figures. Each card ticks its rows in while a badge says "Checking…", then "Checked"; the stack
+ * floats gently. Holds still for people who prefer reduced motion.
  */
 
-const INTERVAL_MS = 6000
+const INTERVAL_MS = 6500
+// Rows tick in one by one; the card says "Checking…" until the last one is in.
+const ROW_STEP_S = 0.22
+const CHECKED_AFTER_MS = 1700
 const ease = [0.16, 1, 0.3, 1] as const
 // The stack: the front card plus two peeking out behind it, each a little lower and smaller.
 const STACK = [
@@ -336,7 +340,11 @@ export function SampleShowcase({
       />
 
       {/* Room for the cards peeking out below the front one. */}
-      <div className="relative h-[502px] sm:h-[442px]">
+      <motion.div
+        className="relative h-[502px] sm:h-[442px]"
+        animate={reduceMotion ? undefined : { y: [0, -8, 0] }}
+        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+      >
         {slides.map((slide, i) => {
           // 0 = front, 1-2 = peeking behind, count-1 = the one that just slid away.
           const depth = (i - index + count) % count
@@ -364,7 +372,7 @@ export function SampleShowcase({
             </motion.div>
           )
         })}
-      </div>
+      </motion.div>
     </div>
   )
 }
@@ -379,9 +387,13 @@ function SlideCard({ slide, replayKey }: { slide: Slide; replayKey: number }) {
           <div className="text-base font-semibold text-slate-900">EXAMPLE FREIGHT LLC</div>
           <div className="font-mono text-xs text-slate-500">USDOT 0000000 · MC 000000</div>
         </div>
-        <span className="rounded-md border border-slate-300 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-500">
-          Sample
-        </span>
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <span className="rounded-md border border-slate-300 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-500">
+            Sample
+          </span>
+          {/* key: starts over at "Checking…" each time the card comes to the front */}
+          <CheckBadge key={replayKey} />
+        </div>
       </div>
       <div className="mt-5 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-slate-500">
         <Icon className="size-3.5 text-slate-500" aria-hidden />
@@ -395,6 +407,35 @@ function SlideCard({ slide, replayKey }: { slide: Slide; replayKey: number }) {
   )
 }
 
+/** "Checking…" with a pulsing dot while the rows tick in, then "Checked". */
+function CheckBadge() {
+  const reduceMotion = useReducedMotion()
+  const [done, setDone] = useState(false)
+  useEffect(() => {
+    if (reduceMotion) return
+    const timer = window.setTimeout(() => setDone(true), CHECKED_AFTER_MS)
+    return () => window.clearTimeout(timer)
+  }, [reduceMotion])
+  const checked = done || reduceMotion
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors duration-300 ${
+        checked ? 'bg-emerald-50 text-emerald-700' : 'bg-sky-50 text-sky-700'
+      }`}
+    >
+      {checked ? (
+        <CircleCheck className="size-3" aria-hidden />
+      ) : (
+        <span className="relative flex size-2" aria-hidden>
+          <span className="absolute inline-flex size-full animate-ping rounded-full bg-sky-400 opacity-75" />
+          <span className="relative inline-flex size-2 rounded-full bg-sky-500" />
+        </span>
+      )}
+      {checked ? 'Checked' : 'Checking…'}
+    </span>
+  )
+}
+
 function Rows({ rows }: { rows: { ok: boolean; label: string; detail: string }[] }) {
   return (
     <ul className="divide-y divide-slate-100">
@@ -403,7 +444,7 @@ function Rows({ rows }: { rows: { ok: boolean; label: string; detail: string }[]
           key={r.label}
           initial={{ opacity: 0, x: 12 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.35, delay: 0.1 + i * 0.06, ease }}
+          transition={{ duration: 0.4, delay: 0.15 + i * ROW_STEP_S, ease }}
           className="flex items-center gap-3 py-2"
         >
           {r.ok ? (

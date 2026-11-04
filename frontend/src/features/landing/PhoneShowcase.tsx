@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 import phoneOverview from '../../assets/phone-overview.webp'
 import phoneReport from '../../assets/phone-report.webp'
@@ -39,7 +39,13 @@ function offsetFrom(screen: number, current: number): number {
  * a loop that never stops. Picking a screen jumps to it and the loop carries on from there. People
  * who asked their device for less motion pick screens themselves.
  */
-export function PhoneShowcase({ title = 'Check your carrier from anywhere' }: { title?: string }) {
+export function PhoneShowcase({
+  title = 'Check your carrier from anywhere',
+  number,
+}: {
+  title?: ReactNode
+  number?: string
+}) {
   const [{ current, previous }, setPlace] = useState({ current: 0, previous: 0 })
   const show = (next: number) => setPlace((place) => ({ current: next, previous: place.current }))
   const reduceMotion = useReducedMotion()
@@ -59,11 +65,16 @@ export function PhoneShowcase({ title = 'Check your carrier from anywhere' }: { 
   }, [current, reduceMotion])
 
   return (
-    <section className="pb-20">
-      <SectionHeading eyebrow="On your phone" title={title} />
+    <div>
+      <SectionHeading
+        number={number}
+        eyebrow="On your phone"
+        title={title}
+        aside="Every page works on a phone, so you can check a carrier from the yard, the office or the road."
+      />
       <motion.div
         {...reveal()}
-        className="mx-auto mt-10 grid max-w-4xl items-center gap-8 md:grid-cols-2 md:gap-12"
+        className="mx-auto mt-12 grid max-w-4xl items-center gap-8 md:grid-cols-2 md:gap-12"
       >
         <div className="relative mx-auto w-full max-w-[280px] md:order-1">
           <div className="rounded-[2.25rem] border border-slate-300 bg-surface p-1.5 shadow-xl">
@@ -122,6 +133,6 @@ export function PhoneShowcase({ title = 'Check your carrier from anywhere' }: { 
       <motion.p {...reveal()} className="mt-6 text-center text-xs text-slate-500">
         Sample screens with example data for a made-up carrier.
       </motion.p>
-    </section>
+    </div>
   )
 }

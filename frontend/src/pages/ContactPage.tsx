@@ -23,7 +23,12 @@ export function ContactPage() {
     return {
       ...EMPTY,
       usdot: /^\d{1,8}$/.test(params.get('usdot') ?? '') ? (params.get('usdot') ?? '') : '',
-      message: topic ? `I’d like help fixing: ${topic}` : '',
+      // "Schedule a demo" in the header: ?demo=1.
+      message: topic
+        ? `I’d like help fixing: ${topic}`
+        : params.get('demo') === '1'
+          ? 'I’d like to schedule a demo of Carrier Safety Scan. A good time to reach me is:'
+          : '',
     }
   })
   const [localError, setLocalError] = useState<string | null>(null)
