@@ -278,8 +278,10 @@ export function GoogleButton({
   label?: string
   portal?: 'client' | 'broker'
 }) {
-  const { data } = useAuthOptions()
-  if (!data?.google) return null
+  const { data, isError } = useAuthOptions()
+  // Shown at once rather than after the API answers (a moment, or up to a minute while the server
+  // wakes), so it doesn't pop in and push the form down; hidden only once the API says Google is off.
+  if (data ? !data.google : isError) return null
   return (
     <>
       <a
