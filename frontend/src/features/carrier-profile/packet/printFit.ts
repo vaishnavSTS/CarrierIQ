@@ -13,11 +13,11 @@ const PX_PER_MM = 96 / 25.4
 const PAGE_HEIGHT = PAGE_HEIGHT_MM * PX_PER_MM
 const PAGE_WIDTH = PAGE_WIDTH_MM * PX_PER_MM
 /**
- * The printed text's size: a little under full size, so the first page holds the score, the red
- * items and the out-of-service rates (it printed at 70-79% when every part had to fit one page).
+ * The printed text's size: just under full size, so the first page holds the score and the red
+ * items (it printed at 70-79% when every part had to fit one page).
  * Each page is laid out at the page width divided by this and scaled down with CSS zoom.
  */
-const SCALE = 0.83 // the on-screen report uses the same (index.css #carrier-packet)
+const SCALE = 0.92 // the on-screen report uses the same (index.css #carrier-packet)
 
 /** Where each report sheet landed: its first and last printed page, and the page count. */
 export interface PageNumbers {
