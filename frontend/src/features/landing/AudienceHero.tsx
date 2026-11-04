@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
-import heroTrucks from '../../assets/hero-trucks.webp'
 import { homeFor, useMe } from '../../hooks/useAuth'
 import { AUDIENCE_PATH, AUDIENCES, type Audience } from '../audience/audience'
 import { PrimaryLink } from './landingParts'
 import { HeroTryForm } from './LandingSections'
+import { HERO_PHOTO } from './photos'
 import { SampleShowcase } from './SampleShowcase'
 
 const highlight = (text: string) => <span className="text-[var(--hero-highlight)]">{text}</span>
@@ -39,10 +39,12 @@ export function AudienceHero({ audience }: { audience: Audience }) {
   const page = HERO[audience]
   return (
     <div className="relative">
-      {/* Trucks on the highway, faint under the blue and fading out before the page turns light.
-        Photo: Bhargav Panchal, Unsplash (unsplash.com/photos/P0bVatS8Jdw), Unsplash License. */}
+      {/* A real photo for each audience, faint under the blue and fading out before the page
+        turns light. Carrier: Bhargav Panchal, Unsplash (unsplash.com/photos/P0bVatS8Jdw),
+        Unsplash License; the others: photos.ts. */}
       <img
-        src={heroTrucks}
+        key={audience}
+        src={HERO_PHOTO[audience]}
         alt=""
         aria-hidden
         className="hero-photo pointer-events-none absolute inset-x-0 top-0 h-[72%] w-full select-none object-cover object-[50%_60%]"

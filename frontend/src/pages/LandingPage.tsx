@@ -1,6 +1,6 @@
 import { ArrowRight, FileText, Search, UserPlus, type LucideIcon } from 'lucide-react'
 import { motion } from 'motion/react'
-import type { ReactElement, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import type { Audience } from '../features/audience/audience'
@@ -9,10 +9,11 @@ import { Accent, Band, reveal, SectionHeading } from '../features/landing/landin
 import { AboutStsSection, DataQsSection, ReportPreview } from '../features/landing/LandingSections'
 import { PhoneShowcase } from '../features/landing/PhoneShowcase'
 import { PortalFeatures } from '../features/landing/PortalFeatures'
-import { BrokerCheckArt, FixArt, PacketArt, RegistrationArt } from '../features/landing/RoleArt'
+import { FEATURE_PHOTOS } from '../features/landing/photos'
+import { ChecksMarquee } from '../features/landing/ChecksMarquee'
 import { useMe } from '../hooks/useAuth'
 
-type Feature = { art: () => ReactElement; title: string; text: string }
+type Feature = { title: string; text: string }
 type Step = { icon: LucideIcon; title: string; text: string }
 
 /** What each audience's page says: only what the app does for them. */
@@ -38,22 +39,18 @@ const CONTENT: Record<
       'Your carrier the way a broker’s check sees it, in plain English, with what to do about each item.',
     features: [
       {
-        art: BrokerCheckArt,
         title: 'See what a broker’s check sees',
         text: 'Authority, insurance, BOC-3, safety and inspection history, all in one place.',
       },
       {
-        art: FixArt,
         title: 'Know what to fix',
         text: 'Which violation groups weigh most in each CSA BASIC, the 49 CFR rule behind them, and how DataQs corrections work.',
       },
       {
-        art: RegistrationArt,
         title: 'Catch registration problems early',
         text: 'Registration gaps, stale MCS-150 updates, shared addresses or phones that can trip a broker’s fraud screen.',
       },
       {
-        art: PacketArt,
         title: 'A packet you can send',
         text: 'A dated Safety Score Report to share with brokers and shippers, with estimates that follow FMCSA’s own published methods.',
       },
@@ -103,22 +100,18 @@ const CONTENT: Record<
       'Authority, insurance, safety and the red flags a fraud screen looks for, on one page, before you book.',
     features: [
       {
-        art: BrokerCheckArt,
         title: 'Authority, insurance and safety together',
         text: 'Operating authority, insurance filings, BOC-3, safety record and the Estimated ISS, all in one place.',
       },
       {
-        art: RegistrationArt,
         title: 'Spot the red flags early',
         text: 'Registration gaps, stale MCS-150 updates, out-of-service orders and past revocations.',
       },
       {
-        art: FixArt,
         title: 'See who it’s linked to',
         text: 'Other carriers sharing its phone, email or address, and the Chameleon check for signs of a carrier re-registered under a new USDOT number.',
       },
       {
-        art: PacketArt,
         title: 'A dated report for your file',
         text: 'Save a dated Safety Score Report on the carrier you booked, and compare up to 3 carriers side by side.',
       },
@@ -168,22 +161,18 @@ const CONTENT: Record<
       'Filings, safety record, crashes and fleet together, so you quote with the full picture.',
     features: [
       {
-        art: BrokerCheckArt,
         title: 'Insurance filings and authority',
         text: 'The liability and cargo filings on file, what FMCSA requires, and when the policy usually renews.',
       },
       {
-        art: FixArt,
         title: 'Safety record and Estimated ISS',
         text: 'CSA BASICs, inspections, out-of-service rates against the national average, and Carrier Safety Scan’s Estimated ISS.',
       },
       {
-        art: RegistrationArt,
         title: 'Crashes, fleet and red flags',
         text: 'The crash record, trucks seen on inspections with their VINs, and registration gaps that point to risk.',
       },
       {
-        art: PacketArt,
         title: 'A dated report for the file',
         text: 'Save a dated Safety Score Report on the carrier you quote, so your file shows what the record said and when.',
       },
@@ -242,6 +231,7 @@ export function LandingPage({ audience }: { audience: Audience }) {
       <div className="hero-gradient">
         <AudienceHero audience={audience} />
       </div>
+      <ChecksMarquee />
 
       <Band tone="dots">
         <SectionHeading
@@ -251,14 +241,26 @@ export function LandingPage({ audience }: { audience: Audience }) {
           aside={content.featuresAside}
         />
         <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {content.features.map(({ art: Art, title, text }, i) => (
+          {content.features.map(({ title, text }, i) => (
             <motion.article
               key={title}
               {...reveal(i * 0.08)}
               className="group rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-brand-glow/15"
             >
-              <div className="-mx-6 -mt-6 mb-1 h-32 overflow-hidden rounded-t-2xl">
-                <Art />
+              <div className="relative -mx-6 -mt-6 mb-1 h-40 overflow-hidden rounded-t-2xl bg-slate-200">
+                <img
+                  src={FEATURE_PHOTOS[audience][i].src}
+                  alt={FEATURE_PHOTOS[audience][i].alt}
+                  loading="lazy"
+                  className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                />
+                <div
+                  aria-hidden
+                  className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent"
+                />
+                <span className="absolute bottom-3 left-4 grid size-7 place-items-center rounded-full bg-white/90 text-xs font-semibold text-slate-900 shadow">
+                  {i + 1}
+                </span>
               </div>
               <h3 className="mt-5 text-base font-semibold text-slate-900">{title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">{text}</p>

@@ -1,27 +1,24 @@
 import { ArrowRight } from 'lucide-react'
-import { useEffect, type ReactElement } from 'react'
+import { useEffect } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 
 import { AUDIENCE_PATH, forgetStoredAudience, type Audience } from '../features/audience/audience'
-import { AgentArt, BrokerArt, CarrierArt } from '../features/landing/RoleArt'
+import { CHOOSER_PHOTO } from '../features/landing/photos'
 import { homeFor, useMe } from '../hooks/useAuth'
 
-const CHOICES: { audience: Audience; art: () => ReactElement; title: string; text: string }[] = [
+const CHOICES: { audience: Audience; title: string; text: string }[] = [
   {
     audience: 'carrier',
-    art: CarrierArt,
     title: 'I’m a carrier',
     text: 'See your company the way brokers do, and know what to fix.',
   },
   {
     audience: 'broker',
-    art: BrokerArt,
     title: 'I’m a freight broker',
     text: 'Vet any carrier before you book the load.',
   },
   {
     audience: 'agent',
-    art: AgentArt,
     title: 'I’m an insurance agent',
     text: 'Understand a trucking risk before you quote it.',
   },
@@ -52,15 +49,23 @@ export function AudienceChooserPage() {
         </p>
         <div className="mt-12 grid gap-5 md:grid-cols-3">
           {/* Shown at once (no fade-in): choosing is the whole page. */}
-          {CHOICES.map(({ audience, art: Art, title, text }) => (
+          {CHOICES.map(({ audience, title, text }) => (
             <button
               key={audience}
               type="button"
               onClick={() => choose(audience)}
               className="group flex flex-col overflow-hidden rounded-3xl bg-surface text-left shadow-2xl shadow-black/20 ring-1 ring-white/30 transition-transform duration-300 hover:-translate-y-1.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--hero-highlight)]"
             >
-              <div className="h-40 overflow-hidden">
-                <Art />
+              <div className="relative h-52 overflow-hidden bg-slate-200">
+                <img
+                  src={CHOOSER_PHOTO[audience].src}
+                  alt={CHOOSER_PHOTO[audience].alt}
+                  className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                />
+                <div
+                  aria-hidden
+                  className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent"
+                />
               </div>
               <div className="flex flex-1 flex-col p-6">
                 <span className="text-xl font-semibold text-slate-900">{title}</span>
