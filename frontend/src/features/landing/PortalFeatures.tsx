@@ -1,4 +1,5 @@
 import {
+  ArrowRight,
   BadgeCheck,
   BriefcaseBusiness,
   ClipboardList,
@@ -21,7 +22,9 @@ import {
 import { motion } from 'motion/react'
 import type { ReactNode } from 'react'
 
-import type { Audience } from '../audience/audience'
+import { Link } from 'react-router-dom'
+
+import { AUDIENCE_PATH, type Audience } from '../audience/audience'
 import { Accent, reveal, SectionHeading } from './landingParts'
 
 type Item = { icon: LucideIcon; title: string; text: string }
@@ -230,6 +233,18 @@ export function PortalFeatures({ audience, number }: { audience: Audience; numbe
           )
         })}
       </ul>
+      <div className="mt-10 flex justify-center">
+        <Link
+          to={`${AUDIENCE_PATH[audience]}/portal`}
+          className="group inline-flex items-center gap-2 rounded-full bg-[#101853] px-6 py-3 text-sm font-semibold text-white shadow-lg transition-colors hover:bg-[#1e3a8a]"
+        >
+          See every page of the portal, with sample screens
+          <ArrowRight
+            className="size-4 transition-transform group-hover:translate-x-1"
+            aria-hidden
+          />
+        </Link>
+      </div>
     </div>
   )
 }

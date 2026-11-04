@@ -183,10 +183,29 @@ class BrokerGoogleSignupIn(BrokerIdIn, AcceptTermsIn):
         return value
 
 
+class InsuranceGoogleSignupIn(AcceptTermsIn):
+    """Finishing an insurance agent's Google sign-up: their agency, mobile and NPN."""
+
+    company_name: str = Field(min_length=1, max_length=200)
+    phone: str = Field(max_length=30)
+    license_number: str = Field(pattern=r"^\d{1,10}$")
+
+    _normalize_phone = field_validator("phone")(normalize_phone)
+
+    @field_validator("company_name")
+    @classmethod
+    def _strip(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Required")
+        return value
+
+
 class GoogleSignupPendingOut(BaseModel):
     email: str
     full_name: str
-    portal: str = "client"  # client | broker: which sign-up the Google round trip started from
+    # client | broker | insurance: which sign-up the Google round trip started from
+    portal: str = "client"
 
 
 class AuthOptionsOut(BaseModel):

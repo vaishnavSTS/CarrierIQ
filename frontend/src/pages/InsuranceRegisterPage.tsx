@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 
 import { ApiError } from '../api/client'
-import { AuthCard, Field, FormError, SubmitButton } from '../features/auth/AuthCard'
+import { AuthCard, Field, FormError, GoogleButton, SubmitButton } from '../features/auth/AuthCard'
 import { useTurnstile } from '../features/auth/useTurnstile'
 import { AgreeToTerms, MUST_AGREE } from '../features/legal/AgreeToTerms'
 import { homeFor, useMe, useRegisterInsurance } from '../hooks/useAuth'
@@ -112,6 +112,7 @@ export function InsuranceRegisterPage() {
         </>
       }
     >
+      <GoogleButton label="Sign up with Google" portal="insurance" />
       <form onSubmit={submit} className="space-y-4">
         <div className="grid items-start gap-4 sm:grid-cols-2">
           <Field

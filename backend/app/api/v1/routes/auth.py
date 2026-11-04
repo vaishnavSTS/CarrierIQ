@@ -41,6 +41,7 @@ from app.schemas.auth import (
     ForgotPasswordIn,
     GoogleSignupIn,
     GoogleSignupPendingOut,
+    InsuranceGoogleSignupIn,
     InsuranceRegisterIn,
     LoginIn,
     RegisterIn,
@@ -68,7 +69,11 @@ GOOGLE_PORTAL_COOKIE = "carrieriq_google_portal"  # sign-up page the round trip 
 GOOGLE_SIGNUP_PURPOSE = "google_signup"
 GOOGLE_SIGNUP_MINUTES = 30
 HOME = {"internal": "/dashboard", "client": "/portal", "broker": "/broker"}
-GOOGLE_SIGNUP_PAGE = {"client": "/register/google", "broker": "/broker/register/google"}
+GOOGLE_SIGNUP_PAGE = {
+    "client": "/register/google",
+    "broker": "/broker/register/google",
+    "insurance": "/insurance/register/google",
+}
 
 
 def get_auth_service(db: Annotated[Session, Depends(get_db)]) -> AuthService:
@@ -330,7 +335,7 @@ def me(user: CurrentUser, service: Service) -> UserOut:
 
 @router.get("/google/start")
 def google_start(
-    google: Google, portal: Literal["client", "broker"] = "client"
+    google: Google, portal: Literal["client", "broker", "insurance"] = "client"
 ) -> RedirectResponse:
     if not get_settings().google_enabled:
         raise NotFoundError("Google sign-in is not set up")
@@ -363,7 +368,8 @@ def google_callback(
         return _to_login("failed")
 
     if user is None:
-        portal = "broker" if request.cookies.get(GOOGLE_PORTAL_COOKIE) == "broker" else "client"
+        started = request.cookies.get(GOOGLE_PORTAL_COOKIE)
+        portal = started if started in GOOGLE_SIGNUP_PAGE else "client"
         response = RedirectResponse(GOOGLE_SIGNUP_PAGE[portal], status_code=302)
         claims = {
             "google_sub": identity.sub,
@@ -405,8 +411,8 @@ def _pending_google_signup(request: Request) -> GoogleIdentity:
 
 @router.get("/google/signup", response_model=GoogleSignupPendingOut)
 def google_signup_pending(request: Request) -> GoogleSignupPendingOut:
-    """Who is finishing a Google sign-up (for the form), and as a client or a broker; 401 when
-    nobody is."""
+    """Who is finishing a Google sign-up (for the form), and as a client, a broker or an
+    insurance agent; 401 when nobody is."""
     claims = _pending_claims(request)
     return GoogleSignupPendingOut(
         email=claims["email"], full_name=claims["name"], portal=claims.get("portal", "client")
@@ -454,6 +460,28 @@ def broker_google_signup_complete(
     identity = _pending_google_signup(request)
     authority = checker.check(data.id_kind, data.id_number)
     user = service.complete_google_broker_signup(identity, data, authority)
+    _clear_cookie(response, GOOGLE_SIGNUP_COOKIE)
+    _start_session(response, user)
+    _welcome(tasks, user, data.company_name, mailer)
+    return service.user_out(user)
+
+
+@router.post(
+    "/insurance/google/signup",
+    response_model=UserOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(limit_signup)],
+)
+def insurance_google_signup_complete(
+    data: InsuranceGoogleSignupIn,
+    request: Request,
+    response: Response,
+    service: Service,
+    tasks: BackgroundTasks,
+    mailer: Mailer,
+) -> UserOut:
+    """Agency, mobile number and NPN for a new Google user signing up as an insurance agent."""
+    user = service.complete_google_insurance_signup(_pending_google_signup(request), data)
     _clear_cookie(response, GOOGLE_SIGNUP_COOKIE)
     _start_session(response, user)
     _welcome(tasks, user, data.company_name, mailer)

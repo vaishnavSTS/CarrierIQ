@@ -55,6 +55,7 @@ from app.schemas.auth import (
     BrokerRegisterIn,
     CarrierContactCheckOut,
     GoogleSignupIn,
+    InsuranceGoogleSignupIn,
     InsuranceRegisterIn,
     LoginIn,
     PortalCarrierOut,
@@ -208,19 +209,42 @@ class AuthService:
         check_password_strength(data.password)
         if self.users.by_email(data.email) is not None:
             raise ConflictError("An account with this email already exists")
-        organization = Organization(
-            name=data.company_name,
-            kind=OrganizationKind.INSURANCE,
+        return self._create_insurance_agent(
+            email=data.email,
+            full_name=data.full_name,
+            company_name=data.company_name,
+            phone=data.phone,
             license_number=data.license_number,
+            password_hash=hash_password(data.password),
+            verified=verified,
+        )
+
+    def _create_insurance_agent(
+        self,
+        *,
+        email: str,
+        full_name: str,
+        company_name: str,
+        phone: str,
+        license_number: str,
+        password_hash: str | None = None,
+        google_sub: str | None = None,
+        verified: bool = True,
+    ) -> User:
+        organization = Organization(
+            name=company_name,
+            kind=OrganizationKind.INSURANCE,
+            license_number=license_number,
         )
         self.db.add(organization)
         self.db.flush()
         user = User(
             organization_id=organization.id,
-            email=data.email,
-            full_name=data.full_name,
-            phone=data.phone,
-            password_hash=hash_password(data.password),
+            email=email,
+            full_name=full_name,
+            phone=phone,
+            password_hash=password_hash,
+            google_sub=google_sub,
             role=UserRole.INSURANCE_AGENT,
             status=UserStatus.ACTIVE,
             last_login_at=self.now() if verified else None,
@@ -400,6 +424,20 @@ class AuthService:
             company_name=data.company_name,
             phone=data.phone,
             authority=authority,
+            google_sub=identity.sub,
+        )
+
+    def complete_google_insurance_signup(
+        self, identity: GoogleIdentity, data: InsuranceGoogleSignupIn
+    ) -> User:
+        if self.users.by_google_sub(identity.sub) or self.users.by_email(identity.email):
+            raise ConflictError("An account with this email already exists; log in instead")
+        return self._create_insurance_agent(
+            email=identity.email,
+            full_name=identity.name,
+            company_name=data.company_name,
+            phone=data.phone,
+            license_number=data.license_number,
             google_sub=identity.sub,
         )
 

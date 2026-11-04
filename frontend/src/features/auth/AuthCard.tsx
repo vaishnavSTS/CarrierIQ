@@ -14,6 +14,7 @@ import type { InputHTMLAttributes, ReactNode } from 'react'
 import { AuroraBackdrop } from '../../components/layout/AuroraBackdrop'
 import { googleStartUrl } from '../../api/auth'
 import { useAuthOptions } from '../../hooks/useAuth'
+import type { GoogleSignupPortal } from '../../types/auth'
 
 const ease = [0.16, 1, 0.3, 1] as const
 
@@ -260,13 +261,14 @@ export function SubmitButton({ busy, children }: { busy: boolean; children: Reac
 }
 
 /** "Continue with Google" plus an "or" divider; hidden when the API has no Google settings. */
-/** `portal`: a new Google user finishes signing up as a client (default) or a broker. */
+/** `portal`: a new Google user finishes signing up as a client (default), a broker or an
+ * insurance agent. */
 export function GoogleButton({
   label = 'Continue with Google',
   portal = 'client',
 }: {
   label?: string
-  portal?: 'client' | 'broker'
+  portal?: GoogleSignupPortal
 }) {
   const { data, isError } = useAuthOptions()
   // Shown at once rather than after the API answers (a moment, or up to a minute while the server

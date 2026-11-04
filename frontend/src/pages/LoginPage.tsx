@@ -112,10 +112,12 @@ export function LoginPage({ audience = 'client' }: { audience?: Audience }) {
           Your password was changed. Log in with your new password.
         </p>
       )}
-      {/* A new Google user would land in another sign-up: agents sign up with their NPN. */}
-      {audience !== 'insurance' && (
-        <GoogleButton portal={audience === 'broker' ? 'broker' : 'client'} />
-      )}
+      {/* A new Google user finishes signing up as the kind of account this login is for. */}
+      <GoogleButton
+        portal={
+          audience === 'broker' ? 'broker' : audience === 'insurance' ? 'insurance' : 'client'
+        }
+      />
       <form onSubmit={submit} className="space-y-4">
         <Field
           label="Email"

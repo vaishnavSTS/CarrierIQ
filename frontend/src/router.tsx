@@ -22,11 +22,13 @@ import { LandingPage } from './pages/LandingPage'
 import { ContactPage } from './pages/ContactPage'
 import { MethodologyPage } from './pages/MethodologyPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
+import { InsuranceGoogleSignupPage } from './pages/InsuranceGoogleSignupPage'
 import { InsuranceRegisterPage } from './pages/InsuranceRegisterPage'
 import { LoginPage } from './pages/LoginPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { VerifyEmailPage } from './pages/VerifyEmailPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { PortalTourPage } from './pages/PortalTourPage'
 import { ClientSearchPage } from './pages/ClientSearchPage'
 import { PortalDataQsIntakePage } from './pages/PortalDataQsIntakePage'
 import { PortalDataQsPage } from './pages/PortalDataQsPage'
@@ -58,6 +60,9 @@ export const router = createBrowserRouter([
       { path: 'for-carriers', element: <LandingPage audience="carrier" /> },
       { path: 'for-brokers', element: <LandingPage audience="broker" /> },
       { path: 'for-insurance-agents', element: <LandingPage audience="agent" /> },
+      { path: 'for-carriers/portal', element: <PortalTourPage audience="carrier" /> },
+      { path: 'for-brokers/portal', element: <PortalTourPage audience="broker" /> },
+      { path: 'for-insurance-agents/portal', element: <PortalTourPage audience="agent" /> },
       { path: 'contact', element: <ContactPage /> },
       { path: 'methodology', element: <MethodologyPage /> },
       { path: 'c/:usdot', element: <CarrierLinkPage /> },
@@ -75,6 +80,7 @@ export const router = createBrowserRouter([
       { path: 'insurance/login', element: <LoginPage audience="insurance" /> },
       { path: 'insurance/register', element: <InsuranceRegisterPage /> },
       { path: 'broker/register/google', element: <BrokerGoogleSignupPage /> },
+      { path: 'insurance/register/google', element: <InsuranceGoogleSignupPage /> },
     ],
   },
   {

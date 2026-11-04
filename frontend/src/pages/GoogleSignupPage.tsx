@@ -5,7 +5,13 @@ import { ApiError } from '../api/client'
 import { AuthCard, Field, FormError, GoogleButton, SubmitButton } from '../features/auth/AuthCard'
 import { ConfirmDetailsDialog } from '../features/auth/ConfirmDetailsDialog'
 import { AgreeToTerms, MUST_AGREE } from '../features/legal/AgreeToTerms'
-import { homeFor, useCompleteGoogleSignup, useGoogleSignup, useMe } from '../hooks/useAuth'
+import {
+  GOOGLE_SIGNUP_PATH,
+  homeFor,
+  useCompleteGoogleSignup,
+  useGoogleSignup,
+  useMe,
+} from '../hooks/useAuth'
 
 /**
  * After "Continue with Google", a new person gives their company, mobile number and USDOT before
@@ -48,7 +54,9 @@ export function GoogleSignupPage() {
   }
 
   // Started from the broker sign-up: finish there.
-  if (pending.data.portal === 'broker') return <Navigate to="/broker/register/google" replace />
+  if (pending.data.portal !== 'client') {
+    return <Navigate to={GOOGLE_SIGNUP_PATH[pending.data.portal]} replace />
+  }
 
   const set = (key: keyof typeof form) => (e: { target: { value: string } }) =>
     setForm((f) => ({ ...f, [key]: e.target.value }))

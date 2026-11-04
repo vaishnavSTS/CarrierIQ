@@ -18,7 +18,7 @@ import carrierRegistration from '../../assets/photos/carrier-registration.jpg' /
 import carrierReport from '../../assets/photos/carrier-report.jpg' // 6720550
 import chooseAgent from '../../assets/photos/choose-agent.jpg' // 7821707
 import chooseBroker from '../../assets/photos/choose-broker.jpg' // 3992926
-import chooseCarrier from '../../assets/photos/choose-carrier.jpg' // 17377416
+import chooseCarrier from '../../assets/photos/choose-carrier.jpg' // 7541981
 import heroAgent from '../../assets/photos/hero-agent.jpg' // 11053641
 import heroBroker from '../../assets/photos/hero-broker.jpg' // Unsplash tv53M6u2bAQ, by LEDC
 import heroCarrier from '../../assets/hero-trucks.webp'
@@ -35,7 +35,7 @@ export const HERO_PHOTO: Record<Audience, string> = {
 
 /** The front door's three cards. */
 export const CHOOSER_PHOTO: Record<Audience, Photo> = {
-  carrier: { src: chooseCarrier, alt: 'A truck driver smiling and waving from his cab' },
+  carrier: { src: chooseCarrier, alt: 'A driver stepping out of the cab of a yellow truck' },
   broker: { src: chooseBroker, alt: 'A dispatcher at a desk with several screens' },
   agent: { src: chooseAgent, alt: 'An agent going over a document with a client' },
 }

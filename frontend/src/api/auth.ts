@@ -5,6 +5,8 @@ import type {
   BrokerRegisterInput,
   GoogleSignupInput,
   GoogleSignupPending,
+  GoogleSignupPortal,
+  InsuranceGoogleSignupInput,
   InsuranceRegisterInput,
   PortalOverview,
   RegisterInput,
@@ -106,6 +108,10 @@ export function completeBrokerGoogleSignup(input: BrokerGoogleSignupInput): Prom
   return postJson<User>('/auth/broker/google/signup', input)
 }
 
+export function completeInsuranceGoogleSignup(input: InsuranceGoogleSignupInput): Promise<User> {
+  return postJson<User>('/auth/insurance/google/signup', input)
+}
+
 export function fetchPortalOverview(): Promise<PortalOverview> {
   return apiGet<PortalOverview>('/portal/overview')
 }
@@ -130,8 +136,9 @@ export function completeGoogleSignup(input: GoogleSignupInput): Promise<User> {
 }
 
 /** Full-page navigation (not fetch): the browser must go to Google and come back. A new Google
- * user then finishes signing up as a client or, from the broker pages, as a broker. */
-export function googleStartUrl(portal: 'client' | 'broker' = 'client'): string {
+ * user then finishes signing up as a client or, from the broker or insurance agent pages, as a
+ * broker or an agent. */
+export function googleStartUrl(portal: GoogleSignupPortal = 'client'): string {
   const start = '/api/v1/auth/google/start'
-  return portal === 'broker' ? `${start}?portal=broker` : start
+  return portal === 'client' ? start : `${start}?portal=${portal}`
 }

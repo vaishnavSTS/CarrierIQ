@@ -61,6 +61,11 @@ export function Band({ tone, children }: { tone: BandTone; children: ReactNode }
   )
 }
 
+/** For dark sections that aren't a Band (a hero): headings and highlights inside turn light. */
+export function OnDark({ children }: { children: ReactNode }) {
+  return <DarkBand.Provider value>{children}</DarkBand.Provider>
+}
+
 /** True inside a deep-navy band: text there is white. */
 export function useDarkBand(): boolean {
   return useContext(DarkBand)

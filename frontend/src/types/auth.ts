@@ -113,7 +113,17 @@ export interface GoogleSignupPending {
   email: string
   full_name: string
   /** Which sign-up the Google round trip started from */
-  portal: 'client' | 'broker'
+  portal: GoogleSignupPortal
+}
+
+/** Where a new Google user finishes signing up. */
+export type GoogleSignupPortal = 'client' | 'broker' | 'insurance'
+
+export interface InsuranceGoogleSignupInput {
+  company_name: string
+  phone: string
+  license_number: string
+  accept_terms: boolean
 }
 
 /** A brokerage is identified by its MC number or, failing that, its USDOT number. */

@@ -5,7 +5,13 @@ import { ApiError } from '../api/client'
 import { AuthCard, Field, FormError, GoogleButton, SubmitButton } from '../features/auth/AuthCard'
 import { BrokerIdField } from '../features/auth/BrokerIdField'
 import { AgreeToTerms, MUST_AGREE } from '../features/legal/AgreeToTerms'
-import { homeFor, useCompleteBrokerGoogleSignup, useGoogleSignup, useMe } from '../hooks/useAuth'
+import {
+  GOOGLE_SIGNUP_PATH,
+  homeFor,
+  useCompleteBrokerGoogleSignup,
+  useGoogleSignup,
+  useMe,
+} from '../hooks/useAuth'
 import type { BrokerIdKind } from '../types/auth'
 import { parseBrokerId } from '../utils/brokerId'
 
@@ -45,8 +51,10 @@ export function BrokerGoogleSignupPage() {
     )
   }
 
-  // Started from the client sign-up: finish there.
-  if (pending.data.portal !== 'broker') return <Navigate to="/register/google" replace />
+  // Started from another sign-up: finish there.
+  if (pending.data.portal !== 'broker') {
+    return <Navigate to={GOOGLE_SIGNUP_PATH[pending.data.portal]} replace />
+  }
 
   const set = (key: keyof typeof form) => (e: { target: { value: string } }) =>
     setForm((f) => ({ ...f, [key]: e.target.value }))

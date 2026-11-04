@@ -234,6 +234,34 @@ def test_google_sign_up_from_the_client_page_stays_a_client_sign_up(api: TestCli
     assert api.get("/api/v1/auth/google/signup").json()["portal"] == "client"
 
 
+def test_new_google_user_from_the_agent_page_finishes_as_an_agent(
+    api: TestClient, checker: FakeChecker
+) -> None:
+    assert google_round_trip(api, "insurance") == "/insurance/register/google"
+    assert api.get("/api/v1/auth/google/signup").json()["portal"] == "insurance"
+    body = {"company_name": "Lane Insurance", "phone": "5036477474", "accept_terms": True}
+
+    refused = api.post(
+        "/api/v1/auth/insurance/google/signup", json={**body, "license_number": "N1"}
+    )
+    assert refused.status_code == 422
+
+    done = api.post(
+        "/api/v1/auth/insurance/google/signup", json={**body, "license_number": "1234567"}
+    )
+    assert done.status_code == 201, done.text
+    assert (done.json()["role"], done.json()["portal"]) == ("INSURANCE_AGENT", "broker")
+    assert checker.asked == []  # agents have no FMCSA authority to check
+    assert api.get("/api/v1/broker/overview").status_code == 200
+    # Next time Google signs them straight into their portal.
+    api.post("/api/v1/auth/logout")
+    assert google_round_trip(api, None) == "/broker"
+
+
+def test_an_unknown_portal_is_refused(api: TestClient) -> None:
+    assert api.get("/api/v1/auth/google/start", params={"portal": "staff"}).status_code == 422
+
+
 # --- The FMCSA check ---------------------------------------------------------------------------
 
 

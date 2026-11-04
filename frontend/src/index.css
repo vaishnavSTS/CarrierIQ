@@ -332,13 +332,37 @@ body {
 
 /* The hero's photo: grey and faint, so the blue and the white text stay on top. */
 .hero-photo {
-  opacity: 0.22;
-  mix-blend-mode: luminosity;
-  -webkit-mask-image: linear-gradient(to bottom, black 35%, transparent 100%);
-  mask-image: linear-gradient(to bottom, black 35%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
 }
-:root[data-theme='dark'] .hero-photo {
-  opacity: 0.16;
+/* Tones the photo into the page's blue, so it reads as part of the hero. */
+.hero-photo-tint {
+  background: #0b2a8f;
+  mix-blend-mode: color;
+  opacity: 0.75;
+}
+/* Darker behind the text on the left, the photo clear on the right. */
+.hero-photo-scrim {
+  background: linear-gradient(
+    90deg,
+    rgb(9 22 84 / 0.82) 0%,
+    rgb(9 22 84 / 0.62) 42%,
+    rgb(9 22 84 / 0.2) 75%,
+    rgb(9 22 84 / 0.1) 100%
+  );
+}
+:root[data-theme='dark'] .hero-photo-tint {
+  background: #0a1430;
+  opacity: 0.6;
+}
+:root[data-theme='dark'] .hero-photo-scrim {
+  background: linear-gradient(
+    90deg,
+    rgb(3 8 24 / 0.85) 0%,
+    rgb(3 8 24 / 0.65) 42%,
+    rgb(3 8 24 / 0.25) 75%,
+    rgb(3 8 24 / 0.15) 100%
+  );
 }
 
 :root[data-theme='dark'] .hero-gradient,

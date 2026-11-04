@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   completeBrokerGoogleSignup,
   completeGoogleSignup,
+  completeInsuranceGoogleSignup,
   fetchAuthOptions,
   fetchBrokerOverview,
   fetchGoogleSignup,
@@ -18,6 +19,8 @@ import type {
   BrokerGoogleSignupInput,
   BrokerRegisterInput,
   GoogleSignupInput,
+  GoogleSignupPortal,
+  InsuranceGoogleSignupInput,
   InsuranceRegisterInput,
   Portal,
   RegisterInput,
@@ -135,6 +138,24 @@ export function useCompleteBrokerGoogleSignup() {
       queryClient.setQueryData(ME_KEY, user)
     },
   })
+}
+
+export function useCompleteInsuranceGoogleSignup() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: InsuranceGoogleSignupInput) => completeInsuranceGoogleSignup(input),
+    onSuccess: (user: User) => {
+      queryClient.clear()
+      queryClient.setQueryData(ME_KEY, user)
+    },
+  })
+}
+
+/** The page where a new Google user finishes signing up, by where they started. */
+export const GOOGLE_SIGNUP_PATH: Record<GoogleSignupPortal, string> = {
+  client: '/register/google',
+  broker: '/broker/register/google',
+  insurance: '/insurance/register/google',
 }
 
 export function usePortalOverview(enabled = true) {
