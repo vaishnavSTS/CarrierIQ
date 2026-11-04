@@ -141,7 +141,7 @@ class Worker:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description=(__doc__ or "CarrierSafetyScan worker").splitlines()[0]
+        description=(__doc__ or "Carrier Safety Scan worker").splitlines()[0]
     )
     parser.add_argument("--once", action="store_true", help="run due jobs, then exit")
     parser.add_argument(

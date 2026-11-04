@@ -48,7 +48,7 @@ class ComplianceRequestOut(BaseModel):
     handled_by_name: str | None
     handled_at: datetime | None
     email_error: str | None  # the email to STS failed (staff)
-    # Paid online: what was chosen, and its CarrierSafetyScan invoice.
+    # Paid online: what was chosen, and its Carrier Safety Scan invoice.
     option_label: str | None = None
     quantity: int | None = None
     amount: Decimal | None = None

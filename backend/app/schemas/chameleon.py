@@ -33,7 +33,7 @@ class ChameleonLinkedOut(BaseModel):
     shutdown_date: date | None  # the most recent revocation or out-of-service order
     # Days from shutdown_date to this carrier's USDOT add date (positive: added afterwards)
     days_after_shutdown: int | None
-    first_linked: date | None  # when CarrierSafetyScan first saw a shared detail
+    first_linked: date | None  # when Carrier Safety Scan first saw a shared detail
 
 
 class PriorRevokeOut(BaseModel):

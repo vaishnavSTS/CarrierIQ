@@ -4,7 +4,7 @@ Phase 2).
 Flow (the spec's intake wizard):
 1-5. The carrier's owner (CLIENT_ADMIN) picks an inspection of one of their STS-verified carriers,
      the violations, a reason and an explanation for each, and any prior DataQs activity. This
-     creates a DRAFT case. The inspection is read from CarrierSafetyScan's own copy of the FMCSA
+     creates a DRAFT case. The inspection is read from Carrier Safety Scan's own copy of the FMCSA
      record and preserved in the case, never taken from the request.
    - Evidence is uploaded to the DRAFT case (dataqs_evidence_service.py).
    - STS staff can also open the draft, for any carrier. It belongs to the client company STS

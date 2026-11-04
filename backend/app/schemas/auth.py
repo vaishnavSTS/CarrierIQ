@@ -241,7 +241,7 @@ class AddCarrierIn(BaseModel):
 class CarrierContactCheckOut(BaseModel):
     """Does the sign-up's phone / email match FMCSA's census record for a USDOT number they gave?
 
-    None means CarrierSafetyScan has not loaded that carrier yet (open its profile to load it) or
+    None means Carrier Safety Scan has not loaded that carrier yet (open its profile to load it) or
     FMCSA lists no such contact: no answer either way.
     """
 
@@ -270,7 +270,7 @@ class AdminUserOut(UserOut):
 
 class PortalCarrierOut(BaseModel):
     usdot_number: int
-    legal_name: str | None  # None until CarrierSafetyScan has loaded the carrier
+    legal_name: str | None  # None until Carrier Safety Scan has loaded the carrier
     dba_name: str | None
     registration_status: str | None
     last_refreshed_at: datetime | None

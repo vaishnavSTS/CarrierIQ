@@ -168,7 +168,7 @@ class DataQsIssue(IdMixin, UpdatedAtMixin, Base):
     verified_by_id: Mapped[int | None] = mapped_column(  # None: the automatic check
         BigInteger, ForeignKey("users.id")
     )
-    # When CarrierSafetyScan's copy of the inspection matched FMCSA's corrected record.
+    # When Carrier Safety Scan's copy of the inspection matched FMCSA's corrected record.
     shown_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 

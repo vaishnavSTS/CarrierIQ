@@ -1,4 +1,4 @@
-"""CarrierSafetyScan invoices: created when a client pays for a Compliance tab service, paid on
+"""Carrier Safety Scan invoices: created when a client pays for a Compliance tab service, paid on
 Stripe Checkout, marked paid (or refunded) by Stripe's webhook.
 
 - A client sees their own company's invoices; STS staff see every invoice and can void an

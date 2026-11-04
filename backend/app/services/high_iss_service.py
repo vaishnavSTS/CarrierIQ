@@ -4,7 +4,7 @@ default), worst first, with a phone number to call; also as an Excel file.
 The scores come from iss_snapshots: once a month the worker rebuilds FMCSA's ISS tables and
 recalculates every stored carrier (iss_service.snapshot_all), saving a snapshot when a score
 changes. So the newest snapshot per carrier is its current score, and the list follows the
-monthly recalculation on its own. Only carriers stored in CarrierSafetyScan are listed.
+monthly recalculation on its own. Only carriers stored in Carrier Safety Scan are listed.
 """
 
 from io import BytesIO

@@ -383,7 +383,7 @@ class DataQsNotifications:
         )
         body = (
             f"It has been {days} days since DataQs request {request} for {carrier} was filed.\n\n"
-            f"{what}\n\nRecord anything new on the case in CarrierSafetyScan (Record an agency "
+            f"{what}\n\nRecord anything new on the case in Carrier Safety Scan (Record an agency "
             "event)."
         )
         override = get_settings().dataqs_staff_override_list

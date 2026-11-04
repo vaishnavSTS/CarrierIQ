@@ -1,4 +1,4 @@
-"""CarrierSafetyScan invoices, and Stripe's webhook that marks them paid or refunded.
+"""Carrier Safety Scan invoices, and Stripe's webhook that marks them paid or refunded.
 
 Clients: their own company's invoices, and paying one (Stripe Checkout). STS staff: every invoice,
 and voiding an unpaid one. The webhook has no login: each request must carry a valid

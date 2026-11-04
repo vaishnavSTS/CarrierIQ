@@ -43,7 +43,7 @@ def get_current_user(request: Request, db: Annotated[Session, Depends(get_db)]) 
         request.url.path
     ):
         raise SubscriptionRequiredError(
-            "Your free trial has ended. Subscribe to keep using CarrierSafetyScan."
+            "Your free trial has ended. Subscribe to keep using Carrier Safety Scan."
         )
     return user
 

@@ -1,4 +1,4 @@
-"""An invoice as a PDF (US Letter), in the same layout as the invoice page: the CarrierSafetyScan
+"""An invoice as a PDF (US Letter), in the same layout as the invoice page: the Carrier Safety Scan
 logo ("Powered by Sky Transport Solutions"), From / To, the lines, the total, a PAID / VOID /
 REFUNDED stamp and the payment dispute policy. Attached to the emails sent when it's paid."""
 
@@ -43,12 +43,12 @@ def _money(value: Decimal) -> str:
     return f"{value:,.2f}"
 
 
-# The CarrierSafetyScan logo (the truck and shield, on the page's white), as in the app.
+# The Carrier Safety Scan logo (the truck and shield, on the page's white), as in the app.
 LOGO = Path(__file__).resolve().parent.parent / "assets" / "carriersafetyscan-logo.jpg"
 
 
 def _logo(c: Canvas, x: float, y: float, size: float) -> None:
-    """The CarrierSafetyScan logo."""
+    """The Carrier Safety Scan logo."""
     c.drawImage(ImageReader(str(LOGO)), x, y, size, size)
 
 
@@ -63,7 +63,7 @@ def render_invoice_pdf(inv: InvoiceOut) -> bytes:
     _logo(c, LEFT, top - 30, 30)
     c.setFillColor(INK)
     c.setFont("Helvetica-Bold", 14)
-    c.drawString(LEFT + 38, top - 12, "CarrierSafetyScan")
+    c.drawString(LEFT + 38, top - 12, "Carrier Safety Scan")
     c.setFont("Helvetica", 8.5)
     c.setFillColor(MUTED)
     c.drawString(LEFT + 38, top - 25, "Powered by ")

@@ -261,7 +261,7 @@ def test_each_paid_month_becomes_a_paid_invoice_emailed_with_its_pdf(
         295017,
     )
     [line] = db.scalars(select(InvoiceLine).where(InvoiceLine.invoice_id == invoice.id))
-    assert line.item == "CARRIERSAFETYSCAN SUBSCRIPTION"
+    assert line.item == "CARRIER SAFETY SCAN SUBSCRIPTION"
     assert line.description == "Oct 28, 2026 to Nov 28, 2026"
 
     client_mail = next(m for m in mails.sent if m["to"] == ["owner@client.com"])

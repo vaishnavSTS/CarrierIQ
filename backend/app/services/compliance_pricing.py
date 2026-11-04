@@ -1,6 +1,6 @@
 """What STS charges for the Compliance tab's services, and the website's service ids
 (skytransportsolutions.com's invoice catalog). A service listed here is paid online: the client
-picks an option, CarrierSafetyScan creates the invoice on the website and opens its payment page.
+picks an option, Carrier Safety Scan creates the invoice on the website and opens its payment page.
 A service not listed (drug & alcohol consortium, criminal background check: no website service id
 yet) is asked for the old way, and STS follows up.
 

@@ -1,4 +1,4 @@
-"""The CarrierSafetyScan subscription: each client and broker login gets a one-month (30-day) free
+"""The Carrier Safety Scan subscription: each client and broker login gets a one-month (30-day) free
 trial from sign-up, then pays $49 a month through Stripe (a Stripe subscription, charged monthly).
 
 Who pays: each login (user) separately. STS staff never do, and accounts made before subscriptions
@@ -14,7 +14,7 @@ retries a failed monthly charge; while it does the status is past_due and the ap
 Stripe gives up (unpaid) or the subscription is cancelled, the login locks again, but never before
 the end of the month already paid for: a user who cancels (`cancel`) is not charged again, Stripe
 stops the subscription at the end of that month, and the app stays fully open until then. Each
-month Stripe charges (invoice.paid) becomes a PAID CarrierSafetyScan invoice, emailed with its PDF
+month Stripe charges (invoice.paid) becomes a PAID Carrier Safety Scan invoice, emailed with its PDF
 and listed in the client's carrier Invoices tab / the broker's Invoices page, and for STS on
 Invoices.
 """
@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 TRIAL = timedelta(days=30)  # one month
 MONTHLY_PRICE = Decimal("49")
-PRODUCT_NAME = "CarrierSafetyScan subscription"
+PRODUCT_NAME = "Carrier Safety Scan subscription"
 # Stripe statuses that keep the app open; past_due = Stripe is still retrying the charge.
 LIVE_STATUSES = frozenset({"active", "trialing", "past_due"})
 
@@ -251,7 +251,7 @@ class SubscriptionService:
         return None
 
     def _invoice_paid(self, obj: dict[str, Any], sender: EmailSender | None) -> str | None:
-        """Stripe charged a subscription month (the first or a renewal): a PAID CarrierSafetyScan
+        """Stripe charged a subscription month (the first or a renewal): a PAID Carrier Safety Scan
         invoice for it, emailed with its PDF, shown in the client's / broker's Invoices and to STS.
         None for Stripe invoices that aren't a subscription's."""
         # Older Stripe API versions put the subscription on the invoice, newer ones under parent.
@@ -294,7 +294,7 @@ class SubscriptionService:
             lines=[NewLine(PRODUCT_NAME.upper(), months, 1, amount)],
             stripe_reference=str(obj.get("id")),
             client_note=(
-                f"Thank you. We received your {_money(amount)} CarrierSafetyScan subscription "
+                f"Thank you. We received your {_money(amount)} Carrier Safety Scan subscription "
                 f"payment ({months}). Stripe charges it again each month; manage or cancel it "
                 "from Manage subscription in the app."
             ),

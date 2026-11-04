@@ -3,7 +3,7 @@ subscription, Stripe's billing page (manage or cancel a subscription), and check
 really came from Stripe.
 
 Stripe Checkout is Stripe's own hosted payment page: card details go to Stripe, never to
-CarrierSafetyScan. Off until STRIPE_SECRET_KEY is set (test keys start sk_test_). Webhooks need
+Carrier Safety Scan. Off until STRIPE_SECRET_KEY is set (test keys start sk_test_). Webhooks need
 STRIPE_WEBHOOK_SECRET (whsec_...), from the endpoint added in Stripe's dashboard.
 """
 

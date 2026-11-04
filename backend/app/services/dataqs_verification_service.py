@@ -2,7 +2,7 @@
 
 An approval is never shown as a verified correction until the data changes. Each corrected issue
 goes through four milestones: requested -> agency decision -> FMCSA record changed -> shown in
-CarrierSafetyScan.
+Carrier Safety Scan.
 
 While a corrected issue is unconfirmed, the inspection is fetched again by its id from FMCSA's
 Vehicle Inspection File (at most every DATAQS_VERIFICATION_CHECK_HOURS) and compared with the copy
@@ -18,7 +18,7 @@ kept when the case was opened:
 - wrong carrier and duplicate requests wait for the inspection to leave the carrier.
 
 Every look is kept (dataqs_verification_checks), with FMCSA's copy each time it changes. When an
-issue is verified the carrier is emailed, and CarrierSafetyScan's copy of the carrier's
+issue is verified the carrier is emailed, and Carrier Safety Scan's copy of the carrier's
 inspections is refreshed; the fourth milestone is reached once that copy matches FMCSA's. When
 every corrected issue is verified, STS gets a task to close the file. A correction still unseen
 DATAQS_VERIFICATION_ESCALATE_DAYS after the decision shows in the supervisor view.
@@ -192,7 +192,7 @@ class FmcsaSource(Protocol):
         ...
 
     def refresh_carrier(self, db: Session, usdot_number: int) -> None:
-        """Fetch the carrier's inspections into CarrierSafetyScan again."""
+        """Fetch the carrier's inspections into Carrier Safety Scan again."""
         ...
 
 
@@ -353,7 +353,7 @@ class DataQsVerificationService:
 
     @staticmethod
     def to_check(issues: Iterable[DataQsIssue]) -> list[DataQsIssue]:
-        """Corrected issues to confirm, or confirmed but not yet shown in CarrierSafetyScan."""
+        """Corrected issues to confirm, or confirmed but not yet shown in Carrier Safety Scan."""
         return [
             i
             for i in issues
@@ -527,7 +527,7 @@ class DataQsVerificationService:
     def _show(
         self, case: DataQsCase, issues: list[DataQsIssue], found: FmcsaRecord | None, now: datetime
     ) -> None:
-        """The fourth milestone: CarrierSafetyScan's copy matches FMCSA's corrected record."""
+        """The fourth milestone: Carrier Safety Scan's copy matches FMCSA's corrected record."""
         waiting = [
             i for i in issues if i.verification_status == Status.VERIFIED and i.shown_at is None
         ]

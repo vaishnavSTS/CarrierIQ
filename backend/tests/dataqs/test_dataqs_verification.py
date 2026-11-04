@@ -24,7 +24,8 @@ from tests.dataqs.test_dataqs_lifecycle import _filed, _ok, _record
 
 
 class FakeFmcsa:
-    """FMCSA's inspection file, as the test sets it; a refresh copies it into CarrierSafetyScan."""
+    """FMCSA's inspection file, as the test sets it; a refresh copies it into Carrier Safety
+    Scan."""
 
     def __init__(self, record: FmcsaRecord | None = None) -> None:
         self.record = record
@@ -110,7 +111,7 @@ def test_an_approval_is_not_verified_until_fmcsa_changes(
     [issue] = case["issues"]
     assert issue["verification_status"] == "VERIFIED" and issue["verified_by_name"] is None
     assert issue["verification_note"] == "Violation 396.3A1BOS (unit 1) is no longer listed."
-    # CarrierSafetyScan's copy was refreshed and now matches FMCSA's.
+    # Carrier Safety Scan's copy was refreshed and now matches FMCSA's.
     assert source.refreshed == [USDOT] and issue["shown_at"] is not None
     assert case["verification_checks"][0]["changes"] == ["Violation 396.3A1BOS (unit 1) removed"]
     kinds = {t["kind"] for t in case["tasks"]}
@@ -180,7 +181,7 @@ def test_a_removed_inspection_and_one_that_may_have_aged_out(
     issue = staff_case(api, case["id"])["issues"][0]
     assert issue["verification_status"] == "REVIEW" and "ageing out" in issue["verification_note"]
 
-    # Today, it means FMCSA took it off the carrier: verified, and gone from CarrierSafetyScan.
+    # Today, it means FMCSA took it off the carrier: verified, and gone from Carrier Safety Scan.
     source.record = fmcsa(case, usdot=1111111)
     check(db, case, source)
     issue = staff_case(api, case["id"])["issues"][0]

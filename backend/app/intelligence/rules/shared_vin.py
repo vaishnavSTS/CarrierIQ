@@ -113,7 +113,7 @@ class SharedVinRule(Rule):
                         "According to FMCSA inspection records, "
                         f"{count} VIN{'s' if count != 1 else ''} on this carrier's inspections "
                         f"{'were' if count != 1 else 'was'} also recorded on inspections of "
-                        f"{who}{'' if name else ', a carrier not loaded in CarrierSafetyScan'}, "
+                        f"{who}{'' if name else ', a carrier not loaded in Carrier Safety Scan'}, "
                         f"{period}. "
                         "The same equipment appears "
                         "associated with multiple carrier identities. Equipment legitimately "

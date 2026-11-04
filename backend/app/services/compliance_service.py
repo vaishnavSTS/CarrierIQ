@@ -276,7 +276,7 @@ class CarrierComplianceService:
         body: ComplianceCheckoutIn,
         stripe: StripeClient,
     ) -> tuple[ComplianceRequest, str, bool]:
-        """Create the invoice (CarrierSafetyScan's own) and save the request; answers a Stripe
+        """Create the invoice (Carrier Safety Scan's own) and save the request; answers a Stripe
         Checkout URL and whether the invoice is new. The same open request (same option and
         drivers) with its invoice still unpaid reuses that invoice instead of a new one."""
         if not user.role.is_client:

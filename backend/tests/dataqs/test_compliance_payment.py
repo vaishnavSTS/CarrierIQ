@@ -1,4 +1,4 @@
-"""Paying for a Compliance tab service: the client picks an option, CarrierSafetyScan creates its
+"""Paying for a Compliance tab service: the client picks an option, Carrier Safety Scan creates its
 own invoice and a Stripe Checkout session (a fake Stripe here); STS is emailed."""
 
 from collections.abc import Iterator

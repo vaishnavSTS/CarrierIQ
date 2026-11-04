@@ -1,6 +1,6 @@
-"""CarrierSafetyScan's own invoices (stored here, in Supabase Postgres), paid by card through Stripe
-Checkout. A Compliance tab service the client pays for gets an invoice; Stripe's webhook marks it
-paid (or refunded). Card details only ever go to Stripe.
+"""Carrier Safety Scan's own invoices (stored here, in Supabase Postgres), paid by card through
+Stripe Checkout. A Compliance tab service the client pays for gets an invoice; Stripe's webhook
+marks it paid (or refunded). Card details only ever go to Stripe.
 
 Numbers come from the `invoice_number_seq` sequence, starting at 1001.
 """

@@ -80,7 +80,7 @@ def send_message(
         f"USDOT: {data.usdot}" if data.usdot else "",
     ]
     body = (
-        "New message from the CarrierSafetyScan Contact Us page. Reply to the visitor at the "
+        "New message from the Carrier Safety Scan Contact Us page. Reply to the visitor at the "
         "email above; replying to this email won't reach them.\n\n"
         + "\n".join(line for line in details if line)
         + f"\n\n{data.message}"
@@ -90,7 +90,7 @@ def send_message(
             to=to,
             subject=f"Contact Us: {name}",
             text=body,
-            html=render_html(body, None, "", footer="CarrierSafetyScan Contact Us page"),
+            html=render_html(body, None, "", footer="Carrier Safety Scan Contact Us page"),
             idempotency_key=f"contact-{secrets.token_hex(12)}",
         )
     except Exception as exc:  # noqa: BLE001 - the visitor is told, and given the phone number

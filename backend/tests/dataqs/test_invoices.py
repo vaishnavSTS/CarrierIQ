@@ -1,4 +1,4 @@
-"""CarrierSafetyScan invoices: who sees them, paying an unpaid one, voiding, and Stripe's webhook
+"""Carrier Safety Scan invoices: who sees them, paying an unpaid one, voiding, and Stripe's webhook
 marking them paid (emails sent once) or refunded. Signatures follow Stripe's scheme."""
 
 import hashlib

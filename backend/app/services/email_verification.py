@@ -16,7 +16,7 @@ from app.services.dataqs_notifications import render_html
 
 logger = logging.getLogger(__name__)
 
-FOOTER = "Sky Transport Solutions · CarrierSafetyScan"
+FOOTER = "Sky Transport Solutions · Carrier Safety Scan"
 
 
 @dataclass(frozen=True)
@@ -38,7 +38,7 @@ def verification_email(user: User, token: str, hours: int) -> VerificationEmail:
     body = (
         f"Hi {first_name},\n\n"
         f"Please confirm that {user.email} is your email address to finish creating your "
-        "CarrierSafetyScan account. Your free trial starts once you do.\n\n"
+        "Carrier Safety Scan account. Your free trial starts once you do.\n\n"
         f"The link below expires in {hours} hours. If you didn't sign up, you can ignore this "
         "email."
     )
@@ -49,7 +49,7 @@ def verification_email(user: User, token: str, hours: int) -> VerificationEmail:
     return VerificationEmail(
         user_id=user.id,
         to=to,
-        subject="Confirm your email for CarrierSafetyScan",
+        subject="Confirm your email for Carrier Safety Scan",
         text=f"{body}\n\n{link}",
         html=render_html(body, link, "Confirm my email", footer=FOOTER),
     )

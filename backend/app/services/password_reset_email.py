@@ -17,7 +17,7 @@ from app.services.dataqs_notifications import render_html
 
 logger = logging.getLogger(__name__)
 
-FOOTER = "Sky Transport Solutions · CarrierSafetyScan"
+FOOTER = "Sky Transport Solutions · Carrier Safety Scan"
 
 
 @dataclass(frozen=True)
@@ -38,7 +38,7 @@ def password_reset_email(user: User, token: str, minutes: int) -> PasswordResetE
     link = f"{settings.public_app_url.rstrip('/')}/reset-password#token={token}"
     body = (
         f"Hi {first_name},\n\n"
-        f"We got a request to reset the password for your CarrierSafetyScan account "
+        f"We got a request to reset the password for your Carrier Safety Scan account "
         f"({user.email}). Use the link below to choose a new one. It works once and expires in "
         f"{minutes} minutes.\n\n"
         "If you didn't ask for this, you can ignore this email: your password stays the same."
@@ -55,7 +55,7 @@ def password_reset_email(user: User, token: str, minutes: int) -> PasswordResetE
     return PasswordResetEmail(
         user_id=user.id,
         to=to,
-        subject="Reset your CarrierSafetyScan password",
+        subject="Reset your Carrier Safety Scan password",
         text=f"{body}\n\n{link}",
         html=render_html(body, link, "Reset my password", footer=FOOTER),
     )

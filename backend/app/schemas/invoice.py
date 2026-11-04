@@ -1,4 +1,4 @@
-"""CarrierSafetyScan invoices (paid through Stripe)."""
+"""Carrier Safety Scan invoices (paid through Stripe)."""
 
 from datetime import datetime
 from decimal import Decimal

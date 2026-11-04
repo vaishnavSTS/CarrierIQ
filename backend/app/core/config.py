@@ -12,7 +12,7 @@ DEV_AUTH_SECRET_KEY = "local-development-only-key-never-use-in-production"
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    app_name: str = "CarrierSafetyScan API"
+    app_name: str = "Carrier Safety Scan API"
     environment: str = "local"
     log_level: str = "INFO"
 
@@ -152,7 +152,7 @@ class Settings(BaseSettings):
         "https://skytransportsolutions.com/api/appointment-schedule-link.ashx"
     )
     sts_schedule_link_token: str | None = None
-    # Paying for a Compliance tab service: CarrierSafetyScan's own invoice, paid on Stripe
+    # Paying for a Compliance tab service: Carrier Safety Scan's own invoice, paid on Stripe
     # Checkout. Off until the secret key is set (sk_test_... while testing). The webhook
     # (PUBLIC_API_URL/api/v1/webhooks/stripe) needs its signing secret (whsec_...).
     stripe_secret_key: str | None = None

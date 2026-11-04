@@ -9,7 +9,7 @@ class VinCarrierOut(BaseModel):
     """Another USDOT number the same VIN was inspected under."""
 
     usdot_number: int
-    legal_name: str | None  # only when that carrier is loaded in CarrierSafetyScan
+    legal_name: str | None  # only when that carrier is loaded in Carrier Safety Scan
     inspections: int
     first_seen: date
     last_seen: date

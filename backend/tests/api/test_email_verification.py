@@ -78,7 +78,7 @@ def test_sign_up_waits_for_the_email(api: TestClient, sender: FakeSender) -> Non
 
     assert get_settings().auth_cookie_name not in api.cookies  # not logged in
     assert api.get("/api/v1/auth/me").status_code == 401
-    assert [e["subject"] for e in sender.sent] == ["Confirm your email for CarrierSafetyScan"]
+    assert [e["subject"] for e in sender.sent] == ["Confirm your email for Carrier Safety Scan"]
     assert sender.sent[0]["to"] == [EMAIL]
 
     refused = api.post(LOGIN, json={"email": EMAIL, "password": PASSWORD})
@@ -106,7 +106,7 @@ def test_the_link_logs_in_starts_the_trial_and_welcomes(
     assert api.get("/api/v1/auth/me").status_code == 200
     assert user.email_verified_at is not None
     assert user.trial_ends_at > datetime.now(UTC) + timedelta(days=29)
-    assert sender.sent[-1]["subject"] == "Welcome to CarrierSafetyScan"
+    assert sender.sent[-1]["subject"] == "Welcome to Carrier Safety Scan"
 
 
 def test_a_used_link_never_logs_in_again(api: TestClient, sender: FakeSender) -> None:

@@ -1,4 +1,4 @@
-"""A company that uses CarrierSafetyScan: STS itself (internal portal), an STS client (client
+"""A company that uses Carrier Safety Scan: STS itself (internal portal), an STS client (client
 portal) or a freight brokerage (broker portal).
 
 Every user belongs to one organization; the organization's kind decides which portal its users

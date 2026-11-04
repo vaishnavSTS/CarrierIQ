@@ -1,7 +1,7 @@
 """The partner API's one answer: a carrier's Estimated ISS for a month, and nothing else.
 
 A score already saved for that USDOT and month (an `IssSnapshot`) is returned as it is. If there
-is none and the month is the newest one CarrierSafetyScan has FMCSA's tables for, the carrier is
+is none and the month is the newest one Carrier Safety Scan has FMCSA's tables for, the carrier is
 fetched from FMCSA, the score is calculated, and it is saved (`iss_for` saves each new result),
 so the next request for that month reads it from the database. Older months can't be calculated
 again: the national tables for them are not kept.

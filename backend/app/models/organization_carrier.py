@@ -1,7 +1,7 @@
 """A USDOT number a client organization operates, as shown in its client portal.
 
-Keyed by USDOT number rather than carriers.id: a client can name a carrier CarrierSafetyScan has not
-loaded yet. The client portal shows every linked carrier at once (public FMCSA data only); STS
+Keyed by USDOT number rather than carriers.id: a client can name a carrier Carrier Safety Scan has
+not loaded yet. The client portal shows every linked carrier at once (public FMCSA data only); STS
 checks a new sign-up's company, phone and email against FMCSA on the Accounts page. `verified`
 is true for carriers STS linked itself.
 """

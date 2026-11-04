@@ -64,7 +64,7 @@ class DataQsEventOut(BaseModel):
     vehicle_oos: bool
     driver_oos: bool
     violations: list[DataQsViolationOut]
-    source_observed_at: datetime | None  # when CarrierSafetyScan last loaded it from FMCSA
+    source_observed_at: datetime | None  # when Carrier Safety Scan last loaded it from FMCSA
 
 
 class ReasonOut(BaseModel):
@@ -595,7 +595,7 @@ class DataQsIssueOut(BaseModel):
     outcome: DataQsOutcome | None
     evidence_count: int
     checklist: list[str]
-    # Phase 6, for a corrected issue: the decision, then FMCSA's record, then CarrierSafetyScan.
+    # Phase 6, for a corrected issue: the decision, then FMCSA's record, then Carrier Safety Scan.
     decided_at: datetime | None = None
     verification_status: DataQsVerificationStatus | None = None
     verification_note: str | None = None  # what the check saw (clients: not STS's own proof)

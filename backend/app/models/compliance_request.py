@@ -38,7 +38,7 @@ class ComplianceRequest(IdMixin, UpdatedAtMixin, Base):
     invoice_id: Mapped[int | None] = mapped_column(
         BigInteger, ForeignKey("invoices.id"), index=True
     )
-    # Before CarrierSafetyScan's own invoices (2026-10-27): the STS website's invoice, kept.
+    # Before Carrier Safety Scan's own invoices (2026-10-27): the STS website's invoice, kept.
     sts_invoice_id: Mapped[int | None] = mapped_column(BigInteger)
     sts_invoice_no: Mapped[int | None] = mapped_column(BigInteger)
     sts_payment_url: Mapped[str | None] = mapped_column(Text)

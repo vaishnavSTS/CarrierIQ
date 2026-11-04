@@ -17,7 +17,7 @@ from app.services.subscription import MONTHLY_PRICE
 
 logger = logging.getLogger(__name__)
 
-FOOTER = "Sky Transport Solutions · CarrierSafetyScan"
+FOOTER = "Sky Transport Solutions · Carrier Safety Scan"
 
 CLIENT_FEATURES = (
     "- See your carrier's safety scores, inspections and violations, from FMCSA's own records\n"
@@ -61,14 +61,14 @@ def welcome_email(user: User, company: str) -> WelcomeEmail:
     )
     body = (
         f"Hi {first_name},\n\n"
-        f"Welcome to CarrierSafetyScan, by Sky Transport Solutions. The account for {company} "
+        f"Welcome to Carrier Safety Scan, by Sky Transport Solutions. The account for {company} "
         f"is ready, and you can log in any time with {user.email}.\n\n"
         f"What you can do:\n{features}"
     )
     if user.trial_ends_at is not None:
         body += (
             f"\n\nYour free trial runs until {_date(user.trial_ends_at)}. After that it's "
-            f"${MONTHLY_PRICE:.0f} a month to keep using CarrierSafetyScan; cancel anytime."
+            f"${MONTHLY_PRICE:.0f} a month to keep using Carrier Safety Scan; cancel anytime."
         )
     body += "\n\nQuestions? Just reply to this email and the STS team will help.\n\nWelcome aboard!"
     to = [user.email]
@@ -78,9 +78,9 @@ def welcome_email(user: User, company: str) -> WelcomeEmail:
     return WelcomeEmail(
         user_id=user.id,
         to=to,
-        subject="Welcome to CarrierSafetyScan",
+        subject="Welcome to Carrier Safety Scan",
         text=f"{body}\n\n{link}",
-        html=render_html(body, link, "Open CarrierSafetyScan", footer=FOOTER),
+        html=render_html(body, link, "Open Carrier Safety Scan", footer=FOOTER),
     )
 
 
