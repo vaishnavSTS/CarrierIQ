@@ -194,13 +194,10 @@ function CountPill({ tone, count, label }: { tone: TileTone; count: number; labe
 }
 
 function Tile({ tile, facts }: { tile: BasicTile; facts: string[] }) {
-  const { box, icon, title, Icon } = TONE[tile.tone]
+  const { box, title } = TONE[tile.tone]
   return (
     <div className={`break-inside-avoid rounded-lg border-l-4 px-3 py-2.5 ${box}`}>
-      <div className="flex items-center gap-1.5">
-        <Icon className={`size-4 shrink-0 ${icon}`} aria-hidden />
-        <span className="text-sm font-semibold text-slate-900">{tile.label}</span>
-      </div>
+      <div className="text-sm font-semibold text-slate-900">{tile.label}</div>
       <div className={`mt-1 text-sm font-semibold ${title}`}>{tile.status}</div>
       {tile.note && (
         <div className="mt-0.5 text-[11px] leading-snug text-slate-600">{tile.note}</div>
@@ -757,7 +754,6 @@ export function PacketDocument({
                 : 'Solutions on improving the Safety Score'
             }
           />
-          <SolutionsBox steps={plan} />
 
           {whereFrom}
 
