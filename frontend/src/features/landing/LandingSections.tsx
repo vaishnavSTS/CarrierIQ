@@ -52,7 +52,7 @@ export function HeroTryForm() {
           type="submit"
           className="rounded-xl bg-[var(--hero-cta)] px-5 py-3 text-sm font-medium text-[var(--hero-cta-ink)] transition-colors hover:bg-[var(--hero-cta-hover)]"
         >
-          Try Now
+          Free trial
         </button>
       </div>
       <p className="mt-2.5 text-center text-xs text-white/90 lg:text-left">
