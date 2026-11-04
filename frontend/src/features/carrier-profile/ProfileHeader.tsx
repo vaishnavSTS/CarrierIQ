@@ -86,7 +86,10 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
         )}
       </p>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* The status cards in one row on a wide screen (staff and brokers also get Review status). */}
+      <div
+        className={`mt-4 grid gap-3 sm:grid-cols-2 ${client ? 'lg:grid-cols-4' : 'lg:grid-cols-5'}`}
+      >
         <IssHeaderCard usdotNumber={profile.usdot_number} />
         <HeaderCard
           label="Authority"
@@ -142,12 +145,14 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
               <Link
                 to="?tab=intelligence"
                 replace
-                className="flex items-center gap-2 hover:underline"
+                className="flex flex-wrap items-center gap-x-2 gap-y-1 hover:underline"
               >
-                <StatusBadge
-                  label={reviewLabel(profile.review_status, profile.open_signal_count) ?? ''}
-                  tone={severityTone(profile.highest_open_severity ?? 'LOW')}
-                />
+                <span className="whitespace-nowrap">
+                  <StatusBadge
+                    label={reviewLabel(profile.review_status, profile.open_signal_count) ?? ''}
+                    tone={severityTone(profile.highest_open_severity ?? 'LOW')}
+                  />
+                </span>
                 {profile.highest_open_severity && (
                   <span className="text-xs text-slate-500">
                     highest: {profile.highest_open_severity.toLowerCase()}

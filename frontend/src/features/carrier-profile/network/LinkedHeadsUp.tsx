@@ -36,11 +36,7 @@ export function LinkedHeadsUp({ usdotNumber }: { usdotNumber: number }) {
   const inactive = linked.some((c) => c.status === 'INACTIVE')
   const names = linked.slice(0, NAMED)
   return (
-    <HeaderCard
-      label="Linked carriers"
-      source="FMCSA Company Census"
-      className="sm:col-span-2 lg:col-span-4"
-    >
+    <HeaderCard label="Linked carriers" source="FMCSA Company Census" className="col-span-full">
       <Link
         to="?tab=network"
         replace

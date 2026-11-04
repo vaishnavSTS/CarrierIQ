@@ -775,6 +775,20 @@ export function PacketDocument({
           </ul>
         </div>
 
+        {/* The notes, after the green items (they fill the space the next section leaves). */}
+        <p className="text-[11px] text-slate-500">
+          Percentile: how the carrier ranks against similar carriers; 0 is best, 100 is worst.
+          Threshold: the percentile at which FMCSA may step in. Measure: violation points divided by
+          inspections, or by fleet size and miles.
+        </p>
+        <p className="text-[11px] text-slate-500">
+          The Estimated ISS is CarrierSafetyScan’s estimate from public FMCSA data using FMCSA’s
+          published methods; it is not FMCSA’s official ISS or a safety rating, and this report is
+          not a recommendation to use or avoid any carrier. Generated{' '}
+          {formatLocalDate(generated.toISOString())} from public FMCSA and NHTSA records (FMCSA data
+          refreshed {formatLocalDate(profile.last_refreshed_at)}).
+        </p>
+
         <div className="space-y-2">
           <SectionHeading
             aside={`FMCSA safety data (SMS)${sms?.snapshot_month ? ` ${new Date(`${sms.snapshot_month}T00:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} results` : ''} · 24 months · thresholds are FMCSA’s`}
@@ -786,20 +800,7 @@ export function PacketDocument({
               <Tile key={t.key} tile={t} facts={tileFacts(t.key, sms, drivers)} />
             ))}
           </div>
-          <p className="text-[11px] text-slate-500">
-            Percentile: how the carrier ranks against similar carriers; 0 is best, 100 is worst.
-            Threshold: the percentile at which FMCSA may step in. Measure: violation points divided
-            by inspections, or by fleet size and miles.
-          </p>
         </div>
-
-        <p className="text-[11px] text-slate-500">
-          The Estimated ISS is CarrierSafetyScan’s estimate from public FMCSA data using FMCSA’s
-          published methods; it is not FMCSA’s official ISS or a safety rating, and this report is
-          not a recommendation to use or avoid any carrier. Generated{' '}
-          {formatLocalDate(generated.toISOString())} from public FMCSA and NHTSA records (FMCSA data
-          refreshed {formatLocalDate(profile.last_refreshed_at)}).
-        </p>
       </Sheet>
 
       {/* The rest of the plan, and where the violations come from */}
