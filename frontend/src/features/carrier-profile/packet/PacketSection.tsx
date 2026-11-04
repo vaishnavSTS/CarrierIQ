@@ -11,7 +11,7 @@ import { createPortal } from 'react-dom'
 
 import { useCarrierAuthority } from '../../../hooks/useCarrierAuthority'
 import { useCarrierEquipment } from '../../../hooks/useCarrierEquipment'
-import { useCarrierSafety, useLatestCarrierInspections } from '../../../hooks/useCarrierSafety'
+import { useAllCarrierInspections, useCarrierSafety } from '../../../hooks/useCarrierSafety'
 import { useCarrierNetwork } from '../../../hooks/useNetwork'
 import { usePortalMode } from '../../../hooks/usePortalMode'
 import type { Portal } from '../../../types/auth'
@@ -226,33 +226,28 @@ function ItemBox({
   /** A red item's fix, shown right under it in place of "What usually fixes it" */
   solution?: { title: string | null; how: string } | null
 }) {
-  const { box, icon, title, Icon } = TONE[tone]
+  // No icon before the title: the box's colour and its section heading say what it is.
+  const { box, title } = TONE[tone]
   return (
-    <li className={`break-inside-avoid rounded-lg border-l-4 px-3 py-2 ${box}`}>
-      <div className="flex items-start gap-2">
-        <Icon className={`mt-0.5 size-4 shrink-0 ${icon}`} aria-hidden />
-        <div className="min-w-0 text-sm">
-          <div className={`font-semibold ${title}`}>{item.title}</div>
-          {item.detail && <p className="mt-0.5 text-slate-700">{item.detail}</p>}
-          {solution ? (
-            <p className="mt-1.5 rounded-md border border-emerald-200 bg-white/80 px-2.5 py-1 text-slate-700">
-              <span className="font-semibold text-emerald-700">How to fix it: </span>
-              {solution.title && (
-                <span className="font-semibold text-slate-900">{solution.title}. </span>
-              )}
-              {solution.how}
-            </p>
-          ) : (
-            item.fix && (
-              <p className="mt-1 text-xs text-slate-600">
-                <span className="font-semibold text-slate-800">What usually fixes it:</span>{' '}
-                {item.fix}
-              </p>
-            )
+    <li className={`break-inside-avoid rounded-lg border-l-4 px-3 py-2 text-sm ${box}`}>
+      <div className={`font-semibold ${title}`}>{item.title}</div>
+      {item.detail && <p className="mt-0.5 text-slate-700">{item.detail}</p>}
+      {solution ? (
+        <p className="mt-1.5 rounded-md border border-emerald-200 bg-white/80 px-2.5 py-1 text-slate-700">
+          <span className="font-semibold text-emerald-700">How to fix it: </span>
+          {solution.title && (
+            <span className="font-semibold text-slate-900">{solution.title}. </span>
           )}
-          {tone !== 'green' && <FixWithSky topic={item.title} />}
-        </div>
-      </div>
+          {solution.how}
+        </p>
+      ) : (
+        item.fix && (
+          <p className="mt-1 text-xs text-slate-600">
+            <span className="font-semibold text-slate-800">What usually fixes it:</span> {item.fix}
+          </p>
+        )
+      )}
+      {tone !== 'green' && <FixWithSky topic={item.title} />}
     </li>
   )
 }
@@ -329,10 +324,8 @@ export interface PacketData {
   equipment: CarrierEquipment
   safety: CarrierSafety | null
   portal: Portal
-  /** The latest inspections on file, newest first, listed at the end; null: not loaded */
+  /** Every inspection on file, newest first, listed at the end; null: not loaded */
   inspections?: InspectionDetail[] | null
-  /** How many inspections are on file in all */
-  inspectionTotal?: number
 }
 
 /**
@@ -349,7 +342,6 @@ export function PacketDocument({
   safety,
   portal,
   inspections = null,
-  inspectionTotal,
 }: PacketData) {
   const client = portal === 'client'
   const whose = client ? 'your' : 'this carrier’s'
@@ -461,9 +453,7 @@ export function PacketDocument({
 
   const whereFrom = driverRows.length > 0 && (
     <div className="space-y-2">
-      <SectionHeading aside="FMCSA safety data: how serious each violation is and how recent">
-        Where the violations come from
-      </SectionHeading>
+      <SectionHeading>Where the violations come from</SectionHeading>
       {summary && <p className="text-sm text-slate-700">{summary}</p>}
       <ScrollX>
         <table className="w-full text-sm">
@@ -507,9 +497,7 @@ export function PacketDocument({
   // Patterns in the violations: on page 2, or at the top of page 3 when page 2 is full.
   const patterns = (truck || repeats.length > 0) && (
     <div className="space-y-2">
-      <SectionHeading aside="FMCSA safety data, last 24 months" tone="amber">
-        Patterns in the violations
-      </SectionHeading>
+      <SectionHeading tone="amber">Patterns in the violations</SectionHeading>
       {truck && (
         <ul>
           <ItemBox
@@ -612,10 +600,7 @@ export function PacketDocument({
 
         {/* Ranked by how much each matters: red (each with its fix), then yellow, then green. */}
         <div className="space-y-2">
-          <SectionHeading
-            aside="Each item names its FMCSA record"
-            tone={hurting.length ? 'red' : 'green'}
-          >
+          <SectionHeading tone={hurting.length ? 'red' : 'green'}>
             What’s hurting {whose} safety score
           </SectionHeading>
           {hurting.length === 0 ? (
@@ -641,12 +626,7 @@ export function PacketDocument({
 
         {redFlags.length > 0 && (
           <div className="space-y-2">
-            <SectionHeading
-              aside="Doesn’t feed the Estimated ISS; a broker’s check may stop on these"
-              tone="red"
-            >
-              Broker red flags
-            </SectionHeading>
+            <SectionHeading tone="red">Broker red flags</SectionHeading>
             <ul data-split className="space-y-2">
               {redFlags.map((item) => (
                 <ItemBox key={item.key} tone="red" item={item} solution={solutionFor(item)} />
@@ -658,8 +638,8 @@ export function PacketDocument({
         {/* The out-of-service rates and counts: on the first page, after the red items. */}
         <div className="grid gap-5 wide:grid-cols-[1.4fr_1fr]">
           <div className="space-y-3">
-            <SectionHeading aside={`Last ${recent?.months ?? 24} months`}>
-              Out-of-service rates
+            <SectionHeading>
+              Out-of-service rates, last {recent?.months ?? 24} months
             </SectionHeading>
             {recent ? (
               <>
@@ -710,9 +690,7 @@ export function PacketDocument({
 
         {roadside.length > 0 && (
           <div className="space-y-2">
-            <SectionHeading aside="Doesn’t feed the Estimated ISS directly" tone="amber">
-              Roadside risk
-            </SectionHeading>
+            <SectionHeading tone="amber">Roadside risk</SectionHeading>
             <ul data-split className="space-y-2">
               {roadside.map((item) => (
                 <ItemBox key={item.key} tone="amber" item={item} />
@@ -733,23 +711,13 @@ export function PacketDocument({
         )}
 
         <div className="space-y-2">
-          <SectionHeading
-            tone="green"
-            aside={
-              red.length + roadside.length + watch.length > 0
-                ? 'These records are in order'
-                : 'Each item names its FMCSA record'
-            }
-          >
-            In good standing
-          </SectionHeading>
+          <SectionHeading tone="green">In good standing</SectionHeading>
           <ul data-split className="grid gap-2 wide:grid-cols-2">
             {good.map((item) => (
               <li
                 key={item.key}
                 className="flex break-inside-avoid items-start gap-2 rounded-lg border-l-4 border-emerald-600 bg-emerald-50 px-3 py-1.5 text-sm"
               >
-                <CircleCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" aria-hidden />
                 <span className="font-medium text-slate-900">{item.title}</span>
               </li>
             ))}
@@ -769,11 +737,7 @@ export function PacketDocument({
         </p>
 
         <div className="space-y-2">
-          <SectionHeading
-            aside={`FMCSA safety data (SMS)${sms?.snapshot_month ? ` ${new Date(`${sms.snapshot_month}T00:00:00`).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} results` : ''} · 24 months · thresholds are FMCSA’s`}
-          >
-            Safety categories (CSA BASICs)
-          </SectionHeading>
+          <SectionHeading>Safety categories (CSA BASICs)</SectionHeading>
           <div data-split className="grid gap-2 wide:grid-cols-3">
             {tiles.map((t) => (
               <Tile key={t.key} tile={t} facts={tileFacts(t.key, sms, drivers)} />
@@ -810,9 +774,7 @@ export function PacketDocument({
       >
         {toReview.length > 0 && (
           <div className="space-y-2">
-            <SectionHeading aside="FMCSA authority history" tone="amber">
-              History to review
-            </SectionHeading>
+            <SectionHeading tone="amber">History to review</SectionHeading>
             <p className="text-xs text-slate-600">
               Past actions on this carrier’s authority. A past action doesn’t show today’s status,
               so each line gives the status FMCSA lists now.
@@ -837,9 +799,7 @@ export function PacketDocument({
           </div>
         )}
         <div className="space-y-2">
-          <SectionHeading aside="FMCSA census, authority, insurance and BOC-3 filings; NHTSA vPIC">
-            Key facts
-          </SectionHeading>
+          <SectionHeading>Key facts</SectionHeading>
           <dl className="grid grid-cols-2 gap-x-5 gap-y-2.5 wide:grid-cols-4">
             <Fact label="USDOT status">
               {profile.registration_status && humanize(profile.registration_status.toLowerCase())}
@@ -927,7 +887,7 @@ export function PacketDocument({
           <div className="grid gap-5 wide:grid-cols-2">
             {events.length > 0 && (
               <div className="space-y-1.5">
-                <SectionHeading aside="FMCSA records">Recent significant events</SectionHeading>
+                <SectionHeading>Recent significant events</SectionHeading>
                 <ul className="space-y-1 text-sm text-slate-700">
                   {events.map((e) => (
                     <li key={`${e.event_type}-${e.event_date}-${e.title}`}>
@@ -943,9 +903,7 @@ export function PacketDocument({
             )}
             {linked.length > 0 && (
               <div className="space-y-1.5">
-                <SectionHeading aside="Relationships to review, not findings">
-                  Linked carriers
-                </SectionHeading>
+                <SectionHeading>Linked carriers</SectionHeading>
                 <ul className="space-y-1 text-sm text-slate-700">
                   {linked.slice(0, MAX_LINKED).map((c) => (
                     <li key={c.usdot_number}>
@@ -1009,11 +967,11 @@ export function PacketDocument({
       {listed && (
         <Sheet
           index={(improve ? 3 : 2) + (record ? (twoRecordPages ? 2 : 1) : 0)}
-          title="Latest inspections"
+          title="All inspections"
           carrier={carrier}
           contact={contact.inspections}
         >
-          <InspectionList inspections={inspections} total={inspectionTotal ?? inspections.length} />
+          <InspectionList inspections={inspections} />
         </Sheet>
       )}
     </>
@@ -1026,7 +984,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
   const network = useCarrierNetwork(profile.usdot_number)
   const equipment = useCarrierEquipment(profile.usdot_number)
   const safety = useCarrierSafety(profile.usdot_number)
-  const inspections = useLatestCarrierInspections(profile.usdot_number)
+  const inspections = useAllCarrierInspections(profile.usdot_number)
   const portal = usePortalMode()
   const printCopy = useRef<HTMLDivElement>(null)
   const printPages = useRef<HTMLDivElement>(null)
@@ -1084,8 +1042,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
       equipment={equipment.data}
       safety={safety.data ?? null}
       portal={portal}
-      inspections={inspections.data?.inspections ?? null}
-      inspectionTotal={inspections.data?.total}
+      inspections={inspections.data ?? null}
     />
   )
   return (

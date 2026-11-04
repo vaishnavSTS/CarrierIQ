@@ -11,19 +11,15 @@ import type { Solution } from './solutions'
 export function SolutionsBox({
   steps,
   title = 'Solutions on improving the Safety Score',
-  aside = 'Suggestions from this report’s FMCSA records',
 }: {
   steps: Solution[]
   title?: string
-  aside?: string
 }) {
   const printed = useContext(PrintCopy)
   if (steps.length === 0) return null
   return (
     <div className="space-y-2">
-      <SectionHeading aside={aside} tone="green">
-        {title}
-      </SectionHeading>
+      <SectionHeading tone="green">{title}</SectionHeading>
       <ol
         className={`grid gap-2 ${printed ? 'grid-cols-2' : 'wide:grid-cols-2'}`}
         aria-label="Steps to improve the Safety Score"

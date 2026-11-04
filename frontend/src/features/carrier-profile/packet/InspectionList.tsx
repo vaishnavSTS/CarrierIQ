@@ -5,12 +5,6 @@ import { violationText } from './recordDetail'
 import { ScrollX } from './ScrollX'
 import { SectionHeading } from './SectionHeading'
 
-const month = (value: string) =>
-  new Date(`${value.slice(0, 10)}T00:00:00`).toLocaleDateString('en-US', {
-    month: 'short',
-    year: 'numeric',
-  })
-
 /** FMCSA's location often already ends with the state ("MARSING ID"), or is only the state. */
 function where(i: InspectionDetail): string {
   const location = i.location?.trim()
@@ -28,29 +22,22 @@ function outOfService(i: InspectionDetail): string {
 }
 
 /**
- * The end of the Safety Score Report: the carrier's latest inspections, one by one, newest first,
- * with each violation FMCSA recorded (all of them are on the Inspections tab). In print it runs
- * over as many pages as it needs, split between inspections (printFit.ts).
+ * The end of the Safety Score Report: every inspection on file for the carrier, one by one, newest
+ * first, with each violation FMCSA recorded. In print it runs over as many pages as it needs,
+ * split between inspections (printFit.ts).
  */
 export function InspectionList({
   inspections,
-  total,
 }: {
-  /** The latest ones, newest first */
+  /** Every inspection on file, newest first */
   inspections: InspectionDetail[]
-  /** How many are on file in all */
-  total: number
 }) {
-  const newest = inspections[0]?.inspection_date
-  const oldest = inspections[inspections.length - 1]?.inspection_date
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 
   return (
     <div className="space-y-2">
-      <SectionHeading
-        aside={`FMCSA inspection file${newest && oldest ? ` · ${month(oldest)} to ${month(newest)}` : ''}`}
-      >
-        {total > inspections.length ? `Latest ${inspections.length} inspections` : 'Inspections'}
+      <SectionHeading>
+        {inspections.length === 1 ? '1 inspection' : `All ${inspections.length} inspections`}
       </SectionHeading>
       <ScrollX>
         {/* Split between inspections when it runs past a printed page (printFit.ts). */}

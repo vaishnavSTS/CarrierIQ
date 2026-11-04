@@ -71,7 +71,6 @@ export function RecordPage({
   const steps = improvementSteps(inspections).slice(0, MAX_STEPS)
   const codes = violationRows(inspections)
   const heaviest = heaviestViolations(inspections)
-  const clean = Math.max(0, (safety.sms?.inspections ?? 0) - inspections.length)
   const crashes = (safety.crashes?.crashes ?? []).filter(
     (c) => new Date(c.report_date) >= new Date(Date.now() - 730 * 24 * 3600 * 1000),
   )
@@ -82,12 +81,7 @@ export function RecordPage({
         <>
           <div className="grid gap-5 wide:grid-cols-[1.15fr_1fr]">
             <div className="space-y-2">
-              <SectionHeading
-                tone="green"
-                aside="Newer violations count more: 3× for 6 months, 2× to 12 months, 1× to 24 months; applied at FMCSA’s next monthly update"
-              >
-                When {whose} score improves on its own
-              </SectionHeading>
+              <SectionHeading tone="green">When {whose} score improves on its own</SectionHeading>
               {steps.length === 0 ? (
                 <p className="text-sm text-slate-600">
                   No violations in FMCSA’s 24-month window, so nothing is waiting to drop off.
@@ -177,11 +171,7 @@ export function RecordPage({
 
           {codes.length > 0 && (
             <div className="space-y-2">
-              <SectionHeading
-                aside={`FMCSA safety data · ${codes.reduce((n, r) => n + r.count, 0)} violations`}
-              >
-                Violation summary
-              </SectionHeading>
+              <SectionHeading>Violation summary</SectionHeading>
               <ScrollX>
                 <table className="w-full text-sm">
                   <thead>
@@ -233,11 +223,7 @@ export function RecordPage({
       {part !== 'summary' && (
         <>
           <div className="space-y-2">
-            <SectionHeading
-              aside={`${inspections.length} with violations · ${clean} without, in FMCSA’s 24 months`}
-            >
-              Inspection history
-            </SectionHeading>
+            <SectionHeading>Inspection history</SectionHeading>
             {inspections.length === 0 ? (
               <p className="text-sm text-slate-600">
                 {safety.sms_inspections === null || safety.sms_inspections === undefined
@@ -342,7 +328,7 @@ export function RecordPage({
 
           {crashes.length > 0 && (
             <div className="space-y-1.5">
-              <SectionHeading aside="FMCSA Crash File · 24 months">Crashes</SectionHeading>
+              <SectionHeading>Crashes, last 24 months</SectionHeading>
               <ul className="space-y-0.5 text-sm text-slate-700">
                 {crashes.slice(0, MAX_CRASHES).map((c) => (
                   <li key={c.report_number}>

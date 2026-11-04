@@ -1,6 +1,6 @@
 // Opens the Safety Score Report of the 20 real carriers in the ISS fixtures, prints each to PDF and
 // compares it with the API: nothing cut off, no broken values, every A4 page fits and is numbered,
-// the latest 30 inspections are listed at the end, and the printed numbers match. It only reads,
+// every inspection on file is listed at the end, and the printed numbers match. It only reads,
 // so it sends no email. Point it at a local or test server, never at production with a real login.
 //
 //   REPORT_EMAIL=... REPORT_PASSWORD=... npm run report-check
@@ -215,8 +215,8 @@ function problemsIn(report, profile, safety, pdfPages, inspectionsOnFile) {
     }
   }
   if (pdfPages !== sizes.length) problems.push(`PDF has ${pdfPages} pages for ${sizes.length}`)
-  // The latest 30 are listed at the end (LATEST_INSPECTIONS in src/hooks/useCarrierSafety.ts).
-  if (listed !== Math.min(30, inspectionsOnFile)) {
+  // Every inspection on file is listed at the end (useAllCarrierInspections).
+  if (listed !== inspectionsOnFile) {
     problems.push(`${listed} inspections listed; ${inspectionsOnFile} on file`)
   }
   if (clipped.length) problems.push(`cut off: ${clipped.join(' | ')}`)
