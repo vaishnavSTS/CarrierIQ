@@ -123,6 +123,8 @@
 }
 
 :root {
+  /* Where sticky bars stop under a layout's own sticky header (layouts change it). */
+  --sticky-top: 3.5rem;
   color-scheme: light;
 }
 
@@ -251,35 +253,47 @@ body {
   --art-dark: #05080f;
 }
 
-/* The public pages' type: Bricolage Grotesque for headings, Manrope for text,
+/* The public pages' and portals' type: Bricolage Grotesque for headings, Manrope for text,
    Instrument Serif italic for the highlighted words (.font-accent) and JetBrains Mono for small
    labels and numbers (.font-label, font-mono). In @layer base so utilities still win. A carrier's
    page shown on a public page (Try Now) keeps the app font: .app-type. */
 @layer base {
-  .landing-page {
+  .landing-page,
+  .portal-type {
     --font-display: 'Bricolage Grotesque Variable', 'Manrope Variable', ui-sans-serif, system-ui,
       sans-serif;
     --font-body: 'Manrope Variable', ui-sans-serif, system-ui, sans-serif;
     --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-family: var(--font-body);
   }
-  .landing-page :is(h1, h2),
-  .landing-page .brand-name {
+  :is(.landing-page, .portal-type) :is(h1, h2),
+  :is(.landing-page, .portal-type) .brand-name {
     font-family: var(--font-display);
     font-optical-sizing: auto;
   }
-  .landing-page .app-type {
+  :is(.landing-page, .portal-type) :is(.app-type, #carrier-packet) {
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
       'Courier New', monospace;
     font-family: var(--font-sans);
   }
-  .landing-page .app-type :is(h1, h2) {
+  :is(.landing-page, .portal-type) :is(.app-type, #carrier-packet) :is(h1, h2) {
     font-family: inherit;
   }
 }
 /* Outside the layer, so it beats tracking-tight: Bricolage is wide-set already. */
-.landing-page :is(h1, h2) {
+:is(.landing-page, .portal-type) :is(h1, h2):not(#carrier-packet *) {
   letter-spacing: -0.012em;
+}
+
+/* The portals' sidebar: deep navy in both themes, with a soft glow at the top. */
+.portal-sidebar {
+  background: radial-gradient(80% 30% at 20% 0%, rgb(109 40 217 / 0.35), transparent 70%),
+    linear-gradient(180deg, #0b1440 0%, #060d24 100%);
+  border-right: 1px solid rgb(255 255 255 / 0.06);
+}
+:root[data-theme='dark'] .portal-sidebar {
+  background: radial-gradient(80% 30% at 20% 0%, rgb(255 138 31 / 0.12), transparent 70%),
+    linear-gradient(180deg, #08101f 0%, #03070f 100%);
 }
 .font-accent {
   font-family: 'Instrument Serif', Georgia, serif;

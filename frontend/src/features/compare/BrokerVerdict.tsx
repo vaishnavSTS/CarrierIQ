@@ -21,7 +21,7 @@ export function BrokerVerdict({ usdotNumber }: { usdotNumber: number }) {
   return (
     <section
       aria-label="Booking check"
-      className="rounded-lg border border-slate-200 bg-surface p-4"
+      className="rounded-2xl border border-slate-200 bg-surface p-5 shadow-sm"
     >
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-sm font-semibold text-slate-900">Booking check</h2>

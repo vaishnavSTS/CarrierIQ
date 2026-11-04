@@ -9,7 +9,7 @@ import { TalkToSky } from './TalkToSky'
 /** Landing, login and sign-up pages: no login needed. */
 export function PublicLayout() {
   return (
-    <div className="landing-page landing-rest relative isolate flex min-h-screen flex-col">
+    <div className="landing-page landing-rest relative isolate flex min-h-screen flex-col [--sticky-top:97px] sm:[--sticky-top:101px]">
       <ScrollToTop />
       <BackgroundSpotlight />
       <PublicHeader />

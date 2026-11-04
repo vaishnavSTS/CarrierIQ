@@ -140,7 +140,7 @@ export function CarrierProfilePage() {
       <div
         role="tablist"
         aria-label="Profile sections"
-        className="flex flex-wrap gap-1 border-b border-slate-200"
+        className="sticky top-[calc(var(--sticky-top)+0.5rem)] z-20 flex gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-surface/90 p-1.5 shadow-sm backdrop-blur [scrollbar-width:none] print:hidden"
       >
         {tabs.map(([id, label]) => (
           <button
@@ -151,10 +151,10 @@ export function CarrierProfilePage() {
             aria-selected={tab === id}
             aria-controls={`panel-${id}`}
             onClick={() => openTab(id)}
-            className={`-mb-px border-b-2 px-3 py-2 text-sm ${
+            className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm transition-colors ${
               tab === id
-                ? 'border-accent-strong font-medium text-slate-900'
-                : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-900'
+                ? 'bg-[#101853] font-semibold text-white shadow-sm'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
           >
             {label}

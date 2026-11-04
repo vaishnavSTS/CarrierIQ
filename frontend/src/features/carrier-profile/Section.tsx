@@ -15,12 +15,15 @@ export function Section({
   children: ReactNode
 }) {
   return (
-    <section id={id} className="scroll-mt-4 rounded-lg border border-slate-200 bg-surface">
-      <h2 className="flex flex-wrap items-baseline justify-between gap-x-3 border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-900">
+    <section
+      id={id}
+      className="scroll-mt-24 overflow-hidden rounded-2xl border border-slate-200 bg-surface shadow-sm"
+    >
+      <h2 className="flex flex-wrap items-baseline justify-between gap-x-3 border-b border-slate-100 px-5 py-4 text-base font-semibold text-slate-900">
         {title}
         {source && <SourceTag>{source}</SourceTag>}
       </h2>
-      <div className="p-4">{children}</div>
+      <div className="p-5">{children}</div>
     </section>
   )
 }

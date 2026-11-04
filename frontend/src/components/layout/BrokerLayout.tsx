@@ -1,86 +1,42 @@
 import { Columns3, Receipt, Search } from 'lucide-react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 
+import { SubscriptionGate } from '../../features/billing/SubscriptionGate'
 import { useCompareList } from '../../features/compare/compareContext'
 import { CompareProvider } from '../../features/compare/CompareProvider'
 import { CompareTray } from '../../features/compare/CompareTray'
-import { SubscriptionGate } from '../../features/billing/SubscriptionGate'
-import { PortalModeContext } from '../../hooks/usePortalMode'
-import { BackgroundSpotlight } from './BackgroundSpotlight'
-import { ScrollToTop } from './ScrollToTop'
-import { SiteFooter } from './SiteFooter'
-import { TalkToSky } from './TalkToSky'
-import { Brand } from './Brand'
 import { useMe } from '../../hooks/useAuth'
-import { MobileMenu } from './MobileMenu'
-import { UserMenu } from './UserMenu'
+import { PortalModeContext } from '../../hooks/usePortalMode'
+import { PortalShell } from './PortalShell'
 
-function navClass({ isActive }: { isActive: boolean }): string {
-  return `flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 ${
-    isActive
-      ? 'bg-accent-soft font-medium text-accent-strong'
-      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-  }`
-}
-
-function CompareNavLink() {
-  const count = useCompareList()?.usdots.length ?? 0
-  return (
-    <NavLink to="/broker/compare" className={navClass}>
-      <Columns3 className="size-4" aria-hidden />
-      Compare
-      {count > 0 && (
-        <span className="rounded-full bg-sky-600 px-1.5 text-xs font-medium text-surface tabular-nums">
-          {count}
-        </span>
-      )}
-    </NavLink>
-  )
-}
-
-/** Broker portal frame: search and compare carriers. */
+/** Broker portal frame (brokers and insurance agents): search and compare carriers. */
 export function BrokerLayout() {
-  const { data: me } = useMe()
-  const links = (
-    <>
-      <NavLink to="/broker" end className={navClass}>
-        <Search className="size-4" aria-hidden />
-        Search
-      </NavLink>
-      <CompareNavLink />
-      <NavLink to="/broker/invoices" className={navClass}>
-        <Receipt className="size-4" aria-hidden />
-        Invoices
-      </NavLink>
-    </>
-  )
   return (
     <CompareProvider page="/broker/compare">
-      <div className="portal-page relative isolate flex min-h-screen flex-col">
-        <ScrollToTop />
-        <BackgroundSpotlight />
-        <header className="sticky top-0 z-30 border-b border-slate-200 bg-canvas/85 backdrop-blur">
-          <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">
-            <Brand to="/broker" />
-            <span className="hidden rounded-md bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 xl:inline">
-              {me?.role === 'INSURANCE_AGENT' ? 'Insurance agent portal' : 'Broker portal'}
-            </span>
-            <nav className="ml-4 hidden items-center gap-1 text-sm lg:flex">{links}</nav>
-            <UserMenu />
-            <MobileMenu>{links}</MobileMenu>
-          </div>
-        </header>
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 pb-24">
-          <PortalModeContext.Provider value="broker">
-            <SubscriptionGate>
-              <Outlet />
-            </SubscriptionGate>
-          </PortalModeContext.Provider>
-        </main>
-        <SiteFooter />
-        <TalkToSky />
-        <CompareTray />
-      </div>
+      <BrokerFrame />
     </CompareProvider>
+  )
+}
+
+function BrokerFrame() {
+  const { data: me } = useMe()
+  const compared = useCompareList()?.usdots.length ?? 0
+  return (
+    <PortalShell
+      home="/broker"
+      label={me?.role === 'INSURANCE_AGENT' ? 'Insurance agent portal' : 'Broker portal'}
+      nav={[
+        { to: '/broker', label: 'Search carriers', icon: Search, end: true },
+        { to: '/broker/compare', label: 'Compare', icon: Columns3, badge: compared },
+        { to: '/broker/invoices', label: 'Invoices', icon: Receipt },
+      ]}
+    >
+      <PortalModeContext.Provider value="broker">
+        <SubscriptionGate>
+          <Outlet />
+        </SubscriptionGate>
+      </PortalModeContext.Provider>
+      <CompareTray />
+    </PortalShell>
   )
 }

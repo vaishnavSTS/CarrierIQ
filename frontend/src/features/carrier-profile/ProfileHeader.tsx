@@ -19,28 +19,38 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
   const dockets = profile.authority.dockets
   const client = useIsClientPortal()
   return (
-    <header className="rounded-lg border border-slate-200 bg-surface p-4">
+    <header className="relative overflow-hidden rounded-2xl border border-slate-200 bg-surface p-5 shadow-sm md:p-6">
+      {/* A thin strip of the brand colours along the top. */}
+      <div
+        aria-hidden
+        className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-violet-600 via-blue-600 to-amber-400"
+      />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">{profile.legal_name}</h1>
+          <h1 className="text-2xl font-semibold text-slate-950 md:text-3xl">
+            {profile.legal_name}
+          </h1>
           {profile.dba_name && <p className="text-sm text-slate-600">DBA {profile.dba_name}</p>}
-          <p className="mt-1 font-mono text-sm text-slate-700">
+          <p className="mt-3 flex flex-wrap items-center gap-2 font-mono text-xs text-slate-700">
             <a
               href={saferUrl(profile.usdot_number)}
               target="_blank"
               rel="noreferrer"
               title="Open the FMCSA SAFER Company Snapshot"
-              className="text-accent-strong hover:underline"
+              className="rounded-full bg-accent-soft px-3 py-1 font-semibold text-accent-strong hover:underline"
             >
               USDOT {profile.usdot_number}
             </a>
             {dockets.map((d) => (
-              <span key={`${d.prefix}${d.number}`} className="ml-3">
+              <span
+                key={`${d.prefix}${d.number}`}
+                className="rounded-full bg-slate-100 px-3 py-1 font-semibold text-slate-700"
+              >
                 {formatDocket(d.prefix, d.number)}
               </span>
             ))}
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-slate-500">
             Official records:{' '}
             <a
               href={saferUrl(profile.usdot_number)}
@@ -76,7 +86,7 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
         </div>
       </div>
 
-      <p className="mt-3 text-sm text-slate-700">
+      <p className="mt-4 max-w-4xl text-sm leading-relaxed text-slate-700">
         {carrierSummary(
           profile,
           profile.insurance.status
@@ -88,7 +98,7 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
 
       {/* The status cards in one row on a wide screen (staff and brokers also get Review status). */}
       <div
-        className={`mt-4 grid gap-3 sm:grid-cols-2 ${client ? 'lg:grid-cols-4' : 'lg:grid-cols-5'}`}
+        className={`mt-5 grid gap-3 sm:grid-cols-2 ${client ? 'lg:grid-cols-4' : 'lg:grid-cols-5'}`}
       >
         <IssHeaderCard usdotNumber={profile.usdot_number} />
         <HeaderCard

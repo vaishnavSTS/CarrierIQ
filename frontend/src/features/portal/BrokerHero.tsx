@@ -39,7 +39,7 @@ export function BrokerHero({
   children: ReactNode
 }) {
   return (
-    <section className="portal-hero relative isolate overflow-hidden rounded-2xl border border-white/15">
+    <section className="portal-hero relative isolate overflow-hidden rounded-3xl border border-white/15 shadow-xl">
       <HeroBoard signals={undefined} />
 
       <motion.div

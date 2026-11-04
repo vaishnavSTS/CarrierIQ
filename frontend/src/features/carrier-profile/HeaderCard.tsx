@@ -20,9 +20,11 @@ export function HeaderCard({
 }) {
   return (
     <div
-      className={`flex h-full flex-col gap-1.5 rounded-md border border-slate-200 bg-slate-50/60 px-3 py-2.5 ${className}`}
+      className={`flex h-full flex-col gap-2 rounded-xl border border-slate-200 bg-gradient-to-b from-surface to-slate-50/70 px-4 py-3 transition-shadow hover:shadow-md ${className}`}
     >
-      <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="font-label text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+        {label}
+      </div>
       <div className="flex flex-wrap items-center gap-2 text-sm">{children}</div>
       {source && (
         <div className="mt-auto pt-0.5">
