@@ -17,6 +17,8 @@ const PAGE_WIDTH = PAGE_WIDTH_MM * PX_PER_MM
  * items (it printed at 70-79% when every part had to fit one page).
  * Each page is laid out at the page width divided by this and scaled down with CSS zoom.
  */
+/** Rows a split section must have on its first page, or it starts on the next one. */
+const MIN_FIRST_ROWS = 3
 const SCALE = 0.92 // the on-screen report uses the same (index.css #carrier-packet)
 
 /** Where each report sheet landed: its first and last printed page, and the page count. */
@@ -182,6 +184,14 @@ function placeSplit(
         break
       }
       to += 1
+    }
+    // A section doesn't start at the foot of a page with only a row or two (a heading and one
+    // line, the rest overleaf): it starts on the next page instead.
+    const fewRows = from === 0 && to > 0 && to < Math.min(MIN_FIRST_ROWS, rows.length)
+    if (fewRows && body().children.length > 1) {
+      copy.remove()
+      newPage()
+      continue
     }
     if (to === from) {
       if (body().children.length > 1) {
