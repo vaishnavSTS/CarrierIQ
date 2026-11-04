@@ -795,8 +795,10 @@ export function PacketDocument({
 
         <p className="text-[11px] text-slate-500">
           The Estimated ISS is CarrierSafetyScan’s estimate from public FMCSA data using FMCSA’s
-          published methods; it is not FMCSA’s official ISS or a safety rating. Details and sources
-          at the end of “Record and sources”.
+          published methods; it is not FMCSA’s official ISS or a safety rating, and this report is
+          not a recommendation to use or avoid any carrier. Generated{' '}
+          {formatLocalDate(generated.toISOString())} from public FMCSA and NHTSA records (FMCSA data
+          refreshed {formatLocalDate(profile.last_refreshed_at)}).
         </p>
       </Sheet>
 
@@ -819,10 +821,10 @@ export function PacketDocument({
         </Sheet>
       )}
 
-      {/* The record: authority history, key facts, events, linked carriers, sources */}
+      {/* The record: authority history, key facts, events, linked carriers */}
       <Sheet
         index={improve ? 2 : 1}
-        title="Record and sources"
+        title="Carrier record"
         carrier={carrier}
         contact={contact.record}
       >
@@ -987,37 +989,6 @@ export function PacketDocument({
             )}
           </div>
         )}
-
-        <footer className="space-y-1.5 border-t border-slate-200 pt-3 text-[11px] leading-relaxed text-slate-500">
-          <p>
-            Generated {formatLocalDate(generated.toISOString())} from public FMCSA and NHTSA records
-            (FMCSA data refreshed {formatLocalDate(profile.last_refreshed_at)}). This Safety Score
-            Report shows what the records show; it is not an FMCSA safety rating and not a
-            recommendation to use or avoid any carrier. The Estimated ISS is CarrierSafetyScan’s
-            estimate from public FMCSA data using FMCSA’s published methods, not FMCSA’s official
-            ISS.
-          </p>
-          <p>
-            How FMCSA counts violations: each has a severity weight (1–10, +2 when it put a vehicle
-            or driver out of service); newer ones weigh more, and after 24 months they no longer
-            count. Clean inspections lower the measures. A wrong inspection or violation can be
-            challenged in FMCSA’s DataQs (dataqs.fmcsa.dot.gov).
-          </p>
-          <p>
-            Words used: BASIC is FMCSA’s name for a safety category. MCS-150 is the company update
-            form every carrier files with FMCSA. BOC-3 is the filing that names a carrier’s process
-            agents, who accept legal papers for it. BI&amp;PD is liability insurance for injuries
-            and property damage. Out of service means FMCSA’s inspector stopped the truck or driver
-            until the problem was fixed. SMS is FMCSA’s Safety Measurement System.
-          </p>
-          <p>
-            Sources: FMCSA Company Census, inspections, SMS and Crash File, Motus and L&I authority,
-            insurance and BOC-3 filings, out-of-service and revocation orders (U.S. DOT Open Data
-            Portal); NHTSA vPIC for VIN decoding. Out-of-service rates follow FMCSA’s method (only
-            inspections that examined the vehicle or driver count); national averages are FMCSA’s
-            published figures.
-          </p>
-        </footer>
       </Sheet>
 
       {/* The SMS record line by line, and when the score improves */}
