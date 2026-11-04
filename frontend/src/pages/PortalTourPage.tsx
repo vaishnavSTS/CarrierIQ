@@ -88,7 +88,7 @@ export function PortalTourPage({ audience }: { audience: Audience }) {
               <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/90">
                 {[
                   '30 days free',
-                  '$49 a month after',
+                  'No card needed to start',
                   'Cancel any time',
                   'Works on your phone',
                 ].map((fact) => (
@@ -178,17 +178,17 @@ export function PortalTourPage({ audience }: { audience: Audience }) {
             {...reveal(0.1)}
             className="rounded-3xl bg-white/95 p-8 text-[#060d24] shadow-2xl"
           >
-            <div className="text-sm font-medium text-[#3e4966]">After 30 days free</div>
-            <div className="mt-1 flex items-baseline gap-1">
-              <span className="text-5xl font-semibold">$49</span>
-              <span className="text-[#3e4966]">a month</span>
+            <div className="text-sm font-medium text-[#3e4966]">Start with</div>
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="text-5xl font-semibold">30 days</span>
+              <span className="text-[#3e4966]">free</span>
             </div>
             <ul className="mt-6 space-y-2.5 text-sm">
               {[
                 'Every part of the portal shown above',
                 'No card needed to start the free month',
-                'Cancel any time; keep access to the end of the month you paid for',
-                'Monthly invoices in your portal',
+                'Cancel any time from your portal',
+                'Your invoices in your portal',
               ].map((line) => (
                 <li key={line} className="flex gap-2.5">
                   <Check className="mt-0.5 size-4 shrink-0 text-emerald-600" aria-hidden />

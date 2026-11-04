@@ -1,4 +1,4 @@
-import { BadgeCheck, Check } from 'lucide-react'
+import { BadgeCheck } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useRef, useState, type FormEvent, type ReactElement } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -6,12 +6,9 @@ import { useNavigate } from 'react-router-dom'
 import reportPage1 from '../../assets/report-sample-1.webp'
 import reportPage2 from '../../assets/report-sample-2.webp'
 import stsLogo from '../carrier-profile/packet/sts-logo.png'
-import { Accent, PrimaryLink, reveal, SectionHeading } from './landingParts'
+import { Accent, reveal, SectionHeading } from './landingParts'
 import { FileArt, FindArt, FollowArt } from './RoleArt'
 
-/** Keep in step with MONTHLY_PRICE and TRIAL (backend/app/services/subscription.py). */
-const MONTHLY_PRICE = 49
-const TRIAL_DAYS = 30
 /** From skytransportsolutions.com. Only what its pages agree on: no client counts or rankings. */
 const STS_FOUNDED = 2013
 const STS_SERVICES = [
@@ -196,46 +193,6 @@ export function ReportPreview({ number }: { number?: string }) {
         Scan’s estimate, not FMCSA’s official score or a safety rating.
       </motion.p>
     </div>
-  )
-}
-
-const INCLUDED = [
-  'Authority, insurance and safety for your carrier',
-  'What’s hurting your score and how to improve it',
-  'The downloadable Safety Score Report',
-  'Cancel anytime',
-]
-
-export function PricingSection() {
-  return (
-    <section className="pb-20">
-      <SectionHeading eyebrow="Pricing" title="Simple, clear pricing" />
-      <div className="mx-auto mt-10 max-w-lg">
-        <motion.article
-          {...reveal()}
-          className="rounded-2xl border border-brand-glow/40 bg-surface p-7 text-center shadow-lg shadow-brand-glow/10"
-        >
-          <p className="text-sm font-semibold text-accent-strong">{TRIAL_DAYS} days free, then</p>
-          <p className="mt-2 flex items-baseline justify-center gap-1.5">
-            <span className="text-5xl font-bold tracking-tight text-slate-950">
-              ${MONTHLY_PRICE}
-            </span>
-            <span className="text-sm text-slate-600">/month per login</span>
-          </p>
-          <ul className="mx-auto mt-6 w-fit space-y-2.5 text-left text-sm text-slate-700">
-            {INCLUDED.map((item) => (
-              <li key={item} className="flex gap-2.5">
-                <Check className="mt-0.5 size-4 shrink-0 text-emerald-600" aria-hidden />
-                {item}
-              </li>
-            ))}
-          </ul>
-          <div className="mt-7 flex justify-center">
-            <PrimaryLink to="/register">Start your free trial</PrimaryLink>
-          </div>
-        </motion.article>
-      </div>
-    </section>
   )
 }
 

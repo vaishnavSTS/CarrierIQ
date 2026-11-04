@@ -255,12 +255,12 @@ const COMPARE = (who: 'broker' | 'agent'): TourSection => ({
 
 const PLAN_FAQ = [
   {
-    q: 'What does it cost?',
-    a: 'Every new account is free for 30 days from sign-up. After that it’s $49 a month.',
+    q: 'Is there a free trial?',
+    a: 'Yes. Every new account is free for 30 days from sign-up, and no card is needed to start.',
   },
   {
     q: 'Can I cancel?',
-    a: 'Any time, from your portal. You keep access until the end of the month you’ve paid for.',
+    a: 'Any time, from your portal. You keep access until the end of the period you’ve paid for.',
   },
   {
     q: 'Is the Estimated ISS FMCSA’s official score?',

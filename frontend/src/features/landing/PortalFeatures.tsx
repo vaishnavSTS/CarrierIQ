@@ -36,7 +36,7 @@ type Item = { icon: LucideIcon; title: string; text: string }
 const PLAN: Item = {
   icon: CreditCard,
   title: 'Free for 30 days',
-  text: 'Then $49 a month. Cancel any time and keep access to the end of the month you paid for.',
+  text: 'Every part of the portal, free for 30 days from sign-up. No card needed to start.',
 }
 
 const COMMON = {
