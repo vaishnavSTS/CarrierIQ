@@ -563,6 +563,14 @@ body {
   padding: 9mm 10mm;
 }
 
+/* The Safety Score Report on screen at the size it prints (SCALE in printFit.ts), on screens wide
+   enough for its two-column layout; phones keep full size. */
+@media (width >= 40rem) {
+  #carrier-packet .packet-sheet {
+    zoom: 0.83;
+  }
+}
+
 @media print {
   :root,
   :root[data-theme='dark'] {

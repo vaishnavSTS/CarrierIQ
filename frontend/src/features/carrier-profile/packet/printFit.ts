@@ -17,7 +17,7 @@ const PAGE_WIDTH = PAGE_WIDTH_MM * PX_PER_MM
  * items and the out-of-service rates (it printed at 70-79% when every part had to fit one page).
  * Each page is laid out at the page width divided by this and scaled down with CSS zoom.
  */
-const SCALE = 0.83
+const SCALE = 0.83 // the on-screen report uses the same (index.css #carrier-packet)
 
 /** Where each report sheet landed: its first and last printed page, and the page count. */
 export interface PageNumbers {
