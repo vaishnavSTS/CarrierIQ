@@ -776,12 +776,12 @@ export function PacketDocument({
         </div>
 
         {/* The notes, after the green items (they fill the space the next section leaves). */}
-        <p className="text-[11px] text-slate-500">
+        <p className="text-sm text-slate-600">
           Percentile: how the carrier ranks against similar carriers; 0 is best, 100 is worst.
           Threshold: the percentile at which FMCSA may step in. Measure: violation points divided by
           inspections, or by fleet size and miles.
         </p>
-        <p className="text-[11px] text-slate-500">
+        <p className="text-sm text-slate-600">
           The Estimated ISS is CarrierSafetyScan’s estimate from public FMCSA data using FMCSA’s
           published methods; it is not FMCSA’s official ISS or a safety rating, and this report is
           not a recommendation to use or avoid any carrier. Generated{' '}
