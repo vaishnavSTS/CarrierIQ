@@ -11,7 +11,7 @@ export function Brand({ to }: { to: string }) {
     <Link to={to} className="flex items-center gap-1.5 sm:gap-2">
       <img src={logo} alt="" className="size-9 shrink-0 object-contain md:size-12" />
       <span className="flex flex-col leading-tight">
-        <span className="text-base font-semibold tracking-tight text-slate-900">
+        <span className="brand-name text-base font-semibold tracking-tight text-slate-900">
           Carrier Safety Scan
         </span>
         <span className="text-xs font-medium text-slate-500 sm:whitespace-nowrap sm:text-[13px]">

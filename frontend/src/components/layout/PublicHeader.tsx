@@ -52,10 +52,10 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-30">
-      <div className="bg-slate-950 text-white">
+      <div className="bg-[#060d24] text-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2 text-xs sm:text-[13px]">
           <Link to="/try" className="group flex min-w-0 items-center gap-2">
-            <span className="shrink-0 rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-950">
+            <span className="shrink-0 rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#060d24]">
               New
             </span>
             <span className="truncate text-white/90 group-hover:text-white">

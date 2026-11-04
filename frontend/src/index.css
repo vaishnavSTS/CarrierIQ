@@ -251,6 +251,48 @@ body {
   --art-dark: #05080f;
 }
 
+/* The public pages' type: Bricolage Grotesque for headings, Manrope for text,
+   Instrument Serif italic for the highlighted words (.font-accent) and JetBrains Mono for small
+   labels and numbers (.font-label, font-mono). In @layer base so utilities still win. A carrier's
+   page shown on a public page (Try Now) keeps the app font: .app-type. */
+@layer base {
+  .landing-page {
+    --font-display: 'Bricolage Grotesque Variable', 'Manrope Variable', ui-sans-serif, system-ui,
+      sans-serif;
+    --font-body: 'Manrope Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-family: var(--font-body);
+  }
+  .landing-page :is(h1, h2),
+  .landing-page .brand-name {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+  }
+  .landing-page .app-type {
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
+      'Courier New', monospace;
+    font-family: var(--font-sans);
+  }
+  .landing-page .app-type :is(h1, h2) {
+    font-family: inherit;
+  }
+}
+/* Outside the layer, so it beats tracking-tight: Bricolage is wide-set already. */
+.landing-page :is(h1, h2) {
+  letter-spacing: -0.012em;
+}
+.font-accent {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.12em;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.font-label {
+  font-family: var(--font-mono);
+}
+
 /* The strip of checks under the hero: two copies of the row slide left forever, so the second
    takes the first's place without a jump. Fades out at both edges. */
 .marquee {

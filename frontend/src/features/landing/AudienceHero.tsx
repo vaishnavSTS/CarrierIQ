@@ -8,7 +8,9 @@ import { HeroTryForm } from './LandingSections'
 import { HERO_PHOTO } from './photos'
 import { SampleShowcase } from './SampleShowcase'
 
-const highlight = (text: string) => <span className="text-[var(--hero-highlight)]">{text}</span>
+const highlight = (text: string) => (
+  <span className="font-accent text-[var(--hero-highlight)]">{text}</span>
+)
 
 const HERO: Record<Audience, { tab: string; title: ReactNode; text: string }> = {
   carrier: {

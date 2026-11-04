@@ -219,7 +219,7 @@ export function PortalFeatures({ audience, number }: { audience: Audience; numbe
                   : 'border-slate-200 bg-surface hover:border-slate-300'
               }`}
             >
-              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-slate-900 text-white">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#101853] text-white">
                 <Icon className="size-5" aria-hidden />
               </span>
               <div>

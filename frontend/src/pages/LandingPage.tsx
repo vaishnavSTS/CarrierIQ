@@ -256,9 +256,9 @@ export function LandingPage({ audience }: { audience: Audience }) {
                 />
                 <div
                   aria-hidden
-                  className="absolute inset-0 bg-gradient-to-t from-slate-950/50 via-transparent to-transparent"
+                  className="absolute inset-0 bg-gradient-to-t from-[#060d24]/50 via-transparent to-transparent"
                 />
-                <span className="absolute bottom-3 left-4 grid size-7 place-items-center rounded-full bg-white/90 text-xs font-semibold text-slate-900 shadow">
+                <span className="absolute bottom-3 left-4 grid size-7 place-items-center rounded-full font-label bg-white/90 text-xs font-semibold text-[#060d24] shadow">
                   {i + 1}
                 </span>
               </div>
@@ -296,7 +296,7 @@ export function LandingPage({ audience }: { audience: Audience }) {
                 <span className="relative grid size-12 shrink-0 place-items-center rounded-2xl border border-white/20 bg-white/10 text-white">
                   <Icon className="size-5" aria-hidden />
                 </span>
-                <span className="shrink-0 text-xs font-medium uppercase tracking-wider text-white/70">
+                <span className="font-label shrink-0 text-xs font-medium uppercase tracking-wider text-white/70">
                   Step {i + 1}
                 </span>
                 {/* Connector: starts after the label and runs across the gap (-mr-8 = the
@@ -334,7 +334,7 @@ export function LandingPage({ audience }: { audience: Audience }) {
             <div className="relative mt-8 flex flex-wrap justify-center gap-3">
               <Link
                 to={content.cta.signUpTo}
-                className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg transition-colors hover:bg-amber-300"
+                className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-5 py-3 text-sm font-semibold text-[#060d24] shadow-lg transition-colors hover:bg-amber-300"
               >
                 {content.cta.signUp}
                 <ArrowRight className="size-4" aria-hidden />

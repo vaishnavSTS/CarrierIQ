@@ -68,7 +68,11 @@ export function useDarkBand(): boolean {
 
 /** The words of a heading that stand out (gold on navy, violet on light). */
 export function Accent({ children }: { children: ReactNode }) {
-  return <span className={useDarkBand() ? 'text-amber-300' : 'text-accent-strong'}>{children}</span>
+  return (
+    <span className={`font-accent ${useDarkBand() ? 'text-amber-300' : 'text-accent-strong'}`}>
+      {children}
+    </span>
+  )
 }
 
 /**
@@ -94,7 +98,7 @@ export function SectionHeading({
     >
       <div>
         <p
-          className={`flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] ${dark ? 'text-amber-300' : 'text-accent-strong'}`}
+          className={`font-label flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] ${dark ? 'text-amber-300' : 'text-accent-strong'}`}
         >
           <span aria-hidden className="h-px w-8 bg-current" />
           {number && <span>{number} ·</span>}

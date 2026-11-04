@@ -64,7 +64,7 @@ export function AudienceChooserPage() {
                 />
                 <div
                   aria-hidden
-                  className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent"
+                  className="absolute inset-0 bg-gradient-to-t from-[#060d24]/40 via-transparent to-transparent"
                 />
               </div>
               <div className="flex flex-1 flex-col p-6">

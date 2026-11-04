@@ -32,7 +32,7 @@ export function TryCarrierPage() {
     <TryModeContext.Provider value={true}>
       {/* What a broker sees about any carrier: no staff controls, and "this carrier" wording. */}
       <PortalModeContext.Provider value="broker">
-        <div className="mx-auto max-w-7xl px-4 py-6">
+        <div className="app-type mx-auto max-w-7xl px-4 py-6">
           <TryCarrier />
         </div>
       </PortalModeContext.Provider>

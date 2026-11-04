@@ -5,6 +5,12 @@ import { RouterProvider } from 'react-router-dom'
 
 import { ApiError } from './api/client'
 import { ME_KEY } from './hooks/useAuth'
+// The public pages' type (self-hosted, so no request to a font service): scoped to .landing-page
+// in index.css; the portals and the Safety Score Report keep the app font.
+import '@fontsource-variable/bricolage-grotesque/opsz.css'
+import '@fontsource-variable/jetbrains-mono'
+import '@fontsource-variable/manrope'
+import '@fontsource/instrument-serif/400-italic.css'
 import './index.css'
 import { router } from './router'
 
