@@ -577,8 +577,8 @@ export function PacketDocument({
           </div>
         </div>
 
-        {/* The score large, with what explains it and the counts beside it, so the red items
-            below start on the first page. Its month-by-month history follows the findings. */}
+        {/* The score large, with what explains it, last month's score and the counts beside it,
+            so the red items below start on the first page. */}
         <div className="grid items-center gap-5 wide:grid-cols-[auto_1fr]">
           <div className="flex flex-col items-center rounded-xl border border-slate-200 px-5 py-3">
             <div className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-600">
@@ -606,6 +606,7 @@ export function PacketDocument({
               <CountPill tone="green" count={good.length} label="In good standing" />
             </div>
             {safety && <PullInRates safety={safety} client={client} />}
+            <IssTrend iss={iss} history={safety?.iss_history ?? []} />
           </div>
         </div>
 
@@ -720,8 +721,6 @@ export function PacketDocument({
             ))}
           </ul>
         </div>
-
-        <IssTrend iss={iss} history={safety?.iss_history ?? []} />
 
         <div className="space-y-2">
           <SectionHeading
