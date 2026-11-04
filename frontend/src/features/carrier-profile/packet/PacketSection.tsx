@@ -616,12 +616,7 @@ export function PacketDocument({
             aside="Each item names its FMCSA record"
             tone={hurting.length ? 'red' : 'green'}
           >
-            <span
-              className={`flex items-center gap-2 ${hurting.length ? 'text-red-700' : 'text-slate-900'}`}
-            >
-              <OctagonX className="size-5" aria-hidden />
-              What’s hurting {whose} safety score
-            </span>
+            What’s hurting {whose} safety score
           </SectionHeading>
           {hurting.length === 0 ? (
             <ul>
@@ -650,10 +645,7 @@ export function PacketDocument({
               aside="Doesn’t feed the Estimated ISS; a broker’s check may stop on these"
               tone="red"
             >
-              <span className="flex items-center gap-2 text-red-700">
-                <OctagonX className="size-5" aria-hidden />
-                Broker red flags
-              </span>
+              Broker red flags
             </SectionHeading>
             <ul data-split className="space-y-2">
               {redFlags.map((item) => (
@@ -719,10 +711,7 @@ export function PacketDocument({
         {roadside.length > 0 && (
           <div className="space-y-2">
             <SectionHeading aside="Doesn’t feed the Estimated ISS directly" tone="amber">
-              <span className="flex items-center gap-2 text-amber-700">
-                <TriangleAlert className="size-5" aria-hidden />
-                Roadside risk
-              </span>
+              Roadside risk
             </SectionHeading>
             <ul data-split className="space-y-2">
               {roadside.map((item) => (
@@ -734,12 +723,7 @@ export function PacketDocument({
 
         {watch.length > 0 && (
           <div className="space-y-2">
-            <SectionHeading tone="amber">
-              <span className="flex items-center gap-2 text-amber-700">
-                <TriangleAlert className="size-5" aria-hidden />
-                Worth watching
-              </span>
-            </SectionHeading>
+            <SectionHeading tone="amber">Worth watching</SectionHeading>
             <ul data-split className="space-y-2">
               {watch.map((item) => (
                 <ItemBox key={item.key} tone="amber" item={item} />
@@ -757,10 +741,7 @@ export function PacketDocument({
                 : 'Each item names its FMCSA record'
             }
           >
-            <span className="flex items-center gap-2 text-emerald-700">
-              <CircleCheck className="size-5" aria-hidden />
-              In good standing
-            </span>
+            In good standing
           </SectionHeading>
           <ul data-split className="grid gap-2 wide:grid-cols-2">
             {good.map((item) => (
@@ -782,11 +763,9 @@ export function PacketDocument({
           inspections, or by fleet size and miles.
         </p>
         <p className="text-sm text-slate-600">
-          The Estimated ISS is CarrierSafetyScan’s estimate from public FMCSA data using FMCSA’s
-          published methods; it is not FMCSA’s official ISS or a safety rating, and this report is
-          not a recommendation to use or avoid any carrier. Generated{' '}
-          {formatLocalDate(generated.toISOString())} from public FMCSA and NHTSA records (FMCSA data
-          refreshed {formatLocalDate(profile.last_refreshed_at)}).
+          The Estimated ISS is CarrierSafetyScan’s estimate using FMCSA’s published methods; it is
+          not FMCSA’s official ISS or a safety rating, and this report is not a recommendation to
+          use or avoid any carrier. Generated {formatLocalDate(generated.toISOString())}.
         </p>
 
         <div className="space-y-2">
@@ -832,7 +811,7 @@ export function PacketDocument({
         {toReview.length > 0 && (
           <div className="space-y-2">
             <SectionHeading aside="FMCSA authority history" tone="amber">
-              <span className="text-amber-700">History to review</span>
+              History to review
             </SectionHeading>
             <p className="text-xs text-slate-600">
               Past actions on this carrier’s authority. A past action doesn’t show today’s status,
@@ -1006,7 +985,6 @@ export function PacketDocument({
             client={client}
             whose={whose}
             part={twoRecordPages ? 'summary' : 'all'}
-            listedAtEnd={listed ? inspections.length : 0}
           />
         </Sheet>
       )}
@@ -1024,7 +1002,6 @@ export function PacketDocument({
             client={client}
             whose={whose}
             part="history"
-            listedAtEnd={listed ? inspections.length : 0}
           />
         </Sheet>
       )}
@@ -1036,12 +1013,7 @@ export function PacketDocument({
           carrier={carrier}
           contact={contact.inspections}
         >
-          <InspectionList
-            inspections={inspections}
-            total={inspectionTotal ?? inspections.length}
-            usdotNumber={profile.usdot_number}
-            fullRecordUrl={fullRecordUrl}
-          />
+          <InspectionList inspections={inspections} total={inspectionTotal ?? inspections.length} />
         </Sheet>
       )}
     </>

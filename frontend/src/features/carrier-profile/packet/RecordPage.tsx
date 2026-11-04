@@ -1,5 +1,3 @@
-import { CalendarClock, Scale } from 'lucide-react'
-
 import type { CarrierSafety } from '../../../types/carrierSafety'
 import { formatDate } from '../../../utils/format'
 import { basicName } from './basicTiles'
@@ -57,7 +55,6 @@ export function RecordPage({
   whose,
   part = 'all',
   fullRecordUrl,
-  listedAtEnd = 0,
 }: {
   safety: CarrierSafety
   client: boolean
@@ -66,8 +63,6 @@ export function RecordPage({
   part?: 'all' | 'summary' | 'history'
   /** This carrier's page in the app, for what a printed page can't list */
   fullRecordUrl: string
-  /** How many of the latest inspections are listed at the end of the report (InspectionList) */
-  listedAtEnd?: number
 }) {
   const maxCodes = part === 'all' ? MAX_CODES : MAX_CODES_OWN_PAGE
   const inspections = safety.sms_inspections ?? []
@@ -91,10 +86,7 @@ export function RecordPage({
                 tone="green"
                 aside="Newer violations count more: 3× for 6 months, 2× to 12 months, 1× to 24 months; applied at FMCSA’s next monthly update"
               >
-                <span className="flex items-center gap-2">
-                  <CalendarClock className="size-5 text-emerald-600" aria-hidden />
-                  When {whose} score improves on its own
-                </span>
+                When {whose} score improves on its own
               </SectionHeading>
               {steps.length === 0 ? (
                 <p className="text-sm text-slate-600">
@@ -141,8 +133,7 @@ export function RecordPage({
             </div>
 
             <div className="break-inside-avoid space-y-2 rounded-xl border-2 border-accent bg-accent-soft px-4 py-3">
-              <div className="flex items-center gap-2 text-base font-semibold text-slate-900">
-                <Scale className="size-5 text-accent-strong" aria-hidden />
+              <div className="text-base font-semibold text-slate-950">
                 Heaviest violations: check these first
               </div>
               {heaviest.length === 0 ? (
@@ -347,20 +338,6 @@ export function RecordPage({
                 </table>
               </ScrollX>
             )}
-            {inspections.length > maxInspections && (
-              <p className="text-xs text-slate-500">
-                +{inspections.length - maxInspections} more inspections with violations after
-                logging in: {fullRecordUrl}
-                {listedAtEnd > 0 &&
-                  `. The latest ${listedAtEnd} inspections are listed at the end of this report`}
-                .
-              </p>
-            )}
-            <p className="text-[11px] text-slate-500">
-              A description ending in “…” is cut off in FMCSA’s own file. Severity is how serious
-              FMCSA rates a violation, and an out-of-service violation (red) adds 2 to it. Time
-              weight is how much FMCSA counts it for its age.
-            </p>
           </div>
 
           {crashes.length > 0 && (

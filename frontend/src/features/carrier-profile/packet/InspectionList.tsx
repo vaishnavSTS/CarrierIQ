@@ -35,21 +35,14 @@ function outOfService(i: InspectionDetail): string {
 export function InspectionList({
   inspections,
   total,
-  usdotNumber,
-  fullRecordUrl,
 }: {
   /** The latest ones, newest first */
   inspections: InspectionDetail[]
   /** How many are on file in all */
   total: number
-  usdotNumber: number
-  /** The carrier's page in the app, where every inspection is listed */
-  fullRecordUrl: string
 }) {
   const newest = inspections[0]?.inspection_date
   const oldest = inspections[inspections.length - 1]?.inspection_date
-  const withViolations = inspections.filter((i) => i.violation_count > 0).length
-  const stopped = inspections.filter((i) => i.vehicle_oos || i.driver_oos).length
   const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 
   return (
@@ -59,18 +52,6 @@ export function InspectionList({
       >
         {total > inspections.length ? `Latest ${inspections.length} inspections` : 'Inspections'}
       </SectionHeading>
-      <p className="text-sm text-slate-700">
-        {total > inspections.length
-          ? `The latest ${inspections.length} of the ${total} inspections`
-          : `All ${plural(inspections.length, 'inspection')}`}{' '}
-        CarrierSafetyScan has from FMCSA’s inspection file for USDOT {usdotNumber}, newest first:{' '}
-        {withViolations} with violations, {inspections.length - withViolations} without, and{' '}
-        {stopped} where a driver or vehicle was placed out of service. Each violation is listed
-        under its inspection; out-of-service ones are in red. A description ending in “…” is cut off
-        in FMCSA’s own file.
-        {total > inspections.length &&
-          ` All ${total} are on the Inspections tab after logging in: ${fullRecordUrl}`}
-      </p>
       <ScrollX>
         {/* Split between inspections when it runs past a printed page (printFit.ts). */}
         <table data-split data-inspection-list className="w-full text-sm">

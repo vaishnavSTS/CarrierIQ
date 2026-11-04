@@ -22,7 +22,7 @@ export function SolutionsBox({
   return (
     <div className="space-y-2">
       <SectionHeading aside={aside} tone="green">
-        <span className="text-emerald-800">{title}</span>
+        {title}
       </SectionHeading>
       <ol
         className={`grid gap-2 ${printed ? 'grid-cols-2' : 'wide:grid-cols-2'}`}
