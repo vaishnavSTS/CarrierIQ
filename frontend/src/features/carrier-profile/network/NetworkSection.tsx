@@ -74,8 +74,12 @@ function shownValue(kind: string, value: string | null): string {
   return kind === 'phone' ? formatPhone(value) : value
 }
 
+/** Newest USDOT number first (by the date FMCSA added it); carriers without one go last. */
 function LinkedTable({ carriers }: { carriers: LinkedCarrier[] }) {
   const client = useIsClientPortal()
+  const newestFirst = [...carriers].sort((a, b) =>
+    (b.registered ?? '').localeCompare(a.registered ?? ''),
+  )
   return (
     <div className="relative overflow-x-auto">
       <StackTable className={tableClass}>
@@ -89,7 +93,7 @@ function LinkedTable({ carriers }: { carriers: LinkedCarrier[] }) {
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
-          {carriers.map((c) => (
+          {newestFirst.map((c) => (
             <tr key={c.usdot_number} className="align-top">
               <td className={cellClass}>
                 <CarrierLink usdotNumber={c.usdot_number} />
