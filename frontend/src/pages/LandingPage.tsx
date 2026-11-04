@@ -17,12 +17,13 @@ import {
   SectionHeading,
   type BandTone,
 } from '../features/landing/landingParts'
+import { CompareShowcase } from '../features/landing/CompareShowcase'
 import { FaqSection } from '../features/landing/Faq'
 import { AUDIENCE_FAQ } from '../features/landing/faqContent'
 import { AboutStsSection, DataQsSection, ReportPreview } from '../features/landing/LandingSections'
 import { PhoneShowcase } from '../features/landing/PhoneShowcase'
 import { PortalFeatures } from '../features/landing/PortalFeatures'
-import { BAND_PHOTO, FEATURE_PHOTOS } from '../features/landing/photos'
+import { BAND_PHOTO, FEATURE_PHOTOS, SECTION_PHOTO } from '../features/landing/photos'
 import { ChecksMarquee } from '../features/landing/ChecksMarquee'
 import { useMe } from '../hooks/useAuth'
 
@@ -234,6 +235,7 @@ type Part =
   | 'dataqs'
   | 'redFlags'
   | 'underwriting'
+  | 'compare'
   | 'portal'
   | 'phone'
   | 'report'
@@ -244,11 +246,11 @@ type Part =
 
 /** Each page has its own order and backgrounds; no two neighbouring bands share one. DataQs is
  * on the carrier page only (it's a carrier service). */
-const LAYOUT: Record<Audience, [Part, BandTone][]> = {
+const LAYOUT: Record<Audience, [Part, BandTone, photo?: string][]> = {
   carrier: [
     ['features', 'mesh'],
     ['fix', 'plain'],
-    ['dataqs', 'dark'],
+    ['dataqs', 'photo', SECTION_PHOTO.carrierDataqs],
     ['portal', 'warm'],
     ['phone', 'grid'],
     ['report', 'tint'],
@@ -259,24 +261,22 @@ const LAYOUT: Record<Audience, [Part, BandTone][]> = {
   ],
   broker: [
     ['features', 'plain'],
-    ['redFlags', 'dark'],
+    ['redFlags', 'photo', SECTION_PHOTO.brokerFlags],
+    ['compare', 'warm'],
     ['portal', 'mesh'],
-    ['report', 'warm'],
-    ['phone', 'grid'],
     ['steps', 'photo'],
-    ['faq', 'tint'],
-    ['cta', 'dots'],
+    ['faq', 'dots'],
+    ['cta', 'tint'],
     ['about', 'plain'],
   ],
   agent: [
     ['features', 'warm'],
-    ['underwriting', 'grid'],
+    ['underwriting', 'photo', SECTION_PHOTO.agentQuestions],
+    ['compare', 'mesh'],
     ['portal', 'plain'],
-    ['report', 'tint'],
-    ['phone', 'mesh'],
     ['steps', 'photo'],
     ['faq', 'dots'],
-    ['cta', 'warm'],
+    ['cta', 'grid'],
     ['about', 'plain'],
   ],
 }
@@ -302,9 +302,11 @@ export function LandingPage({ audience }: { audience: Audience }) {
   // Logged-in visitors don't get the sign-up band. Section numbers run on down the page.
   const parts = LAYOUT[audience].filter(([part]) => part !== 'cta' || !user)
   let count = 0
-  const numbered = parts.map(([part, tone]) => ({
+  const numbered = parts.map(([part, tone, photo]) => ({
     part,
     tone,
+    // A photo band uses its own picture, or the audience's road photo ("How it works").
+    photo: tone === 'photo' ? (photo ?? BAND_PHOTO[audience]) : undefined,
     number: UNNUMBERED.includes(part) ? undefined : String(++count).padStart(2, '0'),
   }))
 
@@ -356,6 +358,8 @@ export function LandingPage({ audience }: { audience: Audience }) {
         return <BrokerRedFlagsSection number={number} />
       case 'underwriting':
         return <AgentUnderwritingSection number={number} />
+      case 'compare':
+        return <CompareShowcase who={audience === 'agent' ? 'agent' : 'broker'} number={number} />
       case 'portal':
         return <PortalFeatures audience={audience} number={number} />
       case 'phone':
@@ -438,8 +442,8 @@ export function LandingPage({ audience }: { audience: Audience }) {
         <AudienceHero audience={audience} />
       </div>
       <ChecksMarquee audience={audience} />
-      {numbered.map(({ part, tone, number }) => (
-        <Band key={part} tone={tone} photo={tone === 'photo' ? BAND_PHOTO[audience] : undefined}>
+      {numbered.map(({ part, tone, photo, number }) => (
+        <Band key={part} tone={tone} photo={photo}>
           {render(part, number)}
         </Band>
       ))}

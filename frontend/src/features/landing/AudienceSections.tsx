@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { motion } from 'motion/react'
 
-import { Accent, reveal, SectionHeading } from './landingParts'
+import { Accent, reveal, SectionHeading, useDarkBand } from './landingParts'
 
 /*
  * The sections only one audience's page has. Everything here matches what the app does today:
@@ -183,6 +183,7 @@ const UNDERWRITING = [
 ]
 
 export function AgentUnderwritingSection({ number }: { number?: string }) {
+  const dark = useDarkBand()
   return (
     <div>
       <SectionHeading
@@ -216,7 +217,10 @@ export function AgentUnderwritingSection({ number }: { number?: string }) {
           </motion.li>
         ))}
       </ol>
-      <motion.p {...reveal()} className="mt-6 text-center text-xs text-slate-500">
+      <motion.p
+        {...reveal()}
+        className={`mt-6 text-center text-xs ${dark ? 'text-white/80' : 'text-slate-500'}`}
+      >
         It shows what the record says and flags what usually needs a closer look. The underwriting
         decision stays with you.
       </motion.p>

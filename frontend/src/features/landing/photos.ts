@@ -5,6 +5,11 @@
  * shows a readable company name; none is of a carrier, broker or agency using Carrier Safety Scan.
  */
 import agentFilings from '../../assets/photos/agent-filings.jpg' // 7734574
+// Unsplash License (unsplash.com/license): band-carrier-dataqs nHHkjqqx9oM by Danique Godwin,
+// band-broker-flags yneUxusDXHo by Carl Tronders, band-agent-questions MhqUBTxQ3Hw by Olena Kholina.
+import bandAgentQuestions from '../../assets/photos/band-agent-questions.jpg'
+import bandBrokerFlags from '../../assets/photos/band-broker-flags.jpg'
+import bandCarrierDataqs from '../../assets/photos/band-carrier-dataqs.jpg'
 import agentFleet from '../../assets/photos/agent-fleet.jpg' // 6720542
 import agentReport from '../../assets/photos/agent-report.jpg' // 9870223
 import agentSafety from '../../assets/photos/agent-safety.jpg' // 34902065
@@ -39,6 +44,13 @@ export const BAND_PHOTO: Record<Audience, string> = {
   carrier: agentSafety,
   broker: agentSafety,
   agent: brokerAuthority,
+}
+
+/** Darkened behind each audience page's own key section (LandingPage LAYOUT). */
+export const SECTION_PHOTO = {
+  carrierDataqs: bandCarrierDataqs, // a driver at the wheel of a truck
+  brokerFlags: bandBrokerFlags, // semi trucks lit up at night
+  agentQuestions: bandAgentQuestions, // two people going over papers at a table
 }
 
 /** The front door's three cards. */

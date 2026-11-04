@@ -108,23 +108,21 @@ export function AudienceHero({ audience }: { audience: Audience }) {
       {audience === 'carrier' ? (
         // Carrier: the headline across the top with the search beside it, then a wide dashboard
         // of a sample carrier's own record, with the MCS-150 tool as one of its cards.
-        <section className="relative z-10 mx-auto max-w-6xl px-4 pb-48 pt-12 md:pt-16 lg:pt-20">
-          <div className="grid items-end gap-x-12 gap-y-8 text-center lg:grid-cols-[1.25fr_1fr] lg:text-left">
+        <section className="relative z-10 mx-auto max-w-6xl px-4 pb-40 pt-8 md:pt-10">
+          <div className="grid items-end gap-x-12 gap-y-6 text-center lg:grid-cols-[1.2fr_1fr] lg:text-left">
             <div>
               {eyebrow}
-              <h1 className="mt-6 text-4xl font-semibold leading-[1.06] tracking-tight text-white md:text-5xl lg:text-[3.5rem]">
+              <h1 className="mt-4 text-4xl font-semibold leading-[1.05] tracking-tight text-white md:text-5xl lg:text-[3rem]">
                 {page.title}
               </h1>
             </div>
             <div>
-              <p className="mx-auto max-w-xl text-base text-white/90 md:text-lg lg:mx-0">
-                {page.text}
-              </p>
-              <div className="mt-6">{action}</div>
-              {facts}
+              <p className="mx-auto max-w-xl text-base text-white/90 lg:mx-0">{page.text}</p>
+              <div className="mt-4">{action}</div>
+              <div className="[&>ul]:mt-3">{facts}</div>
             </div>
           </div>
-          <div className="mt-14">
+          <div className="mt-7">
             <CarrierHeroBoard />
           </div>
         </section>

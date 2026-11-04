@@ -94,7 +94,7 @@ function Result({ id, children }: { id: string; children: ReactNode }) {
 
 // --- Carriers: MCS-150 due date ------------------------------------------------------------------
 
-const MONTHS = [
+export const MONTHS = [
   'January',
   'February',
   'March',
