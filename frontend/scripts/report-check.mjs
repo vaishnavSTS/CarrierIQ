@@ -171,10 +171,12 @@ const READ_REPORT = `JSON.stringify((() => {
     .map((el) => el.textContent.slice(0, 50))
   // The A4 pages paginateReport laid the report out on (printFit.ts): what prints.
   const pages = [...document.querySelectorAll('#carrier-packet-pages .print-page')]
+  // Each page is printed at a fixed scale (CSS zoom); its size is measured as printed.
+  const zoomOf = (sheet) => parseFloat(sheet.style.zoom || 1)
   const sizes = pages.map((page, i) => ({
     page: i + 1,
-    height: page.firstElementChild.scrollHeight,
-    width: page.firstElementChild.scrollWidth,
+    height: page.firstElementChild.scrollHeight * zoomOf(page.firstElementChild),
+    width: page.firstElementChild.scrollWidth * zoomOf(page.firstElementChild),
     runsOn: page.classList.contains('print-flow'),
     number: page.querySelector('[data-page-number]')?.textContent ?? '',
   }))

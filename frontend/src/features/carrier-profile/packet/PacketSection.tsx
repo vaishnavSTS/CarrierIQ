@@ -663,6 +663,59 @@ export function PacketDocument({
           </div>
         )}
 
+        {/* The out-of-service rates and counts: on the first page, after the red items. */}
+        <div className="grid gap-5 wide:grid-cols-[1.4fr_1fr]">
+          <div className="space-y-3">
+            <SectionHeading aside={`Last ${recent?.months ?? 24} months`}>
+              Out-of-service rates
+            </SectionHeading>
+            {recent ? (
+              <>
+                <OosBar
+                  label="Vehicle out-of-service"
+                  rate={recent.vehicle_oos_rate}
+                  national={recent.national_vehicle_oos_rate}
+                  oos={recent.vehicle_oos}
+                  base={recent.vehicle_inspections}
+                />
+                <OosBar
+                  label="Driver out-of-service"
+                  rate={recent.driver_oos_rate}
+                  national={recent.national_driver_oos_rate}
+                  oos={recent.driver_oos}
+                  base={recent.driver_inspections}
+                />
+              </>
+            ) : (
+              <p className="text-sm text-slate-500">No inspections in the last 24 months.</p>
+            )}
+          </div>
+          <dl className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 p-3">
+            <Fact label="Inspections">
+              {recent?.inspections ?? profile.safety.inspection_count}
+            </Fact>
+            <Fact label="Last inspection">{formatDate(profile.safety.last_inspection_date)}</Fact>
+            <Fact label={`Crashes · ${crashes?.recent_months ?? 24} mo`}>
+              {crashes ? crashes.recent_total : null}
+            </Fact>
+            <Fact label="Fatal · injury">
+              {crashes ? `${crashes.recent_fatal} · ${crashes.recent_injury}` : null}
+            </Fact>
+            {clean && (
+              <Fact label="Clean inspections (24 mo)">
+                {`${clean.clean} of ${clean.total} (${formatPercent(clean.clean / clean.total)})`}
+              </Fact>
+            )}
+          </dl>
+        </div>
+        {/* Its own block, so the rates and counts above fit the first page without it. */}
+        <p className="text-[11px] text-slate-500">
+          Why these counts differ: Inspections counts every inspection FMCSA has loaded for the last
+          24 months. Out-of-service rates count only those that examined the vehicle or the driver.
+          Clean inspections use FMCSA’s monthly safety results, which can leave out the most recent
+          inspections.
+        </p>
+
         {roadside.length > 0 && (
           <div className="space-y-2">
             <SectionHeading aside="Doesn’t feed the Estimated ISS directly" tone="amber">
@@ -737,57 +790,6 @@ export function PacketDocument({
             Percentile: how the carrier ranks against similar carriers; 0 is best, 100 is worst.
             Threshold: the percentile at which FMCSA may step in. Measure: violation points divided
             by inspections, or by fleet size and miles.
-          </p>
-        </div>
-
-        <div className="grid gap-5 wide:grid-cols-[1.4fr_1fr]">
-          <div className="space-y-3">
-            <SectionHeading aside={`Last ${recent?.months ?? 24} months`}>
-              Out-of-service rates
-            </SectionHeading>
-            {recent ? (
-              <>
-                <OosBar
-                  label="Vehicle out-of-service"
-                  rate={recent.vehicle_oos_rate}
-                  national={recent.national_vehicle_oos_rate}
-                  oos={recent.vehicle_oos}
-                  base={recent.vehicle_inspections}
-                />
-                <OosBar
-                  label="Driver out-of-service"
-                  rate={recent.driver_oos_rate}
-                  national={recent.national_driver_oos_rate}
-                  oos={recent.driver_oos}
-                  base={recent.driver_inspections}
-                />
-              </>
-            ) : (
-              <p className="text-sm text-slate-500">No inspections in the last 24 months.</p>
-            )}
-          </div>
-          <dl className="grid grid-cols-2 gap-3 rounded-xl border border-slate-200 p-3">
-            <Fact label="Inspections">
-              {recent?.inspections ?? profile.safety.inspection_count}
-            </Fact>
-            <Fact label="Last inspection">{formatDate(profile.safety.last_inspection_date)}</Fact>
-            <Fact label={`Crashes · ${crashes?.recent_months ?? 24} mo`}>
-              {crashes ? crashes.recent_total : null}
-            </Fact>
-            <Fact label="Fatal · injury">
-              {crashes ? `${crashes.recent_fatal} · ${crashes.recent_injury}` : null}
-            </Fact>
-            {clean && (
-              <Fact label="Clean inspections (24 mo)">
-                {`${clean.clean} of ${clean.total} (${formatPercent(clean.clean / clean.total)})`}
-              </Fact>
-            )}
-          </dl>
-          <p className="text-[11px] text-slate-500 wide:col-span-2">
-            Why these counts differ: Inspections counts every inspection FMCSA has loaded for the
-            last 24 months. Out-of-service rates count only those that examined the vehicle or the
-            driver. Clean inspections use FMCSA’s monthly safety results, which can leave out the
-            most recent inspections.
           </p>
         </div>
 

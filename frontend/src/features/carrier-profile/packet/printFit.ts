@@ -8,8 +8,16 @@ export const PrintCopy = createContext(false)
  * margins drawn inside each page (index.css .print-page), less 2mm to spare.
  */
 const PAGE_HEIGHT_MM = 277
+const PAGE_WIDTH_MM = 190
 const PX_PER_MM = 96 / 25.4
 const PAGE_HEIGHT = PAGE_HEIGHT_MM * PX_PER_MM
+const PAGE_WIDTH = PAGE_WIDTH_MM * PX_PER_MM
+/**
+ * The printed text's size: a little under full size, so the first page holds the score, the red
+ * items and the out-of-service rates (it printed at 70-79% when every part had to fit one page).
+ * Each page is laid out at the page width divided by this and scaled down with CSS zoom.
+ */
+const SCALE = 0.83
 
 /** Where each report sheet landed: its first and last printed page, and the page count. */
 export interface PageNumbers {
@@ -19,7 +27,7 @@ export interface PageNumbers {
 }
 
 /**
- * Lays the report out on A4 pages at full size (no shrinking to fit): the sheets of the printed
+ * Lays the report out on A4 pages at one fixed size (SCALE, no shrinking to fit): the sheets of the printed
  * copy (`source`) are copied into `out` page by page. A sheet's sections (the children of its
  * `.sheet-body`) go onto a page while they fit; each new page repeats the running header and Sky
  * Transport Solutions strip of the sheet it starts in. The next sheet carries on on the same page
@@ -55,11 +63,16 @@ export function paginateReport(source: HTMLElement, out: HTMLElement): PageNumbe
       copy.append(part)
     }
     copy.style.minHeight = '0px'
+    // Zoomed from the start, so each page is measured exactly as it prints (text wraps a little
+    // differently once scaled).
+    copy.style.zoom = String(SCALE)
+    copy.style.width = `${PAGE_WIDTH / SCALE}px`
     wrapper.append(copy)
     out.append(wrapper)
     pages.push(wrapper)
     page = copy
   }
+  // The page's size as printed (the box of a zoomed element is the zoomed size).
   const fits = () => page.getBoundingClientRect().height <= PAGE_HEIGHT + 1
 
   sheets.forEach((next, index) => {
@@ -100,8 +113,8 @@ export function paginateReport(source: HTMLElement, out: HTMLElement): PageNumbe
 
   pages.forEach((wrapper, i) => {
     const copy = wrapper.firstElementChild as HTMLElement
-    // A full page tall, so the strip sits at the bottom of each page.
-    copy.style.minHeight = `${PAGE_HEIGHT}px`
+    // A full page tall (in its own, unzoomed units), so the strip sits at the bottom of each page.
+    copy.style.minHeight = `${PAGE_HEIGHT / SCALE}px`
     const number = copy.querySelector('[data-page-number]')
     if (number) number.textContent = `· Page ${i + 1} of ${pages.length}`
   })
