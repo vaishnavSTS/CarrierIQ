@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 
-import { savedAudience, type Audience } from '../../features/audience/audience'
+import { audienceOfPath, type Audience } from '../../features/audience/audience'
 
 import { homeFor, useMe } from '../../hooks/useAuth'
 import { BackgroundSpotlight } from './BackgroundSpotlight'
@@ -20,8 +20,7 @@ const ACCOUNT: Record<Audience, { logIn: string; signUp: string }> = {
 /** Landing, login and sign-up pages: no login needed. */
 export function PublicLayout() {
   const { data: user } = useMe()
-  useLocation() // re-read the visitor's choice on every page change
-  const account = ACCOUNT[savedAudience() ?? 'carrier']
+  const account = ACCOUNT[audienceOfPath(useLocation().pathname)]
 
   return (
     <div className="landing-page landing-rest relative isolate flex min-h-screen flex-col">

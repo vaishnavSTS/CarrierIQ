@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import { homeFor, useMe } from '../../hooks/useAuth'
-import { AUDIENCE_PATH, AUDIENCES, rememberAudience, type Audience } from '../audience/audience'
+import { AUDIENCE_PATH, AUDIENCES, type Audience } from '../audience/audience'
 import { PrimaryLink } from './landingParts'
 import { HeroTryForm } from './LandingSections'
 import { SampleShowcase } from './SampleShowcase'
@@ -32,7 +32,7 @@ const HERO: Record<Audience, { tab: string; title: ReactNode; text: string }> = 
 
 /**
  * The top of an audience's page: its headline, the free search and a sample of what it gets. The
- * pills switch to another audience's page (and remember the new choice).
+ * pills switch to another audience's page.
  */
 export function AudienceHero({ audience }: { audience: Audience }) {
   const { data: user } = useMe()
@@ -47,7 +47,6 @@ export function AudienceHero({ audience }: { audience: Audience }) {
           <Link
             key={a}
             to={AUDIENCE_PATH[a]}
-            onClick={() => rememberAudience(a)}
             aria-current={a === audience ? 'page' : undefined}
             className={`inline-flex min-h-11 items-center rounded-full px-4 py-2 text-sm font-medium ring-1 ring-white/50 transition-colors ${
               a === audience

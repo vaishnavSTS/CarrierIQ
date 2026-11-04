@@ -1,13 +1,8 @@
 import { ArrowRight } from 'lucide-react'
-import type { ReactElement } from 'react'
+import { useEffect, type ReactElement } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 
-import {
-  AUDIENCE_PATH,
-  rememberAudience,
-  savedAudience,
-  type Audience,
-} from '../features/audience/audience'
+import { AUDIENCE_PATH, forgetStoredAudience, type Audience } from '../features/audience/audience'
 import { AgentArt, BrokerArt, CarrierArt } from '../features/landing/RoleArt'
 import { homeFor, useMe } from '../hooks/useAuth'
 
@@ -34,21 +29,17 @@ const CHOICES: { audience: Audience; art: () => ReactElement; title: string; tex
 
 /**
  * The front door: the visitor says whether they're a carrier, a freight broker or an insurance
- * agent, and lands on that page. Someone who already chose (audience.ts) goes straight there, and
- * someone logged in goes to their portal.
+ * agent, and lands on that page. Asked on every visit (nothing is stored); someone logged in goes
+ * to their portal.
  */
 export function AudienceChooserPage() {
   const { data: user, isPending } = useMe()
   const navigate = useNavigate()
+  useEffect(forgetStoredAudience, [])
   if (isPending) return null
   if (user) return <Navigate to={homeFor(user.portal)} replace />
-  const saved = savedAudience()
-  if (saved) return <Navigate to={AUDIENCE_PATH[saved]} replace />
 
-  const choose = (audience: Audience) => {
-    rememberAudience(audience)
-    navigate(AUDIENCE_PATH[audience])
-  }
+  const choose = (audience: Audience) => navigate(AUDIENCE_PATH[audience])
 
   return (
     <div className="hero-gradient">

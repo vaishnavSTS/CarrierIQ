@@ -1,10 +1,9 @@
 import { FileText, Search, UserPlus, type LucideIcon } from 'lucide-react'
 import { motion } from 'motion/react'
-import { useEffect, type ReactElement } from 'react'
+import type { ReactElement } from 'react'
 import { Link } from 'react-router-dom'
 
-import { rememberAudience, type Audience } from '../features/audience/audience'
-import { CookieBar } from '../features/audience/CookieBar'
+import type { Audience } from '../features/audience/audience'
 import { AudienceHero } from '../features/landing/AudienceHero'
 import { PrimaryLink, reveal, SectionHeading } from '../features/landing/landingParts'
 import { AboutStsSection, DataQsSection, ReportPreview } from '../features/landing/LandingSections'
@@ -182,15 +181,10 @@ const CONTENT: Record<
   },
 }
 
-/**
- * One audience's page (carriers, freight brokers or insurance agents): what CarrierSafetyScan does
- * for them, with the cookie question at the foot until it's answered. Opening it counts as their
- * choice (audience.ts), so the front door brings them back here.
- */
+/** One audience's page (carriers, freight brokers or insurance agents): what CarrierSafetyScan does for them. */
 export function LandingPage({ audience }: { audience: Audience }) {
   const { data: user } = useMe()
   const content = CONTENT[audience]
-  useEffect(() => rememberAudience(audience), [audience])
 
   return (
     <div className="relative overflow-hidden">
@@ -280,7 +274,6 @@ export function LandingPage({ audience }: { audience: Audience }) {
           <AboutStsSection />
         </div>
       </div>
-      {!user && <CookieBar audience={audience} />}
     </div>
   )
 }
