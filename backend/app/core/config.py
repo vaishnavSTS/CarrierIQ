@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     carrier_refresh_hours: float = 24.0
     # Intelligence signals (spec Section 12): changes older than this are history, not signals.
     signal_lookback_days: int = 730
-    # Carriers sharing a phone, email, address or officer; more matches than this are cut off.
+    # Carriers sharing a phone, email or address; more matches than this are cut off.
     contact_link_limit: int = 200
     # Background worker (spec Section 18): a PostgreSQL-backed job queue, no Redis.
     # Local development: also run the worker inside the API process (app/main.py), so starting

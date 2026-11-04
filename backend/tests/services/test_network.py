@@ -219,7 +219,7 @@ def test_network_endpoint(api: TestClient) -> None:
     assert body["linked_carriers"][0]["usdot_number"] == 900001  # phone link: strongest
     movers = linked[900001]
     assert (movers["legal_name"], movers["status"]) == ("UNITED MOVERS LLC", "INACTIVE")
-    assert [s["kind"] for s in movers["shares"]] == ["phone", "officer"]
+    assert [s["kind"] for s in movers["shares"]] == ["phone"]  # an officer's name doesn't link
     assert movers["shares"][0]["value"] == "3604794800"
     assert movers["signal_id"] is not None
     assert linked[900002]["shares"][0]["kind"] == "building"

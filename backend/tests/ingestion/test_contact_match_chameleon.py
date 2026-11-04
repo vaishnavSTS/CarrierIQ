@@ -18,7 +18,6 @@ KEYS = keys_for(
     None,
     "1770 NE Fuson Rd",
     "98311-3729",
-    [],
     duns="053826913",
     mailing=("PO Box 12 Main St", "98312"),
     past_phones=["(206) 555-0100", "360-479-4800"],  # the second is still current
@@ -57,7 +56,7 @@ def test_where_adds_duns_mailing_and_past_values() -> None:
 
 
 def test_duns_values_cannot_change_the_query() -> None:
-    keys = keys_for([], None, None, None, [], duns="05382'6913 OR 1=1")
+    keys = keys_for([], None, None, None, duns="05382'6913 OR 1=1")
 
     assert keys.duns == ""  # not 7-9 digits once the rest is stripped
     assert build_where(keys) is None

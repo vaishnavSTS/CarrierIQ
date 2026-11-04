@@ -30,7 +30,7 @@ const FEATURES: GuideItem[] = [
   {
     icon: Network,
     title: 'Fraud red flags',
-    text: 'Phones, emails, addresses or officers shared with other carriers, and links to revoked USDOT numbers.',
+    text: 'Phones, emails or addresses shared with other carriers, and links to revoked USDOT numbers.',
   },
   {
     icon: Truck,

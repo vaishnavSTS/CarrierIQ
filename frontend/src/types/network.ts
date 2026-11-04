@@ -1,6 +1,7 @@
 /** Mirrors backend/app/schemas/network.py */
 
-export type ShareKind = 'phone' | 'email' | 'address' | 'building' | 'officer'
+/** Officer names aren't matched: many different people share a name. */
+export type ShareKind = 'phone' | 'email' | 'address' | 'building'
 
 export interface SharedDetail {
   kind: ShareKind

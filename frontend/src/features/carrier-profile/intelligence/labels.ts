@@ -37,7 +37,7 @@ export const RULE_EXPLAINED: Record<string, string> = {
   shared_vin:
     'VINs on this carrier’s inspections that were also recorded on inspections of another USDOT number.',
   shared_contact:
-    'Phone, email, street address and unit, or officer names in this carrier’s FMCSA census record that also appear on another USDOT number.',
+    'Phone, email, or street address and unit in this carrier’s FMCSA census record that also appear on another USDOT number.',
   ownership_event:
     'Ownership and identity events recorded by your team, such as a broker attestation of an ownership change.',
 }

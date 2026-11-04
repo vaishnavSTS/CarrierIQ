@@ -47,7 +47,6 @@ const SHARE_LABEL: Record<string, string> = {
   email: 'Email',
   address: 'Address and unit',
   building: 'Building (other unit)',
-  officer: 'Officer',
 }
 
 function SubHeading({
@@ -293,15 +292,13 @@ function NetworkBody({
       )}
 
       <SubHeading
-        note={`Other carriers in FMCSA’s Company Census with the same phone, email, address or officer. Last checked ${formatDateTime(data.links_checked_at)}.`}
+        note={`Other carriers in FMCSA’s Company Census with the same phone, email or address. Last checked ${formatDateTime(data.links_checked_at)}.`}
         source={SOURCES.linked}
       >
         Linked carriers
       </SubHeading>
       {strong.length === 0 ? (
-        <Empty>
-          No other carrier shares this carrier’s phone, email, address and unit, or officers.
-        </Empty>
+        <Empty>No other carrier shares this carrier’s phone, email, or address and unit.</Empty>
       ) : (
         <LinkedTable carriers={strong} />
       )}

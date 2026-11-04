@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class SharedDetailOut(BaseModel):
-    kind: str  # phone | email | address | building | officer
+    kind: str  # phone | email | address | building
     value: str | None
     confidence: str
     first_seen: date

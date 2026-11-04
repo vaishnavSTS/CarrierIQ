@@ -203,7 +203,7 @@ const BROKER_SLIDES: Slide[] = [
       <Rows
         rows={[
           { ok: false, label: 'Same phone number', detail: '1 other carrier' },
-          { ok: true, label: 'Same officer', detail: 'None found' },
+          { ok: true, label: 'Same email', detail: 'None found' },
           { ok: true, label: 'Same address', detail: 'None found' },
           { ok: true, label: 'Link to a revoked USDOT', detail: 'None found' },
           { ok: true, label: 'VINs under other USDOT numbers', detail: 'None found' },

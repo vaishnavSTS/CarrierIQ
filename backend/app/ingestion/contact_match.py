@@ -1,8 +1,9 @@
 """Find other carriers that share a carrier's contact details in the Company Census File.
 
-Pure functions: build one SoQL filter matching any of a carrier's phones, email, physical street
-address or officer names, then say which of those each returned row shares. Spec Sections 11.4
-(SHARES_PHONE / SHARES_ADDRESS / SHARES_OFFICER relationships) and 29 (identity history).
+Pure functions: build one SoQL filter matching any of a carrier's phones, email or physical
+street address, then say which of those each returned row shares. Spec Sections 11.4
+(SHARES_PHONE / SHARES_ADDRESS relationships) and 29 (identity history). Officer names are not
+matched: many different people share a name, so a shared name doesn't tie two carriers together.
 
 For the Chameleon check it also matches the carrier's DUNS number, its mailing address (against
 other carriers' physical and mailing addresses) and the phones / addresses it used before (past
@@ -20,7 +21,6 @@ from app.ingestion.company_census_normalizer import normalize_phone
 from app.ingestion.socrata_client import Row
 
 PHONE_FIELDS = ("phone", "cell_phone", "fax")
-OFFICER_FIELDS = ("company_officer_1", "company_officer_2")
 # (street field, zip field) of the census row's physical and mailing addresses.
 ADDRESS_FIELDS = (("phy_street", "phy_zip"), ("carrier_mailing_street", "carrier_mailing_zip"))
 DUNS_FIELD = "dun_bradstreet_no"
@@ -30,7 +30,6 @@ PHONE = "phone"
 EMAIL = "email"
 ADDRESS = "address"  # same street address including the unit
 BUILDING = "building"  # same street address, different (or no) unit
-OFFICER = "officer"
 # Chameleon-check kinds (not part of the Network tab's contact links).
 DUNS = "duns"  # same Dun & Bradstreet number
 MAILING = "mailing"  # same street address and unit, where a mailing address is involved
@@ -45,7 +44,6 @@ _TRAILING_UNIT = re.compile(
     r"\b(ST|AVE|RD|DR|BLVD|LN|WAY|CT|PL|PKWY|HWY|CIR|TER|TRL)\s+#?[A-Z]?\d+[A-Z]?$"
 )
 _UNSAFE = re.compile(r"['%_\\]")
-MIN_OFFICER_LENGTH = 6  # skip initials and fragments that would match strangers
 
 
 def clean(value: str | None) -> str:
@@ -136,7 +134,6 @@ class ContactKeys:
     email: str = ""
     street: str = ""  # full street in USPS short form (unit included)
     zip: str = ""
-    officers: tuple[str, ...] = ()
     # Chameleon check only:
     duns: str = ""
     mailing: AddressKey | None = None  # the current mailing address
@@ -162,7 +159,6 @@ class ContactKeys:
             self.phones
             or self.email
             or (self.building and self.zip)
-            or self.officers
             or self.duns
             or self.mailing
             or self.past_phones
@@ -183,7 +179,6 @@ def keys_for(
     email: str | None,
     street: str | None,
     zip_code: str | None,
-    officers: list[str],
     *,
     duns: str | None = None,
     mailing: tuple[str | None, str | None] | None = None,
@@ -199,9 +194,6 @@ def keys_for(
         email=clean(email) if email and "@" in email else "",
         street=normalize_street(street),
         zip=zip5(zip_code),
-        officers=tuple(
-            sorted({o for o in (clean(x) for x in officers) if len(o) >= MIN_OFFICER_LENGTH})
-        ),
         duns=normalize_duns(duns),
         mailing=mailing_key,
         past_phones=tuple(sorted(former_phones - set(current_phones))),
@@ -238,8 +230,6 @@ def build_where(keys: ContactKeys) -> str | None:
         # classify() then compares the normalized street.
         prefix = f"{keys.house_number} " if keys.house_number else keys.building
         parts.append(f"(upper(phy_street) like '{prefix}%' AND phy_zip like '{keys.zip}%')")
-    if keys.officers:
-        parts += [f"upper({f}) in {_in(keys.officers)}" for f in OFFICER_FIELDS]
     if keys.duns:
         # Digits only (normalize_duns), with and without the leading zeros the census drops.
         forms = tuple(sorted({keys.duns, keys.duns.lstrip("0")}))
@@ -276,11 +266,6 @@ def classify(row: Row, keys: ContactKeys) -> Match:
         elif street and street_base(street) == keys.building:
             match.kinds.add(BUILDING)
             match.values[BUILDING] = written
-    for f in OFFICER_FIELDS:
-        name = clean(row.get(f) if isinstance(row.get(f), str) else "")
-        if name and name in keys.officers:
-            match.kinds.add(OFFICER)
-            match.values[OFFICER] = name
     _classify_chameleon(row, keys, match)
     return match
 

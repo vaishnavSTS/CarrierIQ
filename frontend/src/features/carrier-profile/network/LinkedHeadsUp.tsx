@@ -9,7 +9,6 @@ const KIND_LABEL: Record<string, string> = {
   phone: 'phone',
   email: 'email',
   address: 'address',
-  officer: 'officer',
 }
 const NAMED = 2
 
@@ -23,8 +22,8 @@ function shared(carriers: LinkedCarrier[]): string {
 }
 
 /**
- * Header heads-up: other carriers that FMCSA's census lists with the same phone, email,
- * address or officer. Same-building links (a different unit) are left to the Network tab.
+ * Header heads-up: other carriers that FMCSA's census lists with the same phone, email or
+ * address. Same-building links (a different unit) are left to the Network tab.
  */
 export function LinkedHeadsUp({ usdotNumber }: { usdotNumber: number }) {
   const { data } = useCarrierNetwork(usdotNumber)

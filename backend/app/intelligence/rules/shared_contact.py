@@ -1,5 +1,6 @@
 """Shared contact details (spec Sections 11.4, 12.4, 29): another USDOT number with the same
-phone, email, street address and unit, or officer name in the FMCSA census.
+phone, email, or street address and unit in the FMCSA census (not officer names: many people
+share a name).
 
 One signal per other carrier, from the links stored by services/contact_link_service.py; the
 other carrier's census row is the evidence. Sharing only a building (another unit at the same
@@ -10,7 +11,7 @@ carriers often keep the same phone, email, address or people. There are also ord
 family businesses, a shared office, or a dispatch or compliance service listing its own phone or
 email for its clients. The wording says so; this is a relationship to review, never a finding.
 
-Severity: MEDIUM for a shared phone or email, LOW for a shared address or officer; one level
+Severity: MEDIUM for a shared phone or email, LOW for a shared address; one level
 higher (at most HIGH) when 2+ different details are shared with a carrier that is no longer
 active. Confidence: HIGH for 2+ different details, MEDIUM for one; LOW when every shared value
 appears on many carriers (most likely a service provider's).
@@ -35,7 +36,6 @@ LABEL = {
     LINK_TYPE["phone"]: "phone",
     LINK_TYPE["email"]: "email",
     LINK_TYPE["address"]: "address",
-    LINK_TYPE["officer"]: "officer",
 }
 LEVELS = [Severity.LOW, Severity.MEDIUM, Severity.HIGH]
 
@@ -64,7 +64,7 @@ def _spread_note(count: int) -> str:
 
 class SharedContactRule(Rule):
     rule_id = "shared_contact"
-    rule_version = "1.2"  # 1.2: neutral wording; 1.1: exact shared value in evidence
+    rule_version = "1.3"  # 1.3: no officer names; 1.2: neutral wording; 1.1: exact value
 
     def evaluate(self, context: RuleContext) -> list[SignalValues]:
         usdot = context.carrier.usdot_number

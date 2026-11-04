@@ -30,7 +30,7 @@ const PAGES: {
     title: (
       <>Vet any carrier {highlight('before you book the load')}, and spot the red flags early</>
     ),
-    text: 'Check a carrier’s authority, insurance and safety record in one place, see the carriers it shares a phone, address or officer with, and compare up to 3 side by side.',
+    text: 'Check a carrier’s authority, insurance and safety record in one place, see the carriers it shares a phone, email or address with, and compare up to 3 side by side.',
   },
   {
     audience: 'agent',

@@ -1,7 +1,7 @@
 /** Chameleon check (GET /carriers/{usdot}/chameleon, and the broker equivalent). */
 
 export interface ChameleonShare {
-  /** ein | phone | email | address | building | officer | duns | mailing_address */
+  /** ein | phone | email | address | building | duns | mailing_address */
   kind: string
   value: string | null
   /** A value this carrier used before, not its current one */

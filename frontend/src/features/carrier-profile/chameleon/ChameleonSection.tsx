@@ -17,7 +17,6 @@ const SHARE_LABEL: Record<string, string> = {
   email: 'Email',
   address: 'Address and unit',
   mailing_address: 'Mailing address',
-  officer: 'Officer',
   building: 'Building (other unit)',
 }
 
@@ -277,8 +276,7 @@ function Check({ check }: { check: ChameleonCheck }) {
       {check.linked.length === 0 ? (
         <Empty>
           None found: no other carrier in FMCSA’s census shares this carrier’s DUNS number, phones,
-          email, addresses or officers, and no truck was inspected under two or more other USDOT
-          numbers.
+          email or addresses, and no truck was inspected under two or more other USDOT numbers.
         </Empty>
       ) : (
         <LinkedTable carriers={check.linked} />
@@ -300,9 +298,10 @@ function Check({ check }: { check: ChameleonCheck }) {
       <SubHeading>How the check works</SubHeading>
       <ul className="list-disc space-y-1 pl-5 text-xs text-slate-600">
         <li>
-          This carrier’s DUNS number, phones (office, cell, fax), email, physical and mailing
-          addresses and officer names are compared with every carrier in FMCSA’s Company Census,
-          including phones and addresses it used before (marked “past”).
+          This carrier’s DUNS number, phones (office, cell, fax), email, and physical and mailing
+          addresses are compared with every carrier in FMCSA’s Company Census, including phones and
+          addresses it used before (marked “past”). Officer names are not compared: many different
+          people share a name.
         </li>
         <li>
           Revocation / suspension orders (FMCSA Motus) and out-of-service orders are looked up for

@@ -5,7 +5,7 @@ A chameleon carrier is an operation that re-registers under a new name and USDOT
 a bad record (revocation, out-of-service order) behind, usually keeping its people, phone,
 address, business record or trucks. This puts those pieces side by side:
 
-- shared details: the contact links (phone, email, address, building, officer) plus the DUNS
+- shared details: the contact links (phone, email, address, building) plus the DUNS
   number, mailing address and former phones / addresses (services/contact_link_service.py);
 - what happened to each linked carrier: FMCSA revocation / suspension and out-of-service orders,
   fetched for all of them in one query per dataset, and how long after that this carrier's USDOT
@@ -40,7 +40,6 @@ from app.ingestion.contact_match import (
     DUNS,
     EMAIL,
     MAILING,
-    OFFICER,
     PAST_ADDRESS,
     PAST_PHONE,
     PHONE,
@@ -85,7 +84,6 @@ KIND_OF: dict[str, tuple[str, bool]] = {
     LINK_TYPE[EMAIL]: ("email", False),
     LINK_TYPE[ADDRESS]: ("address", False),
     LINK_TYPE[BUILDING]: ("building", False),
-    LINK_TYPE[OFFICER]: ("officer", False),
     LINK_TYPE[DUNS]: ("duns", False),
     LINK_TYPE[MAILING]: ("mailing_address", False),
     LINK_TYPE[PAST_PHONE]: ("phone", True),
@@ -94,10 +92,10 @@ KIND_OF: dict[str, tuple[str, bool]] = {
 # The value classify() records for each link type's match.
 MATCH_KIND = {
     LINK_TYPE[k]: k
-    for k in (PHONE, EMAIL, ADDRESS, BUILDING, OFFICER, DUNS, MAILING, PAST_PHONE, PAST_ADDRESS)
+    for k in (PHONE, EMAIL, ADDRESS, BUILDING, DUNS, MAILING, PAST_PHONE, PAST_ADDRESS)
 }
-# Strongest first: one business record, then contact details, then people, then the building.
-STRENGTH = ["ein", "duns", "phone", "email", "address", "mailing_address", "officer", "building"]
+# Strongest first: one business record, then contact details, then the building.
+STRENGTH = ["ein", "duns", "phone", "email", "address", "mailing_address", "building"]
 
 
 @dataclass

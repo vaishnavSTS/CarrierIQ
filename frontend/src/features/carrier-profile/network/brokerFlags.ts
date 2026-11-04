@@ -33,7 +33,7 @@ const FIX: Record<string, string> = {
 const RENEWAL_FIX =
   'A current certificate of insurance from the carrier or its insurer, showing the policy dates.'
 
-const KIND_LABEL = { phone: 'phone', email: 'email', address: 'address', officer: 'officer' }
+const KIND_LABEL = { phone: 'phone', email: 'email', address: 'address' }
 
 /** Turn public-record findings into the checklist a broker's vetting is likely to run. */
 export function brokerFlags(network: CarrierNetwork, profile: CarrierProfile): BrokerFlag[] {

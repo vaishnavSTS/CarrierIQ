@@ -110,7 +110,7 @@ def test_strongest_links_first() -> None:
         linked(10, ["phone"], vins=5),
         linked(11, ["building"]),
         linked(12, ["phone", "email"]),
-        linked(13, ["phone", "officer"], shutdown=shut),
+        linked(13, ["phone", "address"], shutdown=shut),
     ]
 
     rows.sort(key=sort_key)

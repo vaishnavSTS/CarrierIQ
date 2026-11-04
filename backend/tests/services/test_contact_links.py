@@ -31,13 +31,13 @@ def other(dot: int, name: str, status: str = "A", **fields: Any) -> dict[str, An
 
 
 OTHERS = [
-    # Same phone (without the country code) and an officer; no longer active.
+    # Same phone (without the country code) and an officer name; no longer active.
     other(
         900001, "UNITED MOVERS LLC", "I", phone="3604794800", company_officer_1="CRAIG LOIDHAMER"
     ),
     # Same building, another suite: shown on the Network tab, not a signal.
     other(900002, "FUSON STORAGE", phy_street="1770 NE FUSON RD STE 2", phy_zip="98311"),
-    # Same officer name only.
+    # Same officer name only: not a link (many people share a name).
     other(900003, "WASHBURN HAULING", company_officer_2="SHAUNA WASHBURN"),
     # The fax number is on many carriers: a service provider's.
     *[other(900010 + i, f"CLIENT {i} INC", fax="3603732751") for i in range(5)],
@@ -60,12 +60,13 @@ def test_links_record_what_is_shared(db: Session) -> None:
 
     result = build_contact_link_service(db, api.client()).ingest(295017)
 
-    assert result.linked_carriers == 8
+    assert result.linked_carriers == 7  # not 900003, which shares only an officer's name
     found = links(db)
-    assert ("SHARES_PHONE", 900001) in found and ("SHARES_OFFICER", 900001) in found
+    assert ("SHARES_PHONE", 900001) in found
+    assert not any(kind == "SHARES_OFFICER" for kind, _ in found)
     assert ("SHARES_BUILDING", 900002) in found and ("SHARES_ADDRESS", 900002) not in found
     assert found[("SHARES_BUILDING", 900002)].confidence == Confidence.LOW
-    assert ("SHARES_OFFICER", 900003) in found
+    assert not any(target == 900003 for _, target in found)
     assert found[("SHARES_PHONE", 900001)].raw_record_id is not None
 
 
@@ -76,13 +77,13 @@ def test_rerun_keeps_first_seen_and_drops_details_no_longer_shared(db: Session) 
     links(db)[("SHARES_PHONE", 900001)].first_seen = date(2026, 1, 1)
     db.flush()
 
-    api.census = [r for r in api.census if r["dot_number"] != "900003"]  # officer link gone
+    api.census = [r for r in api.census if r["dot_number"] != "900002"]  # building link gone
     service.ingest(295017)
 
     again = links(db)
     assert again[("SHARES_PHONE", 900001)].first_seen == date(2026, 1, 1)
     assert again[("SHARES_PHONE", 900001)].observation_count == 2
-    assert ("SHARES_OFFICER", 900003) not in again
+    assert ("SHARES_BUILDING", 900002) not in again
 
 
 def test_shared_contact_signals(db: Session) -> None:
@@ -98,12 +99,11 @@ def test_shared_contact_signals(db: Session) -> None:
 
     assert "shared_contact:900002" not in found  # building only
     movers = found["shared_contact:900001"]
-    assert movers.title == "Shares phone and officer with USDOT 900001 (UNITED MOVERS LLC)"
-    assert (movers.severity, movers.confidence) == (Severity.HIGH, Confidence.HIGH)  # 2 + inactive
+    assert movers.title == "Shares phone with USDOT 900001 (UNITED MOVERS LLC)"
+    assert (movers.severity, movers.confidence) == (Severity.MEDIUM, Confidence.MEDIUM)
     assert "not a finding" in movers.description
-    assert [e.field_name for e in movers.evidence] == ["phone", "officer"]
-    washburn = found["shared_contact:900003"]
-    assert (washburn.severity, washburn.confidence) == (Severity.LOW, Confidence.MEDIUM)
+    assert [e.field_name for e in movers.evidence] == ["phone"]  # the officer name isn't one
+    assert "shared_contact:900003" not in found  # an officer's name only
     client = found["shared_contact:900010"]
     assert (client.severity, client.confidence) == (Severity.LOW, Confidence.LOW)
     assert "dispatch, compliance or filing service" in client.description

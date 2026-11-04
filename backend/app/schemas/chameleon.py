@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 
 class ChameleonShareOut(BaseModel):
-    # ein | phone | email | address | building | officer | duns | mailing_address
+    # ein | phone | email | address | building | duns | mailing_address
     kind: str
     # the shared value as FMCSA has it on the other carrier's record; None for an EIN, which
     # is compared but never returned

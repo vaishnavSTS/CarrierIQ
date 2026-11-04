@@ -1,10 +1,11 @@
 """Carriers that share contact details (spec Sections 11.4, 29; Network / Fraud tab).
 
-During each refresh, the carrier's phones, email, physical address and officer names are looked
-up across the whole FMCSA Company Census File in one query. Every other USDOT number that shares
-one of them becomes a relationship from this carrier: SHARES_PHONE, SHARES_EMAIL, SHARES_ADDRESS
-(same street address and unit), SHARES_BUILDING (same street address, another unit) or
-SHARES_OFFICER, each traced to the other carrier's census row as received.
+During each refresh, the carrier's phones, email and physical address are looked up across the
+whole FMCSA Company Census File in one query. Every other USDOT number that shares one of them
+becomes a relationship from this carrier: SHARES_PHONE, SHARES_EMAIL, SHARES_ADDRESS (same street
+address and unit) or SHARES_BUILDING (same street address, another unit), each traced to the
+other carrier's census row as received. Officer names are not matched (many people share a name;
+migration 0053 removed the SHARES_OFFICER links made before).
 
 For the Chameleon check the same query also finds carriers sharing the DUNS number, a
 mailing address, or a phone / address this carrier used before. Those become SHARES_DUNS,
@@ -33,7 +34,6 @@ from app.ingestion.contact_match import (
     DUNS,
     EMAIL,
     MAILING,
-    OFFICER,
     PAST_ADDRESS,
     PAST_PHONE,
     PHONE,
@@ -44,7 +44,7 @@ from app.ingestion.contact_match import (
     keys_for,
 )
 from app.ingestion.socrata_client import Row, SocrataClient
-from app.models import Address, Carrier, Officer, Phone
+from app.models import Address, Carrier, Phone
 from app.models.enums import AddressType, Confidence
 from app.repositories.carrier_repository import CarrierRepository
 from app.repositories.ingestion_run_repository import IngestionRunRepository
@@ -61,14 +61,13 @@ LINK_TYPE = {
     EMAIL: "SHARES_EMAIL",
     ADDRESS: "SHARES_ADDRESS",
     BUILDING: "SHARES_BUILDING",
-    OFFICER: "SHARES_OFFICER",
     DUNS: "SHARES_DUNS",
     MAILING: "SHARES_MAILING_ADDRESS",
     PAST_PHONE: "SHARED_PAST_PHONE",
     PAST_ADDRESS: "SHARED_PAST_ADDRESS",
 }
 # The Network tab's contact links (strongest first).
-CONTACT_LINK_TYPES = tuple(LINK_TYPE[k] for k in (PHONE, EMAIL, ADDRESS, BUILDING, OFFICER))
+CONTACT_LINK_TYPES = tuple(LINK_TYPE[k] for k in (PHONE, EMAIL, ADDRESS, BUILDING))
 # Everything the Chameleon check reads: the contact links plus DUNS, mailing and past values.
 CHAMELEON_LINK_TYPES = CONTACT_LINK_TYPES + tuple(
     LINK_TYPE[k] for k in (DUNS, MAILING, PAST_PHONE, PAST_ADDRESS)
@@ -79,7 +78,6 @@ LINK_CONFIDENCE = {
     EMAIL: Confidence.HIGH,
     ADDRESS: Confidence.HIGH,
     BUILDING: Confidence.LOW,
-    OFFICER: Confidence.MEDIUM,  # the same name can belong to different people
     DUNS: Confidence.HIGH,  # one business record
     MAILING: Confidence.HIGH,
     PAST_PHONE: Confidence.MEDIUM,  # numbers are reassigned over time
@@ -107,7 +105,7 @@ class ContactLinkResult:
 def contact_keys(
     carrier: Carrier, observed: ObservedValueRepository, census: dict[str, Any] | None = None
 ) -> ContactKeys:
-    """The carrier's current phones, email, physical address and officers, ready to match;
+    """The carrier's current phones, email and physical address, ready to match;
     plus, for the Chameleon check, its mailing address, past phones and addresses and (from its
     census record, when given) its DUNS number."""
     addresses = observed.current(Address, carrier.id)
@@ -119,7 +117,6 @@ def contact_keys(
         carrier.email,
         physical.street if physical else None,
         physical.zip if physical else None,
-        [o.name for o in observed.current(Officer, carrier.id)],
         duns=duns if isinstance(duns, str) else None,
         mailing=(mailing.street, mailing.zip) if mailing else None,
         past_phones=[p.number_normalized for p in observed.past(Phone, carrier.id)],
