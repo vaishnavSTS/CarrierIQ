@@ -1,6 +1,6 @@
 import { humanize } from '../../../utils/format'
 
-/** Census fields CarrierSafetyScan keeps a change history for, in the words FMCSA uses. */
+/** Census fields Carrier Safety Scan keeps a change history for, in the words FMCSA uses. */
 const ATTRIBUTE_LABEL: Record<string, string> = {
   legal_name: 'Legal name',
   dba_name: 'DBA name',

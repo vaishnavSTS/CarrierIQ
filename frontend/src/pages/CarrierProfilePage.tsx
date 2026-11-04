@@ -109,7 +109,7 @@ export function CarrierProfilePage() {
         {error instanceof ApiError && error.status === 404
           ? ownCarriersOnly
             ? `USDOT ${usdotNumber} isn’t one of your carriers. Contact STS if it should be.`
-            : `No carrier with USDOT ${usdotNumber} was found in CarrierSafetyScan or FMCSA data.`
+            : `No carrier with USDOT ${usdotNumber} was found in Carrier Safety Scan or FMCSA data.`
           : `Could not load USDOT ${usdotNumber}: ${error.message}`}
       </Notice>
     )

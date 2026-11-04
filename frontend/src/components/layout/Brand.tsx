@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import logo from '../../assets/carriersafetyscan-logo.png'
 
 /**
- * The CarrierSafetyScan logo and name, with the "Powered by Sky Transport Solutions" line,
+ * The Carrier Safety Scan logo and name, with the "Powered by Sky Transport Solutions" line,
  * linking to `to` (the landing page or a portal's home).
  */
 export function Brand({ to }: { to: string }) {
@@ -12,7 +12,7 @@ export function Brand({ to }: { to: string }) {
       <img src={logo} alt="" className="size-9 shrink-0 object-contain md:size-12" />
       <span className="flex flex-col leading-tight">
         <span className="text-base font-semibold tracking-tight text-slate-900">
-          CarrierSafetyScan
+          Carrier Safety Scan
         </span>
         <span className="text-xs font-medium text-slate-500 sm:whitespace-nowrap sm:text-[13px]">
           Powered by{' '}

@@ -47,7 +47,7 @@ const points = (value: number) => (Number.isInteger(value) ? `${value}` : value.
 
 /**
  * Page 4 of the Safety Score Report: FMCSA's SMS record line by line (as on FMCSA's own SMS
- * profile), and what CarrierSafetyScan adds: when the score improves on its own, which violations
+ * profile), and what Carrier Safety Scan adds: when the score improves on its own, which violations
  * weigh most (worth checking for a DataQs challenge).
  */
 export function RecordPage({

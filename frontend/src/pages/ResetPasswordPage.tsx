@@ -40,13 +40,13 @@ export function ResetPasswordPage() {
     (reset.error instanceof ApiError
       ? reset.error.message
       : reset.error
-        ? 'Could not reach CarrierSafetyScan. Try again in a moment.'
+        ? 'Could not reach Carrier Safety Scan. Try again in a moment.'
         : null)
 
   return (
     <AuthCard
       title="Choose a new password"
-      subtitle="You’ll use it to log in to CarrierSafetyScan from now on."
+      subtitle="You’ll use it to log in to Carrier Safety Scan from now on."
       footer={
         <Link to="/forgot-password" className="font-medium text-accent-strong hover:underline">
           Need a new link?

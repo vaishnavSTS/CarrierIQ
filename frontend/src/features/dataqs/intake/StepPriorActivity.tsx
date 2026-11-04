@@ -6,7 +6,7 @@ const VIEWED_IN = [
   'Pre-Employment Screening Program (PSP) report',
   'FMCSA Portal',
   'Roadside inspection report',
-  'CarrierSafetyScan',
+  'Carrier Safety Scan',
 ]
 
 /** Step 4: where the carrier saw the record (DataQs asks), and anything already filed or

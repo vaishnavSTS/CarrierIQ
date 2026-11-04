@@ -15,7 +15,7 @@ function tierFor(options: PriceOption[], drivers: number): PriceOption | undefin
 
 /**
  * Pay for a service: pick the option (or the number of drivers), see the price, then continue to
- * Stripe's secure payment page. CarrierSafetyScan creates the invoice first.
+ * Stripe's secure payment page. Carrier Safety Scan creates the invoice first.
  */
 export function PayDialog({
   usdotNumber,

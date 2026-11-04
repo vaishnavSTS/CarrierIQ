@@ -1,5 +1,4 @@
 import {
-  CircleCheck,
   FileText,
   Gauge,
   Network,
@@ -30,7 +29,7 @@ const CLIENT_BENEFITS: Benefit[] = [
   {
     icon: ShieldCheck,
     title: 'See what a broker’s check sees',
-    text: 'Authority, insurance, BOC-3 and safety, straight from FMCSA.',
+    text: 'Authority, insurance, BOC-3 and safety, all in one place.',
   },
   {
     icon: TrendingDown,
@@ -40,7 +39,7 @@ const CLIENT_BENEFITS: Benefit[] = [
   {
     icon: FileText,
     title: 'A packet you can send',
-    text: 'A dated, sourced carrier packet for brokers and shippers.',
+    text: 'A dated Safety Score Report for brokers and shippers.',
   },
 ]
 
@@ -53,18 +52,18 @@ const PANEL: Record<
   client: {
     lead: 'Understand your carrier',
     accent: 'the way brokers do',
-    intro: 'Public FMCSA data, turned into a clear picture and what to do about it.',
+    intro: 'A clear picture of your carrier, and what to do about it.',
     benefits: CLIENT_BENEFITS,
   },
   broker: {
     lead: 'Vet any carrier',
     accent: 'before you book the load',
-    intro: 'Public FMCSA data on any carrier, with the source named on every value.',
+    intro: 'A clear picture of any carrier, in one place.',
     benefits: [
       {
         icon: ShieldCheck,
         title: 'Authority and insurance, current',
-        text: 'Active MC, insurance and BOC-3 on file, revocations, straight from FMCSA.',
+        text: 'Active MC, insurance and BOC-3 on file, and revocations.',
       },
       {
         icon: Gauge,
@@ -81,12 +80,12 @@ const PANEL: Record<
   insurance: {
     lead: 'Know the carrier',
     accent: 'before you cover it',
-    intro: 'Public FMCSA data on any carrier, with the source named on every value.',
+    intro: 'A clear picture of any carrier, in one place.',
     benefits: [
       {
         icon: ShieldCheck,
         title: 'Authority and insurance on file',
-        text: 'Active MC, insurance filings and history, revocations, straight from FMCSA.',
+        text: 'Active MC, insurance filings and history, and revocations.',
       },
       {
         icon: Gauge,
@@ -213,15 +212,6 @@ function BrandPanel({ audience }: { audience: Audience }) {
               <span className="mt-0.5 block text-sm text-white/85">{text}</span>
             </span>
           </motion.li>
-        ))}
-      </ul>
-
-      <ul className="relative mt-auto flex flex-wrap gap-x-5 gap-y-2 pt-10 text-xs text-white/85">
-        {['Public FMCSA & NHTSA data', 'Source named on every value'].map((point) => (
-          <li key={point} className="flex items-center gap-1.5">
-            <CircleCheck className="size-3.5 text-white/80" aria-hidden />
-            {point}
-          </li>
         ))}
       </ul>
     </aside>

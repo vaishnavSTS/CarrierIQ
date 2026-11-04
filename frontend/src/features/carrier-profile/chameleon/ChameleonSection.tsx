@@ -147,7 +147,7 @@ function LinkedTable({ carriers }: { carriers: ChameleonLinked[] }) {
                 )}
                 {c.first_linked && (
                   <div className="mt-1 text-[11px] text-slate-500">
-                    First matched by CarrierSafetyScan {formatDate(c.first_linked)}
+                    First matched by Carrier Safety Scan {formatDate(c.first_linked)}
                   </div>
                 )}
               </td>
@@ -319,7 +319,7 @@ function Check({ check }: { check: ChameleonCheck }) {
         <li>Not included: links FMCSA’s public data does not show.</li>
       </ul>
       <div className="mt-3">
-        <SourceTag>CarrierSafetyScan checks of public FMCSA records</SourceTag>
+        <SourceTag>Carrier Safety Scan checks of public FMCSA records</SourceTag>
       </div>
     </div>
   )

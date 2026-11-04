@@ -80,7 +80,7 @@ const DATAQS_STEPS: { art: () => ReactElement; title: string; text: string }[] =
   },
 ]
 
-/** The service that sets CarrierSafetyScan apart: STS files the challenge. */
+/** The service that sets Carrier Safety Scan apart: STS files the challenge. */
 export function DataQsSection() {
   return (
     <section className="pb-20">
@@ -147,8 +147,8 @@ export function ReportPreview() {
         ))}
       </div>
       <motion.p {...reveal()} className="mt-4 text-center text-xs text-slate-500">
-        Sample report with example data for a made-up carrier. The Estimated ISS is
-        CarrierSafetyScan’s estimate, not FMCSA’s official score or a safety rating.
+        Sample report with example data for a made-up carrier. The Estimated ISS is Carrier Safety
+        Scan’s estimate, not FMCSA’s official score or a safety rating.
       </motion.p>
     </section>
   )
@@ -206,7 +206,7 @@ export function AboutStsSection() {
         <img src={stsLogo} alt="Sky Transport Solutions" className="h-16 w-auto object-contain" />
         <div>
           <p className="text-sm leading-relaxed text-slate-700 md:text-base">
-            CarrierSafetyScan is built by Sky Transport Solutions, a trucking compliance company
+            Carrier Safety Scan is built by Sky Transport Solutions, a trucking compliance company
             founded in {STS_FOUNDED}. STS helps trucking companies across the United States with
             registration, permits and DOT compliance, and it’s the team that handles your DataQs
             challenges.

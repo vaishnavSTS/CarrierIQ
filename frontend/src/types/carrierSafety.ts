@@ -198,7 +198,7 @@ export interface CarrierSafety {
   drivers: BasicDriver[] | null
   /** Inspections with SMS violations, newest first; null: not fetched yet */
   sms_inspections?: SmsInspection[] | null
-  /** CarrierSafetyScan's estimate of FMCSA's ISS; null: monthly tables or carrier SMS not loaded */
+  /** Carrier Safety Scan's estimate of FMCSA's ISS; null: monthly tables or carrier SMS not loaded */
   estimated_iss?: EstimatedIss | null
   /** Saved Estimated ISS results, newest first */
   iss_history?: IssHistoryEntry[]

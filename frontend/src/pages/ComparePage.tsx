@@ -134,9 +134,9 @@ export function ComparePage() {
             </table>
           </div>
           <p className="text-xs text-slate-500">
-            The Estimated ISS is CarrierSafetyScan’s estimate of FMCSA’s Inspection Selection System
-            score, not an FMCSA figure. Source: FMCSA records, refreshed on the date in the table.
-            Open a carrier for the source of every value.
+            The Estimated ISS is Carrier Safety Scan’s estimate of FMCSA’s Inspection Selection
+            System score, not an FMCSA figure. Source: FMCSA records, refreshed on the date in the
+            table. Open a carrier for the source of every value.
           </p>
         </>
       )}
@@ -218,8 +218,8 @@ function Summary({ facts, ranked }: { facts: CarrierFacts[]; ranked: Ranked[] | 
         className="rounded-xl border border-slate-200 bg-surface px-4 py-3 text-sm text-slate-600"
         role="status"
       >
-        Loading… a carrier not yet in CarrierSafetyScan is fetched from FMCSA first, which can take
-        a few seconds.
+        Loading… a carrier not yet in Carrier Safety Scan is fetched from FMCSA first, which can
+        take a few seconds.
       </p>
     )
   }

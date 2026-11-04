@@ -33,7 +33,7 @@ const KIND_LABEL: Record<Kind, string> = {
   other: 'Other FMCSA records',
 }
 
-const CENSUS_SOURCE = 'FMCSA Company Census (changes CarrierSafetyScan has detected)'
+const CENSUS_SOURCE = 'FMCSA Company Census (changes Carrier Safety Scan has detected)'
 
 /** The event's kind, by its type's prefix (see backend change_detection). */
 function kindOf(eventType: string): Kind {
@@ -109,9 +109,9 @@ export function TimelineSection({
     >
       <div className="mb-3 space-y-2">
         <p className="text-xs text-slate-500">
-          Authority and insurance events from FMCSA’s history files, plus census changes
-          CarrierSafetyScan has detected between its refreshes of this carrier (changes made before
-          it started tracking the carrier are not known). Newest first.
+          Authority and insurance events from FMCSA’s history files, plus census changes Carrier
+          Safety Scan has detected between its refreshes of this carrier (changes made before it
+          started tracking the carrier are not known). Newest first.
         </p>
         {sources.length > 0 && (
           <p className="text-[11px] text-slate-500">Sources · {sources.join(' · ')}</p>
@@ -151,7 +151,7 @@ export function TimelineSection({
         <Empty>
           {all.length > 0
             ? 'Nothing matches these filters.'
-            : 'No events yet. FMCSA history events and census changes appear here as CarrierSafetyScan detects them.'}
+            : 'No events yet. FMCSA history events and census changes appear here as Carrier Safety Scan detects them.'}
         </Empty>
       ) : (
         <ol className="space-y-3">

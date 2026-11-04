@@ -16,7 +16,7 @@ const FILTERS: [InvoiceStatus | null, string][] = [
   ['REFUNDED', 'Refunded'],
 ]
 
-/** STS staff: every CarrierSafetyScan invoice (paid through Stripe), newest first. */
+/** STS staff: every Carrier Safety Scan invoice (paid through Stripe), newest first. */
 export function InvoicesPage() {
   const [filter, setFilter] = useState<InvoiceStatus | null>(null)
   const { data, isPending, error } = useInvoices(filter)

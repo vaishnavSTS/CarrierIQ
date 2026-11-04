@@ -105,7 +105,7 @@ function TrialBanner({ daysLeft, price }: { daysLeft: number; price: string }) {
           <span className="font-semibold">
             Free trial: {daysLeft} {daysLeft === 1 ? 'day' : 'days'} left.
           </span>{' '}
-          Then {dollars(price)} a month to keep using CarrierSafetyScan.
+          Then {dollars(price)} a month to keep using Carrier Safety Scan.
         </span>
       </p>
       <div className="flex flex-col items-start gap-1 sm:items-end">
@@ -146,7 +146,7 @@ function SubscribeWall({ price, confirming }: { price: string; confirming: boole
             Your free trial has ended
           </span>
           <h2 id="subscribe-title" className="mt-3 text-2xl font-semibold tracking-tight">
-            Subscribe to keep using CarrierSafetyScan
+            Subscribe to keep using Carrier Safety Scan
           </h2>
           <div className="mt-5 flex items-end gap-2">
             <span className="text-5xl font-bold tracking-tight">{dollars(price)}</span>

@@ -109,7 +109,7 @@ export function CarrierSnapshot({ usdotNumber }: { usdotNumber: number }) {
                 <StatusBadge label={band.status} tone={band.tone} />
               </div>
               <p className="mt-1 text-xs text-slate-500">
-                Source: CarrierSafetyScan estimate from FMCSA data · {formatMonth(iss.data_month)}
+                Source: Carrier Safety Scan estimate from FMCSA data · {formatMonth(iss.data_month)}
               </p>
               <p className="mt-1 text-xs text-slate-500">{band.range} of 1–100 · lower is better</p>
               <p className="mt-3 text-sm text-slate-700">{iss.reason}.</p>

@@ -75,7 +75,7 @@ export function ContactPage() {
           Contact us
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-sm text-slate-600 md:text-base">
-          Questions about CarrierSafetyScan, your safety score or a DataQs challenge? The Sky
+          Questions about Carrier Safety Scan, your safety score or a DataQs challenge? The Sky
           Transport Solutions team can help.
         </p>
       </header>

@@ -61,7 +61,7 @@ export interface RegisterInput {
 
 export interface PortalCarrier {
   usdot_number: number
-  /** null until CarrierSafetyScan has loaded the carrier */
+  /** null until Carrier Safety Scan has loaded the carrier */
   legal_name: string | null
   dba_name: string | null
   registration_status: string | null
@@ -92,7 +92,7 @@ export interface AdminUser extends User {
 /** Sign-up phone / email against FMCSA's record for a USDOT they gave. null = no answer yet. */
 export interface CarrierContactCheck {
   usdot_number: number
-  /** null until CarrierSafetyScan has loaded the carrier */
+  /** null until Carrier Safety Scan has loaded the carrier */
   legal_name: string | null
   phone_matches_fmcsa: boolean | null
   email_matches_fmcsa: boolean | null

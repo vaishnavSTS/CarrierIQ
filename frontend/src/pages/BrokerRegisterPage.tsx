@@ -100,7 +100,7 @@ export function BrokerRegisterPage() {
     (register.error instanceof ApiError
       ? register.error.message
       : register.error
-        ? 'Could not reach CarrierSafetyScan. Try again in a moment.'
+        ? 'Could not reach Carrier Safety Scan. Try again in a moment.'
         : null)
 
   return (

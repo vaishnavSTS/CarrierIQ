@@ -43,7 +43,7 @@ export interface ComplianceRequest {
   handled_at: string | null
   /** The email to STS failed (staff) */
   email_error: string | null
-  /** Paid online: what was chosen and its CarrierSafetyScan invoice */
+  /** Paid online: what was chosen and its Carrier Safety Scan invoice */
   option_label: string | null
   quantity: number | null
   /** e.g. "277.00" */

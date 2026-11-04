@@ -132,7 +132,7 @@ export function DataQsFeeCard({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
               <PayButton caseId={c.id} amount={amount} full />
               <p className="flex items-center justify-center gap-1.5 text-xs text-slate-500">
                 <Lock className="size-3.5" aria-hidden />
-                Secure payment by Stripe. Your card details never reach CarrierSafetyScan.
+                Secure payment by Stripe. Your card details never reach Carrier Safety Scan.
               </p>
             </div>
           </div>

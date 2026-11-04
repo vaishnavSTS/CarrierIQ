@@ -14,7 +14,7 @@ export function IssHeaderCard({ usdotNumber }: { usdotNumber: number }) {
       label="Estimated ISS"
       source={
         iss?.value != null
-          ? `CarrierSafetyScan estimate from FMCSA data · ${formatMonth(iss.data_month)}. Not FMCSA’s official ISS`
+          ? `Carrier Safety Scan estimate from FMCSA data · ${formatMonth(iss.data_month)}. Not FMCSA’s official ISS`
           : undefined
       }
     >

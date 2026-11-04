@@ -103,7 +103,7 @@ function OtherCarriers({ carriers }: { carriers: VinCarrier[] }) {
                 <CarrierLink usdotNumber={c.usdot_number} />
               </td>
               <td className="py-1 pr-4 text-slate-700">
-                {c.legal_name ?? 'Name not in CarrierSafetyScan yet'}
+                {c.legal_name ?? 'Name not in Carrier Safety Scan yet'}
               </td>
               <td className="py-1 pr-4 tabular-nums text-slate-700">
                 {c.inspections} inspection{c.inspections === 1 ? '' : 's'}

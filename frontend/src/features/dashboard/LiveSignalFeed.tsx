@@ -38,7 +38,7 @@ export function LiveSignalFeed({ signals }: { signals: RecentSignal[] | undefine
         </h2>
         <span className="flex flex-col items-end text-xs text-slate-500">
           Newest signals · updates every 15 s
-          <SourceTag>CarrierSafetyScan rules over FMCSA and NHTSA records</SourceTag>
+          <SourceTag>Carrier Safety Scan rules over FMCSA and NHTSA records</SourceTag>
         </span>
       </div>
 

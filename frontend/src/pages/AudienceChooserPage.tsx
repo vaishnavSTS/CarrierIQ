@@ -45,11 +45,10 @@ export function AudienceChooserPage() {
     <div className="hero-gradient">
       <section className="mx-auto max-w-6xl px-4 pb-24 pt-14 md:pt-20">
         <h1 className="text-center text-4xl font-semibold tracking-tight text-white md:text-5xl lg:text-6xl">
-          Welcome to CarrierSafetyScan
+          Welcome to Carrier Safety Scan
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-center text-base text-white/90 md:text-lg">
-          FMCSA’s public carrier records, made clear. Tell us who you are and we’ll show you what
-          matters to you.
+          Tell us who you are and we’ll show you what matters to you.
         </p>
         <div className="mt-12 grid gap-5 md:grid-cols-3">
           {/* Shown at once (no fade-in): choosing is the whole page. */}

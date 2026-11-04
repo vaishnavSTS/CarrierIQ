@@ -24,7 +24,7 @@ export function CarrierLinkPage() {
   if (isError) {
     return (
       <div className="grid min-h-[50vh] place-items-center text-sm text-slate-500">
-        Can’t reach the CarrierSafetyScan API. Try again in a moment.
+        Can’t reach the Carrier Safety Scan API. Try again in a moment.
       </div>
     )
   }

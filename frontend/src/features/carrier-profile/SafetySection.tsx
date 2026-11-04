@@ -48,7 +48,7 @@ export function SafetySection({
   const recent = safety.recent
   const months = recent?.months ?? 24
   const crashes = detail.data?.crashes ?? null
-  // Everything CarrierSafetyScan has loaded, which reaches further back than the 24-month window.
+  // Everything Carrier Safety Scan has loaded, which reaches further back than the 24-month window.
   const loaded = safety.first_inspection_date
     ? `${formatDate(safety.first_inspection_date)} – ${formatDate(safety.last_inspection_date)}`
     : null

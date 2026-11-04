@@ -21,7 +21,7 @@ function percentileText(b: Basic, passenger: boolean): string {
 
 /**
  * FMCSA's SMS (CSA) results for the carrier, exactly as FMCSA publishes them. Percentiles and
- * alerts appear only where FMCSA publishes them (passenger carriers); CarrierSafetyScan's own estimate
+ * alerts appear only where FMCSA publishes them (passenger carriers); Carrier Safety Scan's own estimate
  * is the Estimated ISS card above, labelled as such.
  */
 export function CsaBasics({ sms }: { sms: Sms | null }) {

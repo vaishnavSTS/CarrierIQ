@@ -1,4 +1,3 @@
-import { CircleCheck } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -14,7 +13,7 @@ const HERO: Record<Audience, { tab: string; title: ReactNode; text: string }> = 
   carrier: {
     tab: 'For carriers',
     title: <>See your carrier {highlight('the way brokers do')}, and know exactly what to fix</>,
-    text: 'CarrierSafetyScan turns public FMCSA data into a clear picture of a carrier’s authority, insurance, safety and registration health, and explains what to do about it.',
+    text: 'Carrier Safety Scan gives you a clear picture of a carrier’s authority, insurance, safety and registration health, and explains what to do about it.',
   },
   broker: {
     tab: 'For brokers',
@@ -26,7 +25,7 @@ const HERO: Record<Audience, { tab: string; title: ReactNode; text: string }> = 
   agent: {
     tab: 'For insurance agents',
     title: <>Understand a trucking risk {highlight('before you quote it')}</>,
-    text: 'Look up any carrier’s insurance filings, authority, safety record, crashes and fleet from public FMCSA data, and save a dated Safety Score Report for your file.',
+    text: 'Look up any carrier’s insurance filings, authority, safety record, crashes and fleet, and save a dated Safety Score Report for your file.',
   },
 }
 
@@ -40,7 +39,7 @@ export function AudienceHero({ audience }: { audience: Audience }) {
   return (
     <div className="relative">
       <nav
-        aria-label="Who CarrierSafetyScan is for"
+        aria-label="Who Carrier Safety Scan is for"
         className="relative z-20 mx-auto flex max-w-6xl flex-wrap justify-center gap-2 px-4 pt-8 lg:justify-start"
       >
         {AUDIENCES.map((a) => (
@@ -79,15 +78,6 @@ export function AudienceHero({ audience }: { audience: Audience }) {
               </div>
             )}
           </div>
-
-          <ul className="mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-white/90 lg:justify-start">
-            {['Public FMCSA & NHTSA data', 'Source named on every value'].map((point) => (
-              <li key={point} className="flex items-center gap-1.5">
-                <CircleCheck className="size-4 text-white" aria-hidden />
-                {point}
-              </li>
-            ))}
-          </ul>
         </div>
 
         <div className="mx-auto mt-14 w-full max-w-md lg:mt-8 lg:max-w-none">

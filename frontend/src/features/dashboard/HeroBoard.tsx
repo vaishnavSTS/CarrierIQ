@@ -27,7 +27,7 @@ const SEVERITY: Record<string, string> = {
   LOW: 'bg-sky-600',
 }
 
-// Shown before the first signals load, or when there are none: what CarrierSafetyScan checks.
+// Shown before the first signals load, or when there are none: what Carrier Safety Scan checks.
 const PLACEHOLDER: RecentSignal[] = [
   ['AUTHORITY_CHANGE', 'Operating authority status'],
   ['INSURANCE_CHANGE', 'Insurance filings on file'],

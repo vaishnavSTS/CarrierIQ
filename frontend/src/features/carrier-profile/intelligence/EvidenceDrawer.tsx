@@ -115,7 +115,7 @@ export function EvidenceDrawer({
                       e.entity_type ? ` · ${e.entity_type.replace(/_/g, ' ')} #${e.entity_id}` : ''
                     }`}
                   >
-                    The original record is kept in CarrierSafetyScan.
+                    The original record is kept in Carrier Safety Scan.
                   </div>
                 )}
               </li>

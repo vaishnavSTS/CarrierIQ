@@ -77,12 +77,12 @@ export function MethodologyPage() {
         <p className="mt-3 text-slate-700">
           FMCSA’s Inspection Selection System (ISS) gives each carrier a value from 1 to 100 that
           roadside inspectors use to decide who to inspect. FMCSA doesn’t publish these values, or
-          property carriers’ safety percentiles, so CarrierSafetyScan recomputes them from FMCSA’s
+          property carriers’ safety percentiles, so Carrier Safety Scan recomputes them from FMCSA’s
           public data using FMCSA’s published methods.
         </p>
         <p className="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          It is an estimate. It isn’t FMCSA’s official ISS, and it isn’t a safety rating.
-          CarrierSafetyScan and Sky Transport Solutions aren’t part of FMCSA.
+          It is an estimate. It isn’t FMCSA’s official ISS, and it isn’t a safety rating. Carrier
+          Safety Scan and Sky Transport Solutions aren’t part of FMCSA.
         </p>
       </div>
 

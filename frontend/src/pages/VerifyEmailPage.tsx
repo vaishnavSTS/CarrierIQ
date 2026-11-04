@@ -97,7 +97,7 @@ export function VerifyEmailPage() {
             message={
               failure instanceof ApiError
                 ? failure.message
-                : 'Could not reach CarrierSafetyScan. Try again in a moment.'
+                : 'Could not reach Carrier Safety Scan. Try again in a moment.'
             }
           />
         </div>
@@ -142,7 +142,7 @@ function ResendForm({ initialEmail }: { initialEmail: string }) {
       : resend.error instanceof ApiError
         ? resend.error.message
         : resend.error
-          ? 'Could not reach CarrierSafetyScan. Try again in a moment.'
+          ? 'Could not reach Carrier Safety Scan. Try again in a moment.'
           : null
 
   return (

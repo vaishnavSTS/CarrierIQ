@@ -20,7 +20,7 @@ const STAMP: Partial<Record<Invoice['status'], { label: string; color: string }>
 }
 
 /**
- * The invoice as a page: the same layout as STS's invoices, with the CarrierSafetyScan logo
+ * The invoice as a page: the same layout as STS's invoices, with the Carrier Safety Scan logo
  * ("Powered by Sky Transport Solutions"). Always black on white, also in dark mode and in print
  * (the browser's "Save as PDF" makes the PDF).
  */
@@ -37,7 +37,7 @@ export function InvoiceDocument({ invoice: inv }: { invoice: Invoice }) {
           <img src={logo} alt="" className="size-12 shrink-0 object-contain" />
           <span className="flex flex-col leading-tight">
             <span className="text-lg font-semibold tracking-tight text-[#14121f]">
-              CarrierSafetyScan
+              Carrier Safety Scan
             </span>
             <span className="text-[12px] font-medium text-[#6b6880]">
               Powered by{' '}

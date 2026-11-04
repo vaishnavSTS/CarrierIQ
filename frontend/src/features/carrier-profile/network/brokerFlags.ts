@@ -5,7 +5,7 @@ export type FlagLevel = 'alert' | 'attention' | 'info'
 
 /**
  * One item a broker's vetting may react to. Every title and explanation says which record it
- * comes from; CarrierSafetyScan reports what the records show and never gives its own verdict.
+ * comes from; Carrier Safety Scan reports what the records show and never gives its own verdict.
  */
 export interface BrokerFlag {
   key: string
@@ -101,7 +101,7 @@ export function brokerFlags(network: CarrierNetwork, profile: CarrierProfile): B
       key: 'identity',
       level: 'info',
       title: 'Recent change of legal name, DBA name or email',
-      why: 'FMCSA’s census shows a new legal name, DBA name or email since CarrierSafetyScan started tracking this carrier. Brokers often check new names or emails on an existing authority.',
+      why: 'FMCSA’s census shows a new legal name, DBA name or email since Carrier Safety Scan started tracking this carrier. Brokers often check new names or emails on an existing authority.',
       fix: 'Making sure brokers have the current details, with proof of the change.',
     })
   }

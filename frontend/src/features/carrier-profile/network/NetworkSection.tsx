@@ -109,7 +109,7 @@ function LinkedTable({ carriers }: { carriers: LinkedCarrier[] }) {
                       <span className="text-slate-500">{SHARE_LABEL[s.kind] ?? s.kind}:</span>{' '}
                       <span className="text-slate-900">{shownValue(s.kind, s.value)}</span>
                       <span className="block text-[11px] text-slate-500">
-                        First matched by CarrierSafetyScan {formatDate(s.first_seen)}
+                        First matched by Carrier Safety Scan {formatDate(s.first_seen)}
                       </span>
                     </li>
                   ))}
@@ -329,14 +329,14 @@ function NetworkBody({
       )}
 
       <SubHeading
-        note="Census changes CarrierSafetyScan has detected between its refreshes of this carrier (changes made before it started tracking the carrier are not known), plus transfers in FMCSA’s authority history."
+        note="Census changes Carrier Safety Scan has detected between its refreshes of this carrier (changes made before it started tracking the carrier are not known), plus transfers in FMCSA’s authority history."
         source={SOURCES.identityHistory}
       >
         Identity and ownership history
       </SubHeading>
       {history.length === 0 ? (
         <Empty>
-          No changes detected since CarrierSafetyScan started tracking this carrier, and no
+          No changes detected since Carrier Safety Scan started tracking this carrier, and no
           transfers in FMCSA’s authority history.
         </Empty>
       ) : (

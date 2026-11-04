@@ -252,7 +252,7 @@ export interface DataQsIssue {
   outcome: string | null
   evidence_count: number
   checklist: string[]
-  /** Phase 6, for a corrected issue: the decision, FMCSA's record, then CarrierSafetyScan */
+  /** Phase 6, for a corrected issue: the decision, FMCSA's record, then Carrier Safety Scan */
   decided_at: string | null
   verification_status: DataQsVerificationStatus | null
   /** What the check saw (clients: not STS's own proof) */

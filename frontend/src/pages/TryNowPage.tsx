@@ -85,12 +85,12 @@ export function TryNowPage() {
           ? null
           : failure.message
       : failure
-        ? 'Could not reach CarrierSafetyScan. Try again in a moment.'
+        ? 'Could not reach Carrier Safety Scan. Try again in a moment.'
         : null)
 
   return (
     <AuthCard
-      title="Try CarrierSafetyScan"
+      title="Try Carrier Safety Scan"
       subtitle="Look up one carrier for free and see every tab, from its authority and insurance to its inspections and Safety Score Report. No account needed. You get one search, one time only."
       footer={
         <>
@@ -114,8 +114,7 @@ export function TryNowPage() {
         <FormError message={error} />
         {open.isPending && (
           <p role="status" className="text-sm text-slate-600">
-            The first time a carrier is opened, its record is fetched from FMCSA. This can take a
-            few seconds.
+            The first time a carrier is opened, its record is loaded. This can take a few seconds.
           </p>
         )}
         {find.isPending && (

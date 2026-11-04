@@ -62,15 +62,15 @@ const STEPS: GuideItem[] = [
   },
 ]
 
-/** Client portal home, below "My carriers": what CarrierSafetyScan shows about their company. */
+/** Client portal home, below "My carriers": what Carrier Safety Scan shows about their company. */
 export function ClientGuide() {
   return (
     <PortalGuide
-      featuresTitle="What CarrierSafetyScan does for your company"
+      featuresTitle="What Carrier Safety Scan does for your company"
       featuresIntro="Built from the same public FMCSA and NHTSA records brokers check, with the source named on every value."
       features={FEATURES}
       steps={STEPS}
-      note="CarrierSafetyScan shows what FMCSA’s public records say. A fix you make with FMCSA shows here once FMCSA publishes it. Flags are what brokers’ checks commonly react to, not a finding about your company. The Estimated ISS is CarrierSafetyScan’s estimate, not FMCSA’s official score. Questions? Contact your STS team."
+      note="Carrier Safety Scan shows what FMCSA’s public records say. A fix you make with FMCSA shows here once FMCSA publishes it. Flags are what brokers’ checks commonly react to, not a finding about your company. The Estimated ISS is Carrier Safety Scan’s estimate, not FMCSA’s official score. Questions? Contact your STS team."
     />
   )
 }

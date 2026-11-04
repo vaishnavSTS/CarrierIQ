@@ -147,7 +147,7 @@ function Sheet({
         >
           <img src={logo} alt="" className="size-5 object-contain" />
           <span className="text-[12px] font-semibold normal-case tracking-normal text-slate-900">
-            CarrierSafetyScan
+            Carrier Safety Scan
           </span>
           <span className="normal-case tracking-normal text-slate-600">
             Powered by{' '}
@@ -606,7 +606,7 @@ export function PacketDocument({
                 tone="green"
                 item={{
                   key: 'none',
-                  title: 'Nothing in CarrierSafetyScan’s checks is hurting the score',
+                  title: 'Nothing in Carrier Safety Scan’s checks is hurting the score',
                   detail:
                     'No safety category is over its threshold or under an FMCSA alert, and FMCSA’s Crash File lists no fatal crash in the last 24 months.',
                 }}
@@ -728,7 +728,7 @@ export function PacketDocument({
           inspections, or by fleet size and miles.
         </p>
         <p className="text-sm text-slate-600">
-          The Estimated ISS is CarrierSafetyScan’s estimate using FMCSA’s published methods; it is
+          The Estimated ISS is Carrier Safety Scan’s estimate using FMCSA’s published methods; it is
           not FMCSA’s official ISS or a safety rating, and this report is not a recommendation to
           use or avoid any carrier. Generated {formatLocalDate(generated.toISOString())}.
         </p>
@@ -1025,7 +1025,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
   function saveAsPdf() {
     // The browser names the PDF after the page title.
     const title = document.title
-    document.title = `CarrierSafetyScan Safety Score Report - ${profile.legal_name} - USDOT ${profile.usdot_number}`
+    document.title = `Carrier Safety Scan Safety Score Report - ${profile.legal_name} - USDOT ${profile.usdot_number}`
     window.print()
     document.title = title
   }

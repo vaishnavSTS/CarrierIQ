@@ -16,7 +16,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import { useEffect, useState, type ReactNode } from 'react'
 
 /**
- * Landing-page illustration: sample cards of what CarrierSafetyScan shows, as a stack of papers. Every
+ * Landing-page illustration: sample cards of what Carrier Safety Scan shows, as a stack of papers. Every
  * 6 seconds the front card slides up and away and the next one comes forward. Every
  * card is a made-up carrier and labelled SAMPLE; the national OOS averages are FMCSA's published
  * figures. Holds still for people who prefer reduced motion.
@@ -48,9 +48,9 @@ const SLIDES: Slide[] = [
     body: (
       <Rows
         rows={[
-          { ok: true, label: 'Operating authority', detail: 'Active · Motus' },
+          { ok: true, label: 'Operating authority', detail: 'Active' },
           { ok: true, label: 'Insurance on file', detail: 'Usual renewal: March' },
-          { ok: true, label: 'Process agent (BOC-3)', detail: 'On file in Motus' },
+          { ok: true, label: 'Process agent (BOC-3)', detail: 'On file' },
           { ok: false, label: 'MCS-150 update', detail: 'Over 2 years old' },
           { ok: true, label: 'Vehicle out-of-service rate', detail: 'Below average' },
           { ok: false, label: 'Shared phone number', detail: '1 other carrier' },
@@ -102,12 +102,12 @@ const SLIDES: Slide[] = [
           { ok: true, label: 'MC 000000 · common', detail: 'Active since 2019' },
           { ok: true, label: 'Liability (BIPD)', detail: '$750,000 on file' },
           { ok: true, label: 'Cargo', detail: '$100,000 on file' },
-          { ok: true, label: 'Process agent (BOC-3)', detail: 'Filed in Motus' },
+          { ok: true, label: 'Process agent (BOC-3)', detail: 'Filed' },
           { ok: true, label: 'Next insurance renewal', detail: 'Usually around March' },
         ]}
       />
     ),
-    footer: <Note tone="info">Each line names its FMCSA source: Motus or legacy L&amp;I.</Note>,
+    footer: <Note tone="info">The renewal month is an estimate.</Note>,
   },
   {
     title: 'Carrier packet',
@@ -133,7 +133,7 @@ const SLIDES: Slide[] = [
           ))}
         </div>
         <div className="mt-4 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
-          <span className="text-xs text-slate-700">Dated, sourced, no score</span>
+          <span className="text-xs text-slate-700">Dated Safety Score Report</span>
           <span className="inline-flex items-center gap-1.5 rounded-md bg-cta px-2.5 py-1 text-xs font-medium text-cta-ink">
             <Download className="size-3.5" aria-hidden />
             Save as PDF
@@ -210,11 +210,7 @@ const BROKER_SLIDES: Slide[] = [
         ]}
       />
     ),
-    footer: (
-      <Note tone="info">
-        Searched across FMCSA’s census. A link has to be explained, not assumed.
-      </Note>
-    ),
+    footer: <Note tone="info">A link has to be explained, not assumed.</Note>,
   },
   {
     title: 'Compare carriers',
@@ -237,7 +233,7 @@ const BROKER_SLIDES: Slide[] = [
   {
     title: 'Safety Score Report',
     icon: FileText,
-    body: <ReportBody sections={REPORT_SECTIONS} note="Dated and sourced" />,
+    body: <ReportBody sections={REPORT_SECTIONS} note="Dated" />,
     footer: <Note tone="ok">Save it with the load, to show what you checked and when.</Note>,
   },
 ]
@@ -257,7 +253,7 @@ const AGENT_SLIDES: Slide[] = [
         ]}
       />
     ),
-    footer: <Note tone="info">The renewal month is estimated from FMCSA’s filing dates.</Note>,
+    footer: <Note tone="info">The renewal month is an estimate.</Note>,
   },
   {
     title: 'Safety record · last 24 months',
@@ -270,7 +266,7 @@ const AGENT_SLIDES: Slide[] = [
     ),
     footer: (
       <Note tone="info">
-        1 crash, no fatalities. FMCSA’s Crash File doesn’t say who was at fault.
+        1 crash, no fatalities. The crash record doesn’t say who was at fault.
       </Note>
     ),
   },
@@ -295,8 +291,8 @@ const AGENT_SLIDES: Slide[] = [
   {
     title: 'Safety Score Report',
     icon: FileText,
-    body: <ReportBody sections={REPORT_SECTIONS} note="Dated and sourced" />,
-    footer: <Note tone="ok">A dated copy of what FMCSA’s records showed, for your file.</Note>,
+    body: <ReportBody sections={REPORT_SECTIONS} note="Dated" />,
+    footer: <Note tone="ok">A dated copy of the carrier’s record, for your file.</Note>,
   },
 ]
 
@@ -332,7 +328,7 @@ export function SampleShowcase({
     <div
       className="relative"
       aria-roledescription="carousel"
-      aria-label="What CarrierSafetyScan shows, sample cards"
+      aria-label="What Carrier Safety Scan shows, sample cards"
     >
       <div
         aria-hidden

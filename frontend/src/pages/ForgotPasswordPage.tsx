@@ -29,7 +29,7 @@ export function ForgotPasswordPage() {
       : request.error instanceof ApiError
         ? request.error.message
         : request.error
-          ? 'Could not reach CarrierSafetyScan. Try again in a moment.'
+          ? 'Could not reach Carrier Safety Scan. Try again in a moment.'
           : null
 
   return (

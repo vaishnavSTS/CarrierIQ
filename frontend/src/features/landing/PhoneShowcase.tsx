@@ -12,7 +12,7 @@ const SCREENS = [
   {
     src: phoneOverview,
     title: 'Your status at a glance',
-    text: 'Authority, registration and insurance, each with its FMCSA source.',
+    text: 'Authority, registration and insurance, at a glance.',
     alt: 'The carrier page on a phone: authority, registration and insurance status',
   },
   {

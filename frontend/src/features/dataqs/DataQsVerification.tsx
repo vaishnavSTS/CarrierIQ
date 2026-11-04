@@ -18,7 +18,7 @@ const STATUS: Record<DataQsVerificationStatus, { label: string; tone: Tone }> = 
 }
 
 /** Phase 6: does FMCSA's data show each correction the agency approved? Four steps per issue:
- * requested, approved, FMCSA's record changed, shown in CarrierSafetyScan. Shared by both
+ * requested, approved, FMCSA's record changed, shown in Carrier Safety Scan. Shared by both
  * portals; STS can check now and confirm a correction by hand. */
 export function DataQsVerification({ dataqsCase: c }: { dataqsCase: DataQsCase }) {
   const staff = usePortalMode() === 'internal'
@@ -164,11 +164,11 @@ function IssueProgress({
             'STS is confirming this correction in FMCSA’s records.'
           )}
         </Step>
-        <Step done={issue.shown_at !== null} title="Shown in CarrierSafetyScan">
+        <Step done={issue.shown_at !== null} title="Shown in Carrier Safety Scan">
           {issue.shown_at
             ? formatDateTime(issue.shown_at)
             : verified
-              ? 'Updating CarrierSafetyScan’s copy of the inspection'
+              ? 'Updating Carrier Safety Scan’s copy of the inspection'
               : 'After FMCSA’s record changes'}
         </Step>
       </ol>

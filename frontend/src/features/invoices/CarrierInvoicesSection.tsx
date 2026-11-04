@@ -31,7 +31,7 @@ export function CarrierInvoicesSection({
     <Section
       id="invoices"
       title="Invoices"
-      source="CarrierSafetyScan invoices, paid through Stripe"
+      source="Carrier Safety Scan invoices, paid through Stripe"
     >
       {isPending ? (
         <p className="text-sm text-slate-500">Loading invoices…</p>

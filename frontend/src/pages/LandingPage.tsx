@@ -32,7 +32,7 @@ const CONTENT: Record<
       {
         art: BrokerCheckArt,
         title: 'See what a broker’s check sees',
-        text: 'Authority, insurance, BOC-3, safety and inspection history from FMCSA, in one place, with the source named on every value.',
+        text: 'Authority, insurance, BOC-3, safety and inspection history, all in one place.',
       },
       {
         art: FixArt,
@@ -42,12 +42,12 @@ const CONTENT: Record<
       {
         art: RegistrationArt,
         title: 'Catch registration problems early',
-        text: 'Motus and legacy L&I gaps, stale MCS-150 updates, shared addresses or phones that can trip a broker’s fraud screen.',
+        text: 'Registration gaps, stale MCS-150 updates, shared addresses or phones that can trip a broker’s fraud screen.',
       },
       {
         art: PacketArt,
         title: 'A packet you can send',
-        text: 'A dated, sourced Safety Score Report to share with brokers and shippers. Facts from FMCSA, and estimates that follow FMCSA’s own published methods.',
+        text: 'A dated Safety Score Report to share with brokers and shippers, with estimates that follow FMCSA’s own published methods.',
       },
     ],
     phoneTitle: 'Check your carrier from anywhere',
@@ -61,7 +61,7 @@ const CONTENT: Record<
       {
         icon: Search,
         title: 'See what brokers see',
-        text: 'Authority, insurance, safety and registration checks from FMCSA’s own records, each with its source.',
+        text: 'Authority, insurance, safety and registration checks, the way a broker’s check runs them.',
       },
       {
         icon: FileText,
@@ -83,12 +83,12 @@ const CONTENT: Record<
       {
         art: BrokerCheckArt,
         title: 'Authority, insurance and safety together',
-        text: 'Operating authority, insurance filings, BOC-3, safety record and the Estimated ISS from FMCSA’s records, each with its source.',
+        text: 'Operating authority, insurance filings, BOC-3, safety record and the Estimated ISS, all in one place.',
       },
       {
         art: RegistrationArt,
         title: 'Spot the red flags early',
-        text: 'Registration gaps between Motus and legacy L&I, stale MCS-150 updates, out-of-service orders and past revocations.',
+        text: 'Registration gaps, stale MCS-150 updates, out-of-service orders and past revocations.',
       },
       {
         art: FixArt,
@@ -98,7 +98,7 @@ const CONTENT: Record<
       {
         art: PacketArt,
         title: 'A dated report for your file',
-        text: 'Save a sourced Safety Score Report on the carrier you booked, and compare up to 3 carriers side by side.',
+        text: 'Save a dated Safety Score Report on the carrier you booked, and compare up to 3 carriers side by side.',
       },
     ],
     phoneTitle: 'Check any carrier from anywhere',
@@ -107,12 +107,12 @@ const CONTENT: Record<
       {
         icon: UserPlus,
         title: 'Sign up with your MC number',
-        text: 'We check your brokerage’s authority with FMCSA, and your portal opens right away.',
+        text: 'We check your brokerage’s operating authority, and your portal opens right away.',
       },
       {
         icon: Search,
         title: 'Look up any carrier',
-        text: 'By USDOT, MC number or name: authority, insurance, safety and registration checks with their sources.',
+        text: 'By USDOT, MC number or name: authority, insurance, safety and registration checks.',
       },
       {
         icon: FileText,
@@ -134,22 +134,22 @@ const CONTENT: Record<
       {
         art: BrokerCheckArt,
         title: 'Insurance filings and authority',
-        text: 'The liability and cargo filings FMCSA has on file, what FMCSA requires, and when the policy usually renews.',
+        text: 'The liability and cargo filings on file, what FMCSA requires, and when the policy usually renews.',
       },
       {
         art: FixArt,
         title: 'Safety record and Estimated ISS',
-        text: 'CSA BASICs, inspections, out-of-service rates against the national average, and CarrierSafetyScan’s Estimated ISS.',
+        text: 'CSA BASICs, inspections, out-of-service rates against the national average, and Carrier Safety Scan’s Estimated ISS.',
       },
       {
         art: RegistrationArt,
         title: 'Crashes, fleet and red flags',
-        text: 'The FMCSA crash record, trucks seen on inspections with their VINs, and registration gaps that point to risk.',
+        text: 'The crash record, trucks seen on inspections with their VINs, and registration gaps that point to risk.',
       },
       {
         art: PacketArt,
         title: 'A dated report for the file',
-        text: 'Save a sourced Safety Score Report on the carrier you quote, so your file shows what the record said and when.',
+        text: 'Save a dated Safety Score Report on the carrier you quote, so your file shows what the record said and when.',
       },
     ],
     phoneTitle: 'Check any carrier from anywhere',
@@ -163,7 +163,7 @@ const CONTENT: Record<
       {
         icon: Search,
         title: 'Look up the carrier',
-        text: 'Insurance filings, authority, safety record, crashes and fleet, each with its FMCSA source.',
+        text: 'Insurance filings, authority, safety record, crashes and fleet, all in one place.',
       },
       {
         icon: FileText,
@@ -181,7 +181,7 @@ const CONTENT: Record<
   },
 }
 
-/** One audience's page (carriers, freight brokers or insurance agents): what CarrierSafetyScan does for them. */
+/** One audience's page (carriers, freight brokers or insurance agents): what Carrier Safety Scan does for them. */
 export function LandingPage({ audience }: { audience: Audience }) {
   const { data: user } = useMe()
   const content = CONTENT[audience]

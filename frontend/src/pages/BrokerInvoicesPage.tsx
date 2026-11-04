@@ -7,8 +7,8 @@ export function BrokerInvoicesPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Invoices</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Your CarrierSafetyScan subscription invoices. Each one is also emailed to you with its PDF
-          when Stripe charges the month.
+          Your Carrier Safety Scan subscription invoices. Each one is also emailed to you with its
+          PDF when Stripe charges the month.
         </p>
       </div>
       <CarrierInvoicesSection

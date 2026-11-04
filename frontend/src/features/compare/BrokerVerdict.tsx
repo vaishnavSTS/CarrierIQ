@@ -38,7 +38,7 @@ export function BrokerVerdict({ usdotNumber }: { usdotNumber: number }) {
         )}
       </ul>
       <p className="mt-2 text-xs text-slate-500">
-        CarrierSafetyScan’s reading of public FMCSA records, to help you vet. It isn’t a safety
+        Carrier Safety Scan’s reading of public FMCSA records, to help you vet. It isn’t a safety
         rating or a guarantee, and the booking decision is yours.
         {facts.profile?.last_refreshed_at &&
           ` FMCSA data refreshed ${formatDateTime(facts.profile.last_refreshed_at)}.`}

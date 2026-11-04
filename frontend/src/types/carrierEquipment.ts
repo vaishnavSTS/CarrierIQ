@@ -2,7 +2,7 @@
 
 export interface VinCarrier {
   usdot_number: number
-  /** Only when that carrier is loaded in CarrierSafetyScan */
+  /** Only when that carrier is loaded in Carrier Safety Scan */
   legal_name: string | null
   inspections: number
   first_seen: string
