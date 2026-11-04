@@ -17,6 +17,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { DataQsCasePage } from './pages/DataQsCasePage'
 import { DataQsPage } from './pages/DataQsPage'
 import { GoogleSignupPage } from './pages/GoogleSignupPage'
+import { AudienceChooserPage } from './pages/AudienceChooserPage'
 import { LandingPage } from './pages/LandingPage'
 import { ContactPage } from './pages/ContactPage'
 import { MethodologyPage } from './pages/MethodologyPage'
@@ -53,7 +54,10 @@ export const router = createBrowserRouter([
   {
     element: <PublicLayout />,
     children: [
-      { index: true, element: <LandingPage /> },
+      { index: true, element: <AudienceChooserPage /> },
+      { path: 'for-carriers', element: <LandingPage audience="carrier" /> },
+      { path: 'for-brokers', element: <LandingPage audience="broker" /> },
+      { path: 'for-insurance-agents', element: <LandingPage audience="agent" /> },
       { path: 'contact', element: <ContactPage /> },
       { path: 'methodology', element: <MethodologyPage /> },
       { path: 'c/:usdot', element: <CarrierLinkPage /> },

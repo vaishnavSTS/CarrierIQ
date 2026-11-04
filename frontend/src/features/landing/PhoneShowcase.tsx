@@ -39,7 +39,7 @@ function offsetFrom(screen: number, current: number): number {
  * a loop that never stops. Picking a screen jumps to it and the loop carries on from there. People
  * who asked their device for less motion pick screens themselves.
  */
-export function PhoneShowcase() {
+export function PhoneShowcase({ title = 'Check your carrier from anywhere' }: { title?: string }) {
   const [{ current, previous }, setPlace] = useState({ current: 0, previous: 0 })
   const show = (next: number) => setPlace((place) => ({ current: next, previous: place.current }))
   const reduceMotion = useReducedMotion()
@@ -60,7 +60,7 @@ export function PhoneShowcase() {
 
   return (
     <section className="pb-20">
-      <SectionHeading eyebrow="On your phone" title="Check your carrier from anywhere" />
+      <SectionHeading eyebrow="On your phone" title={title} />
       <motion.div
         {...reveal()}
         className="mx-auto mt-10 grid max-w-4xl items-center gap-8 md:grid-cols-2 md:gap-12"
