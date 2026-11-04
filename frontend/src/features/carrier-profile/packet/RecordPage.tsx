@@ -57,7 +57,7 @@ export function RecordPage({
   whose,
   part = 'all',
   fullRecordUrl,
-  listedAtEnd = false,
+  listedAtEnd = 0,
 }: {
   safety: CarrierSafety
   client: boolean
@@ -66,8 +66,8 @@ export function RecordPage({
   part?: 'all' | 'summary' | 'history'
   /** This carrier's page in the app, for what a printed page can't list */
   fullRecordUrl: string
-  /** Every inspection is listed at the end of the report (InspectionList) */
-  listedAtEnd?: boolean
+  /** How many of the latest inspections are listed at the end of the report (InspectionList) */
+  listedAtEnd?: number
 }) {
   const maxCodes = part === 'all' ? MAX_CODES : MAX_CODES_OWN_PAGE
   const inspections = safety.sms_inspections ?? []
@@ -349,10 +349,11 @@ export function RecordPage({
             )}
             {inspections.length > maxInspections && (
               <p className="text-xs text-slate-500">
-                +{inspections.length - maxInspections} more inspections with violations
-                {listedAtEnd
-                  ? ': every inspection is listed at the end of this report.'
-                  : ` after logging in: ${fullRecordUrl}`}
+                +{inspections.length - maxInspections} more inspections with violations after
+                logging in: {fullRecordUrl}
+                {listedAtEnd > 0 &&
+                  `. The latest ${listedAtEnd} inspections are listed at the end of this report`}
+                .
               </p>
             )}
             <p className="text-[11px] text-slate-500">

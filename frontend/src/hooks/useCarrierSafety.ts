@@ -37,27 +37,15 @@ export function useCarrierInspections(
   })
 }
 
-const ALL_PAGE_SIZE = 100 // the API's largest page
+/** How many inspections the Safety Score Report lists at its end */
+export const LATEST_INSPECTIONS = 30
 
-/** Every inspection on file for the carrier, newest first: the list at the end of the report. */
-export function useAllCarrierInspections(usdotNumber: number) {
+/** The carrier's latest inspections, newest first, and how many are on file in all. */
+export function useLatestCarrierInspections(usdotNumber: number) {
   const base = useCarrierApiBase()
   return useQuery({
-    queryKey: ['carrier-inspections-all', usdotNumber, base],
-    queryFn: async () => {
-      const first = await fetchCarrierInspections(usdotNumber, 1, ALL_PAGE_SIZE, false, base)
-      const more = Math.ceil(first.total / ALL_PAGE_SIZE) - 1
-      const rest = await Promise.all(
-        Array.from({ length: Math.max(0, more) }, (_, i) =>
-          fetchCarrierInspections(usdotNumber, i + 2, ALL_PAGE_SIZE, false, base),
-        ),
-      )
-      // Once each, even if an inspection loaded between two pages moved the others along.
-      const seen = new Set<string>()
-      return [first, ...rest]
-        .flatMap((page) => page.inspections)
-        .filter((i) => !seen.has(i.inspection_id) && Boolean(seen.add(i.inspection_id)))
-    },
+    queryKey: ['carrier-inspections-latest', usdotNumber, base],
+    queryFn: () => fetchCarrierInspections(usdotNumber, 1, LATEST_INSPECTIONS, false, base),
     staleTime: 60_000,
   })
 }

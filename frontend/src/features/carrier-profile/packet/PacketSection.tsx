@@ -11,7 +11,7 @@ import { createPortal } from 'react-dom'
 
 import { useCarrierAuthority } from '../../../hooks/useCarrierAuthority'
 import { useCarrierEquipment } from '../../../hooks/useCarrierEquipment'
-import { useAllCarrierInspections, useCarrierSafety } from '../../../hooks/useCarrierSafety'
+import { useCarrierSafety, useLatestCarrierInspections } from '../../../hooks/useCarrierSafety'
 import { useCarrierNetwork } from '../../../hooks/useNetwork'
 import { usePortalMode } from '../../../hooks/usePortalMode'
 import type { Portal } from '../../../types/auth'
@@ -219,12 +219,12 @@ function Tile({ tile, facts }: { tile: BasicTile; facts: string[] }) {
 function ItemBox({
   tone,
   item,
-  hideFix = false,
+  solution,
 }: {
   tone: TileTone
   item: PacketItem
-  /** The fix is in the plan below, in plain words */
-  hideFix?: boolean
+  /** A red item's fix, shown right under it in place of "What usually fixes it" */
+  solution?: { title: string | null; how: string } | null
 }) {
   const { box, icon, title, Icon } = TONE[tone]
   return (
@@ -234,11 +234,21 @@ function ItemBox({
         <div className="min-w-0 text-sm">
           <div className={`font-semibold ${title}`}>{item.title}</div>
           {item.detail && <p className="mt-0.5 text-slate-700">{item.detail}</p>}
-          {item.fix && !hideFix && (
-            <p className="mt-1 text-xs text-slate-600">
-              <span className="font-semibold text-slate-800">What usually fixes it:</span>{' '}
-              {item.fix}
+          {solution ? (
+            <p className="mt-1.5 rounded-md border border-emerald-200 bg-white/80 px-2.5 py-1 text-slate-700">
+              <span className="font-semibold text-emerald-700">How to fix it: </span>
+              {solution.title && (
+                <span className="font-semibold text-slate-900">{solution.title}. </span>
+              )}
+              {solution.how}
             </p>
+          ) : (
+            item.fix && (
+              <p className="mt-1 text-xs text-slate-600">
+                <span className="font-semibold text-slate-800">What usually fixes it:</span>{' '}
+                {item.fix}
+              </p>
+            )
           )}
           {tone !== 'green' && <FixWithSky topic={item.title} />}
         </div>
@@ -319,8 +329,10 @@ export interface PacketData {
   equipment: CarrierEquipment
   safety: CarrierSafety | null
   portal: Portal
-  /** Every inspection on file, newest first, listed at the end; null: not loaded */
+  /** The latest inspections on file, newest first, listed at the end; null: not loaded */
   inspections?: InspectionDetail[] | null
+  /** How many inspections are on file in all */
+  inspectionTotal?: number
 }
 
 /**
@@ -337,6 +349,7 @@ export function PacketDocument({
   safety,
   portal,
   inspections = null,
+  inspectionTotal,
 }: PacketData) {
   const client = portal === 'client'
   const whose = client ? 'your' : 'this carrier’s'
@@ -360,8 +373,8 @@ export function PacketDocument({
   const truck = heaviestTruck(safety?.sms_inspections ?? [])
   const repeats = repeatViolations(safety?.sms_inspections ?? [])
   const summary = improvementSummary(drivers, recent)
-  // Page 2 already full of red and amber items: the plan gets its four most important steps and
-  // the patterns move to page 3, so the report keeps a readable size.
+  // Many red and amber items already: the plan keeps to its four most important steps, so the
+  // report stays short.
   const busy = hurting.length + redFlags.length + watch.length + roadside.length >= 6
   const plan = solutions({
     iss,
@@ -374,12 +387,18 @@ export function PacketDocument({
     client,
     max: busy ? PLAN_STEPS_BUSY : PLAN_STEPS,
   })
-  // The plan says in plain words what the BASIC, out-of-service and MCS-150 items' "what usually
-  // fixes it" lines say, so those lines are left out when it covers them.
-  const planned = (item: PacketItem) =>
-    item.key.startsWith('basic-') || item.key.endsWith('-oos')
-      ? plan.length > 0
-      : item.key === 'fleet-count' && plan.some((s) => s.key === 'mcs150')
+  // Each red item carries its fix right under it: its step of the plan when there is one (same
+  // key), else what usually fixes it. The plan's other steps follow later, after the scorecard.
+  const solutionFor = (item: PacketItem) => {
+    const step = plan.find((s) => s.key === item.key)
+    return step
+      ? { title: step.title, how: step.how }
+      : item.fix
+        ? { title: null, how: item.fix }
+        : null
+  }
+  const red = [...hurting, ...redFlags]
+  const morePlan = plan.filter((s) => !red.some((item) => item.key === s.key))
   const driverRows = (drivers ?? [])
     .flatMap((b) => b.groups.map((g) => ({ basic: b.basic, group: g })))
     .sort((a, b) => b.group.weight - a.group.weight)
@@ -414,7 +433,6 @@ export function PacketDocument({
   const toReview = allToReview.slice(0, MAX_HISTORY_EVENTS)
   const docketStatus = (docket: string) =>
     authority.dockets.find((d) => `${d.prefix}${d.number}` === docket)?.status ?? null
-  const priorities = [...hurting, ...redFlags, ...roadside].slice(0, 3)
   const carrier = `${profile.legal_name} · USDOT ${profile.usdot_number}`
   // Page 4, FMCSA's record line by line, once its violation file is loaded.
   const record = safety !== null && safety.sms_inspections != null
@@ -537,6 +555,8 @@ export function PacketDocument({
       )}
     </div>
   )
+  // "How to improve" only when it has something to say.
+  const improve = morePlan.length > 0 || Boolean(whereFrom) || Boolean(patterns)
   return (
     <>
       {/* Page 1: the scorecard */}
@@ -546,12 +566,10 @@ export function PacketDocument({
         carrier={carrier}
         contact={contact.scorecard}
       >
-        <div className="flex items-center gap-4 rounded-xl border border-accent/20 bg-accent-soft px-5 py-4 text-slate-900">
+        {/* "Carrier safety scorecard" is in the running header above it. */}
+        <div className="flex items-center gap-4 rounded-xl border border-accent/20 bg-accent-soft px-5 py-3 text-slate-900">
           <div className="min-w-0 flex-1">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent-strong">
-              Carrier safety scorecard
-            </div>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight">{profile.legal_name}</h1>
+            <h1 className="text-2xl font-bold tracking-tight">{profile.legal_name}</h1>
             {profile.dba_name && <p className="text-sm text-slate-600">DBA {profile.dba_name}</p>}
             <p className="mt-1 text-sm text-slate-600">
               {[`USDOT ${profile.usdot_number}`, ...dockets, address].filter(Boolean).join(' · ')}
@@ -559,37 +577,151 @@ export function PacketDocument({
           </div>
         </div>
 
-        {/* The score large, with what explains it beside it; its history and the counts below. */}
-        <div className="space-y-3">
-          <div className="grid items-center gap-5 wide:grid-cols-[auto_1fr]">
-            <div className="flex flex-col items-center rounded-xl border border-slate-200 px-5 py-4">
-              <div className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-600">
-                Estimated ISS safety score
-              </div>
-              <IssGauge iss={iss} className="w-72" large />
+        {/* The score large, with what explains it and the counts beside it, so the red items
+            below start on the first page. Its month-by-month history follows the findings. */}
+        <div className="grid items-center gap-5 wide:grid-cols-[auto_1fr]">
+          <div className="flex flex-col items-center rounded-xl border border-slate-200 px-5 py-3">
+            <div className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-600">
+              Estimated ISS safety score
             </div>
-            <div className="space-y-3">
-              {iss && (
-                <p className="text-base text-slate-700">
-                  <span className="font-semibold text-slate-900">Why this score: </span>
-                  {iss.reason}.
-                </p>
-              )}
-              {safety && <PullInRates safety={safety} client={client} />}
-            </div>
+            <IssGauge iss={iss} className="w-60" large />
           </div>
-          <IssTrend iss={iss} history={safety?.iss_history ?? []} />
-          <div
-            className={`grid gap-2 ${redFlags.length ? 'wide:grid-cols-4' : 'wide:grid-cols-3'}`}
-          >
-            <CountPill tone="red" count={hurting.length} label={`Hurting ${whose} score`} />
-            {redFlags.length > 0 && (
-              <CountPill tone="red" count={redFlags.length} label="Broker red flags" />
+          <div className="space-y-3">
+            {iss && (
+              <p className="text-base text-slate-700">
+                <span className="font-semibold text-slate-900">Why this score: </span>
+                {iss.reason}.
+              </p>
             )}
-            <CountPill tone="amber" count={watch.length + roadside.length} label="Worth watching" />
-            <CountPill tone="green" count={good.length} label="In good standing" />
+            <div className="grid grid-cols-2 gap-2">
+              <CountPill tone="red" count={hurting.length} label={`Hurting ${whose} score`} />
+              {redFlags.length > 0 && (
+                <CountPill tone="red" count={redFlags.length} label="Broker red flags" />
+              )}
+              <CountPill
+                tone="amber"
+                count={watch.length + roadside.length}
+                label="Worth watching"
+              />
+              <CountPill tone="green" count={good.length} label="In good standing" />
+            </div>
+            {safety && <PullInRates safety={safety} client={client} />}
           </div>
         </div>
+
+        {/* Ranked by how much each matters: red (each with its fix), then yellow, then green. */}
+        <div className="space-y-2">
+          <SectionHeading
+            aside="Each item names its FMCSA record"
+            tone={hurting.length ? 'red' : 'green'}
+          >
+            <span
+              className={`flex items-center gap-2 ${hurting.length ? 'text-red-700' : 'text-slate-900'}`}
+            >
+              <OctagonX className="size-5" aria-hidden />
+              What’s hurting {whose} safety score
+            </span>
+          </SectionHeading>
+          {hurting.length === 0 ? (
+            <ul>
+              <ItemBox
+                tone="green"
+                item={{
+                  key: 'none',
+                  title: 'Nothing in CarrierSafetyScan’s checks is hurting the score',
+                  detail:
+                    'No safety category is over its threshold or under an FMCSA alert, and FMCSA’s Crash File lists no fatal crash in the last 24 months.',
+                }}
+              />
+            </ul>
+          ) : (
+            <ul data-split className="space-y-2">
+              {hurting.map((item) => (
+                <ItemBox key={item.key} tone="red" item={item} solution={solutionFor(item)} />
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {redFlags.length > 0 && (
+          <div className="space-y-2">
+            <SectionHeading
+              aside="Doesn’t feed the Estimated ISS; a broker’s check may stop on these"
+              tone="red"
+            >
+              <span className="flex items-center gap-2 text-red-700">
+                <OctagonX className="size-5" aria-hidden />
+                Broker red flags
+              </span>
+            </SectionHeading>
+            <ul data-split className="space-y-2">
+              {redFlags.map((item) => (
+                <ItemBox key={item.key} tone="red" item={item} solution={solutionFor(item)} />
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {roadside.length > 0 && (
+          <div className="space-y-2">
+            <SectionHeading aside="Doesn’t feed the Estimated ISS directly" tone="amber">
+              <span className="flex items-center gap-2 text-amber-700">
+                <TriangleAlert className="size-5" aria-hidden />
+                Roadside risk
+              </span>
+            </SectionHeading>
+            <ul data-split className="space-y-2">
+              {roadside.map((item) => (
+                <ItemBox key={item.key} tone="amber" item={item} />
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {watch.length > 0 && (
+          <div className="space-y-2">
+            <SectionHeading tone="amber">
+              <span className="flex items-center gap-2 text-amber-700">
+                <TriangleAlert className="size-5" aria-hidden />
+                Worth watching
+              </span>
+            </SectionHeading>
+            <ul data-split className="space-y-2">
+              {watch.map((item) => (
+                <ItemBox key={item.key} tone="amber" item={item} />
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          <SectionHeading
+            tone="green"
+            aside={
+              red.length + roadside.length + watch.length > 0
+                ? 'These records are in order'
+                : 'Each item names its FMCSA record'
+            }
+          >
+            <span className="flex items-center gap-2 text-emerald-700">
+              <CircleCheck className="size-5" aria-hidden />
+              In good standing
+            </span>
+          </SectionHeading>
+          <ul data-split className="grid gap-2 wide:grid-cols-2">
+            {good.map((item) => (
+              <li
+                key={item.key}
+                className="flex break-inside-avoid items-start gap-2 rounded-lg border-l-4 border-emerald-600 bg-emerald-50 px-3 py-1.5 text-sm"
+              >
+                <CircleCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" aria-hidden />
+                <span className="font-medium text-slate-900">{item.title}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <IssTrend iss={iss} history={safety?.iss_history ?? []} />
 
         <div className="space-y-2">
           <SectionHeading
@@ -660,137 +792,39 @@ export function PacketDocument({
           </p>
         </div>
 
-        <div className="break-inside-avoid rounded-xl border border-slate-200 px-4 py-3">
-          <div className="text-sm font-semibold text-slate-900">
-            {priorities.length > 0 ? 'Start here: top priorities' : 'Start here'}
-          </div>
-          {priorities.length > 0 ? (
-            <ol className="mt-1.5 space-y-1 text-sm">
-              {priorities.map((item, i) => (
-                <li key={item.key} className="flex items-start gap-2">
-                  <span className="grid size-5 shrink-0 place-items-center rounded-full bg-red-600 text-[11px] font-bold text-surface">
-                    {i + 1}
-                  </span>
-                  <span className="font-medium text-red-700">{item.title}</span>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="mt-1 flex items-center gap-2 text-sm font-medium text-emerald-700">
-              <CircleCheck className="size-4" aria-hidden />
-              Nothing in CarrierSafetyScan’s checks is hurting {whose} score.
-            </p>
-          )}
-          <p className="mt-1.5 text-xs text-slate-500">
-            {hurting.length + redFlags.length + watch.length + roadside.length > 0
-              ? '“What to fix” explains each item and what usually fixes it.'
-              : '“Strengths and record” lists what is in good standing.'}
-          </p>
-        </div>
-
         <p className="text-[11px] text-slate-500">
           The Estimated ISS is CarrierSafetyScan’s estimate from public FMCSA data using FMCSA’s
           published methods; it is not FMCSA’s official ISS or a safety rating. Details and sources
-          at the end of “Strengths and record”.
+          at the end of “Record and sources”.
         </p>
       </Sheet>
 
-      {/* Page 2: what is hurting the score, and how to fix it */}
-      <Sheet index={1} title="What to fix" carrier={carrier} contact={contact.fixes}>
-        <div className="space-y-2">
-          <SectionHeading
-            aside="Each item names its FMCSA record"
-            tone={hurting.length ? 'red' : 'green'}
-          >
-            <span
-              className={`flex items-center gap-2 ${hurting.length ? 'text-red-700' : 'text-slate-900'}`}
-            >
-              <OctagonX className="size-5" aria-hidden />
-              What’s hurting {whose} safety score
-            </span>
-          </SectionHeading>
-          {hurting.length === 0 ? (
-            <ul>
-              <ItemBox
-                tone="green"
-                item={{
-                  key: 'none',
-                  title: 'Nothing in CarrierSafetyScan’s checks is hurting the score',
-                  detail:
-                    'No safety category is over its threshold or under an FMCSA alert, and FMCSA’s Crash File lists no fatal crash in the last 24 months.',
-                }}
-              />
-            </ul>
-          ) : (
-            <ul data-split className="space-y-2">
-              {hurting.map((item) => (
-                <ItemBox key={item.key} tone="red" item={item} hideFix={planned(item)} />
-              ))}
-            </ul>
-          )}
-        </div>
+      {/* The rest of the plan, and where the violations come from */}
+      {improve && (
+        <Sheet index={1} title="How to improve" carrier={carrier} contact={contact.fixes}>
+          <SolutionsBox
+            steps={morePlan}
+            title={
+              morePlan.length < plan.length
+                ? 'More ways to improve the Safety Score'
+                : 'Solutions on improving the Safety Score'
+            }
+          />
+          <SolutionsBox steps={plan} />
 
-        {redFlags.length > 0 && (
-          <div className="space-y-2">
-            <SectionHeading
-              aside="Doesn’t feed the Estimated ISS; a broker’s check may stop on these"
-              tone="red"
-            >
-              <span className="flex items-center gap-2 text-red-700">
-                <OctagonX className="size-5" aria-hidden />
-                Broker red flags
-              </span>
-            </SectionHeading>
-            <ul data-split className="space-y-2">
-              {redFlags.map((item) => (
-                <ItemBox key={item.key} tone="red" item={item} hideFix={planned(item)} />
-              ))}
-            </ul>
-          </div>
-        )}
+          {whereFrom}
 
-        {roadside.length > 0 && (
-          <div className="space-y-2">
-            <SectionHeading aside="Doesn’t feed the Estimated ISS directly" tone="amber">
-              <span className="flex items-center gap-2 text-amber-700">
-                <TriangleAlert className="size-5" aria-hidden />
-                Roadside risk
-              </span>
-            </SectionHeading>
-            <ul data-split className="space-y-2">
-              {roadside.map((item) => (
-                <ItemBox key={item.key} tone="amber" item={item} hideFix={planned(item)} />
-              ))}
-            </ul>
-          </div>
-        )}
+          {patterns}
+        </Sheet>
+      )}
 
-        {watch.length > 0 && (
-          <div className="space-y-2">
-            <SectionHeading tone="amber">
-              <span className="flex items-center gap-2 text-amber-700">
-                <TriangleAlert className="size-5" aria-hidden />
-                Worth watching
-              </span>
-            </SectionHeading>
-            <ul data-split className="space-y-2">
-              {watch.map((item) => (
-                <ItemBox key={item.key} tone="amber" item={item} hideFix={planned(item)} />
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <SolutionsBox steps={plan} />
-
-        {whereFrom}
-
-        {!busy && patterns}
-      </Sheet>
-
-      {/* Page 3: strengths and the record */}
-      <Sheet index={2} title="Strengths and record" carrier={carrier} contact={contact.record}>
-        {busy && patterns}
+      {/* The record: authority history, key facts, events, linked carriers, sources */}
+      <Sheet
+        index={improve ? 2 : 1}
+        title="Record and sources"
+        carrier={carrier}
+        contact={contact.record}
+      >
         {toReview.length > 0 && (
           <div className="space-y-2">
             <SectionHeading aside="FMCSA authority history" tone="amber">
@@ -819,33 +853,6 @@ export function PacketDocument({
             <More count={allToReview.length - toReview.length} url={fullRecordUrl} />
           </div>
         )}
-        <div className="space-y-2">
-          <SectionHeading
-            tone="green"
-            aside={
-              hurting.length > 0
-                ? `These records are in order; the safety problems are in the scorecard and “What to fix”${busy && patterns ? ', and above' : ''}`
-                : 'Each item names its FMCSA record'
-            }
-          >
-            <span className="flex items-center gap-2 text-emerald-700">
-              <CircleCheck className="size-5" aria-hidden />
-              In good standing
-            </span>
-          </SectionHeading>
-          <ul data-split className="grid gap-2 wide:grid-cols-2">
-            {good.map((item) => (
-              <li
-                key={item.key}
-                className="flex break-inside-avoid items-start gap-2 rounded-lg border-l-4 border-emerald-600 bg-emerald-50 px-3 py-1.5 text-sm"
-              >
-                <CircleCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" aria-hidden />
-                <span className="font-medium text-slate-900">{item.title}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
         <div className="space-y-2">
           <SectionHeading aside="FMCSA census, authority, insurance and BOC-3 filings; NHTSA vPIC">
             Key facts
@@ -1014,39 +1021,54 @@ export function PacketDocument({
 
       {/* The SMS record line by line, and when the score improves */}
       {record && safety && (
-        <Sheet index={3} title="Inspection record" carrier={carrier} contact={contact.inspections}>
+        <Sheet
+          index={improve ? 3 : 2}
+          title="Inspection record"
+          carrier={carrier}
+          contact={contact.inspections}
+        >
           <RecordPage
             fullRecordUrl={fullRecordUrl}
             safety={safety}
             client={client}
             whose={whose}
             part={twoRecordPages ? 'summary' : 'all'}
-            listedAtEnd={listed}
+            listedAtEnd={listed ? inspections.length : 0}
           />
         </Sheet>
       )}
       {/* For a busy record: the inspection history, crashes and pull-in rates */}
       {twoRecordPages && safety && (
-        <Sheet index={4} title="Inspection history" carrier={carrier} contact={contact.inspections}>
+        <Sheet
+          index={improve ? 4 : 3}
+          title="Inspection history"
+          carrier={carrier}
+          contact={contact.inspections}
+        >
           <RecordPage
             fullRecordUrl={fullRecordUrl}
             safety={safety}
             client={client}
             whose={whose}
             part="history"
-            listedAtEnd={listed}
+            listedAtEnd={listed ? inspections.length : 0}
           />
         </Sheet>
       )}
       {/* Last: every inspection on file, each one listed */}
       {listed && (
         <Sheet
-          index={record ? (twoRecordPages ? 5 : 4) : 3}
-          title="Every inspection"
+          index={(improve ? 3 : 2) + (record ? (twoRecordPages ? 2 : 1) : 0)}
+          title="Latest inspections"
           carrier={carrier}
           contact={contact.inspections}
         >
-          <InspectionList inspections={inspections} usdotNumber={profile.usdot_number} />
+          <InspectionList
+            inspections={inspections}
+            total={inspectionTotal ?? inspections.length}
+            usdotNumber={profile.usdot_number}
+            fullRecordUrl={fullRecordUrl}
+          />
         </Sheet>
       )}
     </>
@@ -1059,7 +1081,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
   const network = useCarrierNetwork(profile.usdot_number)
   const equipment = useCarrierEquipment(profile.usdot_number)
   const safety = useCarrierSafety(profile.usdot_number)
-  const inspections = useAllCarrierInspections(profile.usdot_number)
+  const inspections = useLatestCarrierInspections(profile.usdot_number)
   const portal = usePortalMode()
   const printCopy = useRef<HTMLDivElement>(null)
   const printPages = useRef<HTMLDivElement>(null)
@@ -1117,7 +1139,8 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
       equipment={equipment.data}
       safety={safety.data ?? null}
       portal={portal}
-      inspections={inspections.data ?? null}
+      inspections={inspections.data?.inspections ?? null}
+      inspectionTotal={inspections.data?.total}
     />
   )
   return (

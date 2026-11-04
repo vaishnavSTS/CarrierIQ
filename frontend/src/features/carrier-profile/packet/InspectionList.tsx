@@ -28,16 +28,23 @@ function outOfService(i: InspectionDetail): string {
 }
 
 /**
- * The end of the Safety Score Report: every inspection on file for the carrier, one by one, newest
- * first, with each violation FMCSA recorded. In print it runs over as many pages as it needs,
- * split between inspections (printFit.ts).
+ * The end of the Safety Score Report: the carrier's latest inspections, one by one, newest first,
+ * with each violation FMCSA recorded (all of them are on the Inspections tab). In print it runs
+ * over as many pages as it needs, split between inspections (printFit.ts).
  */
 export function InspectionList({
   inspections,
+  total,
   usdotNumber,
+  fullRecordUrl,
 }: {
+  /** The latest ones, newest first */
   inspections: InspectionDetail[]
+  /** How many are on file in all */
+  total: number
   usdotNumber: number
+  /** The carrier's page in the app, where every inspection is listed */
+  fullRecordUrl: string
 }) {
   const newest = inspections[0]?.inspection_date
   const oldest = inspections[inspections.length - 1]?.inspection_date
@@ -50,14 +57,19 @@ export function InspectionList({
       <SectionHeading
         aside={`FMCSA inspection file${newest && oldest ? ` · ${month(oldest)} to ${month(newest)}` : ''}`}
       >
-        Every inspection on file
+        {total > inspections.length ? `Latest ${inspections.length} inspections` : 'Inspections'}
       </SectionHeading>
       <p className="text-sm text-slate-700">
-        All {plural(inspections.length, 'inspection')} CarrierSafetyScan has from FMCSA’s inspection
-        file for USDOT {usdotNumber}, newest first: {withViolations} with violations,{' '}
-        {inspections.length - withViolations} without, and {stopped} where a driver or vehicle was
-        placed out of service. Each violation is listed under its inspection; out-of-service ones
-        are in red. A description ending in “…” is cut off in FMCSA’s own file.
+        {total > inspections.length
+          ? `The latest ${inspections.length} of the ${total} inspections`
+          : `All ${plural(inspections.length, 'inspection')}`}{' '}
+        CarrierSafetyScan has from FMCSA’s inspection file for USDOT {usdotNumber}, newest first:{' '}
+        {withViolations} with violations, {inspections.length - withViolations} without, and{' '}
+        {stopped} where a driver or vehicle was placed out of service. Each violation is listed
+        under its inspection; out-of-service ones are in red. A description ending in “…” is cut off
+        in FMCSA’s own file.
+        {total > inspections.length &&
+          ` All ${total} are on the Inspections tab after logging in: ${fullRecordUrl}`}
       </p>
       <ScrollX>
         {/* Split between inspections when it runs past a printed page (printFit.ts). */}

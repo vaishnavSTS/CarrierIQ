@@ -5,14 +5,16 @@ import { SectionHeading } from './SectionHeading'
 import type { Solution } from './solutions'
 
 /**
- * Page 2's plan in plain English: numbered steps, each with what to do and how. Two columns on
+ * The report's plan in plain English: numbered steps, each with what to do and how. Two columns on
  * paper (the printed copy is laid out at the A4 width whatever the screen), one on a phone.
  */
 export function SolutionsBox({
   steps,
+  title = 'Solutions on improving the Safety Score',
   aside = 'Suggestions from this report’s FMCSA records',
 }: {
   steps: Solution[]
+  title?: string
   aside?: string
 }) {
   const printed = useContext(PrintCopy)
@@ -20,7 +22,7 @@ export function SolutionsBox({
   return (
     <div className="space-y-2">
       <SectionHeading aside={aside} tone="green">
-        <span className="text-emerald-800">Solutions on improving the Safety Score</span>
+        <span className="text-emerald-800">{title}</span>
       </SectionHeading>
       <ol
         className={`grid gap-2 ${printed ? 'grid-cols-2' : 'wide:grid-cols-2'}`}
