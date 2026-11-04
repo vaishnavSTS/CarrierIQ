@@ -55,7 +55,7 @@ export function PortalGuide({
                 aria-hidden
                 className="absolute -right-12 -top-12 size-32 rounded-full bg-brand-glow/15 opacity-0 blur-2xl transition-opacity group-hover:opacity-100"
               />
-              <span className="grid size-10 place-items-center rounded-xl bg-[#101853] text-white">
+              <span className="grid size-10 place-items-center rounded-xl bg-[var(--portal-ink)] text-white">
                 <Icon className="size-5" aria-hidden />
               </span>
               <h3 className="mt-4 text-sm font-semibold text-slate-900">{title}</h3>
@@ -77,7 +77,7 @@ export function PortalGuide({
               className="relative rounded-2xl border border-slate-200 bg-surface p-5 shadow-sm"
             >
               <div className="flex items-center gap-3">
-                <span className="font-label grid size-9 place-items-center rounded-full bg-amber-300 text-sm font-semibold text-[#060d24]">
+                <span className="font-label grid size-9 place-items-center rounded-full bg-[var(--portal-accent)] text-sm font-semibold text-[var(--portal-accent-ink)]">
                   {String(i + 1).padStart(2, '0')}
                 </span>
                 <Icon className="size-4 text-slate-500" aria-hidden />

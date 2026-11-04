@@ -28,7 +28,7 @@ export function CompareDesk() {
     <motion.section {...reveal()} className={`${CARD} flex flex-col`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#101853] text-white">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--portal-ink)] text-white">
             <Columns3 className="size-5" aria-hidden />
           </span>
           <div className="min-w-0">
@@ -43,7 +43,7 @@ export function CompareDesk() {
         {usdots.length > 0 && (
           <Link
             to={comparePath(compare.page, usdots)}
-            className="inline-flex items-center gap-1 rounded-lg bg-[#101853] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#1b2775]"
+            className="inline-flex items-center gap-1 rounded-lg bg-[var(--portal-ink)] px-3 py-1.5 text-sm font-medium text-white hover:bg-[var(--portal-ink-hover)]"
           >
             {usdots.length > 1 ? 'Compare side by side' : 'Open Compare'}
             <ArrowRight className="size-4" aria-hidden />

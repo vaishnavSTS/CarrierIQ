@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom'
 
 import { useDataQsCases } from '../../hooks/useDataQs'
 import type { PortalCarrier } from '../../types/auth'
-import { HeroBoard } from '../dashboard/HeroBoard'
+import { greeting } from './greeting'
+import { PortalHeroBackdrop } from './PortalHeroBackdrop'
 import { ExampleCheck } from './ExampleCheck'
 
 const container = {
@@ -52,7 +53,7 @@ export function PortalHero({
 
   return (
     <section className="portal-hero relative isolate overflow-hidden rounded-3xl border border-white/15 shadow-xl">
-      <HeroBoard signals={undefined} />
+      <PortalHeroBackdrop tone="carrier" />
 
       <motion.div
         className={`relative grid gap-6 p-5 sm:p-6 md:p-8 ${carriers?.length === 0 ? 'lg:grid-cols-[1.25fr_1fr] lg:items-center' : 'lg:grid-cols-[1fr_auto] lg:items-end'}`}
@@ -74,7 +75,8 @@ export function PortalHero({
 
           <motion.div variants={item} className="max-w-2xl">
             <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">
-              Welcome{firstName ? `, ${firstName}` : ''}.{' '}
+              {greeting()}
+              {firstName ? `, ${firstName}` : ''}.{' '}
               <span className="text-[var(--hero-highlight)]">
                 See your carrier the way brokers do
               </span>

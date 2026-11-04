@@ -15,7 +15,7 @@ export function PortalLayout() {
     ...(searchEnabled ? [{ to: '/portal/search', label: 'Search carriers', icon: Search }] : []),
   ]
   return (
-    <PortalShell home="/portal" label="Carrier portal" nav={nav}>
+    <PortalShell tone="carrier" home="/portal" label="Carrier portal" nav={nav}>
       <PortalModeContext.Provider value="client">
         <SubscriptionGate>
           <Outlet />

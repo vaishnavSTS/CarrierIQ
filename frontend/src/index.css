@@ -946,3 +946,78 @@ body {
     content: none;
   }
 }
+
+/*
+ * All portals share the brand colours: navy (--portal-ink) for icon tiles and step numbers on
+ * light cards, gold (--portal-accent) for highlights on the dark sidebar and banner.
+ */
+[data-portal] {
+  --portal-ink: #101853;
+  --portal-ink-hover: #1b2775;
+  --portal-accent: #fcd34d;
+  --portal-accent-ink: #060d24;
+  --portal-photo-tint: #0b2a8f;
+  --portal-scrim: 9 22 84;
+}
+:root[data-theme='dark'] [data-portal] {
+  --portal-photo-tint: #0a1430;
+  --portal-scrim: 3 8 24;
+}
+/* The banner's backdrop is a toned photo, not the faint board: keep it at full strength. */
+[data-portal] .portal-hero > :first-child {
+  opacity: 1;
+}
+
+/* The banner's photo, toned into the portal's colour, clear on the right and dark behind the text. */
+.portal-hero-photo {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 45%);
+  mask-image: linear-gradient(90deg, transparent 0%, black 45%);
+}
+.portal-hero-tint {
+  background: var(--portal-photo-tint);
+  mix-blend-mode: color;
+  opacity: 0.4;
+}
+.portal-hero-scrim {
+  background: linear-gradient(
+    90deg,
+    rgb(var(--portal-scrim) / 0.9) 0%,
+    rgb(var(--portal-scrim) / 0.55) 50%,
+    rgb(var(--portal-scrim) / 0.15) 100%
+  );
+}
+
+/* Carrier banner: lane markings rolling past along the bottom. */
+@keyframes lane-roll {
+  to {
+    background-position-x: -96px;
+  }
+}
+.portal-road {
+  background-image: linear-gradient(90deg, var(--portal-accent) 0 48px, transparent 48px 96px);
+  background-size: 96px 3px;
+  background-repeat: repeat-x;
+  background-position: 0 50%;
+  animation: lane-roll 1.6s linear infinite;
+  opacity: 0.55;
+}
+/* Agent banner: a slow light sweeping across, like a page being reviewed. */
+@keyframes review-sweep {
+  0% {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  60%,
+  100% {
+    transform: translateX(320%) skewX(-18deg);
+  }
+}
+.portal-sweep {
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.1), transparent);
+  animation: review-sweep 9s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .portal-road,
+  .portal-sweep {
+    animation: none;
+  }
+}

@@ -23,6 +23,7 @@ function BrokerFrame() {
   const compared = useCompareList()?.usdots.length ?? 0
   return (
     <PortalShell
+      tone={me?.role === 'INSURANCE_AGENT' ? 'agent' : 'broker'}
       home="/broker"
       label={me?.role === 'INSURANCE_AGENT' ? 'Insurance agent portal' : 'Broker portal'}
       nav={[

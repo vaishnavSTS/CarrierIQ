@@ -40,7 +40,7 @@ export function BrokerageCard({
   return (
     <motion.section {...reveal(0.05)} className={`${CARD} flex flex-col`}>
       <div className="flex items-start gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#101853] text-white">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--portal-ink)] text-white">
           <Landmark className="size-5" aria-hidden />
         </span>
         <div className="min-w-0">

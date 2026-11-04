@@ -41,7 +41,7 @@ export function TabLinks({ page, index }: { page: string; index: number }) {
               to={tab ? `${page}?tab=${tab}` : page}
               className="group flex h-full min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-surface px-3 py-2 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:border-accent hover:text-accent-strong xl:flex-col xl:items-start xl:gap-1.5"
             >
-              <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-[#101853] text-white transition-transform group-hover:scale-105">
+              <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-[var(--portal-ink)] text-white transition-transform group-hover:scale-105">
                 <Icon className="size-3.5" aria-hidden />
               </span>
               <span className="min-w-0 leading-tight">{label}</span>

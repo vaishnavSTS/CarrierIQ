@@ -26,7 +26,7 @@ export function CarrierList({ carriers }: { carriers: PortalCarrier[] }) {
               to={`/portal/carriers/${c.usdot_number}`}
               className="group flex h-full items-center gap-3 rounded-xl border border-slate-200 px-3 py-3 transition-colors hover:border-accent"
             >
-              <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#101853] text-white">
+              <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[var(--portal-ink)] text-white">
                 <Truck className="size-4" aria-hidden />
               </span>
               <div className="min-w-0 flex-1">

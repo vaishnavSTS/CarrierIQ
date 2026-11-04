@@ -49,63 +49,66 @@ const NOT_IN_RECORD = [
   },
 ]
 
-/** Agent home: the federal liability minimums, beside what the public record can't answer. */
+/** Agent home, step 2: the federal liability minimums for for-hire carriers. */
 export function LiabilityMinimums() {
   return (
-    <div className="grid gap-4 lg:grid-cols-[1.15fr_1fr]">
-      <section className="min-w-0 rounded-2xl border border-slate-200 bg-surface p-5 shadow-sm">
-        <div className="flex items-center gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#101853] text-white">
-            <ShieldHalf className="size-5" aria-hidden />
-          </span>
-          <div className="min-w-0">
-            <p className="font-label text-[10.5px] uppercase tracking-[0.14em] text-slate-500">
-              Quick reference
-            </p>
-            <h2 className="text-lg font-semibold text-slate-950">Federal liability minimums</h2>
-          </div>
+    <section className="min-w-0 rounded-2xl border border-slate-200 bg-surface p-5 shadow-sm">
+      <div className="flex items-center gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--portal-ink)] text-white">
+          <ShieldHalf className="size-5" aria-hidden />
+        </span>
+        <div className="min-w-0">
+          <p className="font-label text-[10.5px] uppercase tracking-[0.14em] text-slate-500">
+            Quick reference
+          </p>
+          <h3 className="text-lg font-semibold text-slate-950">Federal liability minimums</h3>
         </div>
-        <ul className="mt-4 divide-y divide-slate-200">
-          {MINIMUMS.map((m) => (
-            <li key={m.label} className="flex items-baseline justify-between gap-4 py-2.5">
-              <span className="min-w-0">
-                <span className="block text-sm font-medium text-slate-900">{m.label}</span>
-                <span className="block text-xs text-slate-500">{m.detail}</span>
-              </span>
-              <span className="shrink-0 font-mono text-sm font-semibold tabular-nums text-slate-950">
-                ${m.amount.toLocaleString('en-US')}
-              </span>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-3 text-xs text-slate-500">
-          Minimum liability (BI&PD) for for-hire carriers in interstate commerce, 49 CFR 387.9
-          (property) and 387.33 (passengers). The Authority & Insurance tab shows what FMCSA
-          requires of the carrier’s own authority next to what is on file.
-        </p>
-      </section>
+      </div>
+      <ul className="mt-4 grid gap-x-8 divide-y divide-slate-200 md:grid-cols-2 md:divide-y-0">
+        {MINIMUMS.map((m) => (
+          <li
+            key={m.label}
+            className="flex items-baseline justify-between gap-4 py-2.5 md:border-b md:border-slate-200"
+          >
+            <span className="min-w-0">
+              <span className="block text-sm font-medium text-slate-900">{m.label}</span>
+              <span className="block text-xs text-slate-500">{m.detail}</span>
+            </span>
+            <span className="shrink-0 font-mono text-sm font-semibold tabular-nums text-slate-950">
+              ${m.amount.toLocaleString('en-US')}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-xs text-slate-500">
+        Minimum liability (BI&PD) for for-hire carriers in interstate commerce, 49 CFR 387.9
+        (property) and 387.33 (passengers). The Authority & Insurance tab shows what FMCSA requires
+        of the carrier’s own authority next to what is on file.
+      </p>
+    </section>
+  )
+}
 
-      <section className="min-w-0 rounded-2xl border border-slate-200 bg-surface p-5 shadow-sm">
-        <div className="flex items-center gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-300 text-[#060d24]">
-            <CircleHelp className="size-5" aria-hidden />
-          </span>
-          <div className="min-w-0">
-            <p className="font-label text-[10.5px] uppercase tracking-[0.14em] text-slate-500">
-              Good to know
-            </p>
-            <h2 className="text-lg font-semibold text-slate-950">Not in FMCSA’s public record</h2>
+/** Agent home, in the margin: what the public record can't answer, as a note pinned to the file. */
+export function NotInRecord() {
+  return (
+    <section className="relative rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm lg:rotate-[0.6deg]">
+      <span
+        aria-hidden
+        className="absolute -top-2.5 left-1/2 h-5 w-16 -translate-x-1/2 rounded-sm bg-amber-200/80"
+      />
+      <div className="flex items-center gap-2">
+        <CircleHelp className="size-5 text-amber-700" aria-hidden />
+        <h2 className="text-base font-semibold text-slate-950">Not in FMCSA’s public record</h2>
+      </div>
+      <dl className="mt-3 space-y-3">
+        {NOT_IN_RECORD.map((n) => (
+          <div key={n.title}>
+            <dt className="text-sm font-medium text-slate-900">{n.title}</dt>
+            <dd className="mt-0.5 text-sm leading-relaxed text-slate-700">{n.text}</dd>
           </div>
-        </div>
-        <dl className="mt-4 space-y-3">
-          {NOT_IN_RECORD.map((n) => (
-            <div key={n.title}>
-              <dt className="text-sm font-medium text-slate-900">{n.title}</dt>
-              <dd className="mt-0.5 text-sm leading-relaxed text-slate-600">{n.text}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
-    </div>
+        ))}
+      </dl>
+    </section>
   )
 }

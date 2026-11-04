@@ -31,7 +31,7 @@ export function AgentCompareList() {
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#101853] text-white">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--portal-ink)] text-white">
             <Columns3 className="size-5" aria-hidden />
           </span>
           <div>

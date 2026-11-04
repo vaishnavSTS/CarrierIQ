@@ -20,14 +20,18 @@ export function PortalHomePage() {
   const { data, isPending, isError } = usePortalOverview()
   const searchEnabled = useClientSearchEnabled()
   const carriers = data?.carriers ?? []
+  const firstName = user?.full_name.split(' ')[0]
 
   return (
     <div className="space-y-8">
-      <PortalHero
-        firstName={user?.full_name.split(' ')[0]}
-        organizationName={data?.organization_name}
-        carriers={data?.carriers}
-      />
+      {/* With a carrier linked, each carrier's own plate opens the page instead. */}
+      {data && carriers.length === 0 && (
+        <PortalHero
+          firstName={firstName}
+          organizationName={data.organization_name}
+          carriers={carriers}
+        />
+      )}
 
       {isPending && <p className="text-sm text-slate-500">Loading your carriers…</p>}
       {isError && (
@@ -45,7 +49,7 @@ export function PortalHomePage() {
       {carriers.length > 1 && <CarrierList carriers={carriers} />}
 
       {carriers.map((c) => (
-        <CarrierSnapshot key={c.usdot_number} usdotNumber={c.usdot_number} />
+        <CarrierSnapshot key={c.usdot_number} usdotNumber={c.usdot_number} firstName={firstName} />
       ))}
 
       {carriers.length > 0 && <DataQsPanel multipleCarriers={carriers.length > 1} />}

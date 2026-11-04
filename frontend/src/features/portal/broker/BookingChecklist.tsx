@@ -6,7 +6,6 @@ import {
   Network,
   ShieldCheck,
   Truck,
-  UserCheck,
   type LucideIcon,
 } from 'lucide-react'
 import { motion } from 'motion/react'
@@ -79,7 +78,7 @@ export function BookingChecklist() {
     <motion.section {...reveal()} className={CARD}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-amber-300 text-[#060d24]">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--portal-accent)] text-[var(--portal-accent-ink)]">
             <ClipboardCheck className="size-5" aria-hidden />
           </span>
           <div className="min-w-0">
@@ -104,7 +103,7 @@ export function BookingChecklist() {
                 aria-pressed={target === f.usdot}
                 className={`max-w-44 truncate rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
                   target === f.usdot
-                    ? 'bg-[#101853] text-white'
+                    ? 'bg-[var(--portal-ink)] text-white'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
@@ -115,7 +114,7 @@ export function BookingChecklist() {
         )}
       </div>
 
-      <ol className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <ol className="mt-5 grid gap-3 sm:grid-cols-2">
         {CHECKS.map(({ icon: Icon, title, text, tabs }, i) => (
           <motion.li
             key={title}
@@ -123,7 +122,7 @@ export function BookingChecklist() {
             className="flex flex-col rounded-xl border border-slate-200 bg-slate-50/60 p-4"
           >
             <div className="flex items-center gap-2.5">
-              <span className="font-label grid size-7 shrink-0 place-items-center rounded-full bg-[#101853] text-[11px] font-semibold text-white">
+              <span className="font-label grid size-7 shrink-0 place-items-center rounded-full bg-[var(--portal-ink)] text-[11px] font-semibold text-white">
                 {i + 1}
               </span>
               <Icon className="size-4 shrink-0 text-slate-500" aria-hidden />
@@ -150,23 +149,6 @@ export function BookingChecklist() {
             </div>
           </motion.li>
         ))}
-
-        <motion.li
-          {...reveal(0.04 * CHECKS.length)}
-          className="flex flex-col rounded-xl border border-amber-700/40 bg-amber-50 p-4"
-        >
-          <div className="flex items-center gap-2.5">
-            <span className="grid size-7 shrink-0 place-items-center rounded-full bg-amber-300 text-[#060d24]">
-              <UserCheck className="size-4" aria-hidden />
-            </span>
-            <h3 className="text-sm font-semibold text-slate-900">Still on you</h3>
-          </div>
-          <p className="mt-2 text-sm leading-relaxed text-slate-700">
-            Public records can’t show these: the insurance certificate confirmed with the insurer
-            (cargo cover too), a call to the carrier’s listed contact, the W-9 and a signed carrier
-            agreement.
-          </p>
-        </motion.li>
       </ol>
 
       {usdots.length === 0 && (

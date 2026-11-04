@@ -29,7 +29,7 @@ export function DataQsPanel({ multipleCarriers }: { multipleCarriers: boolean })
     <motion.section {...reveal()} className={CARD} aria-labelledby="portal-dataqs">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#101853] text-white">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--portal-ink)] text-white">
             <FileSearch className="size-5" aria-hidden />
           </span>
           <div>
@@ -54,7 +54,7 @@ export function DataQsPanel({ multipleCarriers }: { multipleCarriers: boolean })
         </div>
         <Link
           to="/portal/dataqs#start-request"
-          className="tap inline-flex items-center gap-1.5 rounded-xl bg-amber-300 px-4 py-2.5 text-sm font-semibold text-[#060d24] shadow-sm hover:bg-amber-400"
+          className="tap inline-flex items-center gap-1.5 rounded-xl bg-[var(--portal-accent)] px-4 py-2.5 text-sm font-semibold text-[var(--portal-accent-ink)] shadow-sm hover:brightness-95"
         >
           <FilePlus2 className="size-4" aria-hidden />
           Start a request · $50 per inspection

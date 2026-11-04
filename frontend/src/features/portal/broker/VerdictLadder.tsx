@@ -38,15 +38,15 @@ const RUNGS = [
 ] as const
 
 /**
- * Broker hero, beside the search: the booking check every carrier page opens with, as the four
+ * Broker home, in the side rail: the booking check every carrier page opens with, as the four
  * verdicts and what leads to each. The rule, not sample data.
  */
 export function VerdictLadder() {
   const reduce = useReducedMotion()
   return (
-    <div className="rounded-2xl border border-white/15 bg-[#060d24]/55 p-5 text-white shadow-2xl backdrop-blur">
-      <p className={`${LABEL} text-amber-300`}>Booking check</p>
-      <p className="mt-1 text-sm font-semibold">Every carrier page opens with one</p>
+    <div className="rounded-2xl border border-white/10 bg-[#101853] p-5 text-white shadow-sm">
+      <p className={`${LABEL} text-[var(--portal-accent)]`}>Booking check</p>
+      <p className="mt-1 text-base font-semibold">How every carrier is graded</p>
       <ol className="mt-4 space-y-2.5">
         {RUNGS.map(({ label, icon: Icon, color, bar, text }, i) => (
           <motion.li

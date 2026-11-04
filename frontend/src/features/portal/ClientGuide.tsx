@@ -90,7 +90,7 @@ export function ClientGuide() {
       <ul className="mt-5 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
         {FEATURES.map(({ icon: Icon, title, text }) => (
           <li key={title} className="flex gap-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#101853] text-white">
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--portal-ink)] text-white">
               <Icon className="size-4" aria-hidden />
             </span>
             <div className="min-w-0">
@@ -105,7 +105,7 @@ export function ClientGuide() {
         {STEPS.map(({ title, text }, i) => (
           <li key={title} className="rounded-xl bg-canvas p-4">
             <div className="flex items-center gap-2.5">
-              <span className="font-label grid size-7 place-items-center rounded-full bg-amber-300 text-xs font-semibold text-[#060d24]">
+              <span className="font-label grid size-7 place-items-center rounded-full bg-[var(--portal-accent)] text-xs font-semibold text-[var(--portal-accent-ink)]">
                 {String(i + 1).padStart(2, '0')}
               </span>
               <h3 className="text-sm font-semibold text-slate-900">{title}</h3>

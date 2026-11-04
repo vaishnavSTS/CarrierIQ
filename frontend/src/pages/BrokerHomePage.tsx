@@ -6,15 +6,16 @@ import { SearchResultsPanel } from '../features/carrier-search/SearchResultsPane
 import { BookingChecklist } from '../features/portal/broker/BookingChecklist'
 import { BrokerageCard } from '../features/portal/broker/BrokerageCard'
 import { CompareDesk } from '../features/portal/broker/CompareDesk'
-import { BrokerGuide } from '../features/portal/BrokerGuide'
+import { PaperworkCard } from '../features/portal/broker/PaperworkCard'
+import { VerdictLadder } from '../features/portal/broker/VerdictLadder'
 import { BrokerHero } from '../features/portal/BrokerHero'
 import { useBrokerOverview, useMe } from '../hooks/useAuth'
 import { AgentHomePage } from './AgentHomePage'
 
 /**
- * Broker portal home: welcome and carrier search (?q=…) at the top, then the results when there is
- * a search. Below: the compare list with each carrier's booking check, the brokerage's own FMCSA
- * details, and (before a search) what to check before booking and how the portal works.
+ * Broker portal home, laid out as a vetting desk: the search band (?q=…) and its results, then the
+ * compare desk as the main work area beside a rail with how carriers are graded, the paperwork
+ * checklist for the load and the brokerage's own FMCSA details; before a search, what to check.
  */
 export function BrokerHomePage() {
   const { data: user } = useMe()
@@ -39,21 +40,22 @@ export function BrokerHomePage() {
 
       {query && <SearchResultsPanel query={query} />}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <CompareDesk />
-        <BrokerageCard
-          brokerage={brokerage}
-          fallbackName={brokerageName}
-          loading={brokerageLoading}
-        />
+      <div className="grid gap-6 lg:grid-cols-3 lg:items-start">
+        <div className="space-y-6 lg:col-span-2">
+          <CompareDesk />
+          {!query && <BookingChecklist />}
+        </div>
+        <aside className="space-y-6" aria-label="Booking tools">
+          <VerdictLadder />
+          <PaperworkCard />
+          <BrokerageCard
+            brokerage={brokerage}
+            fallbackName={brokerageName}
+            loading={brokerageLoading}
+          />
+        </aside>
       </div>
 
-      {!query && (
-        <>
-          <BookingChecklist />
-          <BrokerGuide />
-        </>
-      )}
       <SubscriptionPanel />
     </div>
   )

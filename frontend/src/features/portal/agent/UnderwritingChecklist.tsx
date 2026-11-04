@@ -23,24 +23,22 @@ export function UnderwritingChecklist() {
         }
 
   return (
-    <section id="underwriting-checklist" className="scroll-mt-6">
-      <motion.p
-        {...reveal()}
-        className="font-label text-[10.5px] uppercase tracking-[0.14em] text-accent-strong"
-      >
-        Underwriting checklist
-      </motion.p>
-      <motion.h2 {...reveal(0.03)} className="mt-1 text-2xl font-semibold text-slate-950">
-        Where each answer lives on a carrier page
-      </motion.h2>
-      <motion.p {...reveal(0.06)} className="mt-1 max-w-3xl text-sm text-slate-600">
-        Search a carrier above and open its profile: each question below is answered on one tab.
-        Values come from FMCSA and NHTSA public records, with the source named on each.
-      </motion.p>
-
-      <ol className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <section
+      id="underwriting-checklist"
+      className="scroll-mt-6 rounded-2xl border border-slate-200 bg-surface shadow-sm"
+    >
+      <div className="border-b border-slate-200 p-5">
+        <motion.h3 {...reveal()} className="text-lg font-semibold text-slate-950">
+          Where each answer lives on a carrier page
+        </motion.h3>
+        <motion.p {...reveal(0.03)} className="mt-1 max-w-3xl text-sm text-slate-600">
+          Open the carrier and go down this list: each question is answered on one tab, from FMCSA
+          and NHTSA public records with the source named on each.
+        </motion.p>
+      </div>
+      <ol className="divide-y divide-slate-100">
         {CHECKLIST.map((entry, i) => (
-          <motion.li key={entry.tab} {...reveal(0.05 * i)} className="flex">
+          <motion.li key={entry.tab} {...reveal(0.04 * i)}>
             <ChecklistCard entry={entry} index={i} />
           </motion.li>
         ))}
@@ -56,69 +54,63 @@ function ChecklistCard({ entry, index }: { entry: ChecklistItem; index: number }
   const panelId = useId()
 
   return (
-    <article className="group relative flex w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-surface p-5 shadow-sm transition-[border-color,box-shadow] hover:border-slate-300 hover:shadow-lg">
-      <div
-        aria-hidden
-        className="absolute -right-12 -top-12 size-32 rounded-full bg-brand-glow/15 opacity-0 blur-2xl transition-opacity group-hover:opacity-100"
-      />
-      <div className="flex items-start justify-between gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#101853] text-white">
-          <Icon className="size-5" aria-hidden />
-        </span>
-        <span className="font-label text-[10.5px] uppercase tracking-[0.14em] text-slate-500">
-          {String(index + 1).padStart(2, '0')}
-        </span>
+    <article className="grid gap-x-6 gap-y-3 p-5 transition-colors hover:bg-slate-50/60 md:grid-cols-[2.5rem_minmax(0,1fr)_minmax(0,1.3fr)]">
+      <span className="grid size-10 place-items-center rounded-full border-2 border-[var(--portal-ink)] font-label text-sm font-semibold text-slate-900">
+        {String(index + 1).padStart(2, '0')}
+      </span>
+      <div className="min-w-0">
+        <h4 className="text-base font-semibold text-slate-900">{question}</h4>
+        <p className="mt-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--portal-ink)] px-2.5 py-0.5 text-xs font-medium text-white">
+            <Icon className="size-3.5" aria-hidden />
+            Tab: {label}
+          </span>
+        </p>
       </div>
 
-      <h3 className="mt-4 text-sm font-semibold text-slate-900">{question}</h3>
-      <p className="mt-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#101853] px-2.5 py-0.5 text-xs font-medium text-white">
-          <span className="size-1.5 rounded-full bg-amber-300" aria-hidden />
-          Tab: {label}
-        </span>
-      </p>
+      <div className="min-w-0">
+        <ul className="space-y-1.5 text-sm leading-relaxed text-slate-600">
+          {shows.map((line) => (
+            <li key={line} className="flex gap-2">
+              <span className="mt-2 size-1 shrink-0 rounded-full bg-slate-400" aria-hidden />
+              <span>{line}</span>
+            </li>
+          ))}
+        </ul>
 
-      <ul className="mt-3 space-y-1.5 text-sm leading-relaxed text-slate-600">
-        {shows.map((line) => (
-          <li key={line} className="flex gap-2">
-            <span className="mt-2 size-1 shrink-0 rounded-full bg-slate-400" aria-hidden />
-            <span>{line}</span>
-          </li>
-        ))}
-      </ul>
-
-      <div className="mt-auto pt-4">
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-controls={open ? panelId : undefined}
-          className="inline-flex items-center gap-1 text-sm font-medium text-accent-strong hover:underline"
-        >
-          How to use it
-          <ChevronDown
-            className={`size-4 transition-transform ${open ? 'rotate-180' : ''}`}
-            aria-hidden
-          />
-        </button>
-        <AnimatePresence initial={false}>
-          {open && (
-            <motion.div
-              id={panelId}
-              initial={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
-              animate={reduce ? { opacity: 1 } : { height: 'auto', opacity: 1 }}
-              exit={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
-              transition={{ duration: 0.25, ease }}
-              className="overflow-hidden"
-            >
-              <ol className="mt-3 space-y-2 border-l-2 border-amber-300 pl-3 text-sm leading-relaxed text-slate-700">
-                {howTo.map((step) => (
-                  <li key={step}>{step}</li>
-                ))}
-              </ol>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div className="pt-3">
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-controls={open ? panelId : undefined}
+            className="inline-flex items-center gap-1 text-sm font-medium text-accent-strong hover:underline"
+          >
+            How to use it
+            <ChevronDown
+              className={`size-4 transition-transform ${open ? 'rotate-180' : ''}`}
+              aria-hidden
+            />
+          </button>
+          <AnimatePresence initial={false}>
+            {open && (
+              <motion.div
+                id={panelId}
+                initial={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                animate={reduce ? { opacity: 1 } : { height: 'auto', opacity: 1 }}
+                exit={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                transition={{ duration: 0.25, ease }}
+                className="overflow-hidden"
+              >
+                <ol className="mt-3 space-y-2 border-l-2 border-[var(--portal-accent)] pl-3 text-sm leading-relaxed text-slate-700">
+                  {howTo.map((step) => (
+                    <li key={step}>{step}</li>
+                  ))}
+                </ol>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </article>
   )

@@ -7,7 +7,6 @@ import { censusLabel, formatDateTime, formatDocket, sourceLabel } from '../../ut
 import { saferUrl, smsUrl } from '../../utils/sources'
 import { useIsClientPortal } from '../../hooks/usePortalMode'
 import { reviewLabel } from '../../utils/review'
-import { carrierSummary } from './carrierSummary'
 import { HeaderCard } from './HeaderCard'
 import { IssHeaderCard } from './IssHeaderCard'
 import { LinkedHeadsUp } from './network/LinkedHeadsUp'
@@ -85,16 +84,6 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
           )}
         </div>
       </div>
-
-      <p className="mt-4 max-w-4xl text-sm leading-relaxed text-slate-700">
-        {carrierSummary(
-          profile,
-          profile.insurance.status
-            ? (INSURANCE_LABEL[profile.insurance.status] ?? profile.insurance.status)
-            : null,
-          false,
-        )}
-      </p>
 
       {/* The status cards in one row on a wide screen (staff and brokers also get Review status). */}
       <div
