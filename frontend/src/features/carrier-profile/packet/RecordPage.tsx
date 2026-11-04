@@ -1,6 +1,7 @@
 import type { CarrierSafety } from '../../../types/carrierSafety'
 import { formatDate } from '../../../utils/format'
 import { basicName } from './basicTiles'
+import { OosLabel } from './OosLabel'
 import { afterLabel, plainGroup } from './plainLabels'
 import {
   heaviestViolations,
@@ -154,9 +155,14 @@ export function RecordPage({
                         )}
                         <span className="text-xs text-slate-500">
                           ({violationCode(v.code)} · {formatDate(i.inspection_date)}
-                          {i.state && ` ${i.state}`} · {points(worth)} points
-                          {v.out_of_service && ', out of service'})
+                          {i.state && ` ${i.state}`} · {points(worth)} points)
                         </span>
+                        {v.out_of_service && (
+                          <>
+                            {' '}
+                            <OosLabel />
+                          </>
+                        )}
                       </span>
                     </li>
                   ))}
@@ -300,10 +306,8 @@ export function RecordPage({
                               )}
                             </td>
                             <td className={cell}>{basicName(v.basic)}</td>
-                            <td
-                              className={`py-1 pr-2 text-center align-top text-xs ${v.out_of_service ? 'font-semibold text-red-700' : 'text-slate-400'}`}
-                            >
-                              {v.out_of_service ? 'Yes' : '—'}
+                            <td className="py-1 pr-2 text-center align-top text-xs text-slate-400">
+                              {v.out_of_service ? <OosLabel>Yes</OosLabel> : '—'}
                             </td>
                             <td className={`${cell} text-center`}>{v.severity_weight}</td>
                             <td className="py-1 text-center align-top text-xs text-slate-700">

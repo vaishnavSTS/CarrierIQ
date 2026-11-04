@@ -1,6 +1,7 @@
 import type { InspectionDetail } from '../../../types/carrierSafety'
 import { formatDate } from '../../../utils/format'
 import { levelLabel } from '../safety/inspectionLevels'
+import { OosLabel } from './OosLabel'
 import { violationText } from './recordDetail'
 import { ScrollX } from './ScrollX'
 import { SectionHeading } from './SectionHeading'
@@ -66,10 +67,8 @@ export function InspectionList({
                   <td className="py-1.5 pr-3">{where(i)}</td>
                   <td className="py-1.5 pr-3 font-mono text-[13px]">{i.report_number ?? '—'}</td>
                   <td className="whitespace-nowrap py-1.5 pr-3">{levelLabel(i.level)}</td>
-                  <td
-                    className={`whitespace-nowrap py-1.5 pr-3 ${stoppedHere ? 'font-semibold text-red-700' : 'text-slate-500'}`}
-                  >
-                    {outOfService(i)}
+                  <td className="whitespace-nowrap py-1.5 pr-3 text-slate-500">
+                    {stoppedHere ? <OosLabel>{outOfService(i)}</OosLabel> : outOfService(i)}
                   </td>
                   <td className="py-1.5 text-right tabular-nums">{i.violation_count}</td>
                 </tr>
@@ -103,7 +102,12 @@ export function InspectionList({
                                     {v.code}
                                   </span>
                                 )}
-                                {v.out_of_service && ' · Out of service'}
+                                {v.out_of_service && (
+                                  <>
+                                    {' '}
+                                    <OosLabel />
+                                  </>
+                                )}
                               </span>
                             </li>
                           ))}
