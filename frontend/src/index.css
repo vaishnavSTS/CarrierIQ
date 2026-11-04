@@ -446,9 +446,42 @@ body {
   background: var(--color-surface);
 }
 .band-dots {
-  background-color: var(--color-surface);
+  background-color: #f1f4fa;
   background-image: radial-gradient(rgb(30 41 82 / 0.16) 1px, transparent 1.6px);
   background-size: 22px 22px;
+}
+/* A fine line grid, like graph paper. */
+.band-grid {
+  background-color: #f6f8fd;
+  background-image: linear-gradient(rgb(30 41 82 / 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(30 41 82 / 0.07) 1px, transparent 1px);
+  background-size: 44px 44px;
+  background-position: -1px -1px;
+}
+/* Warm cream with a soft gold glow: breaks up the blues. */
+.band-warm {
+  background: radial-gradient(40% 70% at 0% 0%, rgb(251 191 36 / 0.22), transparent 70%),
+    radial-gradient(35% 60% at 100% 100%, rgb(249 115 22 / 0.12), transparent 70%),
+    linear-gradient(180deg, #fffaf0 0%, #fdf1dc 100%);
+}
+/* Soft blobs of violet, sky and teal on light blue. */
+.band-mesh {
+  background: radial-gradient(38% 55% at 8% 18%, rgb(124 58 237 / 0.2), transparent 70%),
+    radial-gradient(40% 60% at 92% 12%, rgb(14 165 233 / 0.24), transparent 70%),
+    radial-gradient(45% 55% at 70% 100%, rgb(20 184 166 / 0.16), transparent 70%),
+    linear-gradient(180deg, #eef3ff 0%, #f4f0ff 100%);
+}
+/* Over a band's photo: deep navy, darker on the left where the heading sits. */
+.band-photo {
+  background: #0b1440;
+}
+.band-photo-scrim {
+  background: linear-gradient(
+    90deg,
+    rgb(6 13 36 / 0.92) 0%,
+    rgb(11 20 64 / 0.78) 55%,
+    rgb(10 38 114 / 0.62) 100%
+  );
 }
 .band-tint {
   background: radial-gradient(45% 60% at 100% 0%, rgb(109 40 217 / 0.14), transparent 70%),
@@ -463,8 +496,32 @@ body {
   background: #03122b;
 }
 :root[data-theme='dark'] .band-dots {
-  background-color: #03122b;
+  background-color: #051936;
   background-image: radial-gradient(rgb(255 255 255 / 0.09) 1px, transparent 1.6px);
+}
+:root[data-theme='dark'] .band-grid {
+  background-color: #031634;
+  background-image: linear-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+}
+:root[data-theme='dark'] .band-warm {
+  background: radial-gradient(40% 70% at 0% 0%, rgb(251 191 36 / 0.14), transparent 70%),
+    radial-gradient(35% 60% at 100% 100%, rgb(253 112 78 / 0.14), transparent 70%),
+    linear-gradient(180deg, #14132b 0%, #1b1530 100%);
+}
+:root[data-theme='dark'] .band-mesh {
+  background: radial-gradient(38% 55% at 8% 18%, rgb(124 58 237 / 0.22), transparent 70%),
+    radial-gradient(40% 60% at 92% 12%, rgb(3 149 221 / 0.26), transparent 70%),
+    radial-gradient(45% 55% at 70% 100%, rgb(20 184 166 / 0.14), transparent 70%),
+    linear-gradient(180deg, #04122e 0%, #071a3f 100%);
+}
+:root[data-theme='dark'] .band-photo-scrim {
+  background: linear-gradient(
+    90deg,
+    rgb(2 6 18 / 0.94) 0%,
+    rgb(2 10 31 / 0.82) 55%,
+    rgb(3 22 52 / 0.7) 100%
+  );
 }
 :root[data-theme='dark'] .band-tint {
   background: radial-gradient(45% 60% at 100% 0%, rgb(253 112 78 / 0.16), transparent 70%),

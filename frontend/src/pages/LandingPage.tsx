@@ -6,10 +6,12 @@ import { Link } from 'react-router-dom'
 import type { Audience } from '../features/audience/audience'
 import { AudienceHero } from '../features/landing/AudienceHero'
 import { Accent, Band, reveal, SectionHeading } from '../features/landing/landingParts'
+import { FaqSection } from '../features/landing/Faq'
+import { AUDIENCE_FAQ } from '../features/landing/faqContent'
 import { AboutStsSection, DataQsSection, ReportPreview } from '../features/landing/LandingSections'
 import { PhoneShowcase } from '../features/landing/PhoneShowcase'
 import { PortalFeatures } from '../features/landing/PortalFeatures'
-import { FEATURE_PHOTOS } from '../features/landing/photos'
+import { BAND_PHOTO, FEATURE_PHOTOS } from '../features/landing/photos'
 import { ChecksMarquee } from '../features/landing/ChecksMarquee'
 import { useMe } from '../hooks/useAuth'
 
@@ -222,9 +224,9 @@ export function LandingPage({ audience }: { audience: Audience }) {
   // Section numbers run on down the page (the DataQs section is for carriers only).
   const numbers =
     audience === 'carrier'
-      ? ['01', '02', '03', '04', '05', '06']
-      : ['01', '02', '', '03', '04', '05']
-  const [nFeatures, nPortal, nDataQs, nPhone, nReport, nSteps] = numbers
+      ? ['01', '02', '03', '04', '05', '06', '07']
+      : ['01', '02', '', '03', '04', '05', '06']
+  const [nFeatures, nPortal, nDataQs, nPhone, nReport, nSteps, nFaq] = numbers
 
   return (
     <div className="relative overflow-hidden">
@@ -233,7 +235,8 @@ export function LandingPage({ audience }: { audience: Audience }) {
       </div>
       <ChecksMarquee />
 
-      <Band tone="dots">
+      {/* Each band has its own background, and no two neighbours share one. */}
+      <Band tone="mesh">
         <SectionHeading
           number={nFeatures}
           eyebrow="What you get"
@@ -279,15 +282,15 @@ export function LandingPage({ audience }: { audience: Audience }) {
         </Band>
       )}
 
-      <Band tone="tint">
+      <Band tone="warm">
         <PhoneShowcase number={nPhone} title={content.phoneTitle} />
       </Band>
 
-      <Band tone="plain">
+      <Band tone="grid">
         <ReportPreview number={nReport} />
       </Band>
 
-      <Band tone="dark">
+      <Band tone="photo" photo={BAND_PHOTO[audience]}>
         <SectionHeading number={nSteps} eyebrow="How it works" title={content.stepsTitle} />
         <ol className="mt-12 grid gap-8 md:grid-cols-3">
           {content.steps.map(({ icon: Icon, title, text }, i) => (
@@ -313,6 +316,10 @@ export function LandingPage({ audience }: { audience: Audience }) {
             </motion.li>
           ))}
         </ol>
+      </Band>
+
+      <Band tone="tint">
+        <FaqSection number={nFaq} items={AUDIENCE_FAQ[audience]} />
       </Band>
 
       {!user && (

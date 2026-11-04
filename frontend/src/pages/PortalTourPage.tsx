@@ -1,11 +1,21 @@
-import { ArrowRight, Check, CircleCheck, Info, Plus } from 'lucide-react'
+import { ArrowRight, Check, CircleCheck, Info } from 'lucide-react'
 import { motion } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { AUDIENCE_PATH, type Audience } from '../features/audience/audience'
+import { FaqSection } from '../features/landing/Faq'
 import { HERO_PHOTO } from '../features/landing/photos'
-import { Band, OnDark, reveal, SectionHeading } from '../features/landing/landingParts'
+import {
+  Band,
+  OnDark,
+  reveal,
+  SectionHeading,
+  type BandTone,
+} from '../features/landing/landingParts'
+
+/** The portal's sections take these backgrounds in turn (all light: their text is dark). */
+const SECTION_TONES: BandTone[] = ['plain', 'warm', 'grid', 'tint', 'mesh', 'dots']
 import { TOURS } from '../features/portal-tour/tourContent'
 import { TourVisual } from '../features/portal-tour/TourVisuals'
 import { homeFor, useMe } from '../hooks/useAuth'
@@ -136,7 +146,7 @@ export function PortalTourPage({ audience }: { audience: Audience }) {
         <section
           key={s.id}
           id={s.id}
-          className={`band scroll-mt-40 py-16 md:py-24 ${i % 2 ? 'band-tint' : 'band-plain'}`}
+          className={`band scroll-mt-40 py-16 md:py-24 band-${SECTION_TONES[i % SECTION_TONES.length]}`}
         >
           <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 lg:grid-cols-2 lg:gap-16">
             <motion.div {...reveal()} className={i % 2 ? 'lg:order-2' : ''}>
@@ -210,22 +220,8 @@ export function PortalTourPage({ audience }: { audience: Audience }) {
       </Band>
 
       {/* Questions */}
-      <Band tone="plain">
-        <SectionHeading eyebrow="Questions" title="Good to know" />
-        <div className="mt-10 divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-surface">
-          {tour.faqs.map(({ q, a }) => (
-            <details key={q} className="group px-5 py-4 md:px-6">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-base font-medium text-slate-900">
-                {q}
-                <Plus
-                  className="size-5 shrink-0 text-slate-500 transition-transform group-open:rotate-45"
-                  aria-hidden
-                />
-              </summary>
-              <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600">{a}</p>
-            </details>
-          ))}
-        </div>
+      <Band tone="tint">
+        <FaqSection items={tour.faqs} />
       </Band>
 
       {!user && (

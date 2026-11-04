@@ -34,6 +34,13 @@ export const HERO_PHOTO: Record<Audience, string> = {
   agent: heroAgent,
 }
 
+/** Darkened behind each audience page's "How it works" band: a road photo not used in its cards. */
+export const BAND_PHOTO: Record<Audience, string> = {
+  carrier: agentSafety,
+  broker: agentSafety,
+  agent: brokerAuthority,
+}
+
 /** The front door's three cards. */
 export const CHOOSER_PHOTO: Record<Audience, Photo> = {
   carrier: { src: chooseCarrier, alt: 'A smiling truck driver at the wheel of his cab' },

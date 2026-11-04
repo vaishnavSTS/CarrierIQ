@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import { StackTable } from '../components/StackTable'
+import { FaqList } from '../features/landing/Faq'
+import { METHODOLOGY_FAQ } from '../features/landing/faqContent'
 
 const BANDS = [
   ['1–49', 'Pass', 'Satisfactory'],
@@ -193,6 +195,13 @@ export function MethodologyPage() {
           <li>FMCSA’s random selection of 1% of carriers at 99 can’t be predicted.</li>
         </ul>
       </Block>
+
+      <div>
+        <h2 className="mb-3 text-lg font-semibold tracking-tight text-slate-900">
+          Common questions
+        </h2>
+        <FaqList items={METHODOLOGY_FAQ} />
+      </div>
 
       <Block title="Sources">
         <ul className="space-y-2">

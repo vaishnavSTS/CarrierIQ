@@ -44,17 +44,34 @@ export function IconBadge({ icon: Icon }: { icon: LucideIcon }) {
 }
 
 /**
- * A full-width band of the page with its own background, so the page changes as it scrolls:
- * a dot grid, a soft tint, deep navy (white text) or plain.
+ * A full-width band of the page with its own background, so the page changes as it scrolls (no
+ * two bands next to each other should share a tone): plain white, a dot grid, a line grid, a soft
+ * lavender tint, a warm cream, a colour mesh, deep navy, or a darkened photo. On `dark` and `photo`
+ * the text inside turns white.
  */
-export type BandTone = 'dots' | 'tint' | 'dark' | 'plain'
+export type BandTone = 'plain' | 'dots' | 'grid' | 'tint' | 'warm' | 'mesh' | 'dark' | 'photo'
 
 const DarkBand = createContext(false)
 
-export function Band({ tone, children }: { tone: BandTone; children: ReactNode }) {
+export function Band({
+  tone,
+  photo,
+  children,
+}: {
+  tone: BandTone
+  /** The picture behind a `photo` band */
+  photo?: string
+  children: ReactNode
+}) {
   return (
-    <DarkBand.Provider value={tone === 'dark'}>
-      <section className={`band band-${tone} py-20 md:py-24`}>
+    <DarkBand.Provider value={tone === 'dark' || tone === 'photo'}>
+      <section className={`band band-${tone} relative isolate overflow-hidden py-20 md:py-24`}>
+        {tone === 'photo' && photo && (
+          <div aria-hidden className="absolute inset-0 -z-10">
+            <img src={photo} alt="" loading="lazy" className="size-full object-cover" />
+            <div className="band-photo-scrim absolute inset-0" />
+          </div>
+        )}
         <div className="mx-auto max-w-6xl px-4">{children}</div>
       </section>
     </DarkBand.Provider>
