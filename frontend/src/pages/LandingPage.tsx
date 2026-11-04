@@ -5,7 +5,18 @@ import { Link } from 'react-router-dom'
 
 import type { Audience } from '../features/audience/audience'
 import { AudienceHero } from '../features/landing/AudienceHero'
-import { Accent, Band, reveal, SectionHeading } from '../features/landing/landingParts'
+import {
+  AgentUnderwritingSection,
+  BrokerRedFlagsSection,
+  CarrierFixSection,
+} from '../features/landing/AudienceSections'
+import {
+  Accent,
+  Band,
+  reveal,
+  SectionHeading,
+  type BandTone,
+} from '../features/landing/landingParts'
 import { FaqSection } from '../features/landing/Faq'
 import { AUDIENCE_FAQ } from '../features/landing/faqContent'
 import { AboutStsSection, DataQsSection, ReportPreview } from '../features/landing/LandingSections'
@@ -216,114 +227,175 @@ const CONTENT: Record<
   },
 }
 
+/** The parts of an audience page, in the order and on the background that page uses. */
+type Part =
+  | 'features'
+  | 'fix'
+  | 'dataqs'
+  | 'redFlags'
+  | 'underwriting'
+  | 'portal'
+  | 'phone'
+  | 'report'
+  | 'steps'
+  | 'faq'
+  | 'cta'
+  | 'about'
+
+/** Each page has its own order and backgrounds; no two neighbouring bands share one. DataQs is
+ * on the carrier page only (it's a carrier service). */
+const LAYOUT: Record<Audience, [Part, BandTone][]> = {
+  carrier: [
+    ['features', 'mesh'],
+    ['fix', 'plain'],
+    ['dataqs', 'dark'],
+    ['portal', 'warm'],
+    ['phone', 'grid'],
+    ['report', 'tint'],
+    ['steps', 'photo'],
+    ['faq', 'dots'],
+    ['cta', 'tint'],
+    ['about', 'plain'],
+  ],
+  broker: [
+    ['features', 'plain'],
+    ['redFlags', 'dark'],
+    ['portal', 'mesh'],
+    ['report', 'warm'],
+    ['phone', 'grid'],
+    ['steps', 'photo'],
+    ['faq', 'tint'],
+    ['cta', 'dots'],
+    ['about', 'plain'],
+  ],
+  agent: [
+    ['features', 'warm'],
+    ['underwriting', 'grid'],
+    ['portal', 'plain'],
+    ['report', 'tint'],
+    ['phone', 'mesh'],
+    ['steps', 'photo'],
+    ['faq', 'dots'],
+    ['cta', 'warm'],
+    ['about', 'plain'],
+  ],
+}
+
+/** Parts without a section number. */
+const UNNUMBERED: Part[] = ['cta', 'about']
+
+/** The report sample's words for each audience. */
+const REPORT_ASIDE: Record<Audience, string> = {
+  carrier:
+    'A clear, printable report on your carrier: the Estimated ISS, each safety category, what’s hurting the score, and plain-English steps to improve it. Send it to brokers before they ask.',
+  broker:
+    'A dated, printable report on the carrier you booked: authority, insurance, safety and red flags as they stood that day, to keep with the load.',
+  agent:
+    'A dated, printable report on the carrier you quoted: filings, safety record, crashes and fleet as they stood that day, to keep in the underwriting file.',
+}
+
 /** One audience's page (carriers, freight brokers or insurance agents): what Carrier Safety Scan does for them. */
 export function LandingPage({ audience }: { audience: Audience }) {
   const { data: user } = useMe()
   const content = CONTENT[audience]
 
-  // Section numbers run on down the page (the DataQs section is for carriers only).
-  const numbers =
-    audience === 'carrier'
-      ? ['01', '02', '03', '04', '05', '06', '07']
-      : ['01', '02', '', '03', '04', '05', '06']
-  const [nFeatures, nPortal, nDataQs, nPhone, nReport, nSteps, nFaq] = numbers
+  // Logged-in visitors don't get the sign-up band. Section numbers run on down the page.
+  const parts = LAYOUT[audience].filter(([part]) => part !== 'cta' || !user)
+  let count = 0
+  const numbered = parts.map(([part, tone]) => ({
+    part,
+    tone,
+    number: UNNUMBERED.includes(part) ? undefined : String(++count).padStart(2, '0'),
+  }))
 
-  return (
-    <div className="relative overflow-hidden">
-      <div className="hero-gradient">
-        <AudienceHero audience={audience} />
-      </div>
-      <ChecksMarquee />
-
-      {/* Each band has its own background, and no two neighbours share one. */}
-      <Band tone="mesh">
-        <SectionHeading
-          number={nFeatures}
-          eyebrow="What you get"
-          title={content.featuresTitle}
-          aside={content.featuresAside}
-        />
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {content.features.map(({ title, text }, i) => (
-            <motion.article
-              key={title}
-              {...reveal(i * 0.08)}
-              className="group rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-brand-glow/15"
-            >
-              <div className="relative -mx-6 -mt-6 mb-1 h-40 overflow-hidden rounded-t-2xl bg-slate-200">
-                <img
-                  src={FEATURE_PHOTOS[audience][i].src}
-                  alt={FEATURE_PHOTOS[audience][i].alt}
-                  loading="lazy"
-                  className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                />
-                <div
-                  aria-hidden
-                  className="absolute inset-0 bg-gradient-to-t from-[#060d24]/50 via-transparent to-transparent"
-                />
-                <span className="absolute bottom-3 left-4 grid size-7 place-items-center rounded-full font-label bg-white/90 text-xs font-semibold text-[#060d24] shadow">
-                  {i + 1}
-                </span>
-              </div>
-              <h3 className="mt-5 text-base font-semibold text-slate-900">{title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">{text}</p>
-            </motion.article>
-          ))}
-        </div>
-      </Band>
-
-      <Band tone="plain">
-        <PortalFeatures audience={audience} number={nPortal} />
-      </Band>
-
-      {audience === 'carrier' && (
-        <Band tone="dark">
-          <DataQsSection number={nDataQs} />
-        </Band>
-      )}
-
-      <Band tone="warm">
-        <PhoneShowcase number={nPhone} title={content.phoneTitle} />
-      </Band>
-
-      <Band tone="grid">
-        <ReportPreview number={nReport} />
-      </Band>
-
-      <Band tone="photo" photo={BAND_PHOTO[audience]}>
-        <SectionHeading number={nSteps} eyebrow="How it works" title={content.stepsTitle} />
-        <ol className="mt-12 grid gap-8 md:grid-cols-3">
-          {content.steps.map(({ icon: Icon, title, text }, i) => (
-            <motion.li key={title} {...reveal(i * 0.1)}>
-              <div className="flex items-center gap-3">
-                <span className="relative grid size-12 shrink-0 place-items-center rounded-2xl border border-white/20 bg-white/10 text-white">
-                  <Icon className="size-5" aria-hidden />
-                </span>
-                <span className="font-label shrink-0 text-xs font-medium uppercase tracking-wider text-white/70">
-                  Step {i + 1}
-                </span>
-                {/* Connector: starts after the label and runs across the gap (-mr-8 = the
-                  grid's gap-8) to the next step's icon. */}
-                {i < content.steps.length - 1 && (
-                  <span
-                    aria-hidden
-                    className="-mr-8 ml-1 hidden h-0.5 flex-1 rounded-full bg-gradient-to-r from-white/30 via-amber-300/60 to-white/30 md:block"
-                  />
-                )}
-              </div>
-              <h3 className="mt-4 text-lg font-semibold text-white">{title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-white/80">{text}</p>
-            </motion.li>
-          ))}
-        </ol>
-      </Band>
-
-      <Band tone="tint">
-        <FaqSection number={nFaq} items={AUDIENCE_FAQ[audience]} />
-      </Band>
-
-      {!user && (
-        <Band tone="dots">
+  const render = (part: Part, number?: string) => {
+    switch (part) {
+      case 'features':
+        return (
+          <>
+            <SectionHeading
+              number={number}
+              eyebrow="What you get"
+              title={content.featuresTitle}
+              aside={content.featuresAside}
+            />
+            <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {content.features.map(({ title, text }, i) => (
+                <motion.article
+                  key={title}
+                  {...reveal(i * 0.08)}
+                  className="group rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-brand-glow/15"
+                >
+                  <div className="relative -mx-6 -mt-6 mb-1 h-40 overflow-hidden rounded-t-2xl bg-slate-200">
+                    <img
+                      src={FEATURE_PHOTOS[audience][i].src}
+                      alt={FEATURE_PHOTOS[audience][i].alt}
+                      loading="lazy"
+                      className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                    />
+                    <div
+                      aria-hidden
+                      className="absolute inset-0 bg-gradient-to-t from-[#060d24]/50 via-transparent to-transparent"
+                    />
+                    <span className="absolute bottom-3 left-4 grid size-7 place-items-center rounded-full font-label bg-white/90 text-xs font-semibold text-[#060d24] shadow">
+                      {i + 1}
+                    </span>
+                  </div>
+                  <h3 className="mt-5 text-base font-semibold text-slate-900">{title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{text}</p>
+                </motion.article>
+              ))}
+            </div>
+          </>
+        )
+      case 'fix':
+        return <CarrierFixSection number={number} />
+      case 'dataqs':
+        return <DataQsSection number={number} />
+      case 'redFlags':
+        return <BrokerRedFlagsSection number={number} />
+      case 'underwriting':
+        return <AgentUnderwritingSection number={number} />
+      case 'portal':
+        return <PortalFeatures audience={audience} number={number} />
+      case 'phone':
+        return <PhoneShowcase audience={audience} number={number} title={content.phoneTitle} />
+      case 'report':
+        return <ReportPreview number={number} aside={REPORT_ASIDE[audience]} />
+      case 'steps':
+        return (
+          <>
+            <SectionHeading number={number} eyebrow="How it works" title={content.stepsTitle} />
+            <ol className="mt-12 grid gap-8 md:grid-cols-3">
+              {content.steps.map(({ icon: Icon, title, text }, i) => (
+                <motion.li key={title} {...reveal(i * 0.1)}>
+                  <div className="flex items-center gap-3">
+                    <span className="relative grid size-12 shrink-0 place-items-center rounded-2xl border border-white/20 bg-white/10 text-white">
+                      <Icon className="size-5" aria-hidden />
+                    </span>
+                    <span className="font-label shrink-0 text-xs font-medium uppercase tracking-wider text-white/70">
+                      Step {i + 1}
+                    </span>
+                    {/* Connector: starts after the label and runs across the gap (-mr-8 = the
+                      grid's gap-8) to the next step's icon. */}
+                    {i < content.steps.length - 1 && (
+                      <span
+                        aria-hidden
+                        className="-mr-8 ml-1 hidden h-0.5 flex-1 rounded-full bg-gradient-to-r from-white/30 via-amber-300/60 to-white/30 md:block"
+                      />
+                    )}
+                  </div>
+                  <h3 className="mt-4 text-lg font-semibold text-white">{title}</h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-white/80">{text}</p>
+                </motion.li>
+              ))}
+            </ol>
+          </>
+        )
+      case 'faq':
+        return <FaqSection number={number} items={AUDIENCE_FAQ[audience]} />
+      case 'cta':
+        return (
           <motion.div
             {...reveal()}
             className="band-dark relative overflow-hidden rounded-3xl px-6 py-14 text-center shadow-2xl shadow-brand-glow/20 md:px-12"
@@ -354,12 +426,23 @@ export function LandingPage({ audience }: { audience: Audience }) {
               </Link>
             </div>
           </motion.div>
-        </Band>
-      )}
+        )
+      case 'about':
+        return <AboutStsSection dataQs={audience === 'carrier'} />
+    }
+  }
 
-      <Band tone="plain">
-        <AboutStsSection />
-      </Band>
+  return (
+    <div className="relative overflow-hidden">
+      <div className="hero-gradient">
+        <AudienceHero audience={audience} />
+      </div>
+      <ChecksMarquee audience={audience} />
+      {numbered.map(({ part, tone, number }) => (
+        <Band key={part} tone={tone} photo={tone === 'photo' ? BAND_PHOTO[audience] : undefined}>
+          {render(part, number)}
+        </Band>
+      ))}
     </div>
   )
 }

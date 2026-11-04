@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import phoneOverview from '../../assets/phone-overview.webp'
 import phoneReport from '../../assets/phone-report.webp'
 import phoneSafety from '../../assets/phone-safety.webp'
+import type { Audience } from '../audience/audience'
 import { reveal, SectionHeading } from './landingParts'
 
 const SLIDE_SECONDS = 2
@@ -11,23 +12,74 @@ const SLIDE_SECONDS = 2
 const SCREENS = [
   {
     src: phoneOverview,
-    title: 'Your status at a glance',
-    text: 'Authority, registration and insurance, at a glance.',
     alt: 'The carrier page on a phone: authority, registration and insurance status',
   },
   {
     src: phoneSafety,
-    title: 'Your safety record',
-    text: 'Safety rating, inspections, crashes and out-of-service rates.',
     alt: 'The Inspections tab on a phone: safety rating, inspections, crashes and out-of-service rates',
   },
   {
     src: phoneReport,
-    title: 'Your Safety Score Report',
-    text: 'Your Estimated ISS and what’s behind it, ready to download as a PDF.',
     alt: 'The Safety Score Report on a phone: the Estimated ISS gauge',
   },
 ]
+
+/** What each screen means to each audience, in the order of SCREENS. */
+const WORDS: Record<Audience, { aside: string; screens: { title: string; text: string }[] }> = {
+  carrier: {
+    aside:
+      'Every page works on a phone, so you can check your own record from the cab or the yard.',
+    screens: [
+      {
+        title: 'Your status at a glance',
+        text: 'Your authority, registration and insurance, at a glance.',
+      },
+      {
+        title: 'Your safety record',
+        text: 'Your safety rating, inspections, crashes and out-of-service rates.',
+      },
+      {
+        title: 'Your Safety Score Report',
+        text: 'Your Estimated ISS and what’s behind it, ready to send a broker as a PDF.',
+      },
+    ],
+  },
+  broker: {
+    aside: 'Every page works on a phone, so you can vet a carrier while it’s on the line.',
+    screens: [
+      {
+        title: 'Can it haul legally?',
+        text: 'Authority, registration and insurance status in one look.',
+      },
+      {
+        title: 'How it does at roadside',
+        text: 'Inspections, crashes and out-of-service rates against the national average.',
+      },
+      {
+        title: 'A report for the load file',
+        text: 'The dated Safety Score Report, ready to save as a PDF.',
+      },
+    ],
+  },
+  agent: {
+    aside:
+      'Every page works on a phone, so you can check a carrier during the call with the client.',
+    screens: [
+      {
+        title: 'Filings at a glance',
+        text: 'Authority, registration and insurance status in one look.',
+      },
+      {
+        title: 'The loss picture',
+        text: 'Safety rating, inspections, crashes and out-of-service rates.',
+      },
+      {
+        title: 'A report for the quote file',
+        text: 'The dated Safety Score Report, ready to save as a PDF.',
+      },
+    ],
+  },
+}
 
 /** Where a screen sits: 0 in the phone, 1 waiting to the right, -1 just left to the left. */
 function offsetFrom(screen: number, current: number): number {
@@ -40,12 +92,15 @@ function offsetFrom(screen: number, current: number): number {
  * who asked their device for less motion pick screens themselves.
  */
 export function PhoneShowcase({
+  audience,
   title = 'Check your carrier from anywhere',
   number,
 }: {
+  audience: Audience
   title?: ReactNode
   number?: string
 }) {
+  const words = WORDS[audience]
   const [{ current, previous }, setPlace] = useState({ current: 0, previous: 0 })
   const show = (next: number) => setPlace((place) => ({ current: next, previous: place.current }))
   const reduceMotion = useReducedMotion()
@@ -66,12 +121,7 @@ export function PhoneShowcase({
 
   return (
     <div>
-      <SectionHeading
-        number={number}
-        eyebrow="On your phone"
-        title={title}
-        aside="Every page works on a phone, so you can check a carrier from the yard, the office or the road."
-      />
+      <SectionHeading number={number} eyebrow="On your phone" title={title} aside={words.aside} />
       <motion.div
         {...reveal()}
         className="mx-auto mt-12 grid max-w-4xl items-center gap-8 md:grid-cols-2 md:gap-12"
@@ -111,7 +161,7 @@ export function PhoneShowcase({
         </div>
 
         <ul className="space-y-3">
-          {SCREENS.map(({ title, text }, i) => (
+          {words.screens.map(({ title, text }, i) => (
             <li key={title}>
               <button
                 type="button"

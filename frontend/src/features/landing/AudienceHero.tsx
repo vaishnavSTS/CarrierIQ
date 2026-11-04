@@ -1,7 +1,10 @@
+import { BadgeCheck, FileCheck2, ShieldAlert, Truck, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { homeFor, useMe } from '../../hooks/useAuth'
 import type { Audience } from '../audience/audience'
+import { AgentHeroFile } from './AgentHeroFile'
+import { CarrierHeroBoard } from './CarrierHeroBoard'
 import { PrimaryLink } from './landingParts'
 import { HeroTryForm } from './LandingSections'
 import { HERO_PHOTO } from './photos'
@@ -11,30 +14,81 @@ const highlight = (text: string) => (
   <span className="font-accent text-[var(--hero-highlight)]">{text}</span>
 )
 
-const HERO: Record<Audience, { title: ReactNode; text: string }> = {
+/**
+ * Each audience's hero has its own layout (the colours stay the same):
+ * - carrier: headline and search on top, then a dashboard of a sample carrier's own record with
+ *   the MCS-150 tool inside it (CarrierHeroBoard);
+ * - broker: centred, the search in the middle and the booking check under it (a vetting desk);
+ * - agent: a paper underwriting file left (liability minimum, filings, crashes, fleet tabs), text
+ *   right (AgentHeroFile).
+ */
+const HERO: Record<
+  Audience,
+  { eyebrow: string; icon: LucideIcon; title: ReactNode; text: string; facts: string[] }
+> = {
   carrier: {
+    eyebrow: 'For carriers · your own record',
+    icon: Truck,
     title: <>See your carrier {highlight('the way brokers do')}, and know exactly what to fix</>,
-    text: 'Carrier Safety Scan gives you a clear picture of a carrier’s authority, insurance, safety and registration health, and explains what to do about it.',
+    text: 'Carrier Safety Scan gives you a clear picture of your authority, insurance, safety and registration health, and explains what to do about each item.',
+    facts: ['What brokers see', 'What to fix first', 'DataQs filed for you'],
   },
   broker: {
+    eyebrow: 'For freight brokers · the vetting desk',
+    icon: ShieldAlert,
     title: (
       <>Vet any carrier {highlight('before you book the load')}, and spot the red flags early</>
     ),
     text: 'Check a carrier’s authority, insurance and safety record in one place, see the carriers it shares a phone, email or address with, and compare up to 3 side by side.',
+    facts: ['Booking check', 'Chameleon check', 'Compare up to 3'],
   },
   agent: {
+    eyebrow: 'For insurance agents · underwriting',
+    icon: FileCheck2,
     title: <>Understand a trucking risk {highlight('before you quote it')}</>,
     text: 'Look up any carrier’s insurance filings, authority, safety record, crashes and fleet, and save a dated Safety Score Report for your file.',
+    facts: ['Filings & renewal month', 'Crashes & roadside record', 'Fleet by VIN'],
   },
 }
 
-/**
- * The top of an audience's page: its headline, the free search and a sample of what it gets. The
- * pills switch to another audience's page.
- */
 export function AudienceHero({ audience }: { audience: Audience }) {
   const { data: user } = useMe()
   const page = HERO[audience]
+  const centered = audience === 'broker'
+  const Icon = page.icon
+
+  const eyebrow = (
+    <p
+      className={`font-label inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white ring-1 ring-white/25 backdrop-blur`}
+    >
+      <Icon className="size-3.5 text-[var(--hero-highlight)]" aria-hidden />
+      {page.eyebrow}
+    </p>
+  )
+
+  const action = user ? (
+    <div className={`flex ${centered ? 'justify-center' : 'justify-center lg:justify-start'}`}>
+      <PrimaryLink to={homeFor(user.portal)}>
+        Open {user.portal === 'internal' ? 'the dashboard' : 'my portal'}
+      </PrimaryLink>
+    </div>
+  ) : (
+    <HeroTryForm centered={centered} />
+  )
+
+  const facts = (
+    <ul
+      className={`mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/90 ${centered ? 'justify-center' : 'justify-center lg:justify-start'}`}
+    >
+      {page.facts.map((fact) => (
+        <li key={fact} className="flex items-center gap-1.5">
+          <BadgeCheck className="size-4 text-[var(--hero-highlight)]" aria-hidden />
+          {fact}
+        </li>
+      ))}
+    </ul>
+  )
+
   return (
     <div className="relative">
       {/* A real photo for each audience, faint under the blue and fading out before the page
@@ -50,32 +104,65 @@ export function AudienceHero({ audience }: { audience: Audience }) {
         <div className="hero-photo-tint absolute inset-0" />
         <div className="hero-photo-scrim absolute inset-0" />
       </div>
-      <section className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 px-4 pb-64 pt-12 md:pt-16 lg:grid-cols-[1.05fr_1fr] lg:pt-20">
-        <div className="text-center lg:text-left">
-          <h1 className="text-4xl font-semibold leading-[1.08] tracking-tight text-white md:text-5xl lg:text-[3.4rem]">
+
+      {audience === 'carrier' ? (
+        // Carrier: the headline across the top with the search beside it, then a wide dashboard
+        // of a sample carrier's own record, with the MCS-150 tool as one of its cards.
+        <section className="relative z-10 mx-auto max-w-6xl px-4 pb-48 pt-12 md:pt-16 lg:pt-20">
+          <div className="grid items-end gap-x-12 gap-y-8 text-center lg:grid-cols-[1.25fr_1fr] lg:text-left">
+            <div>
+              {eyebrow}
+              <h1 className="mt-6 text-4xl font-semibold leading-[1.06] tracking-tight text-white md:text-5xl lg:text-[3.5rem]">
+                {page.title}
+              </h1>
+            </div>
+            <div>
+              <p className="mx-auto max-w-xl text-base text-white/90 md:text-lg lg:mx-0">
+                {page.text}
+              </p>
+              <div className="mt-6">{action}</div>
+              {facts}
+            </div>
+          </div>
+          <div className="mt-14">
+            <CarrierHeroBoard />
+          </div>
+        </section>
+      ) : centered ? (
+        // Broker: one column, everything centred, the booking check under the search.
+        <section className="relative z-10 mx-auto max-w-6xl px-4 pb-56 pt-12 text-center md:pt-16 lg:pt-20">
+          {eyebrow}
+          <h1 className="mx-auto mt-6 max-w-4xl text-4xl font-semibold leading-[1.06] tracking-tight text-white md:text-5xl lg:text-[3.6rem]">
             {page.title}
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-base text-white/90 md:text-lg lg:mx-0">
-            {page.text}
-          </p>
-
-          <div className="mt-8 flex flex-wrap justify-center gap-3 lg:justify-start [&_a]:ring-2 [&_a]:ring-white/70">
-            {user ? (
-              <PrimaryLink to={homeFor(user.portal)}>
-                Open {user.portal === 'internal' ? 'the dashboard' : 'my portal'}
-              </PrimaryLink>
-            ) : (
-              <div className="w-full space-y-4">
-                <HeroTryForm />
-              </div>
-            )}
+          <p className="mx-auto mt-5 max-w-2xl text-base text-white/90 md:text-lg">{page.text}</p>
+          <div className="mt-8">{action}</div>
+          {facts}
+          <div className="mx-auto mt-12 w-full max-w-2xl text-left">
+            <HeroTool audience={audience} />
           </div>
-        </div>
-
-        <div className="mx-auto mt-14 w-full max-w-md lg:mt-8 lg:max-w-none">
-          <HeroTool audience={audience} />
-        </div>
-      </section>
+        </section>
+      ) : (
+        // Agent: an underwriting file on the left (AgentHeroFile), text right.
+        <section className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 px-4 pb-64 pt-12 md:pt-16 lg:grid-cols-[1.05fr_1fr] lg:pt-20">
+          <div className={`text-center lg:text-left ${audience === 'agent' ? 'lg:order-2' : ''}`}>
+            {eyebrow}
+            <h1 className="mt-6 text-4xl font-semibold leading-[1.08] tracking-tight text-white md:text-5xl lg:text-[3.4rem]">
+              {page.title}
+            </h1>
+            <p className="mx-auto mt-5 max-w-xl text-base text-white/90 md:text-lg lg:mx-0">
+              {page.text}
+            </p>
+            <div className="mt-8">{action}</div>
+            {facts}
+          </div>
+          <div
+            className={`mx-auto mt-6 w-full max-w-md lg:mt-8 lg:max-w-none ${audience === 'agent' ? 'lg:order-1' : ''}`}
+          >
+            <AgentHeroFile />
+          </div>
+        </section>
+      )}
     </div>
   )
 }

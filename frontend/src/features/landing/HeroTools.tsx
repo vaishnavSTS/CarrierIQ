@@ -314,7 +314,7 @@ function BookingCheckTool() {
 // --- Insurance agents: federal liability minimums -----------------------------------------------
 
 /** 49 CFR 387.9 (for-hire carriers of property, 10,001 lbs or more) and 387.33 (passengers). */
-const MINIMUMS = [
+export const MINIMUMS = [
   {
     key: 'general',
     label: 'General freight',

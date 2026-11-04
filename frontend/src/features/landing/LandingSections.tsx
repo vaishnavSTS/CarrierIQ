@@ -31,7 +31,7 @@ const SEARCH_MODES = [
 ] as const
 type SearchMode = (typeof SEARCH_MODES)[number]['id']
 
-export function HeroTryForm() {
+export function HeroTryForm({ centered = false }: { centered?: boolean }) {
   const [query, setQuery] = useState('')
   const [mode, setMode] = useState<SearchMode | null>(null)
   const input = useRef<HTMLInputElement>(null)
@@ -54,7 +54,10 @@ export function HeroTryForm() {
     SEARCH_MODES.find((m) => m.id === mode)?.placeholder ?? 'USDOT, MC number or company name'
 
   return (
-    <form onSubmit={submit} className="mx-auto w-full max-w-md lg:mx-0">
+    <form
+      onSubmit={submit}
+      className={`mx-auto w-full ${centered ? 'max-w-xl' : 'max-w-md lg:mx-0'}`}
+    >
       <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-surface/90 p-2 shadow-lg backdrop-blur sm:flex-row">
         <label className="min-w-0 flex-1">
           <span className="sr-only">USDOT number, MC number or company name</span>
@@ -77,7 +80,7 @@ export function HeroTryForm() {
       <div
         role="group"
         aria-label="Search by"
-        className="mt-3 flex flex-wrap items-center justify-center gap-2 lg:justify-start"
+        className={`mt-3 flex flex-wrap items-center justify-center gap-2 ${centered ? '' : 'lg:justify-start'}`}
       >
         <span className="text-xs text-white/80">Search by</span>
         {SEARCH_MODES.map(({ id, label }) => (
@@ -96,7 +99,7 @@ export function HeroTryForm() {
           </button>
         ))}
       </div>
-      <p className="mt-2.5 text-center text-xs text-white/90 lg:text-left">
+      <p className={`mt-2.5 text-center text-xs text-white/90 ${centered ? '' : 'lg:text-left'}`}>
         One free search, no account needed.
       </p>
     </form>
@@ -155,7 +158,13 @@ export function DataQsSection({ number }: { number?: string }) {
 }
 
 /** Two real pages of the report, for a made-up carrier (no identifying details). */
-export function ReportPreview({ number }: { number?: string }) {
+export function ReportPreview({
+  number,
+  aside = 'A clear, printable report on a carrier: the Estimated ISS, each safety category, what’s hurting the score, and plain-English steps to improve it.',
+}: {
+  number?: string
+  aside?: string
+}) {
   return (
     <div>
       <SectionHeading
@@ -166,7 +175,7 @@ export function ReportPreview({ number }: { number?: string }) {
             The <Accent>Safety Score Report</Accent>
           </>
         }
-        aside="A clear, printable report on a carrier: the Estimated ISS, each safety category, what’s hurting the score, and plain-English steps to improve it."
+        aside={aside}
       />
       <div className="mx-auto mt-12 grid max-w-4xl gap-6 sm:grid-cols-2">
         {[
@@ -196,8 +205,8 @@ export function ReportPreview({ number }: { number?: string }) {
   )
 }
 
-/** Who stands behind the app; how to reach them is in the footer. */
-export function AboutStsSection() {
+/** Who stands behind the app; how to reach them is in the footer. DataQs is for carriers only. */
+export function AboutStsSection({ dataQs = false }: { dataQs?: boolean }) {
   return (
     <div>
       <SectionHeading
@@ -217,8 +226,8 @@ export function AboutStsSection() {
           <p className="text-sm leading-relaxed text-slate-700 md:text-base">
             Carrier Safety Scan is built by Sky Transport Solutions, a trucking compliance company
             founded in {STS_FOUNDED}. STS helps trucking companies across the United States with
-            registration, permits and DOT compliance, and it’s the team that handles your DataQs
-            challenges.
+            registration, permits and DOT compliance
+            {dataQs ? ', and it’s the team that handles your DataQs challenges.' : '.'}
           </p>
           <ul className="mt-6 grid gap-x-5 gap-y-2 text-sm text-slate-700 sm:grid-cols-2 lg:grid-cols-4">
             {STS_SERVICES.map((service) => (
