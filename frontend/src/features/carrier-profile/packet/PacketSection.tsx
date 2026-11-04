@@ -6,19 +6,19 @@ import {
   TriangleAlert,
   type LucideIcon,
 } from 'lucide-react'
-import { useContext, useLayoutEffect, useRef, type ReactNode, useState } from 'react'
+import { createContext, useContext, useLayoutEffect, useRef, type ReactNode, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { useCarrierAuthority } from '../../../hooks/useCarrierAuthority'
 import { useCarrierEquipment } from '../../../hooks/useCarrierEquipment'
-import { useCarrierSafety } from '../../../hooks/useCarrierSafety'
+import { useAllCarrierInspections, useCarrierSafety } from '../../../hooks/useCarrierSafety'
 import { useCarrierNetwork } from '../../../hooks/useNetwork'
 import { usePortalMode } from '../../../hooks/usePortalMode'
 import type { Portal } from '../../../types/auth'
 import type { CarrierAuthority } from '../../../types/carrierAuthority'
 import type { CarrierEquipment } from '../../../types/carrierEquipment'
 import type { CarrierProfile } from '../../../types/carrierProfile'
-import type { CarrierSafety } from '../../../types/carrierSafety'
+import type { CarrierSafety, InspectionDetail } from '../../../types/carrierSafety'
 import type { CarrierNetwork } from '../../../types/network'
 import { classificationLabel, classifications } from '../../../utils/classification'
 import {
@@ -39,7 +39,8 @@ import logo from '../../../assets/carriersafetyscan-logo.png'
 import { authorityEventsToReview, packetItems, type PacketItem } from './packetItems'
 import { FixWithSky } from '../FixWithSky'
 import { afterLabel, plainGroup } from './plainLabels'
-import { fitSheets, PrintCopy } from './printFit'
+import { InspectionList } from './InspectionList'
+import { paginateReport, PrintCopy, type PageNumbers } from './printFit'
 import { PullInRates } from './PullInRates'
 import { RecordPage } from './RecordPage'
 import { ScrollX } from './ScrollX'
@@ -56,7 +57,10 @@ import {
   violationText,
 } from './recordDetail'
 
-/** Caps that keep each printed page to one A4 page. */
+/** Where each sheet lands in print (printFit.ts paginateReport); null until it is laid out. */
+const Pages = createContext<PageNumbers | null>(null)
+
+/** Caps that keep each section short; the report itself runs to as many pages as it needs. */
 const MAX_DRIVER_ROWS = 4
 /** Steps in page 2's plan; fewer when the page is already full */
 const PLAN_STEPS = 6
@@ -97,17 +101,19 @@ function yearsSince(value: string | null): number | null {
   return Math.floor((Date.now() - new Date(value).getTime()) / (365.25 * 24 * 3600 * 1000))
 }
 
-/** One printed page: a running header, then the page's content. */
+/**
+ * One part of the report: a running header, then its sections. In print it covers one or more A4
+ * pages (printFit.ts), each with the header and the Sky Transport Solutions strip.
+ */
 function Sheet({
-  page,
-  total,
+  index,
   title,
   carrier,
   contact,
   children,
 }: {
-  page: number
-  total: number
+  /** Its place in the report, from 0: which printed pages it covers comes from `Pages` */
+  index: number
   title: string
   carrier: string
   /** The page's line for the Sky Transport Solutions strip at its bottom */
@@ -115,19 +121,29 @@ function Sheet({
   children: ReactNode
 }) {
   const printed = useContext(PrintCopy)
+  const pages = useContext(Pages)
+  const first = pages?.first[index]
+  const last = pages?.last[index]
+  // Printed, each page's own number is filled in when the pages are laid out.
+  const number = printed
+    ? '·'
+    : pages && first && last
+      ? `· ${first === last ? `Page ${first}` : `Pages ${first}–${last}`} of ${pages.total}`
+      : ''
   const sheet = (
     <section
+      data-title={title}
       className={
         printed
           ? 'packet-sheet flex flex-col space-y-4 bg-white'
-          : 'packet-sheet flex flex-col space-y-5 rounded-xl border border-slate-200 bg-surface p-4 sm:p-8'
+          : 'packet-sheet flex flex-col space-y-5 rounded-xl border border-slate-200 bg-surface p-4 wide:p-8'
       }
     >
       <div
         className={`flex items-center justify-between border-b border-slate-200 pb-2 text-[11px] uppercase tracking-[0.14em] text-slate-500 ${printed ? 'gap-4' : 'flex-wrap gap-x-4 gap-y-1'}`}
       >
         <span
-          className={`flex items-center gap-1.5 ${printed ? 'shrink-0 whitespace-nowrap' : 'flex-wrap sm:shrink-0 sm:whitespace-nowrap'}`}
+          className={`flex items-center gap-1.5 ${printed ? 'shrink-0 whitespace-nowrap' : 'flex-wrap wide:shrink-0 wide:whitespace-nowrap'}`}
         >
           <img src={logo} alt="" className="size-5 object-contain" />
           <span className="text-[12px] font-semibold normal-case tracking-normal text-slate-900">
@@ -141,14 +157,14 @@ function Sheet({
         </span>
         <span className="flex min-w-0 gap-1 normal-case tracking-normal">
           <span className="truncate">{carrier}</span>
-          <span className="shrink-0 whitespace-nowrap">
-            · Page {page} of {total}
+          <span data-page-number className="shrink-0 whitespace-nowrap">
+            {number}
           </span>
         </span>
       </div>
       {printed ? (
         // Printed: the sections follow the heading; this grows so the strip sits at the page's bottom.
-        <div className="flex flex-1 flex-col gap-4">{children}</div>
+        <div className="sheet-body flex flex-1 flex-col gap-4">{children}</div>
       ) : (
         children
       )}
@@ -303,8 +319,8 @@ export interface PacketData {
   equipment: CarrierEquipment
   safety: CarrierSafety | null
   portal: Portal
-  /** A printed page overflowed at the smallest scale: its detail goes on a page of its own */
-  spill?: boolean
+  /** Every inspection on file, newest first, listed at the end; null: not loaded */
+  inspections?: InspectionDetail[] | null
 }
 
 /**
@@ -320,7 +336,7 @@ export function PacketDocument({
   equipment,
   safety,
   portal,
-  spill = false,
+  inspections = null,
 }: PacketData) {
   const client = portal === 'client'
   const whose = client ? 'your' : 'this carrier’s'
@@ -402,11 +418,9 @@ export function PacketDocument({
   const carrier = `${profile.legal_name} · USDOT ${profile.usdot_number}`
   // Page 4, FMCSA's record line by line, once its violation file is loaded.
   const record = safety !== null && safety.sms_inspections != null
-  // A busy record gets two pages, so nothing is shrunk too small to read.
-  const twoRecordPages = record && safety !== null && (spill || recordNeedsTwoPages(safety))
-  // A page that can't fit even at the smallest print size gives up its detail to a page of its own.
-  const extra = spill && (driverRows.length > 0 || Boolean(truck) || repeats.length > 0) ? 1 : 0
-  const total = (record ? (twoRecordPages ? 5 : 4) : 3) + extra
+  // A busy record gets two parts: the summary, then the inspection history.
+  const twoRecordPages = record && safety !== null && recordNeedsTwoPages(safety)
+  const listed = inspections !== null && inspections.length > 0
   // Each page's line in the Sky Transport Solutions strip: what that page is about.
   const ask =
     'Questions about this report? A Sky Transport Solutions specialist can explain any item.'
@@ -527,8 +541,7 @@ export function PacketDocument({
     <>
       {/* Page 1: the scorecard */}
       <Sheet
-        page={1}
-        total={total}
+        index={0}
         title="Carrier safety scorecard"
         carrier={carrier}
         contact={contact.scorecard}
@@ -546,34 +559,35 @@ export function PacketDocument({
           </div>
         </div>
 
-        <div className="grid items-center gap-5 sm:grid-cols-[auto_1fr]">
-          <div className="flex flex-col items-center rounded-xl border border-slate-200 px-4 py-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-              Estimated ISS safety score
+        {/* The score large, with what explains it beside it; its history and the counts below. */}
+        <div className="space-y-3">
+          <div className="grid items-center gap-5 wide:grid-cols-[auto_1fr]">
+            <div className="flex flex-col items-center rounded-xl border border-slate-200 px-5 py-4">
+              <div className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-600">
+                Estimated ISS safety score
+              </div>
+              <IssGauge iss={iss} className="w-72" large />
             </div>
-            <IssGauge iss={iss} className="w-48" />
-          </div>
-          <div className="space-y-3">
-            {iss && (
-              <p className="text-sm text-slate-700">
-                <span className="font-semibold text-slate-900">Why this score: </span>
-                {iss.reason}.
-              </p>
-            )}
-            <IssTrend iss={iss} history={safety?.iss_history ?? []} />
-            {safety && <PullInRates safety={safety} client={client} />}
-            <div className={`grid gap-2 ${redFlags.length ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}>
-              <CountPill tone="red" count={hurting.length} label={`Hurting ${whose} score`} />
-              {redFlags.length > 0 && (
-                <CountPill tone="red" count={redFlags.length} label="Broker red flags" />
+            <div className="space-y-3">
+              {iss && (
+                <p className="text-base text-slate-700">
+                  <span className="font-semibold text-slate-900">Why this score: </span>
+                  {iss.reason}.
+                </p>
               )}
-              <CountPill
-                tone="amber"
-                count={watch.length + roadside.length}
-                label="Worth watching"
-              />
-              <CountPill tone="green" count={good.length} label="In good standing" />
+              {safety && <PullInRates safety={safety} client={client} />}
             </div>
+          </div>
+          <IssTrend iss={iss} history={safety?.iss_history ?? []} />
+          <div
+            className={`grid gap-2 ${redFlags.length ? 'wide:grid-cols-4' : 'wide:grid-cols-3'}`}
+          >
+            <CountPill tone="red" count={hurting.length} label={`Hurting ${whose} score`} />
+            {redFlags.length > 0 && (
+              <CountPill tone="red" count={redFlags.length} label="Broker red flags" />
+            )}
+            <CountPill tone="amber" count={watch.length + roadside.length} label="Worth watching" />
+            <CountPill tone="green" count={good.length} label="In good standing" />
           </div>
         </div>
 
@@ -583,7 +597,7 @@ export function PacketDocument({
           >
             Safety categories (CSA BASICs)
           </SectionHeading>
-          <div className="grid gap-2 sm:grid-cols-3">
+          <div data-split className="grid gap-2 wide:grid-cols-3">
             {tiles.map((t) => (
               <Tile key={t.key} tile={t} facts={tileFacts(t.key, sms, drivers)} />
             ))}
@@ -595,7 +609,7 @@ export function PacketDocument({
           </p>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-[1.4fr_1fr]">
+        <div className="grid gap-5 wide:grid-cols-[1.4fr_1fr]">
           <div className="space-y-3">
             <SectionHeading aside={`Last ${recent?.months ?? 24} months`}>
               Out-of-service rates
@@ -638,7 +652,7 @@ export function PacketDocument({
               </Fact>
             )}
           </dl>
-          <p className="text-[11px] text-slate-500 sm:col-span-2">
+          <p className="text-[11px] text-slate-500 wide:col-span-2">
             Why these counts differ: Inspections counts every inspection FMCSA has loaded for the
             last 24 months. Out-of-service rates count only those that examined the vehicle or the
             driver. Clean inspections use FMCSA’s monthly safety results, which can leave out the
@@ -669,20 +683,20 @@ export function PacketDocument({
           )}
           <p className="mt-1.5 text-xs text-slate-500">
             {hurting.length + redFlags.length + watch.length + roadside.length > 0
-              ? 'Page 2 explains each item and what usually fixes it.'
-              : 'Page 3 lists what is in good standing.'}
+              ? '“What to fix” explains each item and what usually fixes it.'
+              : '“Strengths and record” lists what is in good standing.'}
           </p>
         </div>
 
         <p className="text-[11px] text-slate-500">
           The Estimated ISS is CarrierSafetyScan’s estimate from public FMCSA data using FMCSA’s
           published methods; it is not FMCSA’s official ISS or a safety rating. Details and sources
-          on page 3.
+          at the end of “Strengths and record”.
         </p>
       </Sheet>
 
       {/* Page 2: what is hurting the score, and how to fix it */}
-      <Sheet page={2} total={total} title="What to fix" carrier={carrier} contact={contact.fixes}>
+      <Sheet index={1} title="What to fix" carrier={carrier} contact={contact.fixes}>
         <div className="space-y-2">
           <SectionHeading
             aside="Each item names its FMCSA record"
@@ -708,7 +722,7 @@ export function PacketDocument({
               />
             </ul>
           ) : (
-            <ul className="space-y-2">
+            <ul data-split className="space-y-2">
               {hurting.map((item) => (
                 <ItemBox key={item.key} tone="red" item={item} hideFix={planned(item)} />
               ))}
@@ -727,7 +741,7 @@ export function PacketDocument({
                 Broker red flags
               </span>
             </SectionHeading>
-            <ul className="space-y-2">
+            <ul data-split className="space-y-2">
               {redFlags.map((item) => (
                 <ItemBox key={item.key} tone="red" item={item} hideFix={planned(item)} />
               ))}
@@ -743,7 +757,7 @@ export function PacketDocument({
                 Roadside risk
               </span>
             </SectionHeading>
-            <ul className="space-y-2">
+            <ul data-split className="space-y-2">
               {roadside.map((item) => (
                 <ItemBox key={item.key} tone="amber" item={item} hideFix={planned(item)} />
               ))}
@@ -759,7 +773,7 @@ export function PacketDocument({
                 Worth watching
               </span>
             </SectionHeading>
-            <ul className="space-y-2">
+            <ul data-split className="space-y-2">
               {watch.map((item) => (
                 <ItemBox key={item.key} tone="amber" item={item} hideFix={planned(item)} />
               ))}
@@ -769,20 +783,14 @@ export function PacketDocument({
 
         <SolutionsBox steps={plan} />
 
-        {!spill && whereFrom}
+        {whereFrom}
 
-        {!spill && !busy && patterns}
+        {!busy && patterns}
       </Sheet>
 
       {/* Page 3: strengths and the record */}
-      <Sheet
-        page={3}
-        total={total}
-        title="Strengths and record"
-        carrier={carrier}
-        contact={contact.record}
-      >
-        {!spill && busy && patterns}
+      <Sheet index={2} title="Strengths and record" carrier={carrier} contact={contact.record}>
+        {busy && patterns}
         {toReview.length > 0 && (
           <div className="space-y-2">
             <SectionHeading aside="FMCSA authority history" tone="amber">
@@ -816,7 +824,7 @@ export function PacketDocument({
             tone="green"
             aside={
               hurting.length > 0
-                ? `These records are in order; the safety problems are on pages 1 and 2${!spill && busy && patterns ? ' and above' : ''}`
+                ? `These records are in order; the safety problems are in the scorecard and “What to fix”${busy && patterns ? ', and above' : ''}`
                 : 'Each item names its FMCSA record'
             }
           >
@@ -825,7 +833,7 @@ export function PacketDocument({
               In good standing
             </span>
           </SectionHeading>
-          <ul className="grid gap-2 sm:grid-cols-2">
+          <ul data-split className="grid gap-2 wide:grid-cols-2">
             {good.map((item) => (
               <li
                 key={item.key}
@@ -842,7 +850,7 @@ export function PacketDocument({
           <SectionHeading aside="FMCSA census, authority, insurance and BOC-3 filings; NHTSA vPIC">
             Key facts
           </SectionHeading>
-          <dl className="grid grid-cols-2 gap-x-5 gap-y-2.5 sm:grid-cols-4">
+          <dl className="grid grid-cols-2 gap-x-5 gap-y-2.5 wide:grid-cols-4">
             <Fact label="USDOT status">
               {profile.registration_status && humanize(profile.registration_status.toLowerCase())}
             </Fact>
@@ -926,7 +934,7 @@ export function PacketDocument({
         </div>
 
         {(events.length > 0 || linked.length > 0) && (
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid gap-5 wide:grid-cols-2">
             {events.length > 0 && (
               <div className="space-y-1.5">
                 <SectionHeading aside="FMCSA records">Recent significant events</SectionHeading>
@@ -1004,52 +1012,41 @@ export function PacketDocument({
         </footer>
       </Sheet>
 
-      {extra > 0 && (
-        <Sheet
-          page={4}
-          total={total}
-          title="Where the violations come from"
-          carrier={carrier}
-          contact={contact.fixes}
-        >
-          {whereFrom}
-          {patterns}
-        </Sheet>
-      )}
-      {/* Page 4: the SMS record line by line, and when the score improves */}
+      {/* The SMS record line by line, and when the score improves */}
       {record && safety && (
-        <Sheet
-          page={4 + extra}
-          total={total}
-          title="Inspection record"
-          carrier={carrier}
-          contact={contact.inspections}
-        >
+        <Sheet index={3} title="Inspection record" carrier={carrier} contact={contact.inspections}>
           <RecordPage
             fullRecordUrl={fullRecordUrl}
             safety={safety}
             client={client}
             whose={whose}
             part={twoRecordPages ? 'summary' : 'all'}
+            listedAtEnd={listed}
           />
         </Sheet>
       )}
-      {/* Page 5, for a busy record: the inspection history, crashes and pull-in rates */}
+      {/* For a busy record: the inspection history, crashes and pull-in rates */}
       {twoRecordPages && safety && (
-        <Sheet
-          page={5 + extra}
-          total={total}
-          title="Inspection history"
-          carrier={carrier}
-          contact={contact.inspections}
-        >
+        <Sheet index={4} title="Inspection history" carrier={carrier} contact={contact.inspections}>
           <RecordPage
             fullRecordUrl={fullRecordUrl}
             safety={safety}
             client={client}
             whose={whose}
             part="history"
+            listedAtEnd={listed}
           />
+        </Sheet>
+      )}
+      {/* Last: every inspection on file, each one listed */}
+      {listed && (
+        <Sheet
+          index={record ? (twoRecordPages ? 5 : 4) : 3}
+          title="Every inspection"
+          carrier={carrier}
+          contact={contact.inspections}
+        >
+          <InspectionList inspections={inspections} usdotNumber={profile.usdot_number} />
         </Sheet>
       )}
     </>
@@ -1062,26 +1059,35 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
   const network = useCarrierNetwork(profile.usdot_number)
   const equipment = useCarrierEquipment(profile.usdot_number)
   const safety = useCarrierSafety(profile.usdot_number)
+  const inspections = useAllCarrierInspections(profile.usdot_number)
   const portal = usePortalMode()
   const printCopy = useRef<HTMLDivElement>(null)
-  const [spillFor, setSpillFor] = useState<number | null>(null)
-  const spill = spillFor === profile.usdot_number
+  const printPages = useRef<HTMLDivElement>(null)
+  const [pages, setPages] = useState<PageNumbers | null>(null)
 
-  // Fit each printed sheet to one A4 page whenever the report changes, once fonts have loaded,
-  // and again just before printing.
+  // Lay the report out on A4 pages whenever it changes, once fonts have loaded, and again just
+  // before printing; the page numbers then show on screen too.
   useLayoutEffect(() => {
-    const root = printCopy.current
-    if (!root) return
-    const fit = () => {
-      if (fitSheets(root) && !spill) setSpillFor(profile.usdot_number)
+    const source = printCopy.current
+    const out = printPages.current
+    if (!source || !out) return
+    const layout = () => {
+      const next = paginateReport(source, out)
+      if (next && JSON.stringify(next) !== JSON.stringify(pages)) setPages(next)
     }
-    fit()
-    void document.fonts?.ready.then(fit)
-    window.addEventListener('beforeprint', fit)
-    return () => window.removeEventListener('beforeprint', fit)
+    layout()
+    void document.fonts?.ready.then(layout)
+    window.addEventListener('beforeprint', layout)
+    return () => window.removeEventListener('beforeprint', layout)
   })
 
-  if (authority.isPending || network.isPending || equipment.isPending || safety.isPending) {
+  if (
+    authority.isPending ||
+    network.isPending ||
+    equipment.isPending ||
+    safety.isPending ||
+    inspections.isPending
+  ) {
     return (
       <p className="text-sm text-slate-500">Building the Safety Score Report from FMCSA records…</p>
     )
@@ -1111,7 +1117,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
       equipment={equipment.data}
       safety={safety.data ?? null}
       portal={portal}
-      spill={spill}
+      inspections={inspections.data ?? null}
     />
   )
   return (
@@ -1126,14 +1132,18 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
           Download / Save as PDF
         </button>
       </div>
-      {document_}
+      <Pages.Provider value={pages}>{document_}</Pages.Provider>
       {/* The printed copy sits directly in <body>, outside the app, so the browser prints it at
           full A4 size (inside the app the hidden menu bar would make it shrink everything). It is
-          laid out off-screen at the printed width so fitSheets can size each page exactly. */}
+          laid out off-screen at the printed width, and paginateReport copies it onto A4 pages in
+          #carrier-packet-pages, which is what prints. */}
       {createPortal(
-        <div id="carrier-packet-print" ref={printCopy} aria-hidden>
-          <PrintCopy.Provider value>{document_}</PrintCopy.Provider>
-        </div>,
+        <>
+          <div id="carrier-packet-print" ref={printCopy} aria-hidden>
+            <PrintCopy.Provider value>{document_}</PrintCopy.Provider>
+          </div>
+          <div id="carrier-packet-pages" ref={printPages} aria-hidden />
+        </>,
         document.body,
       )}
     </article>

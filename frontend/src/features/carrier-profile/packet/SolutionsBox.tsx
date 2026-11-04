@@ -23,7 +23,7 @@ export function SolutionsBox({
         <span className="text-emerald-800">Solutions on improving the Safety Score</span>
       </SectionHeading>
       <ol
-        className={`grid gap-2 ${printed ? 'grid-cols-2' : 'sm:grid-cols-2'}`}
+        className={`grid gap-2 ${printed ? 'grid-cols-2' : 'wide:grid-cols-2'}`}
         aria-label="Steps to improve the Safety Score"
       >
         {steps.map((s, n) => (

@@ -1,6 +1,20 @@
 @import 'tailwindcss';
 
 /*
+ * `wide:` is the Safety Score Report's `sm:` (640px and wider), except that its printed copy and
+ * A4 pages always use the wide layout: they print 190mm wide whatever the screen, so a report laid
+ * out on a phone measures and prints the same as on a computer (printFit.ts).
+ */
+@custom-variant wide {
+  @media (width >= 40rem) {
+    @slot;
+  }
+  &:where(#carrier-packet-print *, #carrier-packet-pages *) {
+    @slot;
+  }
+}
+
+/*
  * Light theme (the default).
  *
  * Components are written with the slate scale ("text-slate-900" = strongest text,
@@ -527,21 +541,26 @@ body {
  * the standard light slate scale, whatever the screen theme. The selector also names the dark
  * theme so it outranks it, and every token the dark theme changes is reset here.
  */
-/* In the printed report no text is smaller than 12px (before the page scale), so the smallest
-   print stays readable. */
-#carrier-packet-print :is(.text-\[9px\], .text-\[10px\], .text-\[10\.5px\], .text-\[11px\]) {
+/* In the printed report no text is smaller than 12px, so the smallest print stays readable. */
+#carrier-packet-pages :is(.text-\[9px\], .text-\[10px\], .text-\[10\.5px\], .text-\[11px\]) {
   font-size: 12px;
 }
 
-/* The Safety Score Report's printed copy (PacketSection): laid out off-screen at A4's width (its
-   pages draw their own margins) so each page can be measured and fitted before printing. */
-#carrier-packet-print {
+/* The Safety Score Report's printed copy (PacketSection), and the A4 pages paginateReport
+   (printFit.ts) lays it out on: both off-screen at A4's width (the pages draw their own margins),
+   so each page can be measured before printing. Only the pages print. */
+#carrier-packet-print,
+#carrier-packet-pages {
   position: fixed;
   top: 0;
   left: -10000px;
   width: 210mm;
   visibility: hidden;
   pointer-events: none;
+}
+#carrier-packet-pages .print-page {
+  width: 210mm;
+  padding: 9mm 10mm;
 }
 
 @media print {
@@ -608,25 +627,27 @@ body {
     size: A4;
     margin: 0;
   }
-  #carrier-packet-print .print-page {
+  #carrier-packet-pages .print-page {
     page: report;
-    width: 210mm;
     height: 297mm;
-    padding: 9mm 10mm;
     overflow: hidden;
     break-after: page;
   }
-  #carrier-packet-print .print-page:last-child {
+  #carrier-packet-pages .print-page:last-child {
     break-after: auto;
   }
-  /* Too long for one page even at the smallest scale: never cut it off, run on to the next page. */
-  #carrier-packet-print .print-page.print-flow {
+  /* One section taller than a whole page: never cut it off, run on to the next page. */
+  #carrier-packet-pages .print-page.print-flow {
     height: auto;
     overflow: visible;
   }
+  /* The copy the pages are made from doesn't print. */
+  #carrier-packet-print {
+    display: none;
+  }
   /* The Safety Score Report prints alone: the app (and its wide menu bar) is left out entirely,
      so nothing makes the browser shrink the report to fit. */
-  body:has(#carrier-packet-print) > #root {
+  body:has(#carrier-packet-pages) > #root {
     display: none !important;
   }
   body {
@@ -635,13 +656,13 @@ body {
   body * {
     visibility: hidden;
   }
-  #carrier-packet-print,
-  #carrier-packet-print *,
+  #carrier-packet-pages,
+  #carrier-packet-pages *,
   #invoice-print,
   #invoice-print * {
     visibility: visible;
   }
-  #carrier-packet-print {
+  #carrier-packet-pages {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
     position: static;

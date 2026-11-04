@@ -57,6 +57,7 @@ export function RecordPage({
   whose,
   part = 'all',
   fullRecordUrl,
+  listedAtEnd = false,
 }: {
   safety: CarrierSafety
   client: boolean
@@ -65,6 +66,8 @@ export function RecordPage({
   part?: 'all' | 'summary' | 'history'
   /** This carrier's page in the app, for what a printed page can't list */
   fullRecordUrl: string
+  /** Every inspection is listed at the end of the report (InspectionList) */
+  listedAtEnd?: boolean
 }) {
   const maxCodes = part === 'all' ? MAX_CODES : MAX_CODES_OWN_PAGE
   const inspections = safety.sms_inspections ?? []
@@ -82,7 +85,7 @@ export function RecordPage({
     <>
       {part !== 'history' && (
         <>
-          <div className="grid gap-5 sm:grid-cols-[1.15fr_1fr]">
+          <div className="grid gap-5 wide:grid-cols-[1.15fr_1fr]">
             <div className="space-y-2">
               <SectionHeading
                 tone="green"
@@ -252,7 +255,8 @@ export function RecordPage({
               </p>
             ) : (
               <ScrollX>
-                <table className="w-full text-sm">
+                {/* Split between inspections when it runs past a printed page (printFit.ts). */}
+                <table data-split className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-slate-200 text-left text-[10px] uppercase tracking-wide text-slate-500">
                       <th className="py-1 pr-2 font-medium">Date</th>
@@ -345,8 +349,10 @@ export function RecordPage({
             )}
             {inspections.length > maxInspections && (
               <p className="text-xs text-slate-500">
-                +{inspections.length - maxInspections} more inspections with violations after
-                logging in: {fullRecordUrl}
+                +{inspections.length - maxInspections} more inspections with violations
+                {listedAtEnd
+                  ? ': every inspection is listed at the end of this report.'
+                  : ` after logging in: ${fullRecordUrl}`}
               </p>
             )}
             <p className="text-[11px] text-slate-500">

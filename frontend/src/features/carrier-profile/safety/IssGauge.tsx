@@ -33,10 +33,13 @@ function arc(from: number, to: number): string {
 export function IssGauge({
   iss,
   className = 'w-44',
+  large = false,
 }: {
   iss: EstimatedIss | null | undefined
   /** Width of the dial */
   className?: string
+  /** A bigger number and labels (the Safety Score Report's scorecard) */
+  large?: boolean
 }) {
   const value = iss?.value ?? null
   const band = iss?.band ? ISS_BAND[iss.band] : null
@@ -47,7 +50,7 @@ export function IssGauge({
   return (
     <div className="flex flex-col items-center">
       <svg
-        viewBox="0 0 120 80"
+        viewBox={large ? '0 0 120 86' : '0 0 120 80'}
         className={className}
         role="img"
         aria-label={
@@ -91,20 +94,24 @@ export function IssGauge({
         )}
         <text
           x={CX}
-          y={CY + 20}
+          y={CY + (large ? 26 : 20)}
           textAnchor="middle"
-          className="fill-slate-950 text-[15px] font-semibold tabular-nums"
+          className={`fill-slate-950 font-semibold tabular-nums ${large ? 'text-[23px]' : 'text-[15px]'}`}
         >
           {scored ? value : '—'}
         </text>
       </svg>
-      <div className="mt-1 flex flex-col items-center gap-1">
+      <div
+        className={`mt-1 flex flex-col items-center gap-1 ${large ? '[&>span:first-child]:px-3 [&>span:first-child]:py-1 [&>span:first-child]:text-sm' : ''}`}
+      >
         {scored ? (
           <StatusBadge label={band.status} tone={band.tone} />
         ) : (
           <StatusBadge label="Not enough data" tone="neutral" />
         )}
-        <span className="text-[11px] text-slate-500">1–100 · lower is better</span>
+        <span className={large ? 'text-sm text-slate-600' : 'text-[11px] text-slate-500'}>
+          1–100 · lower is better
+        </span>
       </div>
     </div>
   )

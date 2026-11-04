@@ -73,10 +73,10 @@ export function ContactStrip({ message }: { message: string }) {
   // phone is the device the QR would open the website on), so they show from small tablets up.
   // The printed copy always has them: it is laid out at the A4 width whatever the screen.
   const printed = useContext(PrintCopy)
-  const roomy = printed ? 'flex' : 'hidden sm:flex'
+  const roomy = printed ? 'flex' : 'hidden wide:flex'
   return (
     <div className="contact-strip flex break-inside-avoid items-center gap-4 rounded-xl border border-accent/30 bg-accent-soft px-4 py-2.5">
-      <StsLogo className={`size-14 ${printed ? '' : 'hidden sm:block'}`} />
+      <StsLogo className={`size-14 ${printed ? '' : 'hidden wide:block'}`} />
       <div className="min-w-0 flex-1 space-y-1 text-sm">
         <p className="font-semibold text-slate-900">{message}</p>
         <p className="text-xs text-slate-600">

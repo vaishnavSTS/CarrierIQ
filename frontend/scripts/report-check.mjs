@@ -1,6 +1,6 @@
 // Opens the Safety Score Report of the 20 real carriers in the ISS fixtures, prints each to PDF and
-// compares it with the API: nothing cut off, no broken values, every page fits, and the printed
-// numbers match. It only reads, so it sends no email. Point it at a local or test server, never at
+// compares it with the API: nothing cut off, no broken values, every A4 page fits and is numbered,
+// every inspection on file is listed at the end, and the printed numbers match. It only reads, so it sends no email. Point it at a local or test server, never at
 // production with a real login.
 //
 //   REPORT_EMAIL=... REPORT_PASSWORD=... npm run report-check
@@ -169,11 +169,19 @@ const READ_REPORT = `JSON.stringify((() => {
       )
     })
     .map((el) => el.textContent.slice(0, 50))
-  const sizes = sheets.map((sheet, i) => {
-    const zoom = parseFloat(sheet.style.zoom || 1)
-    return { page: i + 1, height: sheet.scrollHeight * zoom, width: sheet.scrollWidth * zoom, zoom }
-  })
-  return { sizes, clipped, text: pieces.join(' ').replace(/\\s+/g, ' ') }
+  // The A4 pages paginateReport laid the report out on (printFit.ts): what prints.
+  const pages = [...document.querySelectorAll('#carrier-packet-pages .print-page')]
+  const sizes = pages.map((page, i) => ({
+    page: i + 1,
+    height: page.firstElementChild.scrollHeight,
+    width: page.firstElementChild.scrollWidth,
+    runsOn: page.classList.contains('print-flow'),
+    number: page.querySelector('[data-page-number]')?.textContent ?? '',
+  }))
+  const listed = document.querySelectorAll(
+    '#carrier-packet-pages table[data-inspection-list] > tbody',
+  ).length
+  return { sizes, listed, clipped, text: pieces.join(' ').replace(/\\s+/g, ' ') }
 })())`
 
 const api = async (usdot, path) => {
@@ -185,9 +193,9 @@ const api = async (usdot, path) => {
 }
 
 /** Everything wrong with one carrier's report, in words. */
-function problemsIn(report, profile, safety, pdfPages) {
+function problemsIn(report, profile, safety, pdfPages, inspectionsOnFile) {
   const problems = []
-  const { text, sizes, clipped } = report
+  const { text, sizes, listed, clipped } = report
   const has = (pattern) => pattern.test(text)
   for (const bad of ['undefined', 'NaN', '[object', ' null ']) {
     if (text.includes(bad)) problems.push(`contains "${bad}"`)
@@ -199,8 +207,15 @@ function problemsIn(report, profile, safety, pdfPages) {
     if (size.width > PAGE_WIDTH + TOLERANCE) {
       problems.push(`page ${size.page} is ${Math.round(size.width - PAGE_WIDTH)}px too wide`)
     }
+    if (size.runsOn) problems.push(`page ${size.page} runs on to another page`)
+    if (size.number !== `· Page ${size.page} of ${sizes.length}`) {
+      problems.push(`page ${size.page} is numbered "${size.number}"`)
+    }
   }
   if (pdfPages !== sizes.length) problems.push(`PDF has ${pdfPages} pages for ${sizes.length}`)
+  if (listed !== inspectionsOnFile) {
+    problems.push(`${listed} of the ${inspectionsOnFile} inspections on file are listed`)
+  }
   if (clipped.length) problems.push(`cut off: ${clipped.join(' | ')}`)
   if (!text.toLowerCase().includes(profile.legal_name.toLowerCase())) {
     problems.push('legal name missing')
@@ -245,7 +260,7 @@ for (const usdot of usdots) {
       report = JSON.parse((await evaluate(READ_REPORT)) ?? 'null')
     }
     if (!report) throw new Error('the report never rendered')
-    await sleep(2500) // a second fit can move a long page's detail to an extra page
+    await sleep(2500) // the pages are laid out again once the fonts have loaded
     report = JSON.parse(await evaluate(READ_REPORT))
     const safety = await api(usdot, '/safety')
     if (TEST_ISS) safety.estimated_iss = TEST_ISS
@@ -256,8 +271,9 @@ for (const usdot of usdots) {
     const pdf = Buffer.from(printed.result.data, 'base64')
     const pdfPages = (pdf.toString('latin1').match(/\/Type\s*\/Page[^s]/g) ?? []).length
     if (OUT_DIR) writeFileSync(join(OUT_DIR, `report_${usdot}.pdf`), pdf)
-    problems = problemsIn(report, profile, safety, pdfPages)
-    summary = `${profile.legal_name} | ${pdfPages} pages | scale ${report.sizes[0].zoom.toFixed(2)}`
+    const onFile = (await api(usdot, '/inspections?page=1&page_size=1')).total
+    problems = problemsIn(report, profile, safety, pdfPages, onFile)
+    summary = `${profile.legal_name} | ${pdfPages} pages | ${report.listed} inspections listed`
   } catch (error) {
     problems = [String(error)]
   }
