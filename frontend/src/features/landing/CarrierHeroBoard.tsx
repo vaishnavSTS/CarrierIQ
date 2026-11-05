@@ -5,7 +5,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { mcs150Due, MONTHS } from './HeroTools'
 
 const ease = [0.16, 1, 0.3, 1] as const
-const SECONDS = 5
+const SECONDS = 3 // how long each sample carrier shows
 
 /*
  * The carrier hero's dashboard: a compact sample of the carrier's own portal that turns through
