@@ -232,7 +232,7 @@ body {
 }
 
 /* Slow-moving glow over the hero's gradient: soft violet and sky-blue light that drifts across
-   over about 30 seconds and back. Behind the hero's content (isolation + z-index -1), inside its
+   over about 20 seconds and back. Behind the hero's content (isolation + z-index -1), inside its
    box (it moves the background, not the layer), and still for people who prefer reduced motion. */
 .hero-gradient {
   isolation: isolate;
@@ -244,10 +244,10 @@ body {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(closest-side, rgb(139 92 246 / 0.45), transparent) 0 0 / 60% 70% no-repeat,
-    radial-gradient(closest-side, rgb(56 189 248 / 0.35), transparent) 100% 30% / 55% 60% no-repeat,
-    radial-gradient(closest-side, rgb(251 191 36 / 0.16), transparent) 50% 100% / 45% 45% no-repeat;
-  animation: hero-drift 30s ease-in-out infinite alternate;
+    radial-gradient(closest-side, rgb(139 92 246 / 0.7), transparent) 0 0 / 65% 75% no-repeat,
+    radial-gradient(closest-side, rgb(56 189 248 / 0.55), transparent) 100% 30% / 60% 65% no-repeat,
+    radial-gradient(closest-side, rgb(251 191 36 / 0.28), transparent) 50% 100% / 50% 50% no-repeat;
+  animation: hero-drift 20s ease-in-out infinite alternate;
 }
 @keyframes hero-drift {
   0% {
@@ -271,9 +271,9 @@ body {
 }
 :root[data-theme='dark'] .hero-gradient::before {
   background:
-    radial-gradient(closest-side, rgb(37 99 235 / 0.35), transparent) 0 0 / 60% 70% no-repeat,
-    radial-gradient(closest-side, rgb(255 138 31 / 0.14), transparent) 100% 30% / 55% 60% no-repeat,
-    radial-gradient(closest-side, rgb(103 227 255 / 0.18), transparent) 50% 100% / 45% 45% no-repeat;
+    radial-gradient(closest-side, rgb(37 99 235 / 0.55), transparent) 0 0 / 65% 75% no-repeat,
+    radial-gradient(closest-side, rgb(255 138 31 / 0.24), transparent) 100% 30% / 60% 65% no-repeat,
+    radial-gradient(closest-side, rgb(103 227 255 / 0.3), transparent) 50% 100% / 50% 50% no-repeat;
 }
 @media (prefers-reduced-motion: reduce) {
   .hero-gradient::before {

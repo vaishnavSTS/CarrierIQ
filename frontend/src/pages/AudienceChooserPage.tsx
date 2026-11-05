@@ -6,6 +6,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { AUDIENCE_PATH, forgetStoredAudience, type Audience } from '../features/audience/audience'
 import { FaqSection } from '../features/landing/Faq'
 import { CHOOSER_FAQ } from '../features/landing/faqContent'
+import { HeroRoutes } from '../features/landing/HeroRoutes'
 import { HeroTryForm } from '../features/landing/LandingSections'
 import { LiveStrip } from '../features/landing/LivePulse'
 import { Band } from '../features/landing/landingParts'
@@ -133,6 +134,7 @@ export function AudienceChooserPage() {
   return (
     <>
       <div className="hero-gradient">
+        <HeroRoutes />
         <section className="mx-auto max-w-6xl px-4 pb-24 pt-10 md:pt-14">
           {/* A small "Welcome to" over the name in gold, then the invitation in the serif italic. */}
           <h1 className="text-center font-semibold">
