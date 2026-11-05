@@ -1,6 +1,6 @@
 import { apiGet } from './client'
 
-/** The public carrier map (backend routes/directory.py), with no login. */
+/** The carrier map (backend routes/directory.py): public, and in the carrier and agent portals. */
 export interface StateCount {
   state: string
   name: string
@@ -22,7 +22,7 @@ export type DirectorySort = 'newest' | 'largest' | 'az'
 /** Active or inactive USDOT numbers */
 export type DirectoryStatus = 'active' | 'inactive'
 
-/** One page of a state's carriers; only the first 3 pages can be opened. */
+/** A state's carriers: the first 10 on the public pages, every one (25 a page) in the portals. */
 export interface PublicStateList {
   state: string
   name: string
@@ -48,7 +48,24 @@ export const getRecentCarriers = () => apiGet<RecentCarrier[]>('/public/director
 export const getPublicStateCounts = (status: DirectoryStatus) =>
   apiGet<StateCount[]>(`/public/directory/states?status=${status}`)
 
+/** The first 10 of a state's carriers; `has_more` says there are more after logging in. */
 export const getPublicStateCarriers = (
+  state: string,
+  sort: DirectorySort,
+  letter: string | null,
+  status: DirectoryStatus,
+) => {
+  const params = new URLSearchParams({ sort, status })
+  if (letter && sort === 'az') params.set('letter', letter)
+  return apiGet<PublicStateList>(`/public/directory/states/${state}?${params}`)
+}
+
+/** Logged in (carrier and insurance agent portals): the same totals. */
+export const getStateCounts = (status: DirectoryStatus) =>
+  apiGet<StateCount[]>(`/directory/states?status=${status}`)
+
+/** Logged in: every carrier in the state, 25 a page. */
+export const getStateCarriers = (
   state: string,
   sort: DirectorySort,
   letter: string | null,
@@ -57,5 +74,5 @@ export const getPublicStateCarriers = (
 ) => {
   const params = new URLSearchParams({ sort, page: String(page), status })
   if (letter && sort === 'az') params.set('letter', letter)
-  return apiGet<PublicStateList>(`/public/directory/states/${state}?${params}`)
+  return apiGet<PublicStateList>(`/directory/states/${state}?${params}`)
 }

@@ -199,6 +199,7 @@ class CarrierDirectory:
         letter: str | None = None,
         page: int = 0,
         status: Status = "active",
+        size: int = PAGE_SIZE,
     ) -> StatePage:
         state = state.upper()
         if state not in STATES:
@@ -224,11 +225,11 @@ class CarrierDirectory:
                 ),
                 "$where": where,
                 "$order": order,
-                "$limit": str(PAGE_SIZE + 1),
-                "$offset": str(page * PAGE_SIZE),
+                "$limit": str(size + 1),
+                "$offset": str(page * size),
             },
         )
-        carriers = [self._carrier(row) for row in rows[:PAGE_SIZE]]
+        carriers = [self._carrier(row) for row in rows[:size]]
         return StatePage(
             state=state,
             name=STATES[state],
@@ -236,7 +237,7 @@ class CarrierDirectory:
             letter=letter.upper() if letter else None,
             page=page,
             carriers=[c for c in carriers if c is not None],
-            has_more=len(rows) > PAGE_SIZE,
+            has_more=len(rows) > size,
         )
 
     def _carrier(self, row: dict) -> DirectoryCarrier | None:

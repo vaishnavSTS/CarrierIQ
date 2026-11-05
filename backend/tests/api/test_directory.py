@@ -1,18 +1,22 @@
-"""The public carrier map API: state totals and a state's carriers, from a fake census (no
-network), with no login."""
+"""The carrier map API: state totals and a state's carriers, from a fake census (no network):
+public (no login, 10 a state) and in the carrier and insurance agent portals (every carrier)."""
 
 from collections.abc import Iterator
 from datetime import date
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
 
+from app.api.auth import get_current_user
 from app.api.v1.routes.directory import get_carrier_directory
 from app.main import app
+from app.models.enums import UserRole
 from app.services import carrier_directory
 from app.services.carrier_directory import CarrierDirectory
 
 BASE = "/api/v1/public/directory"
+PORTAL = "/api/v1/directory"
 
 
 class FakeCensus:
@@ -96,12 +100,12 @@ def test_state_counts_need_no_login_and_are_cached(api: TestClient, census: Fake
 
 
 def test_state_carriers_sorted_and_without_contact_details(api: TestClient, census: FakeCensus):
-    body = api.get(f"{BASE}/states/ga?sort=az&letter=b&page=1").json()
+    body = api.get(f"{BASE}/states/ga?sort=az&letter=b").json()
     query = census.queries[-1]
     assert "phy_state='GA'" in query["$where"]
     assert "starts_with(upper(legal_name), 'B')" in query["$where"]
     assert query["$order"].startswith("legal_name")
-    assert query["$offset"] == "25"
+    assert query["$offset"] == "0"
     assert "phone" not in query["$select"] and "email" not in query["$select"]
 
     assert body["name"] == "Georgia" and body["letter"] == "B" and body["has_more"] is False
@@ -114,17 +118,51 @@ def test_state_carriers_sorted_and_without_contact_details(api: TestClient, cens
     assert old["city"] == "Atlanta"
 
 
-def test_only_the_first_pages_can_be_read():
-    census = FakeCensus(rows=26)  # more than a page
+def test_public_lists_show_only_ten():
+    census = FakeCensus(rows=26)
     client = _client(census)
     api = next(client)
     try:
-        assert api.get(f"{BASE}/states/TX?sort=largest").json()["has_more"] is True
-        last = api.get(f"{BASE}/states/TX?sort=largest&page=2").json()
-        assert last["has_more"] is False  # the last page anyone can open
-        assert api.get(f"{BASE}/states/TX?page=3").status_code == 422
+        body = api.get(f"{BASE}/states/TX?sort=largest").json()
+        assert len(body["carriers"]) == 10 and body["has_more"] is True
+        assert census.queries[-1]["$limit"] == "11"
+        api.get(f"{BASE}/states/TX?page=2")  # no paging: always the first ten
+        assert census.queries[-1]["$offset"] == "0"
     finally:
         next(client, None)
+
+
+def _as(role: UserRole) -> None:
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(role=role)
+
+
+@pytest.mark.parametrize(
+    "role", [UserRole.CLIENT_USER, UserRole.INSURANCE_AGENT, UserRole.STS_ANALYST]
+)
+def test_the_portal_map_lists_every_carrier(role: UserRole):
+    census = FakeCensus(rows=26)
+    client = _client(census)
+    api = next(client)
+    try:
+        _as(role)
+        assert len(api.get(f"{PORTAL}/states").json()) == 51
+        first = api.get(f"{PORTAL}/states/TX").json()
+        assert len(first["carriers"]) == 25 and first["has_more"] is True
+        api.get(f"{PORTAL}/states/TX?sort=az&page=40")
+        assert census.queries[-1]["$offset"] == "1000"  # far past the public list
+    finally:
+        next(client, None)
+
+
+@pytest.mark.parametrize("role", [UserRole.BROKER_USER, UserRole.BROKER_ADMIN])
+def test_brokers_have_no_portal_map(api: TestClient, census: FakeCensus, role: UserRole):
+    _as(role)
+    assert api.get(f"{PORTAL}/states/TX").status_code == 403
+    assert census.queries == []
+
+
+def test_the_portal_map_needs_a_login(api: TestClient):
+    assert api.get(f"{PORTAL}/states").status_code == 401
 
 
 @pytest.mark.parametrize(
@@ -163,7 +201,3 @@ def test_recent_registrations_nationwide_and_cached(api: TestClient, census: Fak
     assert first[0]["legal_name"] == "BIG NEW FLEET LLC" and "state" in first[0]
     api.get(f"{BASE}/recent")
     assert len(census.queries) == 1  # the second answer came from the cache
-
-
-def test_the_logged_in_map_is_gone(api: TestClient):
-    assert api.get("/api/v1/directory/states").status_code == 404

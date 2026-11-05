@@ -15,6 +15,8 @@ import { Link } from 'react-router-dom'
 import {
   getPublicStateCarriers,
   getPublicStateCounts,
+  getStateCarriers,
+  getStateCounts,
   type DirectorySort,
   type DirectoryStatus,
   type StateCount,
@@ -24,11 +26,12 @@ import { number, UsMap } from '../directory/UsMap'
 import { reveal, SectionHeading } from './landingParts'
 
 /*
- * The carrier map on the public audience pages, open to everyone (no login). Every state shaded by
- * its active interstate carriers, or, where `allowInactive` (broker and agent pages), its inactive
- * ones; click one for its newest, largest or A–Z carriers, 25 a page for
- * the first 3 pages (the backend's limit). Each carrier opens the free search. No wording here
- * about where the data comes from (the public pages' rule).
+ * The carrier map. Every state shaded by its active interstate carriers, or, where `allowInactive`,
+ * its inactive ones; click one for its newest, largest or A–Z carriers.
+ * On the public audience pages (no login) a state shows its first 10 carriers, each opening the
+ * free search. In the carrier and insurance agent portals (`portal`) it lists every carrier, 25 a
+ * page, each opening its page in the portal (`carrierLink`). No wording here about where the data
+ * comes from (the public pages' rule).
  */
 
 const SORTS: { key: DirectorySort; label: string; icon: LucideIcon; note: string }[] = [
@@ -49,6 +52,8 @@ export function MapSection({
   aside,
   signUp,
   allowInactive = false,
+  portal = false,
+  carrierLink,
 }: {
   number?: string
   title: ReactNode
@@ -57,12 +62,16 @@ export function MapSection({
   allowInactive?: boolean
   /** Shown to visitors who aren't logged in */
   signUp?: { to: string; label: string }
+  /** In a portal: every carrier, from the logged-in API */
+  portal?: boolean
+  /** In a portal: where a carrier opens, or null when it can't be opened there */
+  carrierLink?: (usdot: number) => string | null
 }) {
   const [status, setStatus] = useState<DirectoryStatus>('active')
   const inactive = status === 'inactive'
   const counts = useQuery({
-    queryKey: ['public-directory', 'states', status],
-    queryFn: () => getPublicStateCounts(status),
+    queryKey: [portal ? 'directory' : 'public-directory', 'states', status],
+    queryFn: () => (portal ? getStateCounts(status) : getPublicStateCounts(status)),
   })
   const [selected, setSelected] = useState<string | null>(null)
   const total = (counts.data ?? []).reduce((sum, s) => sum + s.carriers, 0)
@@ -156,7 +165,13 @@ export function MapSection({
               exit={{ opacity: 0, x: 24 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
-              <StateList state={current} status={status} signUp={signUp} />
+              <StateList
+                state={current}
+                status={status}
+                signUp={signUp}
+                portal={portal}
+                carrierLink={carrierLink}
+              />
             </motion.div>
           )}
         </AnimatePresence>
@@ -178,19 +193,27 @@ function StateList({
   state,
   status,
   signUp,
+  portal,
+  carrierLink,
 }: {
   state: StateCount
   status: DirectoryStatus
   signUp?: { to: string; label: string }
+  portal: boolean
+  carrierLink?: (usdot: number) => string | null
 }) {
   const inactive = status === 'inactive'
   const [sort, setSort] = useState<DirectorySort>('newest')
   const [letter, setLetter] = useState<string | null>(null)
   const [page, setPage] = useState(0)
   const list = useQuery({
-    queryKey: ['public-directory', state.state, status, sort, letter, page],
-    queryFn: () => getPublicStateCarriers(state.state, sort, letter, page, status),
+    queryKey: [portal ? 'directory' : 'public-directory', state.state, status, sort, letter, page],
+    queryFn: () =>
+      portal
+        ? getStateCarriers(state.state, sort, letter, page, status)
+        : getPublicStateCarriers(state.state, sort, letter, status),
   })
+  const linkFor = (usdot: number) => (portal ? (carrierLink?.(usdot) ?? null) : `/try?q=${usdot}`)
   // The census has no date for going inactive: for inactive carriers "newest" means registered.
   const note =
     inactive && sort === 'newest'
@@ -287,13 +310,17 @@ function StateList({
         {list.data?.carriers.map((c) => (
           <li key={c.usdot_number} className="flex items-start gap-3 px-4 py-2.5">
             <div className="min-w-0 flex-1">
-              <Link
-                to={`/try?q=${c.usdot_number}`}
-                title="Open it with your free search"
-                className="font-medium text-slate-900 hover:text-accent-strong hover:underline"
-              >
-                {c.legal_name}
-              </Link>
+              {linkFor(c.usdot_number) ? (
+                <Link
+                  to={linkFor(c.usdot_number)!}
+                  title={portal ? 'Open this carrier' : 'Open it with your free search'}
+                  className="font-medium text-slate-900 hover:text-accent-strong hover:underline"
+                >
+                  {c.legal_name}
+                </Link>
+              ) : (
+                <span className="font-medium text-slate-900">{c.legal_name}</span>
+              )}
               <div className="mt-0.5 text-xs text-slate-500">
                 <span className="font-mono">USDOT {c.usdot_number}</span>
                 {c.city && ` · ${c.city}`}
@@ -322,7 +349,15 @@ function StateList({
         ))}
       </ul>
 
-      {list.data && (page > 0 || list.data.has_more) && (
+      {/* Public: the first 10 only, the rest after logging in. */}
+      {!portal && list.data?.has_more && (
+        <p className="border-t border-slate-100 px-4 py-2.5 text-xs text-slate-600">
+          Showing the first 10. Every carrier is on the map in the carrier and insurance agent
+          portals.
+        </p>
+      )}
+
+      {portal && list.data && (page > 0 || list.data.has_more) && (
         <div className="flex items-center justify-between border-t border-slate-100 px-4 py-2.5 text-sm">
           <button
             type="button"

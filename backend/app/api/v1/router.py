@@ -58,3 +58,4 @@ api_router.include_router(invoices.webhook_router)
 # The $49/month subscription for client and broker logins.
 api_router.include_router(billing.router)
 api_router.include_router(directory.public_router)  # the carrier map, public (no login)
+api_router.include_router(directory.router)  # the carrier map, carrier and agent portals

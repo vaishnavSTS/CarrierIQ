@@ -1,4 +1,4 @@
-import { Columns3, Receipt, Search } from 'lucide-react'
+import { Columns3, Map as MapIcon, Receipt, Search } from 'lucide-react'
 import { Outlet } from 'react-router-dom'
 
 import { SubscriptionGate } from '../../features/billing/SubscriptionGate'
@@ -29,6 +29,10 @@ function BrokerFrame() {
       nav={[
         { to: '/broker', label: 'Search carriers', icon: Search, end: true },
         { to: '/broker/compare', label: 'Compare', icon: Columns3, badge: compared },
+        // The carrier map is for insurance agents, not brokers.
+        ...(me?.role === 'INSURANCE_AGENT'
+          ? [{ to: '/broker/map', label: 'Carrier map', icon: MapIcon }]
+          : []),
         { to: '/broker/invoices', label: 'Invoices', icon: Receipt },
       ]}
     >

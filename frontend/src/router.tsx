@@ -8,6 +8,7 @@ import { PublicLayout } from './components/layout/PublicLayout'
 import { AccountsPage } from './pages/AccountsPage'
 import { BrokerGoogleSignupPage } from './pages/BrokerGoogleSignupPage'
 import { BrokerHomePage } from './pages/BrokerHomePage'
+import { CarrierMapPage } from './pages/CarrierMapPage'
 import { BrokerInvoicesPage } from './pages/BrokerInvoicesPage'
 import { BrokerRegisterPage } from './pages/BrokerRegisterPage'
 import { CarrierLinkPage } from './pages/CarrierLinkPage'
@@ -117,6 +118,7 @@ export const router = createBrowserRouter([
           { path: 'dataqs/new', element: <PortalDataQsIntakePage /> },
           { path: 'dataqs/cases/:caseId', element: <DataQsCasePage /> },
           { path: 'search', element: <ClientSearchPage /> },
+          { path: 'map', element: <CarrierMapPage /> },
           { path: 'carriers/:usdot', element: <CarrierProfilePage /> },
           { path: 'invoices/:invoiceId', element: <InvoicePage /> },
         ],
@@ -132,6 +134,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <BrokerHomePage /> },
           { path: 'compare', element: <ComparePage /> },
+          { path: 'map', element: <CarrierMapPage /> },
           { path: 'carriers/:usdot', element: <CarrierProfilePage /> },
           { path: 'invoices', element: <BrokerInvoicesPage /> },
           { path: 'invoices/:invoiceId', element: <InvoicePage /> },
