@@ -71,11 +71,10 @@ const CHOOSER_PHOTO_FIT: Record<Audience, string> = {
 const POINT_MS = 2600
 
 /**
- * One glass bar per card whose point changes every few seconds, sliding up (the cards start a
- * little apart, so they don't change together), with a dot for each point. Screen readers get the
- * whole list; with reduced motion the bar stays on the first point.
+ * One glass bar per card whose point changes every few seconds, sliding up; all three cards change
+ * together. Screen readers get the whole list; with reduced motion the bar stays on the first point.
  */
-function CyclingPoint({ points, start }: { points: string[]; start: number }) {
+function CyclingPoint({ points }: { points: string[] }) {
   const reduceMotion = useReducedMotion()
   const [index, setIndex] = useState(0)
 
@@ -85,12 +84,12 @@ function CyclingPoint({ points, start }: { points: string[]; start: number }) {
     const begin = window.setTimeout(() => {
       setIndex((n) => (n + 1) % points.length)
       timer = window.setInterval(() => setIndex((n) => (n + 1) % points.length), POINT_MS)
-    }, POINT_MS + start)
+    }, POINT_MS)
     return () => {
       window.clearTimeout(begin)
       window.clearInterval(timer)
     }
-  }, [points.length, start, reduceMotion])
+  }, [points.length, reduceMotion])
 
   return (
     <span className="mt-4 block">
@@ -111,15 +110,6 @@ function CyclingPoint({ points, start }: { points: string[]; start: number }) {
             </motion.span>
           </AnimatePresence>
         </span>
-      </span>
-      {/* A dot per point under the bar, so the bar keeps its whole width for the words. */}
-      <span aria-hidden className="mt-2 flex gap-1 pl-3">
-        {points.map((point, n) => (
-          <span
-            key={point}
-            className={`h-1.5 rounded-full transition-all duration-300 ${n === index ? 'w-4 bg-[var(--hero-highlight)]' : 'w-1.5 bg-white/40'}`}
-          />
-        ))}
       </span>
     </span>
   )
@@ -195,7 +185,7 @@ export function AudienceChooserPage() {
                     {title}
                   </span>
                   <span className="mt-2 text-sm leading-relaxed text-white/85">{text}</span>
-                  <CyclingPoint points={points} start={i * 900} />
+                  <CyclingPoint points={points} />
                   <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-white">
                     Continue
                     <ArrowRight
