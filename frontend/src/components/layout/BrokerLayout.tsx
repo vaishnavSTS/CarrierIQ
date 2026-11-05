@@ -28,8 +28,7 @@ function BrokerFrame() {
       nav={[
         { to: '/broker', label: 'Search carriers', end: true },
         { to: '/broker/compare', label: 'Compare', badge: compared },
-        // The carrier map is for insurance agents, not brokers.
-        ...(me?.role === 'INSURANCE_AGENT' ? [{ to: '/broker/map', label: 'Carrier map' }] : []),
+        { to: '/broker/map', label: 'Carrier map' },
         { to: '/broker/invoices', label: 'Invoices' },
       ]}
     >

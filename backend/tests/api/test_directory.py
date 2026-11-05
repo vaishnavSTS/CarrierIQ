@@ -45,6 +45,33 @@ class FakeCensus:
                 {"phy_cnty": None, "n": "7"},  # no county on file: left out
                 {"phy_cnty": "2O1", "n": "1"},  # not a county code: left out
             ]
+        if params.get("$where", "").startswith("dot_number="):
+            if params["$where"] != "dot_number='4382997'":
+                return []
+            return [
+                {
+                    "dot_number": "4382997",
+                    "legal_name": "BIG NEW FLEET LLC ",
+                    "dba_name": "BNF",
+                    "status_code": "A",
+                    "docket1prefix": "MC",
+                    "docket1": "1270630",
+                    "phone": "(559) 344-7968",
+                    "cell_phone": "0000000000",
+                    "email_address": "Dispatch@BNF.example ",
+                    "phy_street": "838 ROSAZZO LN",
+                    "phy_city": "MANTECA",
+                    "phy_state": "CA",
+                    "phy_zip": "95337",
+                    "carrier_mailing_street": "PO BOX 12",
+                    "carrier_mailing_city": "MANTECA",
+                    "carrier_mailing_state": "CA",
+                    "carrier_mailing_zip": "95336",
+                    "power_units": "4",
+                    "total_drivers": "5",
+                    "add_date": "20210628",
+                }
+            ]
         if self.rows > 2:
             return [
                 {"dot_number": str(1000 + i), "legal_name": f"CARRIER {i}",
@@ -142,8 +169,8 @@ def test_public_lists_show_only_ten():
         next(client, None)
 
 
-def _as(role: UserRole) -> None:
-    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(role=role)
+def _as(role: UserRole, user_id: int = 1) -> None:
+    app.dependency_overrides[get_current_user] = lambda: SimpleNamespace(role=role, id=user_id)
 
 
 @pytest.mark.parametrize(
@@ -206,10 +233,11 @@ def test_public_lists_keep_three_sorts(api: TestClient, census: FakeCensus, sort
 
 
 @pytest.mark.parametrize("role", [UserRole.BROKER_USER, UserRole.BROKER_ADMIN])
-def test_brokers_have_no_portal_map(api: TestClient, census: FakeCensus, role: UserRole):
+def test_brokers_have_the_portal_map(api: TestClient, census: FakeCensus, role: UserRole):
     _as(role)
-    assert api.get(f"{PORTAL}/states/TX").status_code == 403
-    assert census.queries == []
+    assert api.get(f"{PORTAL}/states/TX").status_code == 200
+    assert api.get(f"{PORTAL}/states/TX/counties").status_code == 200
+    assert api.get(f"{PORTAL}/carriers/4382997").json()["phone"] == "5593447968"
 
 
 def test_the_portal_map_needs_a_login(api: TestClient):
@@ -296,7 +324,59 @@ def test_bad_counties_never_reach_the_query(api: TestClient, census: FakeCensus,
     assert census.queries == []
 
 
-def test_brokers_have_no_portal_county_map(api: TestClient, census: FakeCensus):
+def test_contact_card_for_a_clicked_carrier(api: TestClient, census: FakeCensus):
+    _as(UserRole.INSURANCE_AGENT)
+    card = api.get(f"{PORTAL}/carriers/4382997").json()
+    assert card == {
+        "usdot_number": 4382997,
+        "legal_name": "BIG NEW FLEET LLC",
+        "dba_name": "BNF",
+        "status": "ACTIVE",
+        "mc_number": "MC1270630",
+        "phone": "5593447968",
+        "cell_phone": None,  # all zeros: no number
+        "email": "dispatch@bnf.example",
+        "address": "838 ROSAZZO LN, MANTECA, CA 95337",
+        "mailing_address": "PO BOX 12, MANTECA, CA 95336",
+        "power_units": 4,
+        "drivers": 5,
+        "registered_on": "2021-06-28",
+    }
+    assert census.queries[-1]["$where"] == "dot_number='4382997'"
+    assert api.get(f"{PORTAL}/carriers/123").status_code == 404
+
+
+def test_contact_cards_are_not_public(api: TestClient, census: FakeCensus):
+    assert api.get(f"{PORTAL}/carriers/4382997").status_code == 401
+    assert api.get(f"{BASE}/carriers/4382997").status_code == 404  # no public route
+    _as(UserRole.CLIENT_USER)  # the carrier portal's map has no contact cards
+    assert api.get(f"{PORTAL}/carriers/4382997").status_code == 403
+    assert census.queries == []
+
+
+def test_contact_cards_are_limited_per_user(
+    api: TestClient, census: FakeCensus, monkeypatch: pytest.MonkeyPatch
+):
+    from app.api.v1.routes import directory
+    from app.core.config import get_settings
+    from app.core.rate_limit import limiter
+
+    monkeypatch.setattr(get_settings(), "rate_limit_enabled", True)
+    monkeypatch.setattr(directory, "CONTACT_CARDS_PER_USER", (2, 3600.0))
+    limiter.reset()
+    try:
+        _as(UserRole.BROKER_USER, user_id=7)
+        assert api.get(f"{PORTAL}/carriers/4382997").status_code == 200
+        assert api.get(f"{PORTAL}/carriers/4382997").status_code == 200
+        assert api.get(f"{PORTAL}/carriers/4382997").status_code == 429
+        _as(UserRole.BROKER_USER, user_id=8)  # someone else still can
+        assert api.get(f"{PORTAL}/carriers/4382997").status_code == 200
+    finally:
+        limiter.reset()
+
+
+@pytest.mark.parametrize("path", [f"{PORTAL}/carriers/0", f"{PORTAL}/carriers/abc"])
+def test_bad_usdot_never_reaches_the_query(api: TestClient, census: FakeCensus, path: str):
     _as(UserRole.BROKER_USER)
-    assert api.get(f"{PORTAL}/states/TX/counties").status_code == 403
+    assert api.get(path).status_code == 422
     assert census.queries == []

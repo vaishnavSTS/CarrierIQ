@@ -6,8 +6,9 @@ from STATES, the letter is one A-Z character and a county three digits, so nothi
 reaches a query as text. State and county totals change slowly, so they are kept in memory for
 STATE_COUNTS_TTL.
 
-Only what tells carriers apart is returned (name, city, county code, USDOT, fleet, drivers,
-registration date): never phones, emails or officers.
+Lists return only what tells carriers apart (name, city, county code, USDOT, fleet, drivers,
+registration date): never phones, emails or officers. A carrier's phone, email and address come
+only from `contact`, one carrier at a time, for the logged-in portals' map.
 
 Interstate = census carrier_operation 'A'; active = status_code 'A', inactive = status_code 'I'
 (the census has no date for when a USDOT went inactive). Fleet sizes are what the
@@ -89,6 +90,26 @@ class DirectoryCarrier:
 
 
 @dataclass(frozen=True)
+class CarrierContact:
+    """One carrier's contact card on the portals' map: asked for one carrier at a time, when it
+    is clicked, never as part of a list."""
+
+    usdot_number: int
+    legal_name: str
+    dba_name: str | None
+    status: str | None  # ACTIVE / INACTIVE
+    mc_number: str | None  # e.g. MC1270630
+    phone: str | None
+    cell_phone: str | None
+    email: str | None
+    address: str | None
+    mailing_address: str | None  # only when it differs from the physical address
+    power_units: int | None
+    drivers: int | None
+    registered_on: date | None
+
+
+@dataclass(frozen=True)
 class RecentCarrier:
     usdot_number: int
     legal_name: str
@@ -112,6 +133,24 @@ class StatePage:
 def is_county_code(value: object) -> bool:
     """A county code as the census writes it: three digits (so it is safe in a query)."""
     return isinstance(value, str) and len(value) == 3 and value.isdigit()
+
+
+def _phone(value: object) -> str | None:
+    """A US phone number as 10 digits; None when missing or not a phone number."""
+    digits = "".join(ch for ch in str(value or "") if ch.isdigit())
+    if len(digits) == 11 and digits.startswith("1"):
+        digits = digits[1:]
+    return digits if len(digits) == 10 and set(digits) != {"0"} else None
+
+
+def _address(row: dict, street: str, city: str, state: str, zip_code: str) -> str | None:
+    """'838 ROSAZZO LN, MANTECA, CA 95337' from the census's parts; None when there is none."""
+    parts = [str(row.get(k) or "").strip() for k in (street, city)]
+    region = " ".join(
+        p for p in (str(row.get(state) or "").strip(), str(row.get(zip_code) or "").strip()) if p
+    )
+    text = ", ".join(p for p in [*parts, region] if p)
+    return text or None
 
 
 def _int(value: object) -> int | None:
@@ -309,6 +348,55 @@ class CarrierDirectory:
             carriers=[c for c in carriers if c is not None],
             has_more=len(rows) > size,
             county=county,
+        )
+
+    # --- One carrier's contact card (the portals' map only) --------------------------------------
+
+    def contact(self, usdot_number: int) -> CarrierContact | None:
+        """A carrier's name, contact details and address from the census; None when unknown."""
+        rows = self.client.get_rows(
+            self.dataset,
+            {
+                "$select": (
+                    "dot_number, legal_name, dba_name, status_code, docket1prefix, docket1, "
+                    "phone, cell_phone, email_address, phy_street, phy_city, phy_state, phy_zip, "
+                    "carrier_mailing_street, carrier_mailing_city, carrier_mailing_state, "
+                    "carrier_mailing_zip, power_units, total_drivers, add_date"
+                ),
+                "$where": f"dot_number='{int(usdot_number)}'",
+                "$limit": "1",
+            },
+        )
+        if not rows:
+            return None
+        row = rows[0]
+        address = _address(row, "phy_street", "phy_city", "phy_state", "phy_zip")
+        mailing = _address(
+            row,
+            "carrier_mailing_street",
+            "carrier_mailing_city",
+            "carrier_mailing_state",
+            "carrier_mailing_zip",
+        )
+        status = row.get("status_code")
+        prefix = str(row.get("docket1prefix") or "").strip().upper()
+        docket = str(row.get("docket1") or "").strip()
+        return CarrierContact(
+            usdot_number=int(usdot_number),
+            legal_name=str(row.get("legal_name") or "").strip(),
+            dba_name=(str(row["dba_name"]).strip() or None) if row.get("dba_name") else None,
+            status="ACTIVE" if status == "A" else ("INACTIVE" if status else None),
+            mc_number=f"{prefix}{docket}" if prefix and docket.isdigit() else None,
+            phone=_phone(row.get("phone")),
+            cell_phone=_phone(row.get("cell_phone")),
+            email=(str(row["email_address"]).strip().lower() or None)
+            if row.get("email_address")
+            else None,
+            address=address,
+            mailing_address=mailing if mailing and mailing != address else None,
+            power_units=_int(row.get("power_units")),
+            drivers=_int(row.get("total_drivers")),
+            registered_on=_day(row.get("add_date")),
         )
 
     def _carrier(self, row: dict) -> DirectoryCarrier | None:

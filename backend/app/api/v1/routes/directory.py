@@ -5,9 +5,12 @@ Public (the audience pages, no login): every state's totals and a state's totals
 for a state (or one of its counties) only its first PUBLIC_LIST_SIZE newest, largest or A-Z
 carriers, so the directory can't be read off it. Each visitor has a limit (PUBLIC_REQUESTS_PER_IP).
 
-Logged in (the carrier and insurance agent portals' map page): every carrier, PAGE_SIZE a page.
+Logged in (the portals' map page: carriers, brokers, insurance agents and STS staff): every
+carrier, PAGE_SIZE a page, and in the broker portal a clicked carrier's contact card (phone, email,
+address), CONTACT_CARDS_PER_USER at most.
 
-Only what tells carriers apart is returned: never phones, emails or officers.
+Lists return only what tells carriers apart: never phones, emails or officers. Contact details
+are only on the logged-in contact card, one carrier at a time.
 
 Read-only, from FMCSA's Company Census File on data.transportation.gov.
 """
@@ -25,12 +28,13 @@ from app.core.config import get_settings
 from app.core.exceptions import ForbiddenError, NotFoundError
 from app.core.rate_limit import limiter
 from app.ingestion.socrata_client import SocrataClient
-from app.models.enums import UserRole
 from app.services.carrier_directory import PAGE_SIZE, STATES, CarrierDirectory, Sort, Status
 
 PUBLIC_LIST_SIZE = 10
 MAX_PAGES = 10_000
 PUBLIC_REQUESTS_PER_IP = (120, 3600.0)
+# A carrier's contact card on the portals' map: plenty for real use, too few to copy a directory.
+CONTACT_CARDS_PER_USER = (300, 3600.0)
 
 
 def limit_public_map(request: Request) -> None:
@@ -45,9 +49,9 @@ public_router = APIRouter(
 
 
 def require_map_user(user: CurrentUser) -> None:
-    """The portals' map: carriers, insurance agents and STS staff (not brokers)."""
-    if not (user.role.is_client or user.role.is_staff or user.role == UserRole.INSURANCE_AGENT):
-        raise ForbiddenError("The carrier map is in the carrier and insurance agent portals")
+    """The portals' map: carriers, brokers, insurance agents and STS staff."""
+    if not (user.role.is_client or user.role.is_staff or user.role.is_broker):
+        raise ForbiddenError("The carrier map is in the portals")
 
 
 router = APIRouter(
@@ -76,6 +80,22 @@ class PublicCarrierOut(BaseModel):
     registered_on: date | None
     fleet_needs_check: bool
     rated_on: date | None = None
+
+
+class CarrierContactOut(BaseModel):
+    usdot_number: int
+    legal_name: str
+    dba_name: str | None
+    status: str | None
+    mc_number: str | None
+    phone: str | None
+    cell_phone: str | None
+    email: str | None
+    address: str | None
+    mailing_address: str | None
+    power_units: int | None
+    drivers: int | None
+    registered_on: date | None
 
 
 class RecentCarrierOut(BaseModel):
@@ -173,6 +193,26 @@ def state_carriers(
 ):
     """Every carrier in the state (or one of its counties), PAGE_SIZE a page."""
     return _state_page(directory, state, sort, letter, page, status, PAGE_SIZE, county)
+
+
+@router.get("/carriers/{usdot_number}", response_model=CarrierContactOut)
+def carrier_contact(
+    directory: Directory,
+    user: CurrentUser,
+    usdot_number: Annotated[int, Path(ge=1, lt=100_000_000)],
+):
+    """One carrier's contact card (phone, email, address), when it is clicked on the map. The
+    broker portal's map only (brokers and insurance agents, and STS staff), limited per user, so
+    the map can't be used to copy contact lists."""
+    if not (user.role.is_broker or user.role.is_staff):
+        raise ForbiddenError("Contact details are on the broker portal's map")
+    if get_settings().rate_limit_enabled:
+        limit, window = CONTACT_CARDS_PER_USER
+        limiter.hit(f"map-contact:{user.id}", limit, window)
+    card = directory.contact(usdot_number)
+    if card is None:
+        raise NotFoundError(f"No carrier with USDOT {usdot_number}")
+    return card
 
 
 def _counties(directory: CarrierDirectory, state: str, status: Status) -> list:

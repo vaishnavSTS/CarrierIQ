@@ -78,7 +78,7 @@ export const getPublicStateCarriers = (
   return apiGet<PublicStateList>(`/public/directory/states/${state}?${params}`)
 }
 
-/** Logged in (carrier and insurance agent portals): the same totals. */
+/** Logged in (the carrier, broker and insurance agent portals): the same totals. */
 export const getStateCounts = (status: DirectoryStatus) =>
   apiGet<StateCount[]>(`/directory/states?status=${status}`)
 
@@ -100,3 +100,25 @@ export const getStateCarriers = (
   if (county) params.set('county', county)
   return apiGet<PublicStateList>(`/directory/states/${state}?${params}`)
 }
+
+/** Logged in: one clicked carrier's contact card (the portals' map only). */
+export interface CarrierContact {
+  usdot_number: number
+  legal_name: string
+  dba_name: string | null
+  status: 'ACTIVE' | 'INACTIVE' | null
+  mc_number: string | null
+  /** 10 digits */
+  phone: string | null
+  cell_phone: string | null
+  email: string | null
+  address: string | null
+  /** Only when it differs from the address */
+  mailing_address: string | null
+  power_units: number | null
+  drivers: number | null
+  registered_on: string | null
+}
+
+export const getCarrierContact = (usdot: number) =>
+  apiGet<CarrierContact>(`/directory/carriers/${usdot}`)

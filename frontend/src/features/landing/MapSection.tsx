@@ -24,11 +24,13 @@ import {
   getStateCounts,
   type CountyCount,
   type DirectorySort,
+  type PublicCarrier,
   type DirectoryStatus,
   type StateCount,
 } from '../../api/directory'
 import { formatDate } from '../../utils/format'
 import { countiesOf, countyLabel, useCountyShapes } from '../directory/counties'
+import { CarrierCardDialog } from '../directory/CarrierCardDialog'
 import { CountyMap } from '../directory/CountyMap'
 import { number, stateFips, UsMap } from '../directory/UsMap'
 import { CountUp } from './CountUp'
@@ -39,7 +41,7 @@ import { reveal, SectionHeading } from './landingParts'
  * its inactive ones; click one for its newest, largest or A–Z carriers. The map then shows that
  * state's counties: click one and the list narrows to it (a drop-down does the same on phones).
  * On the public audience pages (no login) a state shows its first 10 carriers, each opening the
- * free search. In the carrier and insurance agent portals (`portal`) it lists every carrier, 25 a
+ * free search. In the carrier, broker and insurance agent portals (`portal`) it lists every carrier, 25 a
  * page, each opening its page in the portal (`carrierLink`). No wording here about where the data
  * comes from (the public pages' rule).
  */
@@ -88,6 +90,7 @@ export function MapSection({
   allowInactive = false,
   portal = false,
   carrierLink,
+  contactCards = false,
 }: {
   number?: string
   title: ReactNode
@@ -100,6 +103,8 @@ export function MapSection({
   portal?: boolean
   /** In a portal: where a carrier opens, or null when it can't be opened there */
   carrierLink?: (usdot: number) => string | null
+  /** The broker portal: a clicked carrier opens a card with its phone, email and address */
+  contactCards?: boolean
 }) {
   const [status, setStatus] = useState<DirectoryStatus>('active')
   const inactive = status === 'inactive'
@@ -264,6 +269,7 @@ export function MapSection({
                 signUp={signUp}
                 portal={portal}
                 carrierLink={carrierLink}
+                contactCards={contactCards}
                 county={currentCounty}
                 counties={countyOptions}
                 onCounty={setCounty}
@@ -291,6 +297,7 @@ function StateList({
   signUp,
   portal,
   carrierLink,
+  contactCards,
   county,
   counties,
   onCounty,
@@ -300,6 +307,7 @@ function StateList({
   signUp?: { to: string; label: string }
   portal: boolean
   carrierLink?: (usdot: number) => string | null
+  contactCards: boolean
   /** The county the list is narrowed to, or null for the whole state */
   county: CountyOption | null
   /** The state's counties, most carriers first (the drop-down) */
@@ -335,6 +343,7 @@ function StateList({
         ? getStateCarriers(state.state, sort, letter, page, status, county?.county ?? null)
         : getPublicStateCarriers(state.state, sort, letter, status, county?.county ?? null),
   })
+  const [open, setOpen] = useState<PublicCarrier | null>(null)
   const linkFor = (usdot: number) => (portal ? (carrierLink?.(usdot) ?? null) : `/try?q=${usdot}`)
   // The census has no date for going inactive: for inactive carriers "newest" means registered.
   const note =
@@ -495,7 +504,17 @@ function StateList({
         {list.data?.carriers.map((c) => (
           <li key={c.usdot_number} className="flex items-start gap-3 px-4 py-2.5">
             <div className="min-w-0 flex-1">
-              {linkFor(c.usdot_number) ? (
+              {/* The broker portal: its card, with contact details. Elsewhere: it opens. */}
+              {contactCards ? (
+                <button
+                  type="button"
+                  onClick={() => setOpen(c)}
+                  title="See its contact details"
+                  className="text-left font-medium text-slate-900 hover:text-accent-strong hover:underline"
+                >
+                  {c.legal_name}
+                </button>
+              ) : linkFor(c.usdot_number) ? (
                 <Link
                   to={linkFor(c.usdot_number)!}
                   title={portal ? 'Open this carrier' : 'Open it with your free search'}
@@ -541,8 +560,8 @@ function StateList({
       {/* Public: the first 10 only, the rest after logging in. */}
       {!portal && list.data?.has_more && (
         <p className="border-t border-slate-100 px-4 py-2.5 text-xs text-slate-600">
-          Showing the first 10. Every carrier is on the map in the carrier and insurance agent
-          portals.
+          Showing the first 10. Every carrier is on the map in the carrier, broker and insurance
+          agent portals.
         </p>
       )}
 
@@ -581,6 +600,13 @@ function StateList({
             <ArrowRight className="size-4" aria-hidden />
           </Link>
         </div>
+      )}
+      {contactCards && open && (
+        <CarrierCardDialog
+          carrier={open}
+          openTo={linkFor(open.usdot_number)}
+          onClose={() => setOpen(null)}
+        />
       )}
     </div>
   )
