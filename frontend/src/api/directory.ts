@@ -27,8 +27,8 @@ export interface PublicCarrier {
   rated_on?: string | null
 }
 
-/** 'new' (last 30 days) and 'rated' (Satisfactory rating) are in the portals' map only. */
-export type DirectorySort = 'newest' | 'largest' | 'az' | 'new' | 'rated'
+/** 'new' (last 30 days), 'rated' (Satisfactory rating) and 'hazmat' are in the portal's map only. */
+export type DirectorySort = 'newest' | 'largest' | 'az' | 'new' | 'rated' | 'hazmat'
 /** Active or inactive USDOT numbers */
 export type DirectoryStatus = 'active' | 'inactive'
 

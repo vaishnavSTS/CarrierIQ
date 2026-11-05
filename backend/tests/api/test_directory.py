@@ -226,7 +226,7 @@ def test_rating_date_only_for_a_satisfactory_rating():
     assert conditional is not None and conditional.rated_on is None
 
 
-@pytest.mark.parametrize("sort", ["new", "rated"])
+@pytest.mark.parametrize("sort", ["new", "rated", "hazmat"])
 def test_public_lists_keep_three_sorts(api: TestClient, census: FakeCensus, sort: str):
     assert api.get(f"{BASE}/states/TX?sort={sort}").status_code == 422
     assert census.queries == []
@@ -389,3 +389,13 @@ def test_carriers_have_no_portal_map(api: TestClient, census: FakeCensus, role: 
     assert api.get(f"{PORTAL}/states/TX").status_code == 403
     assert api.get(f"{PORTAL}/states/TX/counties").status_code == 403
     assert census.queries == []
+
+
+def test_portal_lists_hazmat_carriers(api: TestClient, census: FakeCensus):
+    _as(UserRole.BROKER_USER)
+    assert api.get(f"{PORTAL}/states/TX?sort=hazmat&county=201").status_code == 200
+    query = census.queries[-1]
+    assert "hm_ind='Y'" in query["$where"] and "phy_cnty='201'" in query["$where"]
+    assert query["$order"].startswith("add_date DESC")
+    api.get(f"{PORTAL}/states/TX?sort=hazmat&status=inactive")
+    assert census.queries[-1]["$where"].startswith("status_code='I'")

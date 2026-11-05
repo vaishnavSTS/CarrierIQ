@@ -185,7 +185,7 @@ def county_counts(
 def state_carriers(
     directory: Directory,
     state: State,
-    sort: Literal["newest", "largest", "az", "new", "rated"] = "newest",
+    sort: Literal["newest", "largest", "az", "new", "rated", "hazmat"] = "newest",
     letter: Letter = None,
     page: Annotated[int, Query(ge=0, lt=MAX_PAGES)] = 0,
     status: Literal["active", "inactive"] = "active",

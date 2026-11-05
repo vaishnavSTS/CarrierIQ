@@ -56,8 +56,9 @@ REPORTED_FLEET_CHECK_UNITS = 1000
 REPORTED_FLEET_CHECK_YEARS = 5
 
 # "new": registered in the last NEW_DAYS days; "rated": a Satisfactory safety rating, newest
-# rating first (the portals' map only).
-Sort = Literal["newest", "largest", "az", "new", "rated"]
+# rating first; "hazmat": the census's hazmat indicator (HM_IND = Y), newest first (the portal's
+# map only).
+Sort = Literal["newest", "largest", "az", "new", "rated", "hazmat"]
 
 
 @dataclass(frozen=True)
@@ -317,6 +318,7 @@ class CarrierDirectory:
             "az": "legal_name, dot_number",
             "new": "add_date DESC, dot_number DESC",
             "rated": "safety_rating_date DESC, dot_number",
+            "hazmat": "add_date DESC, dot_number DESC",
         }[sort]
         if sort == "largest":
             where += " AND power_units IS NOT NULL"
@@ -325,6 +327,8 @@ class CarrierDirectory:
             where += f" AND add_date >= '{since}'"
         if sort == "rated":
             where += " AND safety_rating='S'"
+        if sort == "hazmat":
+            where += " AND hm_ind='Y'"
         rows = self.client.get_rows(
             self.dataset,
             {

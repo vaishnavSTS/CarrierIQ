@@ -7,6 +7,7 @@ import {
   Building2,
   CalendarPlus,
   Sparkles,
+  FlaskConical,
   MapPinned,
   Truck,
   type LucideIcon,
@@ -53,6 +54,8 @@ const SORTS: {
   note: string
   /** Only in the portals, and only for active carriers */
   portalOnly?: boolean
+  /** A portal tab that also lists inactive carriers */
+  withInactive?: boolean
 }[] = [
   { key: 'newest', label: 'Newest', icon: CalendarPlus, note: 'Newest USDOT registrations first.' },
   {
@@ -75,6 +78,14 @@ const SORTS: {
     icon: BadgeCheck,
     note: 'Carriers with a Satisfactory safety rating from an FMCSA audit, most recent first. A rating can be many years old: check its date.',
     portalOnly: true,
+  },
+  {
+    key: 'hazmat',
+    label: 'Hazmat',
+    icon: FlaskConical,
+    note: 'Carriers FMCSA’s registration records list as hauling hazardous materials, newest first. It is what the carrier registered, not a hazmat safety permit: check the permit before booking a placarded load.',
+    portalOnly: true,
+    withInactive: true,
   },
 ]
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
@@ -351,7 +362,7 @@ function StateList({
       ? 'Most recently registered first. The date a carrier went inactive isn’t recorded.'
       : SORTS.find((s) => s.key === sort)?.note
 
-  const tabs = SORTS.filter((s) => !s.portalOnly || (portal && !inactive))
+  const tabs = SORTS.filter((s) => !s.portalOnly || (portal && (!inactive || s.withInactive)))
   const compact = tabs.length > 3
 
   const choose = (next: DirectorySort) => {
