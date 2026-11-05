@@ -1,5 +1,6 @@
 import { ArrowRight, Check } from 'lucide-react'
-import { useEffect } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 
 import { AUDIENCE_PATH, forgetStoredAudience, type Audience } from '../features/audience/audience'
@@ -23,21 +24,39 @@ const CHOICES: {
     label: 'Carriers',
     title: 'I’m a carrier',
     text: 'See your company the way brokers do, and know what to fix.',
-    points: ['What a broker’s check would flag', 'Your Estimated ISS', 'DataQs challenges'],
+    points: [
+      'What a broker’s check flags',
+      'Your Estimated ISS',
+      'Violations that weigh most',
+      'MCS-150 update due date',
+      'DataQs challenges',
+    ],
   },
   {
     audience: 'broker',
     label: 'Freight brokers',
     title: 'I’m a freight broker',
     text: 'Vet any carrier before you book the load.',
-    points: ['A booking check on every carrier', 'Chameleon check', 'Compare up to 3'],
+    points: [
+      'Booking check on any carrier',
+      'Chameleon check',
+      'Shared phones & addresses',
+      'Compare up to 3 carriers',
+      'Dated Safety Score Report',
+    ],
   },
   {
     audience: 'agent',
     label: 'Insurance agents',
     title: 'I’m an insurance agent',
     text: 'Understand a trucking risk before you quote it.',
-    points: ['Filings and authority', 'Safety record and crashes', 'Fleet by VIN'],
+    points: [
+      'Liability, cargo & bond filings',
+      'Safety record and crashes',
+      'Trucks & trailers by VIN',
+      'Expected renewal month',
+      'Dated report for the file',
+    ],
   },
 ]
 
@@ -46,6 +65,64 @@ const CHOOSER_PHOTO_FIT: Record<Audience, string> = {
   carrier: 'inset-0 size-full object-[42%_30%]',
   broker: 'inset-0 size-full object-[35%_50%]',
   agent: 'inset-0 size-full object-[70%_50%]',
+}
+
+/** How long each point shows on a card. */
+const POINT_MS = 2600
+
+/**
+ * One glass bar per card whose point changes every few seconds, sliding up (the cards start a
+ * little apart, so they don't change together), with a dot for each point. Screen readers get the
+ * whole list; with reduced motion the bar stays on the first point.
+ */
+function CyclingPoint({ points, start }: { points: string[]; start: number }) {
+  const reduceMotion = useReducedMotion()
+  const [index, setIndex] = useState(0)
+
+  useEffect(() => {
+    if (reduceMotion) return
+    let timer: number | undefined
+    const begin = window.setTimeout(() => {
+      setIndex((n) => (n + 1) % points.length)
+      timer = window.setInterval(() => setIndex((n) => (n + 1) % points.length), POINT_MS)
+    }, POINT_MS + start)
+    return () => {
+      window.clearTimeout(begin)
+      window.clearInterval(timer)
+    }
+  }, [points.length, start, reduceMotion])
+
+  return (
+    <span className="mt-4 block">
+      <span className="flex items-center gap-2.5 rounded-full bg-white/15 py-1.5 pl-3 pr-3.5 ring-1 ring-white/20 backdrop-blur">
+        <Check className="size-4 shrink-0 text-[var(--hero-highlight)]" aria-hidden />
+        <span className="sr-only">{points.join(', ')}</span>
+        <span aria-hidden className="relative h-5 min-w-0 flex-1 overflow-hidden">
+          <AnimatePresence initial={false}>
+            <motion.span
+              key={index}
+              initial={{ y: '100%', opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '-100%', opacity: 0 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute inset-0 truncate text-sm font-medium text-white"
+            >
+              {points[index]}
+            </motion.span>
+          </AnimatePresence>
+        </span>
+      </span>
+      {/* A dot per point under the bar, so the bar keeps its whole width for the words. */}
+      <span aria-hidden className="mt-2 flex gap-1 pl-3">
+        {points.map((point, n) => (
+          <span
+            key={point}
+            className={`h-1.5 rounded-full transition-all duration-300 ${n === index ? 'w-4 bg-[var(--hero-highlight)]' : 'w-1.5 bg-white/40'}`}
+          />
+        ))}
+      </span>
+    </span>
+  )
 }
 
 /**
@@ -67,17 +144,26 @@ export function AudienceChooserPage() {
     <>
       <div className="hero-gradient">
         <section className="mx-auto max-w-6xl px-4 pb-24 pt-10 md:pt-14">
-          <h1 className="text-center text-4xl font-semibold text-white md:text-5xl lg:text-6xl">
-            Welcome to Carrier Safety Scan
+          {/* A small "Welcome to" over the name in gold, then the invitation in the serif italic. */}
+          <h1 className="text-center font-semibold">
+            <span className="font-label block text-sm uppercase tracking-[0.3em] text-white/90 md:text-base">
+              Welcome to
+            </span>
+            <span className="mt-2 block text-4xl text-[var(--hero-highlight)] md:text-5xl lg:text-6xl">
+              Carrier Safety Scan
+            </span>
           </h1>
-          <p className="mx-auto mt-4 max-w-4xl text-center text-base text-white/90 md:text-lg">
-            Try a free carrier search, or choose an option below to see what Carrier Safety Scan
-            does for you.
+          {/* .font-accent sizes itself from its parent, so the size is set on the paragraph. */}
+          <p className="mx-auto mt-4 max-w-4xl text-center text-lg leading-snug text-white/90 md:text-xl">
+            <span className="font-accent">
+              Try a free carrier search, or choose an option below to see what Carrier Safety Scan
+              does for you.
+            </span>
           </p>
 
           {/* The free search, high enough to be seen without scrolling. */}
           <div className="mt-7">
-            <HeroTryForm centered chips={false} />
+            <HeroTryForm centered chips={false} note={false} />
           </div>
 
           <LiveStrip />
@@ -89,7 +175,7 @@ export function AudienceChooserPage() {
                 key={audience}
                 type="button"
                 onClick={() => choose(audience)}
-                className="group relative flex h-[22rem] flex-col justify-end overflow-hidden rounded-3xl text-left shadow-2xl shadow-black/30 ring-1 ring-white/25 transition-transform duration-300 hover:-translate-y-1.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--hero-highlight)]"
+                className="group relative flex h-[24rem] flex-col justify-end overflow-hidden rounded-3xl text-left shadow-2xl shadow-black/30 ring-1 ring-white/25 transition-transform duration-300 hover:-translate-y-1.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--hero-highlight)]"
               >
                 <img
                   src={CHOOSER_PHOTO[audience].src}
@@ -109,18 +195,8 @@ export function AudienceChooserPage() {
                     {title}
                   </span>
                   <span className="mt-2 text-sm leading-relaxed text-white/85">{text}</span>
-                  <span className="mt-4 flex flex-wrap gap-1.5">
-                    {points.map((point) => (
-                      <span
-                        key={point}
-                        className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-xs text-white ring-1 ring-white/20 backdrop-blur"
-                      >
-                        <Check className="size-3 text-[var(--hero-highlight)]" aria-hidden />
-                        {point}
-                      </span>
-                    ))}
-                  </span>
-                  <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-white">
+                  <CyclingPoint points={points} start={i * 900} />
+                  <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-white">
                     Continue
                     <ArrowRight
                       className="size-4 transition-transform group-hover:translate-x-1"

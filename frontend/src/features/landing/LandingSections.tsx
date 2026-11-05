@@ -38,10 +38,13 @@ type SearchMode = (typeof SEARCH_MODES)[number]['id']
 export function HeroTryForm({
   centered = false,
   chips = true,
+  note = true,
 }: {
   centered?: boolean
   /** The "Search by" chips; off where space is short (the home page) */
   chips?: boolean
+  /** The "One free search" line under the box; off on the home page */
+  note?: boolean
 }) {
   const [query, setQuery] = useState('')
   const [mode, setMode] = useState<SearchMode | null>(null)
@@ -112,9 +115,11 @@ export function HeroTryForm({
           ))}
         </div>
       )}
-      <p className={`mt-2.5 text-center text-xs text-white/90 ${centered ? '' : 'lg:text-left'}`}>
-        One free search, no account needed.
-      </p>
+      {note && (
+        <p className={`mt-2.5 text-center text-xs text-white/90 ${centered ? '' : 'lg:text-left'}`}>
+          One free search, no account needed.
+        </p>
+      )}
     </form>
   )
 }
