@@ -11,6 +11,7 @@ import reportPage2 from '../../assets/report-sample-2.webp'
 import stsLogo from '../carrier-profile/packet/sts-logo.png'
 import { Accent, reveal, SectionHeading } from './landingParts'
 import { ReportSampleMotion } from './ReportSampleMotion'
+import { PartnersStrip } from './PartnersStrip'
 import { MembershipsStrip } from './StsVoices'
 
 /** From skytransportsolutions.com. Only what its pages agree on: no client counts or rankings. */
@@ -339,6 +340,7 @@ export function AboutStsSection({ dataQs = false }: { dataQs?: boolean }) {
         </div>
       </motion.div>
       <MembershipsStrip />
+      <PartnersStrip />
     </div>
   )
 }

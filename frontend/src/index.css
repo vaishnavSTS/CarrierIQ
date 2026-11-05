@@ -1153,3 +1153,12 @@ body {
     animation: none;
   }
 }
+
+/* The partner logos have dark lettering: in the dark theme their strip stays light. */
+:root[data-theme='dark'] .partner-strip {
+  background: #e8edf7;
+  border-color: #cbd5e1;
+  /* No fade at the ends: on the dark page it would smudge the light strip's edges. */
+  -webkit-mask-image: none;
+  mask-image: none;
+}

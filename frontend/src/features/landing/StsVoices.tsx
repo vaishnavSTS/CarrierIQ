@@ -5,10 +5,12 @@ import { useEffect, useState } from 'react'
 import { Accent, reveal, SectionHeading } from './landingParts'
 
 /*
- * What Sky Transport Solutions' clients say, word for word from skytransportsolutions.com (its
- * "Testimonials" section, read Nov 4, 2026). They are about STS's compliance services, not about
- * Carrier Safety Scan, and the section says so. Don't add or reword quotes: only real ones, with
- * the customer's permission.
+ * What Sky Transport Solutions' clients and partners say, word for word from
+ * skytransportsolutions.com (read Nov 4-5, 2026): the home page's "Testimonials", the Partner
+ * Program page's "What partners say", the Affiliate Program page and the Sky Drug Testing page.
+ * They are about STS's services, not about Carrier Safety Scan, and the section says so. STS (the
+ * user) asked for them on Nov 5, 2026. Don't add or reword quotes: only real ones, with the
+ * customer's permission. No star ratings: the quotes aren't rated reviews.
  */
 const QUOTES = [
   {
@@ -30,6 +32,79 @@ const QUOTES = [
     text: 'The best in the business for a reason. Professional, knowledgeable, and always responsive. Highly recommend!',
     from: 'Apex Cargo Movers',
     topic: 'Service',
+  },
+  // Partner Program page
+  {
+    text: 'honestly didn’t think we’d use it this much… but our carriers keep asking for authority help and we just send the work order. saves us so many back and forths',
+    from: 'Marcus T., Aperio Logistics Group',
+    topic: 'Partner program',
+  },
+  {
+    text: 'Our grads used to leave with a CDL and a lot of questions. Now we can offer the hire packet stuff (drug test, clearinghouse, etc) without my staff becoming a DMV office lol. parents ask about it on tour days now',
+    from: 'Denise R., Heartland Trucking School',
+    topic: 'Partner program',
+  },
+  {
+    text: 'Works. communication is solid. Wish turnaround was always same-day but that’s not on them half the time… state stuff takes what it takes. Still worth it for us.',
+    from: 'Chris M., Horizon Forwarding',
+    topic: 'Partner program',
+  },
+  {
+    text: 'we run training AND logistics so things get messy fast. STS handles the filing side while we stay with the student/client. big help.',
+    from: 'J. Alvarez, Iron Highway Logistics and CDL Certifications',
+    topic: 'Partner program',
+  },
+  {
+    text: 'Binding gets stuck when MC/BOC isn’t moving… this fixed that for a lot of our book. We still own the insured. They just do the filings. 👍',
+    from: 'Priya S., Reliance Truckers Insurance Agency',
+    topic: 'Partner program',
+  },
+  {
+    text: 'short version: students love having options after graduation. we love not drowning in paperwork. win win',
+    from: 'Nina K., Sierra CDL Training',
+    topic: 'Partner program',
+  },
+  {
+    text: 'UCR season used to be a nightmare for our commercial clients… now we just package it with renewals. Not flashy. Just works. And we set our own price which was the whole point for me.',
+    from: 'Robert H., Sierra Carrier Insurance Company',
+    topic: 'Partner program',
+  },
+  // Affiliate Program page
+  {
+    text: 'We started referring customers from our dealership and saw immediate trust from our buyers. STS keeps the process smooth and updates us quickly.',
+    from: 'R. Singh, Fleet Sales Manager',
+    topic: 'Affiliate program',
+  },
+  {
+    text: 'As a consultant, I need a backend team I can count on. Their permit and compliance execution has helped me serve clients without added stress.',
+    from: 'M. Alvarez, Transportation Consultant',
+    topic: 'Affiliate program',
+  },
+  {
+    text: 'The partner setup was simple, and the team is responsive. It feels like an extension of our own business when clients need compliance support.',
+    from: 'J. Carter, Service Center Owner',
+    topic: 'Affiliate program',
+  },
+  // Sky Drug Testing page
+  {
+    text: 'Their DOT compliance expertise and quick turnaround keep our 150+ fleet running.',
+    from: 'Robert Johnson, CEO, American Eagle Transport',
+    topic: 'Drug testing',
+  },
+  {
+    text: 'Their bilingual support and understanding of our community needs makes all the difference.',
+    from: 'Carlos Rodriguez, Owner, Rodriguez Freight Solutions',
+    topic: 'Drug testing',
+  },
+  {
+    text: 'Punjabi-speaking staff makes our drivers feel comfortable during testing.',
+    from: 'Simran Kaur, Fleet Manager, Golden State Logistics',
+    topic: 'Drug testing',
+  },
+  {
+    text: 'Staff speaks Punjabi and explains everything clearly. Quick results and very professional.',
+    from: 'Harpreet Singh, Owner-Operator Driver',
+    topic: 'Drug testing',
   },
 ]
 
@@ -54,10 +129,10 @@ export function StsTestimonials({ number }: { number?: string }) {
         eyebrow="In their words"
         title={
           <>
-            What Sky Transport Solutions’ <Accent>clients say</Accent>
+            What Sky Transport Solutions’ <Accent>clients and partners say</Accent>
           </>
         }
-        aside="Trucking companies on the compliance work of Sky Transport Solutions, the team behind Carrier Safety Scan."
+        aside="Trucking companies and partners on the work of Sky Transport Solutions, the team behind Carrier Safety Scan."
       />
       <motion.div
         {...reveal()}
@@ -102,27 +177,28 @@ export function StsTestimonials({ number }: { number?: string }) {
           </div>
         </figure>
 
-        <ul className="grid gap-3">
+        <ul className="grid min-w-0 max-h-[30rem] grid-cols-1 content-start gap-2 overflow-y-auto overflow-x-hidden pr-1">
           {QUOTES.map((q, i) => (
-            <li key={q.from}>
+            <li key={q.from} className="min-w-0">
               <button
                 type="button"
                 onClick={() => setIndex(i)}
-                className={`flex h-full w-full items-center justify-between gap-3 rounded-2xl px-5 py-4 text-left ring-1 transition-colors ${
+                className={`flex w-full items-center justify-between gap-3 rounded-2xl px-4 py-2.5 text-left ring-1 transition-colors ${
                   i === index
                     ? 'bg-surface text-slate-950 shadow-lg ring-amber-300'
                     : 'bg-surface/70 text-slate-700 ring-slate-200 hover:bg-surface'
                 }`}
               >
-                <span className="font-semibold">{q.from}</span>
-                <span className="text-xs text-slate-500">{q.topic}</span>
+                <span className="min-w-0 truncate text-sm font-semibold">{q.from}</span>
+                <span className="shrink-0 text-xs text-slate-500">{q.topic}</span>
               </button>
             </li>
           ))}
         </ul>
       </motion.div>
       <p className="mt-4 text-center text-xs text-slate-500">
-        From skytransportsolutions.com. About Sky Transport Solutions’ compliance services.
+        From skytransportsolutions.com. About Sky Transport Solutions’ services, not Carrier Safety
+        Scan.
       </p>
     </div>
   )
