@@ -22,6 +22,7 @@ import { AudienceChooserPage } from './pages/AudienceChooserPage'
 import { LandingPage } from './pages/LandingPage'
 import { ContactPage } from './pages/ContactPage'
 import { MethodologyPage } from './pages/MethodologyPage'
+import { SourcesPage } from './pages/SourcesPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { InsuranceGoogleSignupPage } from './pages/InsuranceGoogleSignupPage'
 import { InsuranceRegisterPage } from './pages/InsuranceRegisterPage'
@@ -66,6 +67,7 @@ export const router = createBrowserRouter([
       { path: 'for-insurance-agents/portal', element: <PortalTourPage audience="agent" /> },
       { path: 'contact', element: <ContactPage /> },
       { path: 'methodology', element: <MethodologyPage /> },
+      { path: 'sources', element: <SourcesPage /> },
       { path: 'c/:usdot', element: <CarrierLinkPage /> },
       { path: 'try', element: <TryNowPage /> },
       { path: 'try/:usdot', element: <TryCarrierPage /> },
