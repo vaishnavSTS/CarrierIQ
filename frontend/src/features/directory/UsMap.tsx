@@ -1,6 +1,7 @@
 import { geoPath } from 'd3-geo'
 import type { Feature, Geometry } from 'geojson'
-import { useMemo, useState, type MouseEvent } from 'react'
+import { motion, useReducedMotion } from 'motion/react'
+import { useMemo, useState, type KeyboardEvent, type MouseEvent } from 'react'
 import { feature } from 'topojson-client'
 import type { GeometryCollection, Topology } from 'topojson-specification'
 import usAtlas from 'us-atlas/states-albers-10m.json'
@@ -9,8 +10,9 @@ import type { StateCount } from '../../api/directory'
 
 /*
  * The US map: each state shaded by how many active interstate carriers it has, a card on hover,
- * and a click (or Enter) picks the state. Used by the portals' Carrier map page and the public
- * audience pages.
+ * and a click (or Enter) picks the state: it pops out, bigger and above the rest with a shadow and
+ * a gold outline, and the others fade back; clicking it again puts it back. No focus box on click.
+ * Used by the public audience pages (features/landing/MapSection.tsx).
  */
 
 type StateProps = { name: string }
@@ -21,6 +23,11 @@ const STATE_SHAPES = (
   }
 ).features
 const path = geoPath() // the shapes are already projected (Albers USA, 975 × 610)
+const WIDTH = 975
+const HEIGHT = 610
+const POP_SIZE = 150
+const POP_MIN = 1.35
+const POP_MAX = 4
 
 /** Darker blue for more carriers: six shades, split by rank so every shade is used. */
 export const SHADES = ['#dbe7ff', '#b7cdff', '#86a8ff', '#5179f0', '#2a4fc9', '#101853']
@@ -34,9 +41,11 @@ export function UsMap({
 }: {
   counts: StateCount[] | undefined
   selected: string | null
-  onSelect: (state: string) => void
+  /** A state's code, or null to go back to the whole US */
+  onSelect: (state: string | null) => void
 }) {
   const [hover, setHover] = useState<{ state: StateCount; x: number; y: number } | null>(null)
+  const reduceMotion = useReducedMotion()
 
   const byName = useMemo(() => new Map((counts ?? []).map((s) => [s.name, s])), [counts])
   const shade = useMemo(() => {
@@ -53,38 +62,79 @@ export function UsMap({
     setHover({ state, x: event.clientX - box.left, y: event.clientY - box.top })
   }
 
+  // The picked state pops out: it grows in its own place, above the rest, with a shadow. Small
+  // states grow more (to about POP_SIZE across), large ones a little (POP_MIN), never past POP_MAX.
+  const selectedName = (counts ?? []).find((s) => s.state === selected)?.name
+  const selectedShape = STATE_SHAPES.find((s) => s.properties.name === selectedName)
+  const pop = useMemo(() => {
+    if (!selectedShape) return 1
+    const [[x0, y0], [x1, y1]] = path.bounds(selectedShape)
+    return Math.min(POP_MAX, Math.max(POP_MIN, POP_SIZE / Math.max(x1 - x0, y1 - y0)))
+  }, [selectedShape])
+
+  const shapeProps = (shape: (typeof STATE_SHAPES)[number]) => {
+    const state = byName.get(shape.properties.name)
+    return {
+      d: path(shape) ?? undefined,
+      fill: state ? shade(state.carriers) : '#e5e7eb',
+      onMouseMove: state ? (e: MouseEvent) => move(e, state) : undefined,
+      onMouseLeave: () => setHover(null),
+      onClick: () => state && onSelect(state.state === selected ? null : state.state),
+      tabIndex: state ? 0 : -1,
+      role: state ? 'button' : undefined,
+      'aria-label': state ? `${state.name}: ${number.format(state.carriers)} carriers` : undefined,
+      'aria-pressed': state ? state.state === selected : undefined,
+      onKeyDown: (e: KeyboardEvent<SVGPathElement>) => {
+        if (state && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault()
+          onSelect(state.state === selected ? null : state.state)
+        }
+      },
+    }
+  }
+
   return (
     <div>
       <div data-map className="relative">
-        <svg viewBox="0 0 975 610" className="h-auto w-full" role="img" aria-label="US map">
+        <svg
+          viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+          className="h-auto w-full overflow-visible"
+          role="img"
+          aria-label="US map"
+        >
           {STATE_SHAPES.map((shape) => {
             const state = byName.get(shape.properties.name)
-            const isSelected = state && state.state === selected
+            const isSelected = shape.properties.name === selectedName
             return (
               <path
                 key={shape.properties.name}
-                d={path(shape) ?? undefined}
-                fill={state ? shade(state.carriers) : '#e5e7eb'}
-                stroke={isSelected ? '#fbbf24' : '#ffffff'}
-                strokeWidth={isSelected ? 3 : 0.8}
-                className={`transition-[fill,opacity] duration-200 ${state ? 'cursor-pointer hover:opacity-80' : ''}`}
-                onMouseMove={state ? (e) => move(e, state) : undefined}
-                onMouseLeave={() => setHover(null)}
-                onClick={() => state && onSelect(state.state)}
-                tabIndex={state ? 0 : -1}
-                role={state ? 'button' : undefined}
-                aria-label={
-                  state ? `${state.name}: ${number.format(state.carriers)} carriers` : undefined
-                }
-                onKeyDown={(e) => {
-                  if (state && (e.key === 'Enter' || e.key === ' ')) {
-                    e.preventDefault()
-                    onSelect(state.state)
-                  }
-                }}
+                {...shapeProps(shape)}
+                stroke="#ffffff"
+                strokeWidth={0.8}
+                opacity={selectedName && !isSelected ? 0.5 : 1}
+                className={`outline-none transition-opacity duration-300 focus-visible:opacity-70 ${state ? 'cursor-pointer hover:opacity-80' : ''}`}
               />
             )
           })}
+          {/* The picked state again, on top, popped out. */}
+          {selectedShape && (
+            <motion.path
+              key={selectedName}
+              {...shapeProps(selectedShape)}
+              stroke="#fbbf24"
+              strokeWidth={2.5}
+              vectorEffect="non-scaling-stroke"
+              initial={reduceMotion ? false : { scale: 1 }}
+              animate={{ scale: pop }}
+              transition={{ type: 'spring', stiffness: 260, damping: 18 }}
+              style={{
+                transformBox: 'fill-box',
+                transformOrigin: 'center',
+                filter: 'drop-shadow(0 10px 14px rgb(6 13 36 / 0.45))',
+              }}
+              className="cursor-pointer outline-none"
+            />
+          )}
         </svg>
 
         {hover && (
