@@ -43,6 +43,11 @@ const GROUPS: { title: string; intro?: string; sources: Source[] }[] = [
     title: 'data.transportation.gov (U.S. Department of Transportation open data)',
     intro: 'FMCSA datasets, read through the site’s public API.',
     sources: [
+      {
+        name: 'data.transportation.gov',
+        href: 'https://data.transportation.gov',
+        note: 'The U.S. Department of Transportation’s open data site, where FMCSA publishes the datasets below.',
+      },
       { name: 'Company Census File', href: dataset('az4n-8mr2') },
       { name: 'Vehicle Inspection File', href: dataset('fx4q-ay7w') },
       { name: 'Inspections Per Unit (VINs)', href: dataset('wt8s-2hbx') },
