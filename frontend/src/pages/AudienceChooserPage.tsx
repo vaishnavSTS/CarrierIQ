@@ -70,24 +70,26 @@ export function AudienceChooserPage() {
           <h1 className="text-center text-4xl font-semibold text-white md:text-5xl lg:text-6xl">
             Welcome to Carrier Safety Scan
           </h1>
-          <p className="mx-auto mt-4 max-w-3xl text-center text-base text-white/90 md:text-lg">
-            Look up any carrier free, or choose an option below to see what Carrier Safety Scan does
-            for you.
+          <p className="mx-auto mt-4 max-w-4xl text-center text-base text-white/90 md:text-lg">
+            Try a free carrier search, or choose an option below to see what Carrier Safety Scan
+            does for you.
           </p>
 
           {/* The free search, high enough to be seen without scrolling. */}
           <div className="mt-7">
-            <HeroTryForm centered />
+            <HeroTryForm centered chips={false} />
           </div>
 
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
+          <LiveStrip />
+
+          <div className="mt-8 grid gap-5 md:grid-cols-3">
             {/* Shown at once (no fade-in): choosing is the whole page. */}
             {CHOICES.map(({ audience, label, title, text, points }, i) => (
               <button
                 key={audience}
                 type="button"
                 onClick={() => choose(audience)}
-                className="group relative flex h-[23rem] flex-col justify-end overflow-hidden rounded-3xl text-left shadow-2xl shadow-black/30 ring-1 ring-white/25 transition-transform duration-300 hover:-translate-y-1.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--hero-highlight)]"
+                className="group relative flex h-[22rem] flex-col justify-end overflow-hidden rounded-3xl text-left shadow-2xl shadow-black/30 ring-1 ring-white/25 transition-transform duration-300 hover:-translate-y-1.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--hero-highlight)]"
               >
                 <img
                   src={CHOOSER_PHOTO[audience].src}
@@ -140,8 +142,6 @@ export function AudienceChooserPage() {
               ))}
             </ul>
           </div>
-
-          <LiveStrip />
         </section>
       </div>
       <Band tone="mesh">

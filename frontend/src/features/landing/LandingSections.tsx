@@ -35,7 +35,14 @@ const SEARCH_MODES = [
 ] as const
 type SearchMode = (typeof SEARCH_MODES)[number]['id']
 
-export function HeroTryForm({ centered = false }: { centered?: boolean }) {
+export function HeroTryForm({
+  centered = false,
+  chips = true,
+}: {
+  centered?: boolean
+  /** The "Search by" chips; off where space is short (the home page) */
+  chips?: boolean
+}) {
   const [query, setQuery] = useState('')
   const [mode, setMode] = useState<SearchMode | null>(null)
   const input = useRef<HTMLInputElement>(null)
@@ -81,28 +88,30 @@ export function HeroTryForm({ centered = false }: { centered?: boolean }) {
           Free trial
         </button>
       </div>
-      <div
-        role="group"
-        aria-label="Search by"
-        className={`mt-3 flex flex-wrap items-center justify-center gap-2 ${centered ? '' : 'lg:justify-start'}`}
-      >
-        <span className="text-xs text-white/80">Search by</span>
-        {SEARCH_MODES.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => pick(id)}
-            aria-pressed={mode === id}
-            className={`rounded-full px-3 py-1 text-xs font-medium ring-1 transition-colors ${
-              mode === id
-                ? 'bg-white text-slate-950 ring-white'
-                : 'bg-white/10 text-white ring-white/30 hover:bg-white/20'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {chips && (
+        <div
+          role="group"
+          aria-label="Search by"
+          className={`mt-3 flex flex-wrap items-center justify-center gap-2 ${centered ? '' : 'lg:justify-start'}`}
+        >
+          <span className="text-xs text-white/80">Search by</span>
+          {SEARCH_MODES.map(({ id, label }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => pick(id)}
+              aria-pressed={mode === id}
+              className={`rounded-full px-3 py-1 text-xs font-medium ring-1 transition-colors ${
+                mode === id
+                  ? 'bg-white text-slate-950 ring-white'
+                  : 'bg-white/10 text-white ring-white/30 hover:bg-white/20'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
       <p className={`mt-2.5 text-center text-xs text-white/90 ${centered ? '' : 'lg:text-left'}`}>
         One free search, no account needed.
       </p>

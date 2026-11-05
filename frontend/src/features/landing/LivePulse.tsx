@@ -20,7 +20,7 @@ const shortDay = new Intl.DateTimeFormat('en-US', {
 })
 
 /** The live numbers and the carriers that just registered (shared by the section and the strip). */
-function usePulse() {
+function usePulse({ withInactive = true }: { withInactive?: boolean } = {}) {
   const active = useQuery({
     queryKey: ['public-directory', 'states', 'active'],
     queryFn: () => getPublicStateCounts('active'),
@@ -28,6 +28,7 @@ function usePulse() {
   const inactive = useQuery({
     queryKey: ['public-directory', 'states', 'inactive'],
     queryFn: () => getPublicStateCounts('inactive'),
+    enabled: withInactive,
   })
   const recent = useQuery({ queryKey: ['public-directory', 'recent'], queryFn: getRecentCarriers })
 
@@ -78,24 +79,21 @@ function RecentRow({ list, hidden }: { list: Recent; hidden: boolean }) {
 }
 
 /**
- * The home page's short version, under the three choices: three live numbers that count up and
- * one strip of carriers that just registered. Nothing shows until the numbers have loaded.
+ * The home page's short version, one slim line under the free search so it shows on the first
+ * screen: two live numbers that count up, then the carriers that just registered scrolling past.
+ * "Active carriers" are interstate carriers with an active USDOT number (the map's count); the
+ * hover title says so. Nothing shows until the numbers have loaded.
  */
 export function LiveStrip() {
-  const { activeCarriers, newest, states, items } = usePulse()
+  const { activeCarriers, newest, items } = usePulse({ withInactive: false })
   if (activeCarriers == null) return null
-  const stats = [
-    { label: 'active interstate carriers', value: activeCarriers, prefix: '' },
-    { label: 'registered in the last 30 days', value: newest, prefix: '+' },
-    { label: 'states on the map', value: states, prefix: '' },
-  ]
   return (
     <motion.section
       {...reveal(0.1)}
       aria-label="Right now"
-      className="mt-10 overflow-hidden rounded-2xl bg-white/8 ring-1 ring-white/15 backdrop-blur"
+      className="mx-auto mt-6 flex max-w-5xl flex-col overflow-hidden rounded-2xl bg-white/8 text-white ring-1 ring-white/15 backdrop-blur lg:flex-row lg:items-center"
     >
-      <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 px-5 py-4 text-white">
+      <div className="flex shrink-0 flex-wrap items-center justify-center gap-x-5 gap-y-1 px-4 py-2.5">
         <span className="font-label flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-300">
           <span className="relative flex size-2">
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-amber-300 opacity-70 motion-reduce:hidden" />
@@ -103,20 +101,27 @@ export function LiveStrip() {
           </span>
           Right now
         </span>
-        {stats.map(({ label, value, prefix }) => (
-          <span key={label} className="flex items-baseline gap-2">
-            <span className="text-2xl font-semibold [font-family:var(--font-display)]">
-              <CountUp value={value} prefix={prefix} />
-            </span>
-            <span className="text-sm text-white/75">{label}</span>
+        <span
+          className="flex items-baseline gap-1.5"
+          title="Interstate carriers (hauling across state lines) with an active USDOT number"
+        >
+          <span className="text-lg font-semibold [font-family:var(--font-display)]">
+            <CountUp value={activeCarriers} />
           </span>
-        ))}
+          <span className="text-xs text-white/75">active carriers</span>
+        </span>
+        <span className="flex items-baseline gap-1.5">
+          <span className="text-lg font-semibold [font-family:var(--font-display)]">
+            <CountUp value={newest} prefix="+" />
+          </span>
+          <span className="text-xs text-white/75">new in 30 days</span>
+        </span>
       </div>
       {items.length > 0 && (
         <div
           aria-label="Carriers that just registered"
           role="region"
-          className="marquee relative overflow-hidden border-t border-white/10 bg-white/5 py-3"
+          className="marquee relative min-w-0 flex-1 overflow-hidden border-t border-white/10 bg-white/5 py-2.5 lg:border-l lg:border-t-0"
         >
           {/* Slower than the section's strips: about 3 seconds per carrier. */}
           <div
