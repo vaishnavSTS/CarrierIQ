@@ -176,11 +176,8 @@ export function StsTestimonials({ number }: { number?: string }) {
               </figcaption>
             </motion.div>
           </AnimatePresence>
-          {/* Under the quote: which one this is, and Previous / Next. */}
-          <div className="mt-8 flex items-center justify-between gap-3 border-t border-white/15 pt-5 text-sm text-white/75">
-            <span className="tabular-nums">
-              {index + 1} of {QUOTES.length}
-            </span>
+          {/* Under the quote: Previous / Next. */}
+          <div className="mt-8 flex items-center justify-end gap-3 border-t border-white/15 pt-5 text-sm text-white/75">
             <div className="flex gap-2">
               <button
                 type="button"
