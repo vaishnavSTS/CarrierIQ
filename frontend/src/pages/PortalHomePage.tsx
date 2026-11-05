@@ -5,7 +5,7 @@ import { CarrierSearchBox } from '../features/carrier-search/CarrierSearchBox'
 import { CarrierList } from '../features/portal/carrier/CarrierList'
 import { DataQsPanel } from '../features/portal/carrier/DataQsPanel'
 import { CARD } from '../features/portal/carrier/ui'
-import { CarrierSnapshot } from '../features/portal/CarrierSnapshot'
+import { CarrierSnapshot, SnapshotSkeleton } from '../features/portal/CarrierSnapshot'
 import { ClientGuide } from '../features/portal/ClientGuide'
 import { PortalHero } from '../features/portal/PortalHero'
 import { useClientSearchEnabled, usePortalOverview, useMe } from '../hooks/useAuth'
@@ -22,6 +22,11 @@ export function PortalHomePage() {
   const carriers = data?.carriers ?? []
   const firstName = user?.full_name.split(' ')[0]
 
+  // Until the account's carriers are known, only a placeholder as tall as a carrier's snapshot:
+  // the sections further down (what Carrier Safety Scan does, the plan) would otherwise fill the
+  // first screen while the list loads, which on a waking server can take several seconds.
+  if (isPending) return <SnapshotSkeleton />
+
   return (
     <div className="space-y-8">
       {/* With a carrier linked, each carrier's own plate opens the page instead. */}
@@ -33,7 +38,6 @@ export function PortalHomePage() {
         />
       )}
 
-      {isPending && <p className="text-sm text-slate-500">Loading your carriers…</p>}
       {isError && (
         <p className={`${CARD} text-sm text-red-700`}>
           Couldn’t load your carriers. Try again shortly.

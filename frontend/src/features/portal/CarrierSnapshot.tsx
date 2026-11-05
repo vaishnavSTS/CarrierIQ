@@ -34,26 +34,9 @@ export function CarrierSnapshot({
   const dataqs = useDataQsCases()
   const page = `/portal/carriers/${usdotNumber}`
 
-  if (profile.isPending) {
-    // As tall as the snapshot itself, so what follows (the DataQs requests) stays below until it
-    // has loaded, rather than filling the screen first and then being pushed down.
-    return (
-      <section
-        aria-busy
-        className={`${CARD} min-h-[calc(100svh-9rem)] animate-pulse space-y-4 text-sm text-slate-500`}
-      >
-        <p>Loading your carrier’s record…</p>
-        <div className="h-8 w-2/5 rounded bg-slate-100" />
-        <div className="h-4 w-3/5 rounded bg-slate-100" />
-        <div className="grid gap-4 pt-2 sm:grid-cols-3">
-          <div className="h-32 rounded-xl bg-slate-100" />
-          <div className="h-32 rounded-xl bg-slate-100" />
-          <div className="h-32 rounded-xl bg-slate-100" />
-        </div>
-        <div className="h-48 rounded-xl bg-slate-100" />
-      </section>
-    )
-  }
+  // As tall as the snapshot itself, so what follows (the DataQs requests) stays below until it
+  // has loaded, rather than filling the screen first and then being pushed down.
+  if (profile.isPending) return <SnapshotSkeleton />
   if (!profile.data) {
     return (
       <section className={`${CARD} text-sm text-red-700`}>
@@ -127,6 +110,30 @@ export function CarrierSnapshot({
         The same FMCSA records brokers check. Flags are what brokers’ checks commonly react to, not
         a finding about your company.
       </p>
+    </section>
+  )
+}
+
+/**
+ * Where a carrier's snapshot will be, while it loads: about a screen tall, so the sections below it
+ * (DataQs requests, what Carrier Safety Scan does) don't fill the first screen and then jump down.
+ * Also used by the portal home while it is still finding the account's carriers.
+ */
+export function SnapshotSkeleton() {
+  return (
+    <section
+      aria-busy
+      className={`${CARD} min-h-[calc(100svh-9rem)] animate-pulse space-y-4 text-sm text-slate-500`}
+    >
+      <p>Loading your carrier’s record…</p>
+      <div className="h-8 w-2/5 rounded bg-slate-100" />
+      <div className="h-4 w-3/5 rounded bg-slate-100" />
+      <div className="grid gap-4 pt-2 sm:grid-cols-3">
+        <div className="h-32 rounded-xl bg-slate-100" />
+        <div className="h-32 rounded-xl bg-slate-100" />
+        <div className="h-32 rounded-xl bg-slate-100" />
+      </div>
+      <div className="h-48 rounded-xl bg-slate-100" />
     </section>
   )
 }
