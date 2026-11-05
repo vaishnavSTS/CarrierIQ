@@ -19,7 +19,9 @@ import {
 } from '../features/landing/landingParts'
 import { CompareShowcase } from '../features/landing/CompareShowcase'
 import { FaqSection } from '../features/landing/Faq'
+import { LivePulse } from '../features/landing/LivePulse'
 import { MapSection } from '../features/landing/MapSection'
+import { StsTestimonials } from '../features/landing/StsVoices'
 import { AUDIENCE_FAQ } from '../features/landing/faqContent'
 import { AboutStsSection, DataQsSection, ReportPreview } from '../features/landing/LandingSections'
 import { PhoneShowcase } from '../features/landing/PhoneShowcase'
@@ -238,6 +240,8 @@ type Part =
   | 'underwriting'
   | 'compare'
   | 'map'
+  | 'live'
+  | 'testimonials'
   | 'portal'
   | 'phone'
   | 'report'
@@ -254,34 +258,40 @@ const LAYOUT: Record<Audience, [Part, BandTone, photo?: string][]> = {
     ['fix', 'plain'],
     ['dataqs', 'photo', SECTION_PHOTO.carrierDataqs],
     ['map', 'grid'],
+    ['live', 'dark'],
     ['portal', 'warm'],
     ['phone', 'grid'],
     ['report', 'tint'],
     ['steps', 'photo'],
     ['faq', 'dots'],
     ['cta', 'tint'],
+    ['testimonials', 'warm'],
     ['about', 'plain'],
   ],
   broker: [
     ['features', 'plain'],
     ['redFlags', 'photo', SECTION_PHOTO.brokerFlags],
     ['map', 'tint'],
+    ['live', 'dark'],
     ['compare', 'warm'],
     ['portal', 'mesh'],
     ['steps', 'photo'],
     ['faq', 'dots'],
     ['cta', 'tint'],
+    ['testimonials', 'warm'],
     ['about', 'plain'],
   ],
   agent: [
     ['features', 'warm'],
     ['underwriting', 'photo', SECTION_PHOTO.agentQuestions],
     ['map', 'tint'],
+    ['live', 'dark'],
     ['compare', 'mesh'],
     ['portal', 'plain'],
     ['steps', 'photo'],
     ['faq', 'dots'],
     ['cta', 'grid'],
+    ['testimonials', 'warm'],
     ['about', 'plain'],
   ],
 }
@@ -405,6 +415,7 @@ export function LandingPage({ audience }: { audience: Audience }) {
             signUp={
               user ? undefined : { to: content.cta.signUpTo, label: 'Start free for 30 days' }
             }
+            allowInactive={audience !== 'carrier'}
           />
         )
       case 'portal':
@@ -478,6 +489,10 @@ export function LandingPage({ audience }: { audience: Audience }) {
             </div>
           </motion.div>
         )
+      case 'live':
+        return <LivePulse number={number} />
+      case 'testimonials':
+        return <StsTestimonials number={number} />
       case 'about':
         return <AboutStsSection dataQs={audience === 'carrier'} />
     }

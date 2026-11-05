@@ -1,5 +1,5 @@
-"""The carrier map on the public audience pages: active interstate carriers by state, with no
-login (services/carrier_directory.py).
+"""The carrier map on the public audience pages: interstate carriers by state, active or
+inactive (`status`), with no login (services/carrier_directory.py).
 
 Every state's totals, and for a state its newest, largest or A-Z carriers, PAGE_SIZE at a time
 for the first PUBLIC_MAX_PAGES pages only, so the whole directory can't be read off it. Each
@@ -54,9 +54,18 @@ class PublicCarrierOut(BaseModel):
     fleet_needs_check: bool
 
 
+class RecentCarrierOut(BaseModel):
+    usdot_number: int
+    legal_name: str
+    city: str | None
+    state: str
+    registered_on: date | None
+
+
 class PublicStateOut(BaseModel):
     state: str
     name: str
+    status: str
     sort: str
     letter: str | None
     page: int
@@ -76,8 +85,16 @@ Directory = Annotated[CarrierDirectory, Depends(get_carrier_directory)]
 
 
 @public_router.get("/states", response_model=list[StateCountOut])
-def public_state_counts(directory: Directory) -> list:
-    return directory.state_counts()
+def public_state_counts(
+    directory: Directory, status: Literal["active", "inactive"] = "active"
+) -> list:
+    return directory.state_counts(status)
+
+
+@public_router.get("/recent", response_model=list[RecentCarrierOut])
+def public_recent(directory: Directory) -> list:
+    """The newest active interstate registrations nationwide (the "just registered" strip)."""
+    return directory.recent_registrations()
 
 
 @public_router.get("/states/{state}", response_model=PublicStateOut)
@@ -87,13 +104,15 @@ def public_state_carriers(
     sort: Literal["newest", "largest", "az"] = "newest",
     letter: Annotated[str | None, Query(pattern=r"^[A-Za-z]$")] = None,
     page: Annotated[int, Query(ge=0, lt=PUBLIC_MAX_PAGES)] = 0,
+    status: Literal["active", "inactive"] = "active",
 ):
     if state.upper() not in STATES:
         raise NotFoundError(f"No state {state.upper()}")
-    result = directory.state_carriers(state, sort, letter if sort == "az" else None, page)
+    result = directory.state_carriers(state, sort, letter if sort == "az" else None, page, status)
     return PublicStateOut(
         state=result.state,
         name=result.name,
+        status=status,
         sort=result.sort,
         letter=result.letter,
         page=result.page,

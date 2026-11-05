@@ -1,4 +1,5 @@
-"""The carrier directory: active interstate carriers by state, from FMCSA's Company Census File.
+"""The carrier directory: interstate carriers by state, active or inactive, from FMCSA's Company
+Census File.
 
 Reads data.transportation.gov live (settings.census_dataset_id) with fixed SoQL: the state comes
 from STATES and the letter is one A-Z character, so nothing a visitor types reaches a query as
@@ -7,7 +8,8 @@ text. State totals change slowly, so they are kept in memory for STATE_COUNTS_TT
 Only what tells carriers apart is returned (name, city, county code, USDOT, fleet, drivers,
 registration date): never phones, emails or officers.
 
-"Active interstate" = census status_code 'A' and carrier_operation 'A'. Fleet sizes are what the
+Interstate = census carrier_operation 'A'; active = status_code 'A', inactive = status_code 'I'
+(the census has no date for when a USDOT went inactive). Fleet sizes are what the
 carrier reported on its MCS-150; a USDOT under REPORTED_FLEET_CHECK_YEARS old reporting
 REPORTED_FLEET_CHECK_UNITS or more power units is marked for a closer look, the pattern the
 booking check also treats as a fraud sign.
@@ -38,8 +40,14 @@ STATES: dict[str, str] = {
     "WY": "Wyoming",
 }  # fmt: skip
 
-ACTIVE_INTERSTATE = "status_code='A' AND carrier_operation='A'"
+Status = Literal["active", "inactive"]
+INTERSTATE: dict[str, str] = {
+    "active": "status_code='A' AND carrier_operation='A'",
+    "inactive": "status_code='I' AND carrier_operation='A'",
+}
 STATE_COUNTS_TTL = 6 * 3600.0
+RECENT_TTL = 3600.0
+RECENT_LIMIT = 30
 NEW_DAYS = 30
 PAGE_SIZE = 25
 REPORTED_FLEET_CHECK_UNITS = 1000
@@ -67,6 +75,15 @@ class DirectoryCarrier:
     drivers: int | None
     registered_on: date | None
     fleet_needs_check: bool
+
+
+@dataclass(frozen=True)
+class RecentCarrier:
+    usdot_number: int
+    legal_name: str
+    city: str | None
+    state: str
+    registered_on: date | None
 
 
 @dataclass(frozen=True)
@@ -104,20 +121,22 @@ class CarrierDirectory:
 
     # --- State totals -------------------------------------------------------------------------
 
-    def state_counts(self) -> list[StateCount]:
+    def state_counts(self, status: Status = "active") -> list[StateCount]:
+        key = f"states:{status}"
         with _CACHE_LOCK:
-            cached = _CACHE.get("states")
+            cached = _CACHE.get(key)
             if cached and self._now() - cached[0] < STATE_COUNTS_TTL:
                 return cached[1]
         since = (self._today() - timedelta(days=NEW_DAYS)).strftime("%Y%m%d")
-        totals = self._grouped(ACTIVE_INTERSTATE)
-        new = self._grouped(f"{ACTIVE_INTERSTATE} AND add_date >= '{since}'")
+        base = INTERSTATE[status]
+        totals = self._grouped(base)
+        new = self._grouped(f"{base} AND add_date >= '{since}'")
         counts = [
             StateCount(code, name, totals.get(code, 0), new.get(code, 0))
             for code, name in STATES.items()
         ]
         with _CACHE_LOCK:
-            _CACHE["states"] = (self._now(), counts)
+            _CACHE[key] = (self._now(), counts)
         return counts
 
     def _grouped(self, where: str) -> dict[str, int]:
@@ -136,17 +155,57 @@ class CarrierDirectory:
             if row.get("phy_state") in STATES
         }
 
+    # --- Just registered, nationwide ------------------------------------------------------------
+
+    def recent_registrations(self) -> list[RecentCarrier]:
+        """The RECENT_LIMIT newest active interstate USDOT registrations in the 50 states and DC,
+        kept for RECENT_TTL."""
+        with _CACHE_LOCK:
+            cached = _RECENT.get("recent")
+            if cached and self._now() - cached[0] < RECENT_TTL:
+                return cached[1]
+        rows = self.client.get_rows(
+            self.dataset,
+            {
+                "$select": "dot_number, legal_name, phy_city, phy_state, add_date",
+                "$where": INTERSTATE["active"],
+                "$order": "add_date DESC, dot_number DESC",
+                "$limit": str(RECENT_LIMIT * 2),  # some are outside the 50 states and DC
+            },
+        )
+        recent = [
+            RecentCarrier(
+                usdot_number=usdot,
+                legal_name=str(row.get("legal_name") or "").strip(),
+                city=(str(row["phy_city"]).strip().title() or None)
+                if row.get("phy_city")
+                else None,
+                state=str(row["phy_state"]),
+                registered_on=_day(row.get("add_date")),
+            )
+            for row in rows
+            if (usdot := _int(row.get("dot_number"))) is not None and row.get("phy_state") in STATES
+        ][:RECENT_LIMIT]
+        with _CACHE_LOCK:
+            _RECENT["recent"] = (self._now(), recent)
+        return recent
+
     # --- One state's carriers ------------------------------------------------------------------
 
     def state_carriers(
-        self, state: str, sort: Sort, letter: str | None = None, page: int = 0
+        self,
+        state: str,
+        sort: Sort,
+        letter: str | None = None,
+        page: int = 0,
+        status: Status = "active",
     ) -> StatePage:
         state = state.upper()
         if state not in STATES:
             raise ValueError("Unknown state")
         if letter is not None and not (len(letter) == 1 and "A" <= letter.upper() <= "Z"):
             raise ValueError("Letter must be A-Z")
-        where = f"{ACTIVE_INTERSTATE} AND phy_state='{state}'"
+        where = f"{INTERSTATE[status]} AND phy_state='{state}'"
         if letter:
             where += f" AND starts_with(upper(legal_name), '{letter.upper()}')"
         order = {
@@ -203,6 +262,7 @@ class CarrierDirectory:
 
 
 _CACHE: dict[str, tuple[float, list[StateCount]]] = {}
+_RECENT: dict[str, tuple[float, list[RecentCarrier]]] = {}
 _CACHE_LOCK = threading.Lock()
 
 
@@ -210,3 +270,4 @@ def clear_cache() -> None:
     """Tests start from an empty cache."""
     with _CACHE_LOCK:
         _CACHE.clear()
+        _RECENT.clear()

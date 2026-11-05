@@ -38,8 +38,11 @@ export function UsMap({
   counts,
   selected,
   onSelect,
+  inactive = false,
 }: {
   counts: StateCount[] | undefined
+  /** The counts are of inactive carriers (the hover card says so, without "new") */
+  inactive?: boolean
   selected: string | null
   /** A state's code, or null to go back to the whole US */
   onSelect: (state: string | null) => void
@@ -144,11 +147,14 @@ export function UsMap({
           >
             <div className="text-sm font-semibold">{hover.state.name}</div>
             <div className="mt-1 text-xs text-white/85">
-              {number.format(hover.state.carriers)} active interstate carriers
+              {number.format(hover.state.carriers)} {inactive ? 'inactive' : 'active'} interstate
+              carriers
             </div>
-            <div className="text-xs text-amber-300">
-              +{number.format(hover.state.new_last_30_days)} in the last 30 days
-            </div>
+            {!inactive && (
+              <div className="text-xs text-amber-300">
+                +{number.format(hover.state.new_last_30_days)} in the last 30 days
+              </div>
+            )}
           </div>
         )}
       </div>

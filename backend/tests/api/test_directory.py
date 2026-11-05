@@ -42,6 +42,7 @@ class FakeCensus:
             {
                 "dot_number": "4382997",
                 "legal_name": "BIG NEW FLEET LLC",
+                "phy_state": "GA",
                 "dba_name": "BNF",
                 "phy_city": "THOMSON",
                 "phy_cnty": "189",
@@ -138,6 +139,30 @@ def test_only_the_first_pages_can_be_read():
 def test_bad_input_never_reaches_the_query(api: TestClient, census: FakeCensus, path: str):
     assert api.get(path).status_code in (404, 422)
     assert census.queries == []
+
+
+def test_inactive_carriers_and_totals(api: TestClient, census: FakeCensus):
+    api.get(f"{BASE}/states?status=inactive")
+    assert census.queries[0]["$where"].startswith("status_code='I' AND carrier_operation='A'")
+    api.get(f"{BASE}/states")  # active totals are cached apart from inactive ones
+    assert census.queries[-1]["$where"].startswith("status_code='A'")
+
+    body = api.get(f"{BASE}/states/TX?status=inactive&sort=largest").json()
+    assert body["status"] == "inactive"
+    assert census.queries[-1]["$where"].startswith("status_code='I'")
+    assert api.get(f"{BASE}/states/TX?status=revoked").status_code == 422
+
+
+def test_recent_registrations_nationwide_and_cached(api: TestClient, census: FakeCensus):
+    census.rows = 2
+    first = api.get(f"{BASE}/recent").json()
+    query = census.queries[-1]
+    assert query["$order"].startswith("add_date DESC")
+    assert "phy_state" not in query["$where"]  # every state
+    assert "phone" not in query["$select"]
+    assert first[0]["legal_name"] == "BIG NEW FLEET LLC" and "state" in first[0]
+    api.get(f"{BASE}/recent")
+    assert len(census.queries) == 1  # the second answer came from the cache
 
 
 def test_the_logged_in_map_is_gone(api: TestClient):
