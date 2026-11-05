@@ -90,7 +90,7 @@ export function basicTiles(
         label,
         tone: 'red',
         status: 'Serious violation in an investigation',
-        note: 'FMCSA calls this acute / critical. Found in an FMCSA investigation in the last 12 months',
+        note: 'Acute / critical violation found in an investigation in the last 12 months',
       }
     }
     if (
@@ -106,7 +106,7 @@ export function basicTiles(
         label,
         tone: 'amber',
         status: 'Out-of-service violations',
-        note: note(counts, estimate?.assessed ? 'below threshold' : 'no FMCSA percentile'),
+        note: note(counts, estimate?.assessed ? 'below threshold' : 'no percentile'),
       }
     }
     if (key === 'crash') {

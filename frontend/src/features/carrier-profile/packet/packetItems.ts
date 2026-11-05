@@ -11,7 +11,7 @@ import { NEAR_THRESHOLD_POINTS } from '../safety/issBand'
 
 /** What a passed registration check found, as the report's green list says it. */
 const GOOD_TITLES: Record<string, string> = {
-  motus: 'Authority and insurance listed in Motus (FMCSA’s current system)',
+  motus: 'Authority and insurance listed in Motus',
   boc3: 'Process agent (BOC-3) listed in Motus',
   // Only the filing's age is checked (FMCSA's due date also depends on the USDOT number).
   mcs150: 'Company update (MCS-150) filed within the last 2 years',
@@ -141,8 +141,8 @@ export function packetItems(
       key: `basic-${b.key}`,
       title: `${basicName(b.label)}: ${b.alert ? 'FMCSA alert' : 'serious violation in an FMCSA investigation'}`,
       detail: b.alert
-        ? `FMCSA’s safety data shows an alert for this category${b.percentile !== null ? ` (${ordinal(b.percentile)} percentile)` : ''}.`
-        : 'FMCSA’s safety data records a serious (“acute or critical”) violation found in an investigation in the last 12 months.',
+        ? `An alert is on file for this category${b.percentile !== null ? ` (${ordinal(b.percentile)} percentile)` : ''}.`
+        : 'A serious (“acute or critical”) violation was found in an investigation in the last 12 months.',
       fix: basicTip(b.label),
     })
   }
@@ -189,14 +189,14 @@ export function packetItems(
     hurting.push({
       key: 'fatal-crash',
       title: 'Fatal crash in the last 24 months',
-      detail: `FMCSA’s Crash File lists ${crashes.recent_fatal} crash${crashes.recent_fatal === 1 ? '' : 'es'} with a fatality in the last ${crashes.recent_months} months; the file does not say who was at fault.`,
+      detail: `${crashes.recent_fatal} crash${crashes.recent_fatal === 1 ? '' : 'es'} with a fatality in the last ${crashes.recent_months} months; the crash record does not say who was at fault.`,
       fix: 'If the crash was not preventable, FMCSA’s Crash Preventability program (through DataQs) can mark it so it no longer counts against the carrier.',
     })
   } else if (crashes && crashes.recent_total === 0) {
     good.push({
       key: 'no-crashes',
       title: 'No crashes in the last 24 months',
-      detail: 'FMCSA’s Crash File lists none.',
+      detail: 'None on record.',
     })
   }
 
@@ -212,7 +212,7 @@ export function packetItems(
       good.push({
         key: `authority-${d.prefix}${d.number}`,
         title: `Operating authority active (${d.prefix}${d.number})`,
-        detail: `FMCSA lists ${d.authority_type ?? 'the authority'} as active.`,
+        detail: `${d.authority_type ?? 'The authority'} is active.`,
       })
     }
   }
@@ -222,8 +222,8 @@ export function packetItems(
       key: 'insurance',
       title: 'Liability insurance on file',
       detail: d
-        ? `FMCSA lists ${formatMoney(d.bipd_on_file)} liability insurance (BI&PD) on file (${formatMoney(d.bipd_required)} required).`
-        : 'FMCSA lists liability insurance (BI&PD) on file.',
+        ? `${formatMoney(d.bipd_on_file)} liability insurance (BI&PD) on file (${formatMoney(d.bipd_required)} required).`
+        : 'Liability insurance (BI&PD) on file.',
     })
   }
   // FMCSA's authority history can show revocations (since reinstated) that Motus' revocation list
@@ -260,7 +260,7 @@ export function packetItems(
       good.push({
         key: 'established',
         title: `Registered ${years} years`,
-        detail: `FMCSA’s census lists the USDOT number as added on ${formatDate(profile.first_registered_date)}.`,
+        detail: `USDOT number added on ${formatDate(profile.first_registered_date)}.`,
       })
     }
   }

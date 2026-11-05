@@ -391,7 +391,7 @@ export function PacketDocument({
     max: busy ? PLAN_STEPS_BUSY : PLAN_STEPS,
   })
   // Each red item carries its fix right under it: its step of the plan when there is one (same
-  // key), else what usually fixes it. The plan's other steps follow later, after the scorecard.
+  // key), else what usually fixes it. The plan's other steps follow, before the green items.
   const solutionFor = (item: PacketItem) => {
     const step = plan.find((s) => s.key === item.key)
     return step
@@ -554,7 +554,7 @@ export function PacketDocument({
     </div>
   )
   // "How to improve" only when it has something to say.
-  const improve = morePlan.length > 0 || Boolean(whereFrom) || Boolean(patterns)
+  const improve = Boolean(whereFrom) || Boolean(patterns)
   return (
     <>
       {/* Page 1: the scorecard */}
@@ -628,7 +628,7 @@ export function PacketDocument({
                   key: 'none',
                   title: 'Nothing in Carrier Safety Scan’s checks is hurting the score',
                   detail:
-                    'No safety category is over its threshold or under an FMCSA alert, and FMCSA’s Crash File lists no fatal crash in the last 24 months.',
+                    'No safety category is over its threshold or under an alert, and no fatal crash is on record in the last 24 months.',
                 }}
               />
             </ul>
@@ -699,9 +699,9 @@ export function PacketDocument({
         </div>
         {/* Its own block, so the rates and counts above fit the first page without it. */}
         <p className="text-[11px] text-slate-500">
-          Why these counts differ: Inspections counts every inspection FMCSA has loaded for the last
-          24 months. Out-of-service rates count only those that examined the vehicle or the driver.
-          Clean inspections use FMCSA’s monthly safety results, which can leave out the most recent
+          Why these counts differ: Inspections counts every inspection on record for the last 24
+          months. Out-of-service rates count only those that examined the vehicle or the driver.
+          Clean inspections use the monthly safety results, which can leave out the most recent
           inspections.
         </p>
 
@@ -727,6 +727,16 @@ export function PacketDocument({
           </div>
         )}
 
+        {/* The rest of the plan, before what is already in order */}
+        <SolutionsBox
+          steps={morePlan}
+          title={
+            morePlan.length < plan.length
+              ? 'More ways to improve the Safety Score'
+              : 'Solutions on improving the Safety Score'
+          }
+        />
+
         <div className="space-y-2">
           <SectionHeading tone="green">In good standing</SectionHeading>
           <ul data-split className="grid gap-2 wide:grid-cols-2">
@@ -751,18 +761,9 @@ export function PacketDocument({
         </div>
       </Sheet>
 
-      {/* The rest of the plan, and where the violations come from */}
+      {/* Where the violations come from, and the patterns in them */}
       {improve && (
         <Sheet index={1} title="How to improve" carrier={carrier} contact={contact.fixes}>
-          <SolutionsBox
-            steps={morePlan}
-            title={
-              morePlan.length < plan.length
-                ? 'More ways to improve the Safety Score'
-                : 'Solutions on improving the Safety Score'
-            }
-          />
-
           {whereFrom}
 
           {patterns}
@@ -781,7 +782,7 @@ export function PacketDocument({
             <SectionHeading tone="amber">History to review</SectionHeading>
             <p className="text-xs text-slate-600">
               Past actions on this carrier’s authority. A past action doesn’t show today’s status,
-              so each line gives the status FMCSA lists now.
+              so each line gives the status today.
             </p>
             <ul className="divide-y divide-slate-100 text-sm text-slate-700">
               {toReview.map((a) => (
@@ -1017,9 +1018,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
     safety.isPending ||
     inspections.isPending
   ) {
-    return (
-      <p className="text-sm text-slate-500">Building the Safety Score Report from FMCSA records…</p>
-    )
+    return <p className="text-sm text-slate-500">Building the Safety Score Report…</p>
   }
   if (!authority.data || !network.data || !equipment.data) {
     return (

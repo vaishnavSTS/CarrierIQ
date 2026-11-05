@@ -85,7 +85,7 @@ export function RecordPage({
               <SectionHeading tone="green">When {whose} score improves on its own</SectionHeading>
               {steps.length === 0 ? (
                 <p className="text-sm text-slate-600">
-                  No violations in FMCSA’s 24-month window, so nothing is waiting to drop off.
+                  No violations in the last 24 months, so nothing is waiting to drop off.
                 </p>
               ) : (
                 <ScrollX>
@@ -187,7 +187,7 @@ export function RecordPage({
                       <th className="w-16 py-1 pl-3 text-center font-medium">Count</th>
                       <th className="w-16 py-1 pl-3 text-center font-medium">Out of service</th>
                       <th className="w-16 py-1 pl-3 text-center font-medium">Severity</th>
-                      <th className="py-1 pl-3 font-medium">FMCSA code</th>
+                      <th className="py-1 pl-3 font-medium">Violation code</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 align-top tabular-nums text-slate-700">
@@ -233,8 +233,8 @@ export function RecordPage({
             {inspections.length === 0 ? (
               <p className="text-sm text-slate-600">
                 {safety.sms_inspections === null || safety.sms_inspections === undefined
-                  ? 'FMCSA’s violation file has not been loaded for this carrier yet.'
-                  : 'No inspection in FMCSA’s 24-month window has a violation.'}
+                  ? 'The violation details have not been loaded for this carrier yet.'
+                  : 'No inspection in the last 24 months has a violation.'}
               </p>
             ) : (
               <ScrollX>

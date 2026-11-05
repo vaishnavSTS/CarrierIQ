@@ -78,7 +78,7 @@ export function InspectionList({
                     <td colSpan={6} className="pb-2 pl-4">
                       {i.violations.length === 0 ? (
                         <span className="text-slate-500">
-                          {`${plural(i.violation_count, 'violation')} on the report; FMCSA’s file has no details for ${i.violation_count === 1 ? 'it' : 'them'}.`}
+                          {`${plural(i.violation_count, 'violation')} on the report; no details are on file for ${i.violation_count === 1 ? 'it' : 'them'}.`}
                         </span>
                       ) : (
                         <ul className="space-y-0.5">

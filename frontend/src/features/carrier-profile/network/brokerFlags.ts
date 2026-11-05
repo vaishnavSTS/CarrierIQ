@@ -50,7 +50,7 @@ export function brokerFlags(network: CarrierNetwork, profile: CarrierProfile): B
         FIX[check.key] ??
         (check.key.startsWith('renewal_')
           ? RENEWAL_FIX
-          : 'Reviewing the FMCSA record and correcting it if needed.'),
+          : 'Reviewing the carrier’s record and correcting it if needed.'),
     })
   }
 
@@ -88,7 +88,7 @@ export function brokerFlags(network: CarrierNetwork, profile: CarrierProfile): B
       key: 'transfer',
       level: 'attention',
       title: 'Operating authority was transferred',
-      why: 'FMCSA’s authority history shows this authority changed hands. Brokers often ask about that.',
+      why: 'The authority history shows this authority changed hands. Brokers often ask about that.',
       fix: 'The documents for the transfer, showing it was part of a change of the same business.',
     })
   }
@@ -101,7 +101,7 @@ export function brokerFlags(network: CarrierNetwork, profile: CarrierProfile): B
       key: 'identity',
       level: 'info',
       title: 'Recent change of legal name, DBA name or email',
-      why: 'FMCSA’s census shows a new legal name, DBA name or email since Carrier Safety Scan started tracking this carrier. Brokers often check new names or emails on an existing authority.',
+      why: 'A new legal name, DBA name or email is on file since Carrier Safety Scan started tracking this carrier. Brokers often check new names or emails on an existing authority.',
       fix: 'Making sure brokers have the current details, with proof of the change.',
     })
   }
