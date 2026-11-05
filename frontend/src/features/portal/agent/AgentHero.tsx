@@ -19,7 +19,7 @@ const item = {
 
 /**
  * Insurance agent portal opener: welcome, their agency and NPN, and the carrier search (passed in
- * as `children`), beside the cover of the underwriting file the review fills in.
+ * as `children`), beside the review path: the carrier tabs an underwriting review goes through.
  */
 export function AgentHero({
   firstName,
@@ -86,7 +86,7 @@ export function AgentHero({
         </div>
 
         <motion.div variants={item} className="hidden md:block">
-          <FileCover agencyName={agencyName} npn={npn} guideLink={guideLink} />
+          <ReviewPath guideLink={guideLink} />
         </motion.div>
       </motion.div>
     </section>
@@ -94,69 +94,52 @@ export function AgentHero({
 }
 
 /**
- * The banner's right side: the cover of an underwriting file, on fixed paper colours so it reads
- * the same in both themes. Only real details: the agency and NPN from sign-up, today's date, and
- * the carrier tabs the review goes through.
+ * The banner's right side: the review path, open on the banner (no card). The six carrier tabs
+ * in the order an underwriting review goes, each with the question it answers, down a thin line.
  */
-function FileCover({
-  agencyName,
-  npn,
-  guideLink,
-}: {
-  agencyName: string
-  npn: string | null | undefined
-  guideLink: boolean
-}) {
+function ReviewPath({ guideLink }: { guideLink: boolean }) {
   const reduce = useReducedMotion()
-  const today = new Date().toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  })
   return (
-    <div className="relative pt-5">
-      <span className="font-label absolute left-5 top-0 rounded-t-xl bg-[#f3e7c9] px-4 pb-3 pt-1.5 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#5b4a1f]">
-        Underwriting file
-      </span>
-      <div className="relative rotate-[0.6deg] rounded-2xl rounded-tl-none bg-[#fbf6e9] p-5 text-[#1f2433] shadow-2xl ring-1 ring-black/5">
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 border-b border-dashed border-[#d9cba5] pb-3 text-sm">
-          <dt className="text-[#6b6455]">Agency</dt>
-          <dd className="truncate font-medium">{agencyName}</dd>
-          <dt className="text-[#6b6455]">NPN</dt>
-          <dd className="font-mono">{npn ?? '—'}</dd>
-          <dt className="text-[#6b6455]">Date</dt>
-          <dd>{today}</dd>
-          <dt className="text-[#6b6455]">Carrier</dt>
-          <dd className="italic text-[#6b6455]">Search to open one</dd>
-        </dl>
-        <p className="font-label mt-3 text-[10.5px] uppercase tracking-[0.14em] text-[#6b6455]">
-          Contents · {CHECKLIST.length} tabs
-        </p>
-        <ol className="mt-2 space-y-1.5">
-          {CHECKLIST.map(({ tab, label, icon: Icon }, i) => (
-            <motion.li
-              key={tab}
-              initial={reduce ? false : { opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.35, delay: 0.5 + i * 0.1, ease }}
-              className="flex items-center gap-2.5 text-sm"
-            >
-              <span className="font-label w-5 text-xs text-[#8a7f63]">{i + 1}.</span>
-              <Icon className="size-4 text-[#101853]" aria-hidden />
-              <span className="flex-1 border-b border-dotted border-[#d9cba5]">{label}</span>
-            </motion.li>
-          ))}
-        </ol>
-        {guideLink && (
-          <a
-            href="#underwriting-checklist"
-            className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-[#101853] underline-offset-4 hover:underline"
+    <div className="text-white">
+      <p className="font-label text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--hero-highlight)]">
+        Your review, tab by tab
+      </p>
+      <ol className="relative mt-4 space-y-3.5">
+        {/* The line the steps hang on */}
+        <motion.span
+          aria-hidden
+          className="absolute bottom-3 left-[13px] top-3 w-px origin-top bg-gradient-to-b from-[var(--hero-highlight)] to-white/20"
+          initial={reduce ? false : { scaleY: 0 }}
+          animate={{ scaleY: 1 }}
+          transition={{ duration: 0.9, delay: 0.4, ease }}
+        />
+        {CHECKLIST.map(({ tab, label, question }, i) => (
+          <motion.li
+            key={tab}
+            initial={reduce ? false : { opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, delay: 0.5 + i * 0.1, ease }}
+            className="relative flex items-start gap-3.5"
           >
-            How to read each one
-            <ArrowDown className="size-3.5" aria-hidden />
-          </a>
-        )}
-      </div>
+            <span className="relative z-10 grid size-[27px] shrink-0 place-items-center rounded-full bg-[#101853] text-xs font-semibold tabular-nums text-[var(--hero-highlight)] ring-1 ring-[var(--hero-highlight)]/60">
+              {i + 1}
+            </span>
+            <span className="min-w-0 pt-0.5">
+              <span className="block text-sm font-semibold leading-tight">{label}</span>
+              <span className="block text-xs leading-snug text-white/75">{question}</span>
+            </span>
+          </motion.li>
+        ))}
+      </ol>
+      {guideLink && (
+        <a
+          href="#underwriting-checklist"
+          className="mt-4 ml-[41px] inline-flex items-center gap-1 text-xs font-medium text-white/90 underline-offset-4 hover:text-white hover:underline"
+        >
+          How to read each one
+          <ArrowDown className="size-3.5" aria-hidden />
+        </a>
+      )}
     </div>
   )
 }
