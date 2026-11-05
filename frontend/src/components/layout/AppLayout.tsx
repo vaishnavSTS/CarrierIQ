@@ -1,12 +1,3 @@
-import {
-  ClipboardList,
-  FileSearch,
-  Gauge,
-  LayoutDashboard,
-  ReceiptText,
-  UserCheck,
-  type LucideIcon,
-} from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 
 import { NewSignupBanner } from '../../features/accounts/NewSignupBanner'
@@ -23,13 +14,11 @@ import { UserMenu } from './UserMenu'
 function NavItem({
   to,
   end,
-  icon: Icon,
   label,
   badge = 0,
 }: {
   to: string
   end?: boolean
-  icon: LucideIcon
   label: string
   /** e.g. new sign-ups not seen yet; hidden at 0 */
   badge?: number
@@ -46,7 +35,6 @@ function NavItem({
         }`
       }
     >
-      <Icon className="size-4" aria-hidden />
       {label}
       {badge > 0 && (
         <span className="rounded-full bg-amber-700 px-1.5 text-xs font-semibold text-surface">
@@ -71,14 +59,12 @@ function AppFrame() {
   const newAccounts = useNewAccountCount()
   const links = (
     <>
-      <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-      <NavItem to="/dataqs" icon={FileSearch} label="DataQs" />
-      <NavItem to="/high-iss" icon={Gauge} label="High Safety Score" />
-      <NavItem to="/service-requests" icon={ClipboardList} label="Service requests" />
-      <NavItem to="/invoices" icon={ReceiptText} label="Invoices" />
-      {me?.role === 'STS_ADMIN' && (
-        <NavItem to="/accounts" icon={UserCheck} label="Accounts" badge={newAccounts} />
-      )}
+      <NavItem to="/dashboard" label="Dashboard" />
+      <NavItem to="/dataqs" label="DataQs" />
+      <NavItem to="/high-iss" label="High Safety Score" />
+      <NavItem to="/service-requests" label="Service requests" />
+      <NavItem to="/invoices" label="Invoices" />
+      {me?.role === 'STS_ADMIN' && <NavItem to="/accounts" label="Accounts" badge={newAccounts} />}
     </>
   )
 

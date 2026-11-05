@@ -1,4 +1,3 @@
-import { FileSearch, Map as MapIcon, Search, Truck } from 'lucide-react'
 import { Outlet } from 'react-router-dom'
 
 import { SubscriptionGate } from '../../features/billing/SubscriptionGate'
@@ -10,10 +9,10 @@ import { PortalShell, type PortalNavItem } from './PortalShell'
 export function PortalLayout() {
   const searchEnabled = useClientSearchEnabled()
   const nav: PortalNavItem[] = [
-    { to: '/portal', label: 'My carriers', icon: Truck, end: true },
-    { to: '/portal/dataqs', label: 'DataQs', icon: FileSearch },
-    ...(searchEnabled ? [{ to: '/portal/search', label: 'Search carriers', icon: Search }] : []),
-    { to: '/portal/map', label: 'Carrier map', icon: MapIcon },
+    { to: '/portal', label: 'My carriers', end: true },
+    { to: '/portal/dataqs', label: 'DataQs' },
+    ...(searchEnabled ? [{ to: '/portal/search', label: 'Search carriers' }] : []),
+    { to: '/portal/map', label: 'Carrier map' },
   ]
   return (
     <PortalShell tone="carrier" home="/portal" label="Carrier portal" nav={nav}>

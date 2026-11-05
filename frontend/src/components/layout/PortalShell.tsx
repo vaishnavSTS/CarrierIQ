@@ -1,4 +1,3 @@
-import { type LucideIcon } from 'lucide-react'
 import { type ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
 
@@ -16,7 +15,6 @@ export type PortalTone = 'carrier' | 'broker' | 'agent'
 export interface PortalNavItem {
   to: string
   label: string
-  icon: LucideIcon
   /** Active only on this exact path (the portal's home) */
   end?: boolean
   /** A count shown beside the label */
@@ -53,9 +51,8 @@ export function PortalShell({
 }) {
   const links = (
     <>
-      {nav.map(({ to, label: text, icon: Icon, end, badge }) => (
+      {nav.map(({ to, label: text, end, badge }) => (
         <NavLink key={to} to={to} end={end} className={navClass}>
-          <Icon className="size-4" aria-hidden />
           {text}
           {badge ? (
             <span className="rounded-full bg-sky-600 px-1.5 text-xs font-medium text-surface tabular-nums">

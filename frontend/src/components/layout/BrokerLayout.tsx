@@ -1,4 +1,3 @@
-import { Columns3, Map as MapIcon, Receipt, Search } from 'lucide-react'
 import { Outlet } from 'react-router-dom'
 
 import { SubscriptionGate } from '../../features/billing/SubscriptionGate'
@@ -27,13 +26,11 @@ function BrokerFrame() {
       home="/broker"
       label={me?.role === 'INSURANCE_AGENT' ? 'Insurance agent portal' : 'Broker portal'}
       nav={[
-        { to: '/broker', label: 'Search carriers', icon: Search, end: true },
-        { to: '/broker/compare', label: 'Compare', icon: Columns3, badge: compared },
+        { to: '/broker', label: 'Search carriers', end: true },
+        { to: '/broker/compare', label: 'Compare', badge: compared },
         // The carrier map is for insurance agents, not brokers.
-        ...(me?.role === 'INSURANCE_AGENT'
-          ? [{ to: '/broker/map', label: 'Carrier map', icon: MapIcon }]
-          : []),
-        { to: '/broker/invoices', label: 'Invoices', icon: Receipt },
+        ...(me?.role === 'INSURANCE_AGENT' ? [{ to: '/broker/map', label: 'Carrier map' }] : []),
+        { to: '/broker/invoices', label: 'Invoices' },
       ]}
     >
       <PortalModeContext.Provider value="broker">
