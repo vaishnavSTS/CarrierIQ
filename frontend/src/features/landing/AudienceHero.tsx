@@ -90,7 +90,7 @@ export function AudienceHero({ audience }: { audience: Audience }) {
   )
 
   return (
-    <div className="relative">
+    <div className="relative flex flex-1 flex-col">
       {/* A real photo for each audience, faint under the blue and fading out before the page
         turns light. Carrier: Bhargav Panchal, Unsplash (unsplash.com/photos/P0bVatS8Jdw),
         Unsplash License; the others: photos.ts. */}
@@ -109,7 +109,7 @@ export function AudienceHero({ audience }: { audience: Audience }) {
         // Carrier: the headline across the top with the search beside it, then a wide dashboard
         // of a sample carrier's own record, with the MCS-150 tool as one of its cards.
         // Centred in the screen below the header (6.25rem), so it sits mid-screen at any height.
-        <section className="relative z-10 mx-auto max-w-6xl px-4 pb-40 pt-8 md:pt-10 lg:flex lg:min-h-[calc(100svh-6.25rem+6rem)] lg:flex-col lg:justify-center lg:pb-[7.5rem] lg:pt-6">
+        <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-40 pt-8 md:pt-10 lg:flex lg:flex-1 lg:flex-col lg:justify-center lg:pb-20 lg:pt-6">
           <div className="grid items-end gap-x-12 gap-y-6 text-center lg:grid-cols-[1.2fr_1fr] lg:text-left">
             <div>
               {eyebrow}
@@ -129,21 +129,21 @@ export function AudienceHero({ audience }: { audience: Audience }) {
         </section>
       ) : centered ? (
         // Broker: one column, everything centred, the booking check under the search.
-        <section className="relative z-10 mx-auto max-w-6xl px-4 pb-56 pt-12 text-center md:pt-16 lg:pt-20">
-          {eyebrow}
-          <h1 className="mx-auto mt-6 max-w-4xl text-4xl font-semibold leading-[1.06] tracking-tight text-white md:text-5xl lg:text-[3.6rem]">
+        <section className="relative z-10 mx-auto w-full max-w-6xl px-4 pb-56 pt-12 text-center md:pt-16 lg:flex lg:flex-1 lg:flex-col lg:justify-center lg:pb-14 lg:pt-5">
+          <div>{eyebrow}</div>
+          <h1 className="mx-auto mt-4 max-w-4xl text-4xl font-semibold leading-[1.05] tracking-tight text-white md:text-5xl lg:text-[3.1rem]">
             {page.title}
           </h1>
-          <p className="mx-auto mt-5 max-w-2xl text-base text-white/90 md:text-lg">{page.text}</p>
-          <div className="mt-8">{action}</div>
-          {facts}
-          <div className="mx-auto mt-12 w-full max-w-2xl text-left">
-            <HeroTool audience={audience} />
+          <p className="mx-auto mt-3 max-w-2xl text-base text-white/90">{page.text}</p>
+          <div className="mt-5">{action}</div>
+          <div className="[&>ul]:mt-3">{facts}</div>
+          <div className="mx-auto mt-6 w-full max-w-5xl text-left">
+            <HeroTool audience={audience} wide />
           </div>
         </section>
       ) : (
         // Agent: text left with the liability-minimum strip; a photo with floating facts right.
-        <section className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 px-4 pb-56 pt-10 md:pt-12 lg:grid-cols-[1.05fr_1fr] lg:gap-20 lg:pt-14">
+        <section className="relative z-10 mx-auto grid w-full max-w-6xl flex-1 content-center items-center gap-12 px-4 pb-56 pt-10 md:pt-12 lg:grid-cols-[1.05fr_1fr] lg:gap-20 lg:pb-20 lg:pt-6">
           <div className="text-center lg:text-left">
             {eyebrow}
             <h1 className="mt-5 text-4xl font-semibold leading-[1.08] tracking-tight text-white md:text-5xl lg:text-[3.2rem]">

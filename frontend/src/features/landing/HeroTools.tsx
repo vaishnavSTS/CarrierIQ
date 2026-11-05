@@ -18,8 +18,8 @@ import type { Audience } from '../audience/audience'
  * booking check by the portal's own rules (features/compare/vetting.ts). Insurance agents: the
  * federal liability minimum for the kind of carrier (49 CFR 387.9 and 387.33).
  */
-export function HeroTool({ audience }: { audience: Audience }) {
-  if (audience === 'broker') return <BookingCheckTool />
+export function HeroTool({ audience, wide = false }: { audience: Audience; wide?: boolean }) {
+  if (audience === 'broker') return <BookingCheckTool wide={wide} />
   if (audience === 'agent') return <MinimumTool />
   return <Mcs150Tool />
 }
@@ -235,7 +235,7 @@ const VERDICTS = {
   ready: { label: 'Ready to book', style: 'bg-emerald-100 text-emerald-800', icon: CircleCheck },
 } as const
 
-function BookingCheckTool() {
+function BookingCheckTool({ wide = false }: { wide?: boolean }) {
   const [answers, setAnswers] = useState(START)
   const flagged = QUESTIONS.filter((q) => answers[q.key] === q.flagWhen)
   const count = (level: Level) => flagged.filter((q) => q.level === level).length
@@ -247,6 +247,80 @@ function BookingCheckTool() {
         ? 'review'
         : 'ready'
   const { label, style, icon: VerdictIcon } = VERDICTS[verdict]
+  const toggles = QUESTIONS.map((q) => {
+    const on = answers[q.key]
+    const bad = on === q.flagWhen
+    return (
+      <li key={q.key}>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={on}
+          onClick={() => setAnswers((a) => ({ ...a, [q.key]: !a[q.key] }))}
+          className="flex w-full items-center gap-3 rounded-xl px-2 py-1.5 text-left text-sm text-slate-800 transition-colors hover:bg-slate-50"
+        >
+          <span
+            className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${on ? 'bg-[#101853]' : 'bg-slate-300'}`}
+          >
+            <span
+              className={`absolute top-0.5 size-4 rounded-full bg-white shadow transition-[left] ${on ? 'left-[1.125rem]' : 'left-0.5'}`}
+            />
+          </span>
+          <span className="flex-1">{q.ask}</span>
+          {bad && (
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${q.level === 'stop' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800'}`}
+            >
+              {q.level}
+            </span>
+          )}
+        </button>
+      </li>
+    )
+  })
+  const result = (
+    <Result id={verdict}>
+      <div className={`flex items-center gap-3 rounded-2xl px-4 py-3 ${style}`}>
+        <VerdictIcon className="size-6 shrink-0" aria-hidden />
+        <div>
+          <div className="text-lg font-semibold">{label}</div>
+          <div className="text-xs opacity-80">
+            {flagged.length === 0
+              ? 'Nothing here holds the booking back.'
+              : `${flagged.length} item${flagged.length > 1 ? 's' : ''} to weigh.`}
+          </div>
+        </div>
+      </div>
+    </Result>
+  )
+
+  if (wide) {
+    // The broker hero's version: toggles in two columns, the grade beside them, so it's short.
+    return (
+      <div className="relative rounded-3xl border border-white/40 bg-surface p-4 text-left shadow-2xl md:p-5">
+        <div className="flex items-center gap-2.5">
+          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-[#101853] text-amber-300">
+            <ShieldCheck className="size-4" aria-hidden />
+          </span>
+          <span className="font-label text-[10.5px] font-semibold uppercase tracking-[0.16em] text-accent-strong">
+            Try it
+          </span>
+          <span className="text-base font-semibold text-slate-950 [font-family:var(--font-display)]">
+            Quick booking check
+          </span>
+        </div>
+        <div className="mt-2 grid items-center gap-4 md:grid-cols-[1fr_13rem]">
+          <ul className="grid gap-x-3 sm:grid-cols-2">{toggles}</ul>
+          {result}
+        </div>
+        <p className="mt-2 border-t border-slate-100 pt-2 text-xs text-slate-500">
+          A short version of the booking check in the broker portal. It isn’t a safety rating or a
+          guarantee.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <ToolCard
       icon={ShieldCheck}
@@ -259,54 +333,8 @@ function BookingCheckTool() {
         </>
       }
     >
-      <ul className="space-y-1.5">
-        {QUESTIONS.map((q) => {
-          const on = answers[q.key]
-          const bad = on === q.flagWhen
-          return (
-            <li key={q.key}>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={on}
-                onClick={() => setAnswers((a) => ({ ...a, [q.key]: !a[q.key] }))}
-                className="flex w-full items-center gap-3 rounded-xl px-2 py-1.5 text-left text-sm text-slate-800 transition-colors hover:bg-slate-50"
-              >
-                <span
-                  className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${on ? 'bg-[#101853]' : 'bg-slate-300'}`}
-                >
-                  <span
-                    className={`absolute top-0.5 size-4 rounded-full bg-white shadow transition-[left] ${on ? 'left-[1.125rem]' : 'left-0.5'}`}
-                  />
-                </span>
-                <span className="flex-1">{q.ask}</span>
-                {bad && (
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${q.level === 'stop' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800'}`}
-                  >
-                    {q.level}
-                  </span>
-                )}
-              </button>
-            </li>
-          )
-        })}
-      </ul>
-      <div className="mt-3">
-        <Result id={verdict}>
-          <div className={`flex items-center gap-3 rounded-2xl px-4 py-3 ${style}`}>
-            <VerdictIcon className="size-6 shrink-0" aria-hidden />
-            <div>
-              <div className="text-lg font-semibold">{label}</div>
-              <div className="text-xs opacity-80">
-                {flagged.length === 0
-                  ? 'Nothing here holds the booking back.'
-                  : `${flagged.length} item${flagged.length > 1 ? 's' : ''} to weigh.`}
-              </div>
-            </div>
-          </div>
-        </Result>
-      </div>
+      <ul className="space-y-1.5">{toggles}</ul>
+      <div className="mt-3">{result}</div>
     </ToolCard>
   )
 }

@@ -438,10 +438,14 @@ export function LandingPage({ audience }: { audience: Audience }) {
 
   return (
     <div className="relative overflow-hidden">
-      <div className="hero-gradient">
-        <AudienceHero audience={audience} />
+      {/* The hero and the scrolling strip fill the first screen (below the 101px header), so
+          the strip shows at its bottom without scrolling. */}
+      <div className="flex flex-col lg:min-h-[calc(100svh-101px)]">
+        <div className="hero-gradient flex flex-1 flex-col">
+          <AudienceHero audience={audience} />
+        </div>
+        <ChecksMarquee audience={audience} />
       </div>
-      <ChecksMarquee audience={audience} />
       {numbered.map(({ part, tone, photo, number }) => (
         <Band key={part} tone={tone} photo={photo}>
           {render(part, number)}
