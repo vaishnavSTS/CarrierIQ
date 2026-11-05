@@ -92,8 +92,8 @@ export function RecordPage({
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-slate-200 text-left text-[10px] uppercase tracking-wide text-slate-500">
-                        <th className="py-1 font-medium">Date</th>
-                        <th className="py-1 font-medium">Inspection</th>
+                        <th className="py-1 font-medium">Points drop on</th>
+                        <th className="py-1 font-medium">Inspected on</th>
                         <th className="py-1 font-medium">What happens</th>
                         <th className="py-1 text-right font-medium">Points removed</th>
                       </tr>
