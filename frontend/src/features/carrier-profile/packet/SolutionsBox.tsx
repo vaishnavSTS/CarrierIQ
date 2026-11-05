@@ -39,10 +39,6 @@ export function SolutionsBox({
           </li>
         ))}
       </ol>
-      <p className="text-[11px] text-slate-500">
-        The score is recalculated when FMCSA updates its data each month; it depends on future
-        inspections, so no step guarantees a result.
-      </p>
     </div>
   )
 }
