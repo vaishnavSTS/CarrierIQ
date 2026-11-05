@@ -774,6 +774,49 @@ body {
   }
 }
 
+/* On screen, where a printed page begins part-way through a sheet (PacketSection Sheet): a dashed
+   line with the page's number, in a gap above that section or row. Table rows get the gap inside
+   their first cells, as rows take no margin. */
+#carrier-packet [data-page-break] {
+  position: relative;
+}
+#carrier-packet [data-page-break]:not(tbody, tr) {
+  margin-top: 2.75rem;
+}
+#carrier-packet tbody[data-page-break] > tr:first-child > td,
+#carrier-packet tr[data-page-break] > td {
+  padding-top: 2.75rem;
+}
+#carrier-packet [data-page-break]::before,
+#carrier-packet [data-page-break]::after {
+  position: absolute;
+  top: -1.4rem;
+  pointer-events: none;
+}
+#carrier-packet [data-page-break]::before {
+  content: '';
+  left: 0;
+  right: 0;
+  border-top: 1.5px dashed var(--color-slate-300);
+}
+#carrier-packet [data-page-break]::after {
+  content: attr(data-page-break);
+  right: 0;
+  transform: translateY(-50%);
+  padding-left: 0.5rem;
+  background: var(--color-surface);
+  color: var(--color-slate-500);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+#carrier-packet :is(tbody, tr)[data-page-break]::before,
+#carrier-packet :is(tbody, tr)[data-page-break]::after {
+  top: 1.35rem;
+}
+
 @media print {
   :root,
   :root[data-theme='dark'] {

@@ -21,11 +21,25 @@ const PAGE_WIDTH = PAGE_WIDTH_MM * PX_PER_MM
 const MIN_FIRST_ROWS = 3
 const SCALE = 0.92 // the on-screen report uses the same (index.css #carrier-packet)
 
+/**
+ * A printed page that starts part-way through a sheet: before section `block` of sheet `sheet`
+ * (the children of its `.sheet-body`, in order), or before row `row` of that section's split
+ * element when it starts inside a table or list.
+ */
+export interface PageBreak {
+  sheet: number
+  block: number
+  row: number | null
+  page: number
+}
+
 /** Where each report sheet landed: its first and last printed page, and the page count. */
 export interface PageNumbers {
   first: number[]
   last: number[]
   total: number
+  /** Where the pages after a sheet's first one begin (shown on screen as lines) */
+  breaks: PageBreak[]
 }
 
 /**
@@ -48,10 +62,13 @@ export function paginateReport(source: HTMLElement, out: HTMLElement): PageNumbe
   const first: number[] = []
   const last: number[] = []
   const pages: HTMLElement[] = []
+  const breaks: PageBreak[] = []
+  let sheetIndex = 0
+  let blockIndex = -1 // -1 while a sheet's title line is placed, before its sections
   let sheet = sheets[0]
   let page!: HTMLElement
   let body!: HTMLElement
-  const newPage = () => {
+  const newPage = (row: number | null = null) => {
     // A sheet's title line left alone at the bottom of a page goes: the new page's header names it.
     if (body?.lastElementChild?.hasAttribute('data-sheet-title')) body.lastElementChild.remove()
     const wrapper = document.createElement('div')
@@ -73,12 +90,17 @@ export function paginateReport(source: HTMLElement, out: HTMLElement): PageNumbe
     out.append(wrapper)
     pages.push(wrapper)
     page = copy
+    if (blockIndex >= 0) {
+      breaks.push({ sheet: sheetIndex, block: blockIndex, row: row || null, page: pages.length })
+    }
   }
   // The page's size as printed (the box of a zoomed element is the zoomed size).
   const fits = () => page.getBoundingClientRect().height <= PAGE_HEIGHT + 1
 
   sheets.forEach((next, index) => {
     sheet = next
+    sheetIndex = index
+    blockIndex = -1
     if (index === 0) {
       newPage()
     } else {
@@ -95,10 +117,11 @@ export function paginateReport(source: HTMLElement, out: HTMLElement): PageNumbe
     const blocks = [
       ...(sheet.querySelector(':scope > .sheet-body')?.children ?? []),
     ] as HTMLElement[]
-    for (const block of blocks) {
+    blocks.forEach((block, b) => {
+      blockIndex = b
       const whole = block.cloneNode(true) as HTMLElement
       body.append(whole)
-      if (fits()) continue
+      if (fits()) return
       whole.remove()
       const split = block.querySelector('[data-split]')
       if (!split) {
@@ -106,11 +129,19 @@ export function paginateReport(source: HTMLElement, out: HTMLElement): PageNumbe
         if (body.children.length) newPage()
         body.append(whole)
         if (!fits()) page.parentElement?.classList.add('print-flow') // never cut it off
-        continue
+        return
       }
       placeSplit(block, split, () => body, newPage, fits)
-    }
+    })
     last.push(pages.length)
+  })
+
+  // A sheet whose first section moved to a new page (only its title line was left behind, and
+  // that went) starts on that page: no line for it.
+  const kept = breaks.filter((b) => {
+    if (b.block > 0 || b.row !== null) return true
+    first[b.sheet] = b.page
+    return false
   })
 
   pages.forEach((wrapper, i) => {
@@ -120,11 +151,11 @@ export function paginateReport(source: HTMLElement, out: HTMLElement): PageNumbe
     const number = copy.querySelector('[data-page-number]')
     if (number) number.textContent = `· Page ${i + 1} of ${pages.length}`
   })
-  return { first, last, total: pages.length }
+  return { first, last, total: pages.length, breaks: kept }
 }
 
 /** The units a split element is cut between: its rows (a table's body groups, a list's items). */
-function units(element: Element): Element[] {
+export function units(element: Element): Element[] {
   return [...element.children].filter((c) => c.tagName !== 'THEAD')
 }
 
@@ -165,7 +196,8 @@ function placeSplit(
   block: HTMLElement,
   split: Element,
   body: () => HTMLElement,
-  newPage: () => void,
+  /** Starts a new page whose first row is the one given */
+  newPage: (row: number) => void,
   fits: () => boolean,
 ) {
   const rows = units(split)
@@ -190,13 +222,13 @@ function placeSplit(
     const fewRows = from === 0 && to > 0 && to < Math.min(MIN_FIRST_ROWS, rows.length)
     if (fewRows && body().children.length > 1) {
       copy.remove()
-      newPage()
+      newPage(from)
       continue
     }
     if (to === from) {
       if (body().children.length > 1) {
         copy.remove()
-        newPage() // not even one row fits after what is there: start a new page
+        newPage(from) // not even one row fits after what is there: start a new page
         continue
       }
       // One row taller than a page: printed on its own, running on rather than cut off.
@@ -206,6 +238,6 @@ function placeSplit(
     }
     if (to < rows.length) after.forEach((element) => element.remove())
     from = to
-    if (from < rows.length) newPage()
+    if (from < rows.length) newPage(from)
   }
 }

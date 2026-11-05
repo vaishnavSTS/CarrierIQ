@@ -40,7 +40,7 @@ import { authorityEventsToReview, packetItems, type PacketItem } from './packetI
 import { FixWithSky } from '../FixWithSky'
 import { afterLabel, plainGroup } from './plainLabels'
 import { InspectionList } from './InspectionList'
-import { paginateReport, PrintCopy, type PageNumbers } from './printFit'
+import { paginateReport, PrintCopy, units, type PageNumbers } from './printFit'
 import { PullInRates } from './PullInRates'
 import { RecordPage } from './RecordPage'
 import { ScrollX } from './ScrollX'
@@ -123,15 +123,29 @@ function Sheet({
   const printed = useContext(PrintCopy)
   const pages = useContext(Pages)
   const first = pages?.first[index]
-  const last = pages?.last[index]
-  // Printed, each page's own number is filled in when the pages are laid out.
-  const number = printed
-    ? '·'
-    : pages && first && last
-      ? `· ${first === last ? `Page ${first}` : `Pages ${first}–${last}`} of ${pages.total}`
-      : ''
+  const ref = useRef<HTMLElement>(null)
+  // Printed, each page's own number is filled in when the pages are laid out. On screen the header
+  // gives the sheet's first page, and a line marks where each later page begins (index.css
+  // [data-page-break]), at the same section or row as in print.
+  const number = printed ? '·' : pages && first ? `· Page ${first} of ${pages.total}` : ''
+  useLayoutEffect(() => {
+    const section = ref.current
+    if (printed || !section) return
+    section
+      .querySelectorAll('[data-page-break]')
+      .forEach((e) => e.removeAttribute('data-page-break'))
+    for (const b of pages?.breaks ?? []) {
+      if (b.sheet !== index) continue
+      // Its sections follow the header, as in the printed sheet's body.
+      const block = section.children[b.block + 1]
+      const split = b.row === null ? null : block?.querySelector('[data-split]')
+      const target = split ? units(split)[b.row!] : block
+      target?.setAttribute('data-page-break', `Page ${b.page} of ${pages!.total}`)
+    }
+  })
   const sheet = (
     <section
+      ref={ref}
       data-title={title}
       className={
         printed
