@@ -1,4 +1,4 @@
-import { CircleHelp, ShieldHalf } from 'lucide-react'
+import { CircleHelp } from 'lucide-react'
 
 /** 49 CFR 387.9 (for-hire carriers of property, 10,001 lbs or more) and 387.33 (passengers). */
 const MINIMUMS = [
@@ -54,9 +54,6 @@ export function LiabilityMinimums() {
   return (
     <section className="min-w-0 rounded-2xl border border-slate-200 bg-surface p-5 shadow-sm">
       <div className="flex items-center gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--portal-ink)] text-white">
-          <ShieldHalf className="size-5" aria-hidden />
-        </span>
         <div className="min-w-0">
           <p className="font-label text-[10.5px] uppercase tracking-[0.14em] text-slate-500">
             Quick reference

@@ -1,6 +1,5 @@
 import {
   ArrowUpRight,
-  ClipboardCheck,
   FileText,
   Gauge,
   Network,
@@ -78,9 +77,6 @@ export function BookingChecklist() {
     <motion.section {...reveal()} className={CARD}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--portal-accent)] text-[var(--portal-accent-ink)]">
-            <ClipboardCheck className="size-5" aria-hidden />
-          </span>
           <div className="min-w-0">
             <p className={`${LABEL} text-slate-500`}>Before you book</p>
             <h2 className="mt-0.5 text-base font-semibold text-slate-900">

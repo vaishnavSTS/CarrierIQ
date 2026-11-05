@@ -8,7 +8,7 @@ import {
   Truck,
   type LucideIcon,
 } from 'lucide-react'
-import { motion } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -73,8 +73,16 @@ export function MapSection({
     <div>
       <SectionHeading number={sectionNumber} eyebrow="Carrier map" title={title} aside={aside} />
 
-      <motion.div {...reveal()} className="mt-10 grid items-start gap-6 lg:grid-cols-[1.45fr_1fr]">
-        <div className="rounded-3xl border border-slate-200 bg-surface p-4 shadow-xl shadow-brand-glow/10 md:p-6">
+      {/* The map alone, centred, until a state is picked; then the state's list slides in. */}
+      <motion.div
+        {...reveal()}
+        className={`mt-10 grid items-start gap-6 ${current ? 'lg:grid-cols-[1.45fr_1fr]' : ''}`}
+      >
+        <motion.div
+          layout
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className={`w-full rounded-3xl border border-slate-200 bg-surface p-4 shadow-xl shadow-brand-glow/10 md:p-6 ${current ? '' : 'mx-auto max-w-4xl'}`}
+        >
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <Pill
               label={inactive ? 'Inactive interstate carriers' : 'Active interstate carriers'}
@@ -131,26 +139,27 @@ export function MapSection({
               inactive={inactive}
             />
           )}
-        </div>
+          {!current && counts.data && (
+            <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-accent-strong">
+              <MapPinned className="size-4" aria-hidden />
+              Click a state to see its carriers
+            </p>
+          )}
+        </motion.div>
 
-        {current ? (
-          <StateList
-            key={`${current.state}-${status}`}
-            state={current}
-            status={status}
-            signUp={signUp}
-          />
-        ) : (
-          <div className="grid min-h-72 place-items-center rounded-3xl border border-dashed border-slate-300 bg-surface/80 p-8 text-center">
-            <div>
-              <MapPinned className="mx-auto size-9 text-accent-strong" aria-hidden />
-              <p className="mt-3 font-semibold text-slate-900">Pick a state</p>
-              <p className="mt-1 text-sm text-slate-600">
-                Click any state to see its newest, largest and A–Z carriers.
-              </p>
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {current && (
+            <motion.div
+              key={`${current.state}-${status}`}
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 24 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <StateList state={current} status={status} signUp={signUp} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   )

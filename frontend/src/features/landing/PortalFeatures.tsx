@@ -211,7 +211,7 @@ export function PortalFeatures({ audience, number }: { audience: Audience; numbe
       <SectionHeading number={number} eyebrow="Inside the portal" title={title} aside={aside} />
       <ul className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item, i) => {
-          const { icon: Icon, title, text } = item
+          const { title, text } = item
           return (
             <motion.li
               key={title}
@@ -222,9 +222,6 @@ export function PortalFeatures({ audience, number }: { audience: Audience; numbe
                   : 'border-slate-200 bg-surface hover:border-slate-300'
               }`}
             >
-              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#101853] text-white">
-                <Icon className="size-5" aria-hidden />
-              </span>
               <div>
                 <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
                 <p className="mt-1 text-sm leading-relaxed text-slate-600">{text}</p>

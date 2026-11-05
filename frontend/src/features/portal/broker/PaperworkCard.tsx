@@ -1,4 +1,4 @@
-import { Check, ClipboardList, RotateCcw } from 'lucide-react'
+import { Check, RotateCcw } from 'lucide-react'
 import { useState } from 'react'
 
 import { CARD, LABEL } from './reveal'
@@ -23,9 +23,6 @@ export function PaperworkCard() {
     <section className={CARD} aria-labelledby="paperwork">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--portal-ink)] text-white">
-            <ClipboardList className="size-5" aria-hidden />
-          </span>
           <div>
             <div className={`${LABEL} text-slate-500`}>Still on you · {count} of 4</div>
             <h2 id="paperwork" className="text-base font-semibold leading-tight text-slate-950">

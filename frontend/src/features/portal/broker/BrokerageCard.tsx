@@ -1,4 +1,4 @@
-import { ArrowUpRight, Landmark } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 
@@ -40,9 +40,6 @@ export function BrokerageCard({
   return (
     <motion.section {...reveal(0.05)} className={`${CARD} flex flex-col`}>
       <div className="flex items-start gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--portal-ink)] text-white">
-          <Landmark className="size-5" aria-hidden />
-        </span>
         <div className="min-w-0">
           <p className={`${LABEL} text-slate-500`}>Your brokerage</p>
           <h2 className="mt-0.5 truncate text-base font-semibold text-slate-900">

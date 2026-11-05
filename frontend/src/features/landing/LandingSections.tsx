@@ -1,13 +1,15 @@
-import { BadgeCheck } from 'lucide-react'
-import { motion } from 'motion/react'
-import { useRef, useState, type FormEvent, type ReactElement } from 'react'
+import { BadgeCheck, BellRing, Search, Send, type LucideIcon } from 'lucide-react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import dataqsFile from '../../assets/photos/dataqs-file.jpg'
+import dataqsFind from '../../assets/photos/dataqs-find.jpg'
+import dataqsFollow from '../../assets/photos/dataqs-follow.jpg'
 import reportPage1 from '../../assets/report-sample-1.webp'
 import reportPage2 from '../../assets/report-sample-2.webp'
 import stsLogo from '../carrier-profile/packet/sts-logo.png'
 import { Accent, reveal, SectionHeading } from './landingParts'
-import { FileArt, FindArt, FollowArt } from './RoleArt'
 import { MembershipsStrip } from './StsVoices'
 
 /** From skytransportsolutions.com. Only what its pages agree on: no client counts or rankings. */
@@ -107,23 +109,72 @@ export function HeroTryForm({ centered = false }: { centered?: boolean }) {
   )
 }
 
-const DATAQS_STEPS: { art: () => ReactElement; title: string; text: string }[] = [
+/* The three steps, each with a real photo (Unsplash License: dataqs-find RLGVfefASPo and
+   dataqs-follow ALcrPWjLHDY by Vitaly Gariev, dataqs-file wnpf3Q5pkXA by BaljkanN4). */
+const DATAQS_STEPS: {
+  photo: string
+  alt: string
+  icon: LucideIcon
+  title: string
+  text: string
+}[] = [
   {
-    art: FindArt,
+    photo: dataqsFind,
+    alt: 'A man going through papers at his laptop',
+    icon: Search,
     title: 'Find it',
     text: 'See every inspection and violation on your record, with the ones weighing most on your score first.',
   },
   {
-    art: FileArt,
+    photo: dataqsFile,
+    alt: 'A specialist with a headset working at a computer',
+    icon: Send,
     title: 'We file it',
     text: 'Choose the inspection and an STS specialist prepares and files the DataQs challenge with you.',
   },
   {
-    art: FollowArt,
+    photo: dataqsFollow,
+    alt: 'A woman reading good news on her phone at her desk',
+    icon: BellRing,
     title: 'Follow it',
     text: 'Track your case in your portal. The agency reviewing the record makes the final decision.',
   },
 ]
+
+/** The stages a case shows in the portal, turning over on the "Follow it" card. */
+const CASE_STAGES = [
+  { label: 'STS review', style: 'bg-slate-100 text-slate-700 ring-slate-200' },
+  { label: 'With the agency', style: 'bg-sky-50 text-sky-800 ring-sky-200' },
+  { label: 'Decision made', style: 'bg-emerald-50 text-emerald-700 ring-emerald-200' },
+]
+
+function CaseStage() {
+  const reduceMotion = useReducedMotion()
+  const [stage, setStage] = useState(0)
+  useEffect(() => {
+    if (reduceMotion) return
+    const timer = window.setTimeout(() => setStage((s) => (s + 1) % CASE_STAGES.length), 2200)
+    return () => window.clearTimeout(timer)
+  }, [stage, reduceMotion])
+  const { label, style } = CASE_STAGES[stage]
+  return (
+    <span className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-lg">
+      Case 12
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span
+          key={label}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ duration: 0.25 }}
+          className={`rounded-full px-2 py-0.5 text-[10.5px] uppercase ring-1 ${style}`}
+        >
+          {label}
+        </motion.span>
+      </AnimatePresence>
+    </span>
+  )
+}
 
 /** The service that sets Carrier Safety Scan apart: STS files the challenge. */
 export function DataQsSection({ number }: { number?: string }) {
@@ -139,20 +190,47 @@ export function DataQsSection({ number }: { number?: string }) {
         }
         aside="A violation cited by mistake counts against your safety record until it’s corrected. If a challenge is accepted, the violation is removed and stops counting."
       />
-      <div className="mt-12 grid gap-5 md:grid-cols-3">
-        {DATAQS_STEPS.map(({ art: Art, title, text }, i) => (
-          <motion.article
-            key={title}
-            {...reveal(i * 0.05)}
-            className="rounded-2xl border border-white/10 bg-surface p-6 shadow-2xl shadow-black/20"
-          >
-            <div className="-mx-6 -mt-6 mb-1 h-32 overflow-hidden rounded-t-2xl">
-              <Art />
-            </div>
-            <h3 className="mt-5 text-sm font-semibold text-slate-900">{title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">{text}</p>
-          </motion.article>
-        ))}
+      <div className="relative mt-12">
+        {/* The path from one step to the next, drawn as the section comes into view. */}
+        <motion.div
+          aria-hidden
+          initial={{ scaleX: 0 }}
+          whileInView={{ scaleX: 1 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
+          className="absolute left-[16.6%] right-[16.6%] top-[5.5rem] hidden h-0.5 origin-left bg-gradient-to-r from-amber-300 via-amber-200 to-emerald-300 md:block"
+        />
+        <div className="relative grid gap-5 md:grid-cols-3">
+          {DATAQS_STEPS.map(({ photo, alt, icon: Icon, title, text }, i) => (
+            <motion.article
+              key={title}
+              {...reveal(0.15 + i * 0.25)}
+              className="group overflow-hidden rounded-2xl bg-surface shadow-2xl shadow-black/25 ring-1 ring-white/10 transition-transform duration-300 hover:-translate-y-1.5"
+            >
+              <div className="relative h-44 overflow-hidden">
+                <img
+                  src={photo}
+                  alt={alt}
+                  loading="lazy"
+                  className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                />
+                <div
+                  aria-hidden
+                  className="absolute inset-0 bg-gradient-to-t from-[#060d24]/70 via-[#060d24]/10 to-transparent"
+                />
+                <span className="absolute left-4 top-4 grid size-9 place-items-center rounded-full bg-amber-300 text-sm font-bold text-[#060d24] shadow-lg">
+                  {i + 1}
+                </span>
+                <span className="absolute bottom-3 left-4 inline-flex items-center gap-1.5 text-sm font-semibold text-white">
+                  <Icon className="size-4 text-amber-300" aria-hidden />
+                  {title}
+                </span>
+                {i === 2 && <CaseStage />}
+              </div>
+              <p className="p-5 text-sm leading-relaxed text-slate-600">{text}</p>
+            </motion.article>
+          ))}
+        </div>
       </div>
     </div>
   )

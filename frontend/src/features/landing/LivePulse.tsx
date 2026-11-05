@@ -71,12 +71,15 @@ export function LivePulse({ number }: { number?: string }) {
   ]
 
   const items = recent.data ?? []
-  const row = (hidden: boolean) => (
+  // Two strips with different carriers: the first half, then the rest (running the other way).
+  const half = Math.ceil(items.length / 2)
+  const strips = [items.slice(0, half), items.slice(half)].filter((s) => s.length > 0)
+  const row = (list: typeof items, hidden: boolean) => (
     <ul
       className="marquee-row flex shrink-0 items-center gap-8 pr-8"
       aria-hidden={hidden || undefined}
     >
-      {items.map((c) => (
+      {list.map((c) => (
         <li
           key={`${hidden}-${c.usdot_number}`}
           className="flex items-center gap-2 whitespace-nowrap text-sm"
@@ -133,15 +136,22 @@ export function LivePulse({ number }: { number?: string }) {
           <div className="font-label mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-300">
             Just registered
           </div>
-          <section
-            aria-label="Carriers that just registered"
-            className="marquee relative overflow-hidden rounded-2xl bg-white/6 py-3.5 ring-1 ring-white/10"
-          >
-            <div className="marquee-track flex w-max">
-              {row(false)}
-              {row(true)}
-            </div>
-          </section>
+          <div className="space-y-2.5">
+            {strips.map((list, i) => (
+              <section
+                key={i}
+                aria-label={
+                  i === 0 ? 'Carriers that just registered' : 'More carriers that just registered'
+                }
+                className={`marquee relative overflow-hidden rounded-2xl bg-white/6 py-3.5 ring-1 ring-white/10 ${i === 1 ? 'marquee-reverse' : ''}`}
+              >
+                <div className="marquee-track flex w-max">
+                  {row(list, false)}
+                  {row(list, true)}
+                </div>
+              </section>
+            ))}
+          </div>
         </div>
       )}
     </div>

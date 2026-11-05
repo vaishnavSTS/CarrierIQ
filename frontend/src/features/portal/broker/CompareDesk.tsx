@@ -1,4 +1,4 @@
-import { ArrowRight, Columns3, Plus, X } from 'lucide-react'
+import { ArrowRight, Plus, X } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Link } from 'react-router-dom'
 
@@ -28,9 +28,6 @@ export function CompareDesk() {
     <motion.section {...reveal()} className={`${CARD} flex flex-col`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--portal-ink)] text-white">
-            <Columns3 className="size-5" aria-hidden />
-          </span>
           <div className="min-w-0">
             <p className={`${LABEL} text-slate-500`}>
               Compare list · {usdots.length} of {MAX_COMPARE}
