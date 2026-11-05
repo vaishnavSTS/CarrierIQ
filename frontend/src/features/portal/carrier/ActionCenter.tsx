@@ -6,7 +6,6 @@ import {
   CircleCheck,
   FileSearch,
   Hourglass,
-  ShieldCheck,
   type LucideIcon,
 } from 'lucide-react'
 import { motion } from 'motion/react'
@@ -62,9 +61,6 @@ export function ActionCenter({
     <motion.section {...rise(0)} className={CARD} aria-labelledby={`actions-${usdotNumber}`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--portal-ink)] text-white">
-            <ShieldCheck className="size-5" aria-hidden />
-          </span>
           <div>
             <div className={`${LABEL} text-slate-500`}>Action center</div>
             <h3

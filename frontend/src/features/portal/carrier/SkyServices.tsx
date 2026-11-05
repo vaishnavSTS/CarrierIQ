@@ -5,7 +5,6 @@ import {
   FileCheck2,
   FlaskConical,
   FolderOpen,
-  Handshake,
   ScrollText,
   type LucideIcon,
 } from 'lucide-react'
@@ -35,9 +34,6 @@ export function SkyServices({ page }: { page: string }) {
     <motion.section {...rise(5)} className={CARD} aria-labelledby="sky-services">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--portal-ink)] text-white">
-            <Handshake className="size-5" aria-hidden />
-          </span>
           <div>
             <div className={`${LABEL} text-slate-500`}>Get it done with Sky</div>
             <h2 id="sky-services" className="text-lg font-semibold leading-tight text-slate-950">

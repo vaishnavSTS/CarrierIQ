@@ -19,6 +19,7 @@ import {
 } from '../features/landing/landingParts'
 import { CompareShowcase } from '../features/landing/CompareShowcase'
 import { FaqSection } from '../features/landing/Faq'
+import { MapSection } from '../features/landing/MapSection'
 import { AUDIENCE_FAQ } from '../features/landing/faqContent'
 import { AboutStsSection, DataQsSection, ReportPreview } from '../features/landing/LandingSections'
 import { PhoneShowcase } from '../features/landing/PhoneShowcase'
@@ -236,6 +237,7 @@ type Part =
   | 'redFlags'
   | 'underwriting'
   | 'compare'
+  | 'map'
   | 'portal'
   | 'phone'
   | 'report'
@@ -251,6 +253,7 @@ const LAYOUT: Record<Audience, [Part, BandTone, photo?: string][]> = {
     ['features', 'mesh'],
     ['fix', 'plain'],
     ['dataqs', 'photo', SECTION_PHOTO.carrierDataqs],
+    ['map', 'grid'],
     ['portal', 'warm'],
     ['phone', 'grid'],
     ['report', 'tint'],
@@ -262,6 +265,7 @@ const LAYOUT: Record<Audience, [Part, BandTone, photo?: string][]> = {
   broker: [
     ['features', 'plain'],
     ['redFlags', 'photo', SECTION_PHOTO.brokerFlags],
+    ['map', 'tint'],
     ['compare', 'warm'],
     ['portal', 'mesh'],
     ['steps', 'photo'],
@@ -272,6 +276,7 @@ const LAYOUT: Record<Audience, [Part, BandTone, photo?: string][]> = {
   agent: [
     ['features', 'warm'],
     ['underwriting', 'photo', SECTION_PHOTO.agentQuestions],
+    ['map', 'tint'],
     ['compare', 'mesh'],
     ['portal', 'plain'],
     ['steps', 'photo'],
@@ -283,6 +288,37 @@ const LAYOUT: Record<Audience, [Part, BandTone, photo?: string][]> = {
 
 /** Parts without a section number. */
 const UNNUMBERED: Part[] = ['cta', 'about']
+
+/** The carrier map section's words for each audience. */
+const MAP_WORDS: Record<Audience, { title: ReactNode; aside: string }> = {
+  carrier: {
+    title: (
+      <>
+        Who’s hauling <Accent>in your state</Accent>
+      </>
+    ),
+    aside:
+      'How many carriers are active in each state and who just registered: the companies brokers weigh you against.',
+  },
+  broker: {
+    title: (
+      <>
+        Find carriers <Accent>state by state</Accent>
+      </>
+    ),
+    aside:
+      'Where carriers are based, who registered this month and who runs the biggest fleets. Open any of them with your free search.',
+  },
+  agent: {
+    title: (
+      <>
+        Trucking risk, <Accent>state by state</Accent>
+      </>
+    ),
+    aside:
+      'Where carriers are based, which are newly registered and which run large fleets: the accounts you may be asked to quote.',
+  },
+}
 
 /** The report sample's words for each audience. */
 const REPORT_ASIDE: Record<Audience, string> = {
@@ -360,6 +396,17 @@ export function LandingPage({ audience }: { audience: Audience }) {
         return <AgentUnderwritingSection number={number} />
       case 'compare':
         return <CompareShowcase who={audience === 'agent' ? 'agent' : 'broker'} number={number} />
+      case 'map':
+        return (
+          <MapSection
+            number={number}
+            title={MAP_WORDS[audience].title}
+            aside={MAP_WORDS[audience].aside}
+            signUp={
+              user ? undefined : { to: content.cta.signUpTo, label: 'Start free for 30 days' }
+            }
+          />
+        )
       case 'portal':
         return <PortalFeatures audience={audience} number={number} />
       case 'phone':

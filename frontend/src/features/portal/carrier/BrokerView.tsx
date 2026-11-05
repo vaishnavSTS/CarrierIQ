@@ -1,4 +1,4 @@
-import { Ban, ChevronRight, CircleAlert, CircleCheck, Eye, TriangleAlert } from 'lucide-react'
+import { Ban, ChevronRight, CircleAlert, CircleCheck, TriangleAlert } from 'lucide-react'
 import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 
@@ -37,9 +37,6 @@ export function BrokerView({ usdotNumber, page }: { usdotNumber: number; page: s
   return (
     <motion.section {...rise(1)} className={`${CARD} flex flex-col`} aria-labelledby="broker-view">
       <div className="flex items-center gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--portal-ink)] text-white">
-          <Eye className="size-5" aria-hidden />
-        </span>
         <div>
           <div className={`${LABEL} text-slate-500`}>Booking check</div>
           <h2 id="broker-view" className="text-lg font-semibold leading-tight text-slate-950">

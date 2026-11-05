@@ -88,11 +88,8 @@ export function ClientGuide() {
       </p>
 
       <ul className="mt-5 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
-        {FEATURES.map(({ icon: Icon, title, text }) => (
+        {FEATURES.map(({ title, text }) => (
           <li key={title} className="flex gap-3">
-            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[var(--portal-ink)] text-white">
-              <Icon className="size-4" aria-hidden />
-            </span>
             <div className="min-w-0">
               <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
               <p className="mt-0.5 text-sm leading-relaxed text-slate-600">{text}</p>

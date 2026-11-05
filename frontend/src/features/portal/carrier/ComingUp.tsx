@@ -1,4 +1,4 @@
-import { CalendarClock, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 
@@ -16,9 +16,6 @@ export function ComingUp({ items }: { items: ActionItem[] }) {
   return (
     <motion.section {...rise(3)} className={CARD} aria-labelledby="coming-up">
       <div className="flex items-center gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--portal-ink)] text-white">
-          <CalendarClock className="size-5" aria-hidden />
-        </span>
         <div>
           <div className={`${LABEL} text-slate-500`}>Plan ahead</div>
           <h2 id="coming-up" className="text-lg font-semibold leading-tight text-slate-950">

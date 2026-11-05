@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronRight, FilePlus2, FileSearch } from 'lucide-react'
+import { ArrowRight, ChevronRight, FilePlus2 } from 'lucide-react'
 import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 
@@ -29,9 +29,6 @@ export function DataQsPanel({ multipleCarriers }: { multipleCarriers: boolean })
     <motion.section {...reveal()} className={CARD} aria-labelledby="portal-dataqs">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--portal-ink)] text-white">
-            <FileSearch className="size-5" aria-hidden />
-          </span>
           <div>
             <div className={`${LABEL} text-slate-500`}>DataQs requests</div>
             <h2 id="portal-dataqs" className="text-lg font-semibold leading-tight text-slate-950">

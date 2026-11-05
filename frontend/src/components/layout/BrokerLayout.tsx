@@ -1,4 +1,4 @@
-import { Columns3, MapPinned, Receipt, Search } from 'lucide-react'
+import { Columns3, Receipt, Search } from 'lucide-react'
 import { Outlet } from 'react-router-dom'
 
 import { SubscriptionGate } from '../../features/billing/SubscriptionGate'
@@ -29,7 +29,6 @@ function BrokerFrame() {
       nav={[
         { to: '/broker', label: 'Search carriers', icon: Search, end: true },
         { to: '/broker/compare', label: 'Compare', icon: Columns3, badge: compared },
-        { to: '/broker/map', label: 'Carrier map', icon: MapPinned },
         { to: '/broker/invoices', label: 'Invoices', icon: Receipt },
       ]}
     >

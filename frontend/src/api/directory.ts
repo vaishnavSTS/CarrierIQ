@@ -1,6 +1,6 @@
 import { apiGet } from './client'
 
-/** One state on the carrier map (backend routes/directory.py). */
+/** The public carrier map (backend routes/directory.py), with no login. */
 export interface StateCount {
   state: string
   name: string
@@ -8,14 +8,11 @@ export interface StateCount {
   new_last_30_days: number
 }
 
-export interface DirectoryCarrier {
+export interface PublicCarrier {
   usdot_number: number
   legal_name: string
-  dba_name: string | null
   city: string | null
-  county_code: string | null
   power_units: number | null
-  drivers: number | null
   registered_on: string | null
   /** A USDOT under 5 years old reporting 1,000+ power units: worth a closer look. */
   fleet_needs_check: boolean
@@ -23,25 +20,26 @@ export interface DirectoryCarrier {
 
 export type DirectorySort = 'newest' | 'largest' | 'az'
 
-export interface StatePage {
+/** One page of a state's carriers; only the first 3 pages can be opened. */
+export interface PublicStateList {
   state: string
   name: string
   sort: DirectorySort
   letter: string | null
   page: number
-  carriers: DirectoryCarrier[]
+  carriers: PublicCarrier[]
   has_more: boolean
 }
 
-export const getStateCounts = () => apiGet<StateCount[]>('/directory/states')
+export const getPublicStateCounts = () => apiGet<StateCount[]>('/public/directory/states')
 
-export const getStateCarriers = (
+export const getPublicStateCarriers = (
   state: string,
   sort: DirectorySort,
   letter: string | null,
   page: number,
 ) => {
   const params = new URLSearchParams({ sort, page: String(page) })
-  if (letter) params.set('letter', letter)
-  return apiGet<StatePage>(`/directory/states/${state}?${params}`)
+  if (letter && sort === 'az') params.set('letter', letter)
+  return apiGet<PublicStateList>(`/public/directory/states/${state}?${params}`)
 }
