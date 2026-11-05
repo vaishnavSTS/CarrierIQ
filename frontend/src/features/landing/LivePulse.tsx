@@ -118,7 +118,11 @@ export function LiveStrip() {
           role="region"
           className="marquee relative overflow-hidden border-t border-white/10 bg-white/5 py-3"
         >
-          <div className="marquee-track flex w-max">
+          {/* Slower than the section's strips: about 3 seconds per carrier. */}
+          <div
+            className="marquee-track flex w-max"
+            style={{ animationDuration: `${Math.max(90, items.length * 3)}s` }}
+          >
             <RecentRow list={items} hidden={false} />
             <RecentRow list={items} hidden />
           </div>

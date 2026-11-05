@@ -1,10 +1,11 @@
 import { ArrowRight, Check } from 'lucide-react'
 import { useEffect } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 
 import { AUDIENCE_PATH, forgetStoredAudience, type Audience } from '../features/audience/audience'
 import { FaqSection } from '../features/landing/Faq'
 import { CHOOSER_FAQ } from '../features/landing/faqContent'
+import { HeroTryForm } from '../features/landing/LandingSections'
 import { LiveStrip } from '../features/landing/LivePulse'
 import { Band } from '../features/landing/landingParts'
 import { CHOOSER_PHOTO } from '../features/landing/photos'
@@ -65,22 +66,28 @@ export function AudienceChooserPage() {
   return (
     <>
       <div className="hero-gradient">
-        <section className="mx-auto max-w-6xl px-4 pb-24 pt-14 md:pt-20">
+        <section className="mx-auto max-w-6xl px-4 pb-24 pt-10 md:pt-14">
           <h1 className="text-center text-4xl font-semibold text-white md:text-5xl lg:text-6xl">
             Welcome to Carrier Safety Scan
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-center text-base text-white/90 md:text-lg">
-            Choose one of the options below to see what Carrier Safety Scan does for you.
+          <p className="mx-auto mt-4 max-w-3xl text-center text-base text-white/90 md:text-lg">
+            Look up any carrier free, or choose an option below to see what Carrier Safety Scan does
+            for you.
           </p>
 
-          <div className="mt-12 grid gap-5 md:grid-cols-3">
+          {/* The free search, high enough to be seen without scrolling. */}
+          <div className="mt-7">
+            <HeroTryForm centered />
+          </div>
+
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
             {/* Shown at once (no fade-in): choosing is the whole page. */}
             {CHOICES.map(({ audience, label, title, text, points }, i) => (
               <button
                 key={audience}
                 type="button"
                 onClick={() => choose(audience)}
-                className="group relative flex h-[27rem] flex-col justify-end overflow-hidden rounded-3xl text-left shadow-2xl shadow-black/30 ring-1 ring-white/25 transition-transform duration-300 hover:-translate-y-1.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--hero-highlight)]"
+                className="group relative flex h-[23rem] flex-col justify-end overflow-hidden rounded-3xl text-left shadow-2xl shadow-black/30 ring-1 ring-white/25 transition-transform duration-300 hover:-translate-y-1.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[var(--hero-highlight)]"
               >
                 <img
                   src={CHOOSER_PHOTO[audience].src}
@@ -123,9 +130,7 @@ export function AudienceChooserPage() {
             ))}
           </div>
 
-          <LiveStrip />
-
-          <div className="mt-8 flex flex-col items-center justify-center gap-x-8 gap-y-3 text-sm text-white/90 sm:flex-row">
+          <div className="mt-6 flex justify-center text-sm text-white/90">
             <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2">
               {['30 days free', 'No card needed to start', 'Cancel any time'].map((fact) => (
                 <li key={fact} className="flex items-center gap-2">
@@ -134,17 +139,9 @@ export function AudienceChooserPage() {
                 </li>
               ))}
             </ul>
-            <Link
-              to="/try"
-              className="group inline-flex items-center gap-1.5 font-semibold text-white"
-            >
-              Just looking? Try one free search
-              <ArrowRight
-                className="size-4 transition-transform group-hover:translate-x-1"
-                aria-hidden
-              />
-            </Link>
           </div>
+
+          <LiveStrip />
         </section>
       </div>
       <Band tone="mesh">
