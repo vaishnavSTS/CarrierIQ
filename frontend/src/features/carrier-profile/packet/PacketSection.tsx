@@ -886,8 +886,9 @@ export function PacketDocument({
           </dl>
         </div>
 
+        {/* Linked carriers under the events, full width. */}
         {(events.length > 0 || linked.length > 0) && (
-          <div className="grid gap-5 wide:grid-cols-2">
+          <div className="space-y-5">
             {events.length > 0 && (
               <div className="space-y-1.5">
                 <SectionHeading>Recent significant events</SectionHeading>
