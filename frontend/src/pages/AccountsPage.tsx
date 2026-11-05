@@ -126,13 +126,13 @@ function AccountClaims({ account }: { account: AdminUser }) {
             </>
           ) : (
             <>
-              <StatusBadge label="Claimed" tone="neutral" />
+              <StatusBadge label="Claimed" tone="ok" />
               {claimed.length > 1 && <span className="font-mono text-slate-600">{n}</span>}
               <button
                 type="button"
                 onClick={() => setReleasing(n)}
                 title="Free this USDOT number so another carrier account can sign up with it. This account keeps the carrier in its portal."
-                className="whitespace-nowrap rounded px-2 py-0.5 font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50"
+                className="whitespace-nowrap rounded px-2 py-0.5 font-medium text-red-700 ring-1 ring-red-300 hover:bg-red-50"
               >
                 Release claim
               </button>
