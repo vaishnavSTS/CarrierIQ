@@ -270,9 +270,6 @@ export function ReportPreview({
               height={1123}
               className="h-auto w-full rounded-xl border border-slate-200 bg-white shadow-xl"
             />
-            <span className="absolute right-3 top-3 rounded-md border border-slate-300 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-700 shadow-sm">
-              Sample
-            </span>
           </motion.figure>
         ))}
       </div>
