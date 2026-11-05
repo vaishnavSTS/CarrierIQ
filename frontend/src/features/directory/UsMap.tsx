@@ -34,6 +34,12 @@ export const SHADES = ['#dbe7ff', '#b7cdff', '#86a8ff', '#5179f0', '#2a4fc9', '#
 
 export const number = new Intl.NumberFormat('en-US')
 
+/** A state's two-digit FIPS code (the county map's ids start with it), by its name. */
+export function stateFips(name: string): string | null {
+  const shape = STATE_SHAPES.find((s) => s.properties.name === name)
+  return shape?.id != null ? String(shape.id).padStart(2, '0') : null
+}
+
 export function UsMap({
   counts,
   selected,

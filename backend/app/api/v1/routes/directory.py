@@ -1,9 +1,9 @@
 """The carrier map: interstate carriers by state, active or inactive (`status`)
 (services/carrier_directory.py).
 
-Public (the audience pages, no login): every state's totals, and for a state only its first
-PUBLIC_LIST_SIZE newest, largest or A-Z carriers, so the directory can't be read off it. Each
-visitor has a limit (PUBLIC_REQUESTS_PER_IP).
+Public (the audience pages, no login): every state's totals and a state's totals by county, and
+for a state (or one of its counties) only its first PUBLIC_LIST_SIZE newest, largest or A-Z
+carriers, so the directory can't be read off it. Each visitor has a limit (PUBLIC_REQUESTS_PER_IP).
 
 Logged in (the carrier and insurance agent portals' map page): every carrier, PAGE_SIZE a page.
 
@@ -62,6 +62,12 @@ class StateCountOut(BaseModel):
     new_last_30_days: int
 
 
+class CountyCountOut(BaseModel):
+    county: str
+    carriers: int
+    new_last_30_days: int
+
+
 class PublicCarrierOut(BaseModel):
     usdot_number: int
     legal_name: str
@@ -89,6 +95,7 @@ class PublicStateOut(BaseModel):
     page: int
     carriers: list[PublicCarrierOut]
     has_more: bool
+    county: str | None = None
 
 
 def get_carrier_directory() -> Iterator[CarrierDirectory]:
@@ -117,6 +124,15 @@ def public_recent(directory: Directory) -> list:
 
 State = Annotated[str, Path(min_length=2, max_length=2)]
 Letter = Annotated[str | None, Query(pattern=r"^[A-Za-z]$")]
+County = Annotated[str | None, Query(pattern=r"^[0-9]{3}$")]
+
+
+@public_router.get("/states/{state}/counties", response_model=list[CountyCountOut])
+def public_county_counts(
+    directory: Directory, state: State, status: Literal["active", "inactive"] = "active"
+) -> list:
+    """A state's carriers per county (the map inside a state)."""
+    return _counties(directory, state, status)
 
 
 @public_router.get("/states/{state}", response_model=PublicStateOut)
@@ -126,14 +142,23 @@ def public_state_carriers(
     sort: Literal["newest", "largest", "az"] = "newest",
     letter: Letter = None,
     status: Literal["active", "inactive"] = "active",
+    county: County = None,
 ):
-    """A state's first PUBLIC_LIST_SIZE carriers; `has_more`: more after logging in."""
-    return _state_page(directory, state, sort, letter, 0, status, PUBLIC_LIST_SIZE)
+    """A state's (or one of its counties') first PUBLIC_LIST_SIZE carriers; `has_more`: more
+    after logging in."""
+    return _state_page(directory, state, sort, letter, 0, status, PUBLIC_LIST_SIZE, county)
 
 
 @router.get("/states", response_model=list[StateCountOut])
 def state_counts(directory: Directory, status: Literal["active", "inactive"] = "active") -> list:
     return directory.state_counts(status)
+
+
+@router.get("/states/{state}/counties", response_model=list[CountyCountOut])
+def county_counts(
+    directory: Directory, state: State, status: Literal["active", "inactive"] = "active"
+) -> list:
+    return _counties(directory, state, status)
 
 
 @router.get("/states/{state}", response_model=PublicStateOut)
@@ -144,9 +169,16 @@ def state_carriers(
     letter: Letter = None,
     page: Annotated[int, Query(ge=0, lt=MAX_PAGES)] = 0,
     status: Literal["active", "inactive"] = "active",
+    county: County = None,
 ):
-    """Every carrier in the state, PAGE_SIZE a page."""
-    return _state_page(directory, state, sort, letter, page, status, PAGE_SIZE)
+    """Every carrier in the state (or one of its counties), PAGE_SIZE a page."""
+    return _state_page(directory, state, sort, letter, page, status, PAGE_SIZE, county)
+
+
+def _counties(directory: CarrierDirectory, state: str, status: Status) -> list:
+    if state.upper() not in STATES:
+        raise NotFoundError(f"No state {state.upper()}")
+    return directory.county_counts(state, status)
 
 
 def _state_page(
@@ -157,11 +189,12 @@ def _state_page(
     page: int,
     status: Status,
     size: int,
+    county: str | None = None,
 ) -> PublicStateOut:
     if state.upper() not in STATES:
         raise NotFoundError(f"No state {state.upper()}")
     result = directory.state_carriers(
-        state, sort, letter if sort == "az" else None, page, status, size
+        state, sort, letter if sort == "az" else None, page, status, size, county
     )
     return PublicStateOut(
         state=result.state,
@@ -174,4 +207,5 @@ def _state_page(
             PublicCarrierOut.model_validate(c, from_attributes=True) for c in result.carriers
         ],
         has_more=result.has_more,
+        county=result.county,
     )

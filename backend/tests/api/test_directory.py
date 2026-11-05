@@ -36,6 +36,15 @@ class FakeCensus:
                 {"phy_state": "CA", "n": "90000"},
                 {"phy_state": "ON", "n": "5"},  # a Canadian province: not on the map
             ]
+        if params.get("$group") == "phy_cnty":
+            if "add_date >=" in params["$where"]:
+                return [{"phy_cnty": "201", "n": "38"}]
+            return [
+                {"phy_cnty": "113", "n": "2100"},
+                {"phy_cnty": "201", "n": "4120"},
+                {"phy_cnty": None, "n": "7"},  # no county on file: left out
+                {"phy_cnty": "2O1", "n": "1"},  # not a county code: left out
+            ]
         if self.rows > 2:
             return [
                 {"dot_number": str(1000 + i), "legal_name": f"CARRIER {i}",
@@ -243,3 +252,51 @@ def test_recent_registrations_nationwide_and_cached(api: TestClient, census: Fak
     assert first[0]["legal_name"] == "BIG NEW FLEET LLC" and "state" in first[0]
     api.get(f"{BASE}/recent")
     assert len(census.queries) == 1  # the second answer came from the cache
+
+
+def test_county_counts_most_first_and_cached(api: TestClient, census: FakeCensus):
+    body = api.get(f"{BASE}/states/tx/counties").json()
+    assert body == [
+        {"county": "201", "carriers": 4120, "new_last_30_days": 38},
+        {"county": "113", "carriers": 2100, "new_last_30_days": 0},
+    ]
+    assert "phy_state='TX'" in census.queries[0]["$where"]
+    assert "add_date >= '20261005'" in census.queries[1]["$where"]
+    api.get(f"{BASE}/states/TX/counties")
+    assert len(census.queries) == 2  # the second answer came from the cache
+
+    api.get(f"{BASE}/states/TX/counties?status=inactive")  # cached apart from active
+    assert census.queries[-1]["$where"].startswith("status_code='I'")
+
+
+def test_a_county_narrows_the_list(api: TestClient, census: FakeCensus):
+    body = api.get(f"{BASE}/states/TX?county=201&sort=largest").json()
+    assert "phy_state='TX' AND phy_cnty='201'" in census.queries[-1]["$where"]
+    assert body["county"] == "201" and len(body["carriers"]) <= 10
+
+    _as(UserRole.CLIENT_USER)
+    api.get(f"{PORTAL}/states/TX?county=201&sort=new&page=3")
+    query = census.queries[-1]
+    assert "phy_cnty='201'" in query["$where"] and query["$offset"] == "75"
+    assert api.get(f"{PORTAL}/states/TX/counties").status_code == 200
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        f"{BASE}/states/TX?county=20",
+        f"{BASE}/states/TX?county=2011",
+        f"{BASE}/states/TX?county=20%27",
+        f"{BASE}/states/TX?county=abc",
+        f"{BASE}/states/ZZ/counties",
+    ],
+)
+def test_bad_counties_never_reach_the_query(api: TestClient, census: FakeCensus, path: str):
+    assert api.get(path).status_code in (404, 422)
+    assert census.queries == []
+
+
+def test_brokers_have_no_portal_county_map(api: TestClient, census: FakeCensus):
+    _as(UserRole.BROKER_USER)
+    assert api.get(f"{PORTAL}/states/TX/counties").status_code == 403
+    assert census.queries == []

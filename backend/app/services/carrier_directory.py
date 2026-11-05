@@ -2,8 +2,9 @@
 Census File.
 
 Reads data.transportation.gov live (settings.census_dataset_id) with fixed SoQL: the state comes
-from STATES and the letter is one A-Z character, so nothing a visitor types reaches a query as
-text. State totals change slowly, so they are kept in memory for STATE_COUNTS_TTL.
+from STATES, the letter is one A-Z character and a county three digits, so nothing a visitor types
+reaches a query as text. State and county totals change slowly, so they are kept in memory for
+STATE_COUNTS_TTL.
 
 Only what tells carriers apart is returned (name, city, county code, USDOT, fleet, drivers,
 registration date): never phones, emails or officers.
@@ -67,6 +68,13 @@ class StateCount:
 
 
 @dataclass(frozen=True)
+class CountyCount:
+    county: str  # the census's 3-digit county code (FIPS); with the state's, the map's county
+    carriers: int
+    new_last_30_days: int
+
+
+@dataclass(frozen=True)
 class DirectoryCarrier:
     usdot_number: int
     legal_name: str
@@ -98,6 +106,12 @@ class StatePage:
     page: int
     carriers: list[DirectoryCarrier]
     has_more: bool
+    county: str | None = None
+
+
+def is_county_code(value: object) -> bool:
+    """A county code as the census writes it: three digits (so it is safe in a query)."""
+    return isinstance(value, str) and len(value) == 3 and value.isdigit()
 
 
 def _int(value: object) -> int | None:
@@ -141,6 +155,47 @@ class CarrierDirectory:
         with _CACHE_LOCK:
             _CACHE[key] = (self._now(), counts)
         return counts
+
+    # --- One state's counties -------------------------------------------------------------------
+
+    def county_counts(self, state: str, status: Status = "active") -> list[CountyCount]:
+        """A state's carriers per county (the census's phy_cnty), most first, kept for
+        STATE_COUNTS_TTL. Carriers without a county code are left out."""
+        state = state.upper()
+        if state not in STATES:
+            raise ValueError("Unknown state")
+        key = f"counties:{state}:{status}"
+        with _CACHE_LOCK:
+            cached = _COUNTIES.get(key)
+            if cached and self._now() - cached[0] < STATE_COUNTS_TTL:
+                return cached[1]
+        since = (self._today() - timedelta(days=NEW_DAYS)).strftime("%Y%m%d")
+        base = f"{INTERSTATE[status]} AND phy_state='{state}'"
+        totals = self._by_county(base)
+        new = self._by_county(f"{base} AND add_date >= '{since}'")
+        counts = sorted(
+            (CountyCount(code, n, new.get(code, 0)) for code, n in totals.items()),
+            key=lambda c: (-c.carriers, c.county),
+        )
+        with _CACHE_LOCK:
+            _COUNTIES[key] = (self._now(), counts)
+        return counts
+
+    def _by_county(self, where: str) -> dict[str, int]:
+        rows = self.client.get_rows(
+            self.dataset,
+            {
+                "$select": "phy_cnty, count(*) AS n",
+                "$where": where,
+                "$group": "phy_cnty",
+                "$limit": "1000",  # Texas has the most counties: 254
+            },
+        )
+        return {
+            str(row["phy_cnty"]): _int(row.get("n")) or 0
+            for row in rows
+            if is_county_code(row.get("phy_cnty"))
+        }
 
     def _grouped(self, where: str) -> dict[str, int]:
         rows = self.client.get_rows(
@@ -203,13 +258,18 @@ class CarrierDirectory:
         page: int = 0,
         status: Status = "active",
         size: int = PAGE_SIZE,
+        county: str | None = None,
     ) -> StatePage:
         state = state.upper()
         if state not in STATES:
             raise ValueError("Unknown state")
+        if county is not None and not is_county_code(county):
+            raise ValueError("County must be a 3-digit code")
         if letter is not None and not (len(letter) == 1 and "A" <= letter.upper() <= "Z"):
             raise ValueError("Letter must be A-Z")
         where = f"{INTERSTATE[status]} AND phy_state='{state}'"
+        if county:
+            where += f" AND phy_cnty='{county}'"
         if letter:
             where += f" AND starts_with(upper(legal_name), '{letter.upper()}')"
         order = {
@@ -248,6 +308,7 @@ class CarrierDirectory:
             page=page,
             carriers=[c for c in carriers if c is not None],
             has_more=len(rows) > size,
+            county=county,
         )
 
     def _carrier(self, row: dict) -> DirectoryCarrier | None:
@@ -277,6 +338,7 @@ class CarrierDirectory:
 
 _CACHE: dict[str, tuple[float, list[StateCount]]] = {}
 _RECENT: dict[str, tuple[float, list[RecentCarrier]]] = {}
+_COUNTIES: dict[str, tuple[float, list[CountyCount]]] = {}
 _CACHE_LOCK = threading.Lock()
 
 
@@ -285,3 +347,4 @@ def clear_cache() -> None:
     with _CACHE_LOCK:
         _CACHE.clear()
         _RECENT.clear()
+        _COUNTIES.clear()

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import {
   AlertTriangle,
+  ArrowLeft,
   ArrowRight,
   BadgeCheck,
   Building2,
@@ -11,26 +12,32 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import {
+  getCountyCounts,
+  getPublicCountyCounts,
   getPublicStateCarriers,
   getPublicStateCounts,
   getStateCarriers,
   getStateCounts,
+  type CountyCount,
   type DirectorySort,
   type DirectoryStatus,
   type StateCount,
 } from '../../api/directory'
 import { formatDate } from '../../utils/format'
-import { number, UsMap } from '../directory/UsMap'
+import { countiesOf, countyLabel, useCountyShapes } from '../directory/counties'
+import { CountyMap } from '../directory/CountyMap'
+import { number, stateFips, UsMap } from '../directory/UsMap'
 import { CountUp } from './CountUp'
 import { reveal, SectionHeading } from './landingParts'
 
 /*
  * The carrier map. Every state shaded by its active interstate carriers, or, where `allowInactive`,
- * its inactive ones; click one for its newest, largest or A–Z carriers.
+ * its inactive ones; click one for its newest, largest or A–Z carriers. The map then shows that
+ * state's counties: click one and the list narrows to it (a drop-down does the same on phones).
  * On the public audience pages (no login) a state shows its first 10 carriers, each opening the
  * free search. In the carrier and insurance agent portals (`portal`) it lists every carrier, 25 a
  * page, each opening its page in the portal (`carrierLink`). No wording here about where the data
@@ -70,6 +77,9 @@ const SORTS: {
 ]
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
+/** A county as the list and its drop-down show it */
+type CountyOption = CountyCount & { label: string }
+
 export function MapSection({
   number: sectionNumber,
   title,
@@ -97,10 +107,35 @@ export function MapSection({
     queryKey: [portal ? 'directory' : 'public-directory', 'states', status],
     queryFn: () => (portal ? getStateCounts(status) : getPublicStateCounts(status)),
   })
-  const [selected, setSelected] = useState<string | null>(null)
+  const [selected, setSelectedState] = useState<string | null>(null)
+  const [county, setCounty] = useState<string | null>(null)
+  const setSelected = (state: string | null) => {
+    setSelectedState(state)
+    setCounty(null)
+  }
   const total = (counts.data ?? []).reduce((sum, s) => sum + s.carriers, 0)
   const recent = (counts.data ?? []).reduce((sum, s) => sum + s.new_last_30_days, 0)
   const current = (counts.data ?? []).find((s) => s.state === selected) ?? null
+  const fips = current ? stateFips(current.name) : null
+
+  // The picked state's counties: their totals, and their names from the county shapes.
+  const countyCounts = useQuery({
+    queryKey: [portal ? 'directory' : 'public-directory', 'counties', selected, status],
+    queryFn: () =>
+      portal ? getCountyCounts(selected!, status) : getPublicCountyCounts(selected!, status),
+    enabled: Boolean(selected),
+  })
+  const shapes = useCountyShapes()
+  const countyOptions = useMemo(() => {
+    if (!current || !fips) return []
+    const names = new Map(
+      countiesOf(shapes.data, fips).map((c) => [c.id.slice(2), c.properties.name]),
+    )
+    return (countyCounts.data ?? [])
+      .filter((c) => names.has(c.county))
+      .map((c) => ({ ...c, label: countyLabel(current.state, c.county, names.get(c.county)) }))
+  }, [current, fips, shapes.data, countyCounts.data])
+  const currentCounty = countyOptions.find((c) => c.county === county) ?? null
 
   return (
     <div>
@@ -139,7 +174,10 @@ export function MapSection({
                     type="button"
                     role="radio"
                     aria-checked={status === s}
-                    onClick={() => setStatus(s)}
+                    onClick={() => {
+                      setStatus(s)
+                      setCounty(null)
+                    }}
                     className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
                       status === s
                         ? s === 'inactive'
@@ -160,10 +198,41 @@ export function MapSection({
               book or quote it.
             </p>
           )}
+          {current && (
+            <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <button
+                type="button"
+                onClick={() => setSelected(null)}
+                className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-medium text-accent-strong hover:bg-accent-soft"
+              >
+                <ArrowLeft className="size-4" aria-hidden />
+                All states
+              </button>
+              <span className="text-sm font-semibold text-slate-900">
+                {current.name}, by county
+              </span>
+            </div>
+          )}
           {counts.isError ? (
             <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
               The map couldn’t load just now. Try again in a moment.
             </p>
+          ) : current && fips ? (
+            countyCounts.isError ? (
+              <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                The county map couldn’t load just now. Try again in a moment.
+              </p>
+            ) : (
+              <CountyMap
+                key={`${current.state}-${status}`}
+                state={current.state}
+                stateFips={fips}
+                counts={countyCounts.data}
+                selected={county}
+                onSelect={setCounty}
+                inactive={inactive}
+              />
+            )
           ) : (
             <UsMap
               counts={counts.data}
@@ -172,10 +241,10 @@ export function MapSection({
               inactive={inactive}
             />
           )}
-          {!current && counts.data && (
+          {counts.data && (
             <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-accent-strong">
               <MapPinned className="size-4" aria-hidden />
-              Click a state to see its carriers
+              {current ? 'Click a county to see its carriers' : 'Click a state to see its carriers'}
             </p>
           )}
         </motion.div>
@@ -195,6 +264,9 @@ export function MapSection({
                 signUp={signUp}
                 portal={portal}
                 carrierLink={carrierLink}
+                county={currentCounty}
+                counties={countyOptions}
+                onCounty={setCounty}
               />
             </motion.div>
           )}
@@ -219,23 +291,49 @@ function StateList({
   signUp,
   portal,
   carrierLink,
+  county,
+  counties,
+  onCounty,
 }: {
   state: StateCount
   status: DirectoryStatus
   signUp?: { to: string; label: string }
   portal: boolean
   carrierLink?: (usdot: number) => string | null
+  /** The county the list is narrowed to, or null for the whole state */
+  county: CountyOption | null
+  /** The state's counties, most carriers first (the drop-down) */
+  counties: CountyOption[]
+  onCounty: (county: string | null) => void
 }) {
   const inactive = status === 'inactive'
   const [sort, setSort] = useState<DirectorySort>('newest')
   const [letter, setLetter] = useState<string | null>(null)
-  const [page, setPage] = useState(0)
+  // The page goes back to the first whenever the county changes.
+  const [paging, setPaging] = useState<{ county: string | null; page: number }>({
+    county: null,
+    page: 0,
+  })
+  const page = paging.county === (county?.county ?? null) ? paging.page : 0
+  const setPage = (next: number | ((p: number) => number)) =>
+    setPaging({
+      county: county?.county ?? null,
+      page: typeof next === 'function' ? next(page) : next,
+    })
   const list = useQuery({
-    queryKey: [portal ? 'directory' : 'public-directory', state.state, status, sort, letter, page],
+    queryKey: [
+      portal ? 'directory' : 'public-directory',
+      state.state,
+      county?.county ?? null,
+      status,
+      sort,
+      letter,
+      page,
+    ],
     queryFn: () =>
       portal
-        ? getStateCarriers(state.state, sort, letter, page, status)
-        : getPublicStateCarriers(state.state, sort, letter, status),
+        ? getStateCarriers(state.state, sort, letter, page, status, county?.county ?? null)
+        : getPublicStateCarriers(state.state, sort, letter, status, county?.county ?? null),
   })
   const linkFor = (usdot: number) => (portal ? (carrierLink?.(usdot) ?? null) : `/try?q=${usdot}`)
   // The census has no date for going inactive: for inactive carriers "newest" means registered.
@@ -259,22 +357,74 @@ function StateList({
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-surface shadow-xl shadow-brand-glow/10">
       <div className={`px-5 py-4 text-white ${inactive ? 'bg-red-900' : 'bg-[#101853]'}`}>
-        <div className="text-xl font-semibold">{state.name}</div>
-        <div className="mt-1 text-sm text-white/85">
-          {inactive ? (
-            <>
-              <CountUp key={state.state} value={state.carriers} /> inactive interstate carriers
-            </>
-          ) : (
-            <>
-              <CountUp key={state.state} value={state.carriers} /> active interstate carriers ·{' '}
-              <span className="text-amber-300">
-                <CountUp key={state.state} value={state.new_last_30_days} prefix="+" /> in the last
-                30 days
-              </span>
-            </>
-          )}
-        </div>
+        {county ? (
+          <>
+            <button
+              type="button"
+              onClick={() => onCounty(null)}
+              className="-ml-1 mb-1 inline-flex items-center gap-1 rounded px-1 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white"
+            >
+              <ArrowLeft className="size-3.5" aria-hidden />
+              All of {state.name}
+            </button>
+            <div className="text-xl font-semibold">
+              {county.label}, {state.state}
+            </div>
+            <div className="mt-1 text-sm text-white/85">
+              <CountUp key={county.county} value={county.carriers} />{' '}
+              {inactive ? 'inactive' : 'active'} interstate carriers
+              {!inactive && (
+                <>
+                  {' · '}
+                  <span className="text-amber-300">
+                    <CountUp
+                      key={`n-${county.county}`}
+                      value={county.new_last_30_days}
+                      prefix="+"
+                    />{' '}
+                    in the last 30 days
+                  </span>
+                </>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="text-xl font-semibold">{state.name}</div>
+            <div className="mt-1 text-sm text-white/85">
+              {inactive ? (
+                <>
+                  <CountUp key={state.state} value={state.carriers} /> inactive interstate carriers
+                </>
+              ) : (
+                <>
+                  <CountUp key={state.state} value={state.carriers} /> active interstate carriers ·{' '}
+                  <span className="text-amber-300">
+                    <CountUp key={state.state} value={state.new_last_30_days} prefix="+" /> in the
+                    last 30 days
+                  </span>
+                </>
+              )}
+            </div>
+          </>
+        )}
+        {counties.length > 0 && (
+          <label className="mt-3 block">
+            <span className="sr-only">County</span>
+            <select
+              value={county?.county ?? ''}
+              onChange={(e) => onCounty(e.target.value || null)}
+              className="w-full rounded-lg border-0 bg-white/10 px-3 py-2 text-sm text-white ring-1 ring-white/25 focus:outline-none focus:ring-2 focus:ring-white/60 [&>option]:text-slate-900"
+            >
+              <option value="">All of {state.name}</option>
+              {counties.map((c) => (
+                <option key={c.county} value={c.county}>
+                  {c.label} · {number.format(c.carriers)}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
 
       {/* Five tabs in the portals: kept on one line, without icons, scrolling sideways if the
