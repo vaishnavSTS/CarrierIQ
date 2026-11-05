@@ -12,7 +12,6 @@ export function PortalLayout() {
     { to: '/portal', label: 'My carriers', end: true },
     { to: '/portal/dataqs', label: 'DataQs' },
     ...(searchEnabled ? [{ to: '/portal/search', label: 'Search carriers' }] : []),
-    { to: '/portal/map', label: 'Carrier map' },
   ]
   return (
     <PortalShell tone="carrier" home="/portal" label="Carrier portal" nav={nav}>

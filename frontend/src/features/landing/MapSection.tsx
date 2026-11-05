@@ -41,7 +41,7 @@ import { reveal, SectionHeading } from './landingParts'
  * its inactive ones; click one for its newest, largest or A–Z carriers. The map then shows that
  * state's counties: click one and the list narrows to it (a drop-down does the same on phones).
  * On the public audience pages (no login) a state shows its first 10 carriers, each opening the
- * free search. In the carrier, broker and insurance agent portals (`portal`) it lists every carrier, 25 a
+ * free search. In the broker portal (brokers and insurance agents, `portal`) it lists every carrier, 25 a
  * page, each opening its page in the portal (`carrierLink`). No wording here about where the data
  * comes from (the public pages' rule).
  */
@@ -560,8 +560,8 @@ function StateList({
       {/* Public: the first 10 only, the rest after logging in. */}
       {!portal && list.data?.has_more && (
         <p className="border-t border-slate-100 px-4 py-2.5 text-xs text-slate-600">
-          Showing the first 10. Every carrier is on the map in the carrier, broker and insurance
-          agent portals.
+          Showing the first 10. Every carrier is on the map in the broker and insurance agent
+          portals.
         </p>
       )}
 

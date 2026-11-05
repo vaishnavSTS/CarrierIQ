@@ -144,7 +144,7 @@ export function LivePulse({ number }: { number?: string }) {
     { label: 'Active interstate carriers', value: activeCarriers, prefix: '' },
     { label: 'Registered in the last 30 days', value: newest, prefix: '+' },
     { label: 'Inactive USDOT numbers', value: inactiveCarriers, prefix: '' },
-    { label: 'States on the map', value: states, prefix: '' },
+    { label: 'States and DC', value: states, prefix: '' },
   ]
 
   // Two strips with different carriers: the first half, then the rest (running the other way).

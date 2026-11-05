@@ -257,7 +257,6 @@ const LAYOUT: Record<Audience, [Part, BandTone, photo?: string][]> = {
     ['features', 'mesh'],
     ['fix', 'plain'],
     ['dataqs', 'photo', SECTION_PHOTO.carrierDataqs],
-    ['map', 'grid'],
     ['live', 'dark'],
     ['portal', 'warm'],
     ['phone', 'grid'],
@@ -299,17 +298,9 @@ const LAYOUT: Record<Audience, [Part, BandTone, photo?: string][]> = {
 /** Parts without a section number. */
 const UNNUMBERED: Part[] = ['cta', 'about']
 
-/** The carrier map section's words for each audience. */
-const MAP_WORDS: Record<Audience, { title: ReactNode; aside: string }> = {
-  carrier: {
-    title: (
-      <>
-        Who’s hauling <Accent>in your state</Accent>
-      </>
-    ),
-    aside:
-      'How many carriers are active in each state and who just registered: the companies brokers weigh you against.',
-  },
+/** The carrier map section's words, for the broker and insurance agent pages (the carrier page has
+ * no map). */
+const MAP_WORDS: Partial<Record<Audience, { title: ReactNode; aside: string }>> = {
   broker: {
     title: (
       <>
@@ -407,7 +398,7 @@ export function LandingPage({ audience }: { audience: Audience }) {
       case 'compare':
         return <CompareShowcase who={audience === 'agent' ? 'agent' : 'broker'} number={number} />
       case 'map':
-        return (
+        return MAP_WORDS[audience] ? (
           <MapSection
             number={number}
             title={MAP_WORDS[audience].title}
@@ -415,9 +406,9 @@ export function LandingPage({ audience }: { audience: Audience }) {
             signUp={
               user ? undefined : { to: content.cta.signUpTo, label: 'Start free for 30 days' }
             }
-            allowInactive={audience !== 'carrier'}
+            allowInactive
           />
-        )
+        ) : null
       case 'portal':
         return <PortalFeatures audience={audience} number={number} />
       case 'phone':

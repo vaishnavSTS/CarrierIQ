@@ -5,9 +5,9 @@ Public (the audience pages, no login): every state's totals and a state's totals
 for a state (or one of its counties) only its first PUBLIC_LIST_SIZE newest, largest or A-Z
 carriers, so the directory can't be read off it. Each visitor has a limit (PUBLIC_REQUESTS_PER_IP).
 
-Logged in (the portals' map page: carriers, brokers, insurance agents and STS staff): every
-carrier, PAGE_SIZE a page, and in the broker portal a clicked carrier's contact card (phone, email,
-address), CONTACT_CARDS_PER_USER at most.
+Logged in (the broker portal's map page: brokers, insurance agents and STS staff; carriers have no
+map): every carrier, PAGE_SIZE a page, and a clicked carrier's contact card (phone, email, address),
+CONTACT_CARDS_PER_USER at most.
 
 Lists return only what tells carriers apart: never phones, emails or officers. Contact details
 are only on the logged-in contact card, one carrier at a time.
@@ -49,9 +49,9 @@ public_router = APIRouter(
 
 
 def require_map_user(user: CurrentUser) -> None:
-    """The portals' map: carriers, brokers, insurance agents and STS staff."""
-    if not (user.role.is_client or user.role.is_staff or user.role.is_broker):
-        raise ForbiddenError("The carrier map is in the portals")
+    """The broker portal's map: brokers, insurance agents and STS staff (carriers have no map)."""
+    if not (user.role.is_broker or user.role.is_staff):
+        raise ForbiddenError("The carrier map is in the broker portal")
 
 
 router = APIRouter(
@@ -201,11 +201,9 @@ def carrier_contact(
     user: CurrentUser,
     usdot_number: Annotated[int, Path(ge=1, lt=100_000_000)],
 ):
-    """One carrier's contact card (phone, email, address), when it is clicked on the map. The
-    broker portal's map only (brokers and insurance agents, and STS staff), limited per user, so
-    the map can't be used to copy contact lists."""
-    if not (user.role.is_broker or user.role.is_staff):
-        raise ForbiddenError("Contact details are on the broker portal's map")
+    """One carrier's contact card (phone, email, address), when it is clicked on the map
+    (broker portal only, like the whole map), limited per user, so the map can't be used to copy
+    contact lists."""
     if get_settings().rate_limit_enabled:
         limit, window = CONTACT_CARDS_PER_USER
         limiter.hit(f"map-contact:{user.id}", limit, window)

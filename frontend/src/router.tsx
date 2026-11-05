@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 
 import { RequireAuth } from './components/auth/RequireAuth'
 import { AppLayout } from './components/layout/AppLayout'
@@ -120,7 +120,8 @@ export const router = createBrowserRouter([
           { path: 'dataqs/new', element: <PortalDataQsIntakePage /> },
           { path: 'dataqs/cases/:caseId', element: <DataQsCasePage /> },
           { path: 'search', element: <ClientSearchPage /> },
-          { path: 'map', element: <CarrierMapPage /> },
+          // The carrier map is in the broker portal only; old links go home.
+          { path: 'map', element: <Navigate to="/portal" replace /> },
           { path: 'carriers/:usdot', element: <CarrierProfilePage /> },
           { path: 'invoices/:invoiceId', element: <InvoicePage /> },
         ],

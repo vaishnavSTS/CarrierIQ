@@ -174,7 +174,7 @@ def _as(role: UserRole, user_id: int = 1) -> None:
 
 
 @pytest.mark.parametrize(
-    "role", [UserRole.CLIENT_USER, UserRole.INSURANCE_AGENT, UserRole.STS_ANALYST]
+    "role", [UserRole.BROKER_USER, UserRole.INSURANCE_AGENT, UserRole.STS_ANALYST]
 )
 def test_the_portal_map_lists_every_carrier(role: UserRole):
     census = FakeCensus(rows=26)
@@ -302,7 +302,7 @@ def test_a_county_narrows_the_list(api: TestClient, census: FakeCensus):
     assert "phy_state='TX' AND phy_cnty='201'" in census.queries[-1]["$where"]
     assert body["county"] == "201" and len(body["carriers"]) <= 10
 
-    _as(UserRole.CLIENT_USER)
+    _as(UserRole.BROKER_USER)
     api.get(f"{PORTAL}/states/TX?county=201&sort=new&page=3")
     query = census.queries[-1]
     assert "phy_cnty='201'" in query["$where"] and query["$offset"] == "75"
@@ -349,7 +349,7 @@ def test_contact_card_for_a_clicked_carrier(api: TestClient, census: FakeCensus)
 def test_contact_cards_are_not_public(api: TestClient, census: FakeCensus):
     assert api.get(f"{PORTAL}/carriers/4382997").status_code == 401
     assert api.get(f"{BASE}/carriers/4382997").status_code == 404  # no public route
-    _as(UserRole.CLIENT_USER)  # the carrier portal's map has no contact cards
+    _as(UserRole.CLIENT_USER)  # carriers have no map at all
     assert api.get(f"{PORTAL}/carriers/4382997").status_code == 403
     assert census.queries == []
 
@@ -379,4 +379,13 @@ def test_contact_cards_are_limited_per_user(
 def test_bad_usdot_never_reaches_the_query(api: TestClient, census: FakeCensus, path: str):
     _as(UserRole.BROKER_USER)
     assert api.get(path).status_code == 422
+    assert census.queries == []
+
+
+@pytest.mark.parametrize("role", [UserRole.CLIENT_USER, UserRole.CLIENT_ADMIN])
+def test_carriers_have_no_portal_map(api: TestClient, census: FakeCensus, role: UserRole):
+    _as(role)
+    assert api.get(f"{PORTAL}/states").status_code == 403
+    assert api.get(f"{PORTAL}/states/TX").status_code == 403
+    assert api.get(f"{PORTAL}/states/TX/counties").status_code == 403
     assert census.queries == []
