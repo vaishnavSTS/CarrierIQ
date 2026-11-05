@@ -60,6 +60,20 @@ export function UsMap({
     }
   }, [counts])
 
+  // One dot per state with new registrations, at the state's centre; the area grows with the
+  // count. Delays are spread so the pulses ripple across the map rather than beat together.
+  const newDots = useMemo(() => {
+    const most = Math.max(1, ...(counts ?? []).map((s) => s.new_last_30_days))
+    return STATE_SHAPES.flatMap((shape, i) => {
+      const state = byName.get(shape.properties.name)
+      if (!state || state.new_last_30_days <= 0) return []
+      const [x, y] = path.centroid(shape)
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return []
+      const r = 2.5 + 5.5 * Math.sqrt(state.new_last_30_days / most)
+      return [{ name: shape.properties.name, x, y, r, delay: (i * 0.37) % 2.4 }]
+    })
+  }, [counts, byName])
+
   const move = (event: MouseEvent, state: StateCount) => {
     const box = (event.currentTarget.closest('[data-map]') as HTMLElement).getBoundingClientRect()
     setHover({ state, x: event.clientX - box.left, y: event.clientY - box.top })
@@ -119,6 +133,31 @@ export function UsMap({
               />
             )
           })}
+          {/* New registrations: a gold dot in each state with carriers new in the last 30 days,
+              sized by how many, with a ring that pulses outward (still, for reduced motion). */}
+          {!inactive && !selectedName && (
+            <g aria-hidden className="pointer-events-none">
+              {newDots.map(({ name, x, y, r, delay }) => (
+                <g key={name}>
+                  {!reduceMotion && (
+                    <motion.circle
+                      cx={x}
+                      cy={y}
+                      r={r}
+                      fill="none"
+                      stroke="#f59e0b"
+                      strokeWidth={1.5}
+                      initial={{ scale: 1, opacity: 0.8 }}
+                      animate={{ scale: 3, opacity: 0 }}
+                      transition={{ duration: 2.4, delay, repeat: Infinity, ease: 'easeOut' }}
+                      style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+                    />
+                  )}
+                  <circle cx={x} cy={y} r={r} fill="#fbbf24" stroke="#ffffff" strokeWidth={1} />
+                </g>
+              ))}
+            </g>
+          )}
           {/* The picked state again, on top, popped out. */}
           {selectedShape && (
             <motion.path
@@ -167,6 +206,12 @@ export function UsMap({
           ))}
         </span>
         <span>More carriers</span>
+        {!inactive && (
+          <span className="flex items-center gap-1.5">
+            <span className="size-2.5 rounded-full bg-amber-400 ring-1 ring-white" />
+            New in the last 30 days
+          </span>
+        )}
         <span className="ml-auto text-slate-500">Shaded by each state’s rank</span>
       </div>
     </div>

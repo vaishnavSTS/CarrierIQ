@@ -231,6 +231,56 @@ body {
     );
 }
 
+/* Slow-moving glow over the hero's gradient: soft violet and sky-blue light that drifts across
+   over about 30 seconds and back. Behind the hero's content (isolation + z-index -1), inside its
+   box (it moves the background, not the layer), and still for people who prefer reduced motion. */
+.hero-gradient {
+  isolation: isolate;
+}
+.hero-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(closest-side, rgb(139 92 246 / 0.45), transparent) 0 0 / 60% 70% no-repeat,
+    radial-gradient(closest-side, rgb(56 189 248 / 0.35), transparent) 100% 30% / 55% 60% no-repeat,
+    radial-gradient(closest-side, rgb(251 191 36 / 0.16), transparent) 50% 100% / 45% 45% no-repeat;
+  animation: hero-drift 30s ease-in-out infinite alternate;
+}
+@keyframes hero-drift {
+  0% {
+    background-position:
+      0% 0%,
+      100% 30%,
+      50% 100%;
+  }
+  50% {
+    background-position:
+      55% 20%,
+      20% 10%,
+      85% 70%;
+  }
+  100% {
+    background-position:
+      100% 5%,
+      0% 45%,
+      15% 85%;
+  }
+}
+:root[data-theme='dark'] .hero-gradient::before {
+  background:
+    radial-gradient(closest-side, rgb(37 99 235 / 0.35), transparent) 0 0 / 60% 70% no-repeat,
+    radial-gradient(closest-side, rgb(255 138 31 / 0.14), transparent) 100% 30% / 55% 60% no-repeat,
+    radial-gradient(closest-side, rgb(103 227 255 / 0.18), transparent) 50% 100% / 45% 45% no-repeat;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-gradient::before {
+    animation: none;
+  }
+}
+
 /* The public pages' and portals' type: Bricolage Grotesque for headings, Manrope for text,
    Instrument Serif italic for the highlighted words (.font-accent) and JetBrains Mono for small
    labels and numbers (.font-label, font-mono). In @layer base so utilities still win. A carrier's

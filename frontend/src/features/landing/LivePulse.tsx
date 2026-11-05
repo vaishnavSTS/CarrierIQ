@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
-import { animate, motion, useInView, useReducedMotion } from 'motion/react'
-import { useEffect, useRef, useState } from 'react'
+import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 
 import { getPublicStateCounts, getRecentCarriers } from '../../api/directory'
+import { CountUp } from './CountUp'
 import { Accent, reveal, SectionHeading } from './landingParts'
 
 /*
@@ -13,42 +13,14 @@ import { Accent, reveal, SectionHeading } from './landingParts'
  * No wording about where the data comes from (the public pages' rule).
  */
 
-const format = new Intl.NumberFormat('en-US')
 const shortDay = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: 'numeric',
   timeZone: 'UTC',
 })
 
-/** A number that counts up from 0 the first time it is on screen. */
-function CountUp({ value, prefix = '' }: { value: number | null; prefix?: string }) {
-  const ref = useRef<HTMLSpanElement>(null)
-  const inView = useInView(ref, { once: true, margin: '-40px' })
-  const reduceMotion = useReducedMotion()
-  const [shown, setShown] = useState(0)
-
-  useEffect(() => {
-    if (value == null || !inView) return
-    if (reduceMotion) {
-      setShown(value)
-      return
-    }
-    const controls = animate(0, value, {
-      duration: 1.6,
-      ease: [0.16, 1, 0.3, 1],
-      onUpdate: (v) => setShown(Math.round(v)),
-    })
-    return () => controls.stop()
-  }, [value, inView, reduceMotion])
-
-  return (
-    <span ref={ref} className="tabular-nums">
-      {value == null ? '…' : `${prefix}${format.format(shown)}`}
-    </span>
-  )
-}
-
-export function LivePulse({ number }: { number?: string }) {
+/** The live numbers and the carriers that just registered (shared by the section and the strip). */
+function usePulse() {
   const active = useQuery({
     queryKey: ['public-directory', 'states', 'active'],
     queryFn: () => getPublicStateCounts('active'),
@@ -61,20 +33,20 @@ export function LivePulse({ number }: { number?: string }) {
 
   const sum = (rows: { carriers: number }[] | undefined) =>
     rows ? rows.reduce((total, s) => total + s.carriers, 0) : null
-  const newest = active.data ? active.data.reduce((t, s) => t + s.new_last_30_days, 0) : null
+  return {
+    activeCarriers: sum(active.data),
+    newest: active.data ? active.data.reduce((t, s) => t + s.new_last_30_days, 0) : null,
+    inactiveCarriers: sum(inactive.data),
+    states: active.data ? active.data.length : null,
+    items: recent.data ?? [],
+  }
+}
 
-  const stats = [
-    { label: 'Active interstate carriers', value: sum(active.data), prefix: '' },
-    { label: 'Registered in the last 30 days', value: newest, prefix: '+' },
-    { label: 'Inactive USDOT numbers', value: sum(inactive.data), prefix: '' },
-    { label: 'States on the map', value: active.data ? active.data.length : null, prefix: '' },
-  ]
+type Recent = ReturnType<typeof usePulse>['items']
 
-  const items = recent.data ?? []
-  // Two strips with different carriers: the first half, then the rest (running the other way).
-  const half = Math.ceil(items.length / 2)
-  const strips = [items.slice(0, half), items.slice(half)].filter((s) => s.length > 0)
-  const row = (list: typeof items, hidden: boolean) => (
+/** One run of just-registered carriers; the copy (hidden) makes the strip loop seamlessly. */
+function RecentRow({ list, hidden }: { list: Recent; hidden: boolean }) {
+  return (
     <ul
       className="marquee-row flex shrink-0 items-center gap-8 pr-8"
       aria-hidden={hidden || undefined}
@@ -103,6 +75,72 @@ export function LivePulse({ number }: { number?: string }) {
       ))}
     </ul>
   )
+}
+
+/**
+ * The home page's short version, under the three choices: three live numbers that count up and
+ * one strip of carriers that just registered. Nothing shows until the numbers have loaded.
+ */
+export function LiveStrip() {
+  const { activeCarriers, newest, states, items } = usePulse()
+  if (activeCarriers == null) return null
+  const stats = [
+    { label: 'active interstate carriers', value: activeCarriers, prefix: '' },
+    { label: 'registered in the last 30 days', value: newest, prefix: '+' },
+    { label: 'states on the map', value: states, prefix: '' },
+  ]
+  return (
+    <motion.section
+      {...reveal(0.1)}
+      aria-label="Right now"
+      className="mt-10 overflow-hidden rounded-2xl bg-white/8 ring-1 ring-white/15 backdrop-blur"
+    >
+      <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 px-5 py-4 text-white">
+        <span className="font-label flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-300">
+          <span className="relative flex size-2">
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-amber-300 opacity-70 motion-reduce:hidden" />
+            <span className="relative inline-flex size-2 rounded-full bg-amber-300" />
+          </span>
+          Right now
+        </span>
+        {stats.map(({ label, value, prefix }) => (
+          <span key={label} className="flex items-baseline gap-2">
+            <span className="text-2xl font-semibold [font-family:var(--font-display)]">
+              <CountUp value={value} prefix={prefix} />
+            </span>
+            <span className="text-sm text-white/75">{label}</span>
+          </span>
+        ))}
+      </div>
+      {items.length > 0 && (
+        <div
+          aria-label="Carriers that just registered"
+          role="region"
+          className="marquee relative overflow-hidden border-t border-white/10 bg-white/5 py-3"
+        >
+          <div className="marquee-track flex w-max">
+            <RecentRow list={items} hidden={false} />
+            <RecentRow list={items} hidden />
+          </div>
+        </div>
+      )}
+    </motion.section>
+  )
+}
+
+export function LivePulse({ number }: { number?: string }) {
+  const { activeCarriers, newest, inactiveCarriers, states, items } = usePulse()
+
+  const stats = [
+    { label: 'Active interstate carriers', value: activeCarriers, prefix: '' },
+    { label: 'Registered in the last 30 days', value: newest, prefix: '+' },
+    { label: 'Inactive USDOT numbers', value: inactiveCarriers, prefix: '' },
+    { label: 'States on the map', value: states, prefix: '' },
+  ]
+
+  // Two strips with different carriers: the first half, then the rest (running the other way).
+  const half = Math.ceil(items.length / 2)
+  const strips = [items.slice(0, half), items.slice(half)].filter((s) => s.length > 0)
 
   return (
     <div>
@@ -146,8 +184,8 @@ export function LivePulse({ number }: { number?: string }) {
                 className={`marquee relative overflow-hidden rounded-2xl bg-white/6 py-3.5 ring-1 ring-white/10 ${i === 1 ? 'marquee-reverse' : ''}`}
               >
                 <div className="marquee-track flex w-max">
-                  {row(list, false)}
-                  {row(list, true)}
+                  <RecentRow list={list} hidden={false} />
+                  <RecentRow list={list} hidden />
                 </div>
               </section>
             ))}

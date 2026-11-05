@@ -10,6 +10,7 @@ import reportPage1 from '../../assets/report-sample-1.webp'
 import reportPage2 from '../../assets/report-sample-2.webp'
 import stsLogo from '../carrier-profile/packet/sts-logo.png'
 import { Accent, reveal, SectionHeading } from './landingParts'
+import { ReportSampleMotion } from './ReportSampleMotion'
 import { MembershipsStrip } from './StsVoices'
 
 /** From skytransportsolutions.com. Only what its pages agree on: no client counts or rankings. */
@@ -261,15 +262,23 @@ export function ReportPreview({
           { src: reportPage1, alt: 'Sample report page 1: the carrier safety scorecard' },
           { src: reportPage2, alt: 'Sample report page 2: what to fix and how to improve' },
         ].map(({ src, alt }, i) => (
-          <motion.figure key={src} {...reveal(i * 0.05)} className="relative">
-            <img
-              src={src}
-              alt={alt}
-              loading="lazy"
-              width={794}
-              height={1123}
-              className="h-auto w-full rounded-xl border border-slate-200 bg-white shadow-xl"
-            />
+          <motion.figure
+            key={src}
+            {...reveal(i * 0.05)}
+            className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+          >
+            {/* The border sits on the frame, so the motion layer lines up with the picture. */}
+            <div className="relative">
+              <img
+                src={src}
+                alt={alt}
+                loading="lazy"
+                width={794}
+                height={1123}
+                className="block h-auto w-full"
+              />
+              {i === 0 && <ReportSampleMotion />}
+            </div>
           </motion.figure>
         ))}
       </div>

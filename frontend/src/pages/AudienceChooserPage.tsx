@@ -5,6 +5,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { AUDIENCE_PATH, forgetStoredAudience, type Audience } from '../features/audience/audience'
 import { FaqSection } from '../features/landing/Faq'
 import { CHOOSER_FAQ } from '../features/landing/faqContent'
+import { LiveStrip } from '../features/landing/LivePulse'
 import { Band } from '../features/landing/landingParts'
 import { CHOOSER_PHOTO } from '../features/landing/photos'
 import { homeFor, useMe } from '../hooks/useAuth'
@@ -52,10 +53,11 @@ const CHOOSER_PHOTO_FIT: Record<Audience, string> = {
  * to their portal.
  */
 export function AudienceChooserPage() {
-  const { data: user, isPending } = useMe()
+  const { data: user } = useMe()
   const navigate = useNavigate()
   useEffect(forgetStoredAudience, [])
-  if (isPending) return null
+  // The choices show straight away, without waiting on the login check: when the API is waking
+  // up that check can take most of a minute, and the page used to stay empty until it answered.
   if (user) return <Navigate to={homeFor(user.portal)} replace />
 
   const choose = (audience: Audience) => navigate(AUDIENCE_PATH[audience])
@@ -120,6 +122,8 @@ export function AudienceChooserPage() {
               </button>
             ))}
           </div>
+
+          <LiveStrip />
 
           <div className="mt-8 flex flex-col items-center justify-center gap-x-8 gap-y-3 text-sm text-white/90 sm:flex-row">
             <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2">

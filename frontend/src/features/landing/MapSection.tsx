@@ -25,6 +25,7 @@ import {
 } from '../../api/directory'
 import { formatDate } from '../../utils/format'
 import { number, UsMap } from '../directory/UsMap'
+import { CountUp } from './CountUp'
 import { reveal, SectionHeading } from './landingParts'
 
 /*
@@ -118,12 +119,12 @@ export function MapSection({
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <Pill
               label={inactive ? 'Inactive interstate carriers' : 'Active interstate carriers'}
-              value={counts.data ? number.format(total) : '…'}
+              value={<CountUp value={counts.data ? total : null} />}
             />
             {!inactive && (
               <Pill
                 label="Registered in the last 30 days"
-                value={counts.data ? `+${number.format(recent)}` : '…'}
+                value={<CountUp value={counts.data ? recent : null} prefix="+" />}
               />
             )}
             {allowInactive && (
@@ -203,7 +204,7 @@ export function MapSection({
   )
 }
 
-function Pill({ label, value }: { label: string; value: string }) {
+function Pill({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="rounded-xl bg-slate-50 px-3.5 py-2 ring-1 ring-slate-200">
       <div className="text-[11px] text-slate-500">{label}</div>
@@ -261,12 +262,15 @@ function StateList({
         <div className="text-xl font-semibold">{state.name}</div>
         <div className="mt-1 text-sm text-white/85">
           {inactive ? (
-            <>{number.format(state.carriers)} inactive interstate carriers</>
+            <>
+              <CountUp key={state.state} value={state.carriers} /> inactive interstate carriers
+            </>
           ) : (
             <>
-              {number.format(state.carriers)} active interstate carriers ·{' '}
+              <CountUp key={state.state} value={state.carriers} /> active interstate carriers ·{' '}
               <span className="text-amber-300">
-                +{number.format(state.new_last_30_days)} in the last 30 days
+                <CountUp key={state.state} value={state.new_last_30_days} prefix="+" /> in the last
+                30 days
               </span>
             </>
           )}
