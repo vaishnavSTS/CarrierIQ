@@ -350,16 +350,6 @@ export function violationCode(code: string): string {
   return /^\d{4}/.test(code) ? `${code.slice(0, 3)}.${code.slice(3)}` : code
 }
 
-/**
- * A record with more than 3 inspections with violations, or more than 10 violation codes, would be
- * printed too small on one page: it gets two (when the score improves, the heaviest violations and
- * the violation summary; then the inspection history, crashes and pull-in rates).
- */
-export function recordNeedsTwoPages(safety: CarrierSafety): boolean {
-  const inspections = safety.sms_inspections ?? []
-  return inspections.length > 3 || violationRows(inspections).length > 10
-}
-
 const number = (value: number, decimals = 2) =>
   value.toLocaleString('en-US', { maximumFractionDigits: decimals })
 

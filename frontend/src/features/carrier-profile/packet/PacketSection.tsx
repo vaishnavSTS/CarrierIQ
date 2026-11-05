@@ -50,7 +50,6 @@ import { SolutionsBox } from './SolutionsBox'
 import {
   cleanInspections,
   heaviestTruck,
-  recordNeedsTwoPages,
   repeatViolations,
   tileFacts,
   violationCode,
@@ -439,7 +438,6 @@ export function PacketDocument({
   // Page 4, FMCSA's record line by line, once its violation file is loaded.
   const record = safety !== null && safety.sms_inspections != null
   // A busy record gets two parts: the summary, then the inspection history.
-  const twoRecordPages = record && safety !== null && recordNeedsTwoPages(safety)
   const listed = inspections !== null && inspections.length > 0
   // Each page's line in the Sky Transport Solutions strip: what that page is about.
   const ask =
@@ -942,36 +940,13 @@ export function PacketDocument({
           carrier={carrier}
           contact={contact.inspections}
         >
-          <RecordPage
-            fullRecordUrl={fullRecordUrl}
-            safety={safety}
-            client={client}
-            whose={whose}
-            part={twoRecordPages ? 'summary' : 'all'}
-          />
-        </Sheet>
-      )}
-      {/* For a busy record: the inspection history, crashes and pull-in rates */}
-      {twoRecordPages && safety && (
-        <Sheet
-          index={improve ? 4 : 3}
-          title="Inspection history"
-          carrier={carrier}
-          contact={contact.inspections}
-        >
-          <RecordPage
-            fullRecordUrl={fullRecordUrl}
-            safety={safety}
-            client={client}
-            whose={whose}
-            part="history"
-          />
+          <RecordPage fullRecordUrl={fullRecordUrl} safety={safety} client={client} whose={whose} />
         </Sheet>
       )}
       {/* Last: every inspection on file, each one listed */}
       {listed && (
         <Sheet
-          index={(improve ? 3 : 2) + (record ? (twoRecordPages ? 2 : 1) : 0)}
+          index={(improve ? 3 : 2) + (record ? 1 : 0)}
           title="All inspections"
           carrier={carrier}
           contact={contact.inspections}
