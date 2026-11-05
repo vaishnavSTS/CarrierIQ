@@ -55,7 +55,8 @@ export function PartnersStrip() {
         aria-label="Sky Transport Solutions partners"
         className="partner-strip marquee relative overflow-hidden rounded-2xl border border-slate-200 bg-surface py-4"
       >
-        <div className="marquee-track flex w-max">
+        {/* Faster than the page's other strips (60 s a loop). */}
+        <div className="marquee-track flex w-max" style={{ animationDuration: '30s' }}>
           {row(false)}
           {row(true)}
         </div>
