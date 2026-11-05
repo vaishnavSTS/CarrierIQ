@@ -9,7 +9,7 @@ import { Field, FormError, SubmitButton } from '../features/auth/AuthCard'
 import { useTurnstile } from '../features/auth/useTurnstile'
 import { STS_CONTACT } from '../features/carrier-profile/packet/contact'
 import stsLogo from '../features/carrier-profile/packet/sts-logo.png'
-import { STS_ADDRESS, STS_HOURS } from '../features/landing/stsInfo'
+import { STS_HOURS, STS_LOCATIONS } from '../features/landing/stsInfo'
 import { formatPhone } from '../utils/format'
 
 const EMPTY = { full_name: '', email: '', phone: '', company: '', usdot: '', message: '' }
@@ -101,10 +101,15 @@ export function ContactPage() {
                 </a>
               </li>
             ))}
-            <li className="flex gap-2.5">
-              <MapPin className="mt-0.5 size-4 shrink-0 text-slate-500" aria-hidden />
-              {STS_ADDRESS}
-            </li>
+            {STS_LOCATIONS.map(({ label, address }) => (
+              <li key={label} className="flex gap-2.5">
+                <MapPin className="mt-0.5 size-4 shrink-0 text-slate-500" aria-hidden />
+                <span>
+                  <span className="block font-medium text-slate-900">{label}</span>
+                  {address}
+                </span>
+              </li>
+            ))}
             <li className="flex gap-2.5">
               <Clock className="mt-0.5 size-4 shrink-0 text-slate-500" aria-hidden />
               {STS_HOURS}

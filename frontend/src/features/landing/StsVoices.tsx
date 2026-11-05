@@ -1,4 +1,4 @@
-import { BadgeCheck, Quote } from 'lucide-react'
+import { BadgeCheck, ChevronLeft, ChevronRight, Quote } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 
@@ -153,7 +153,7 @@ export function StsTestimonials({ number }: { number?: string }) {
         onMouseLeave={() => setPaused(false)}
         className="mt-10 grid items-stretch gap-4 lg:grid-cols-[1.6fr_1fr]"
       >
-        <figure className="relative overflow-hidden rounded-3xl bg-[#101853] p-8 text-white shadow-2xl shadow-brand-glow/20 md:p-10">
+        <figure className="relative flex flex-col overflow-hidden rounded-3xl bg-[#101853] p-8 text-white shadow-2xl shadow-brand-glow/20 md:p-10">
           <Quote className="absolute -right-2 -top-2 size-32 text-white/8" aria-hidden />
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
@@ -162,6 +162,7 @@ export function StsTestimonials({ number }: { number?: string }) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.35 }}
+              className="my-auto"
             >
               <span className="font-label inline-flex rounded-full bg-amber-300 px-2.5 py-0.5 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-[#060d24]">
                 {quote.topic}
@@ -175,11 +176,35 @@ export function StsTestimonials({ number }: { number?: string }) {
               </figcaption>
             </motion.div>
           </AnimatePresence>
+          {/* Under the quote: which one this is, and Previous / Next. */}
+          <div className="mt-8 flex items-center justify-between gap-3 border-t border-white/15 pt-5 text-sm text-white/75">
+            <span className="tabular-nums">
+              {index + 1} of {QUOTES.length}
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setIndex((i) => (i - 1 + QUOTES.length) % QUOTES.length)}
+                aria-label="Previous quote"
+                className="grid size-9 place-items-center rounded-full ring-1 ring-white/30 transition-colors hover:bg-white/10"
+              >
+                <ChevronLeft className="size-4" aria-hidden />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIndex((i) => (i + 1) % QUOTES.length)}
+                aria-label="Next quote"
+                className="grid size-9 place-items-center rounded-full ring-1 ring-white/30 transition-colors hover:bg-white/10"
+              >
+                <ChevronRight className="size-4" aria-hidden />
+              </button>
+            </div>
+          </div>
         </figure>
 
         <ul
           ref={list}
-          className="grid min-w-0 max-h-[30rem] grid-cols-1 content-start gap-2 overflow-y-auto overflow-x-hidden pr-1"
+          className="grid min-w-0 max-h-[26rem] grid-cols-1 content-start gap-2 no-scrollbar overflow-y-auto overflow-x-hidden"
         >
           {QUOTES.map((q, i) => (
             <li key={q.from} className="min-w-0">

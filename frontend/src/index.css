@@ -1162,3 +1162,11 @@ body {
   -webkit-mask-image: none;
   mask-image: none;
 }
+
+/* Scrolls (wheel, touch, keyboard) without showing a scroll bar. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
