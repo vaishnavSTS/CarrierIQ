@@ -53,9 +53,6 @@ function UsdotLinks({ numbers }: { numbers: number[] }) {
  */
 function AccountCarriers({ account }: { account: AdminUser }) {
   const verify = useAddAccountCarrier()
-  const release = useReleaseClaim()
-  // The number whose "Release claim" was pressed once: a second press confirms
-  const [releasing, setReleasing] = useState<number | null>(null)
   const canVerify = account.role.startsWith('CLIENT_') && account.status !== 'DISABLED'
   if (account.usdot_numbers.length === 0) return <UsdotLinks numbers={[]} />
   return (
@@ -81,48 +78,68 @@ function AccountCarriers({ account }: { account: AdminUser }) {
                 {pending ? 'Verifying…' : 'Verify'}
               </button>
             )}
-            {account.claimed_usdot_numbers?.includes(n) &&
-              (releasing === n ? (
-                <>
-                  <span className="text-slate-600">Let another carrier sign up with {n}?</span>
-                  <button
-                    type="button"
-                    disabled={release.isPending}
-                    onClick={() =>
-                      release.mutate(
-                        { id: account.id, usdotNumber: n },
-                        { onSettled: () => setReleasing(null) },
-                      )
-                    }
-                    className="rounded bg-red-700 px-2 py-0.5 font-medium text-white hover:bg-red-800 disabled:opacity-50"
-                  >
-                    {release.isPending ? 'Releasing…' : 'Yes, release'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setReleasing(null)}
-                    className="rounded px-2 py-0.5 font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50"
-                  >
-                    Cancel
-                  </button>
-                </>
-              ) : (
-                <>
-                  <StatusBadge label="Claimed" tone="neutral" />
-                  <button
-                    type="button"
-                    onClick={() => setReleasing(n)}
-                    title="Free this USDOT number so another carrier account can sign up with it. This account keeps the carrier in its portal."
-                    className="rounded px-2 py-0.5 font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50"
-                  >
-                    Release claim
-                  </button>
-                </>
-              ))}
           </li>
         )
       })}
       {verify.isError && <li className="text-red-700">{verify.error.message}</li>}
+    </ul>
+  )
+}
+
+/**
+ * The Claim column: each USDOT this carrier account has claimed (no other carrier account can sign
+ * up with it), with Release claim. The first press asks to confirm; the account keeps the carrier.
+ */
+function AccountClaims({ account }: { account: AdminUser }) {
+  const release = useReleaseClaim()
+  // The number whose "Release claim" was pressed once: a second press confirms
+  const [releasing, setReleasing] = useState<number | null>(null)
+  const claimed = account.claimed_usdot_numbers ?? []
+  if (claimed.length === 0) return <span className="text-slate-400">—</span>
+  return (
+    <ul className="space-y-1.5">
+      {claimed.map((n) => (
+        <li key={n} className="flex flex-wrap items-center gap-1.5">
+          {releasing === n ? (
+            <>
+              <span className="text-slate-600">Let another carrier sign up with {n}?</span>
+              <button
+                type="button"
+                disabled={release.isPending}
+                onClick={() =>
+                  release.mutate(
+                    { id: account.id, usdotNumber: n },
+                    { onSettled: () => setReleasing(null) },
+                  )
+                }
+                className="rounded bg-red-700 px-2 py-0.5 font-medium text-white hover:bg-red-800 disabled:opacity-50"
+              >
+                {release.isPending ? 'Releasing…' : 'Yes, release'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setReleasing(null)}
+                className="rounded px-2 py-0.5 font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+            </>
+          ) : (
+            <>
+              <StatusBadge label="Claimed" tone="neutral" />
+              {claimed.length > 1 && <span className="font-mono text-slate-600">{n}</span>}
+              <button
+                type="button"
+                onClick={() => setReleasing(n)}
+                title="Free this USDOT number so another carrier account can sign up with it. This account keeps the carrier in its portal."
+                className="whitespace-nowrap rounded px-2 py-0.5 font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50"
+              >
+                Release claim
+              </button>
+            </>
+          )}
+        </li>
+      ))}
       {release.isError && <li className="text-red-700">{release.error.message}</li>}
     </ul>
   )
@@ -343,6 +360,9 @@ function AccountRow({ account, isMe }: { account: AdminUser; isMe: boolean }) {
           </>
         )}
       </td>
+      <td className="py-2.5 pr-4 text-xs">
+        <AccountClaims account={account} />
+      </td>
       <td className="py-2.5 pr-4">
         <StatusBadge label={account.status} tone={STATUS_TONES[account.status]} />
       </td>
@@ -414,6 +434,7 @@ export function AccountsPage() {
                   <th className="pb-2 pr-4 font-medium">Company</th>
                   <th className="pb-2 pr-4 font-medium">Role</th>
                   <th className="pb-2 pr-4 font-medium">USDOT</th>
+                  <th className="pb-2 pr-4 font-medium">Claim</th>
                   <th className="pb-2 pr-4 font-medium">Status</th>
                   <th className="pb-2 pr-4 font-medium">Last login</th>
                   <th className="pb-2" />

@@ -17,10 +17,12 @@ export function TalkToSky() {
   return (
     <Link
       to="/contact"
-      className="fixed bottom-4 right-4 z-20 inline-flex min-h-11 items-center gap-2 rounded-full bg-cta px-4 py-2 text-sm font-semibold text-cta-ink shadow-lg print:hidden"
+      aria-label="Talk to a Sky specialist"
+      title="Talk to a Sky specialist"
+      // On phones, a round icon button that covers as little of the page as possible
+      className="fixed bottom-3 right-3 z-20 inline-flex size-11 items-center justify-center gap-2 rounded-full bg-cta text-sm font-semibold text-cta-ink shadow-lg sm:bottom-4 sm:right-4 sm:size-auto sm:min-h-11 sm:px-4 sm:py-2 print:hidden"
     >
-      <MessageCircle className="size-4" aria-hidden />
-      <span className="sm:hidden">Talk to Sky</span>
+      <MessageCircle className="size-5 sm:size-4" aria-hidden />
       <span className="hidden sm:inline">Talk to a Sky specialist</span>
     </Link>
   )
