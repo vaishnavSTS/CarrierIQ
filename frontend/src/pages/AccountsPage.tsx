@@ -369,13 +369,13 @@ function AccountRow({ account, isMe }: { account: AdminUser; isMe: boolean }) {
       <td className="py-2.5 pr-4 text-xs text-slate-500">
         {account.last_login_at ? formatDateTime(account.last_login_at) : 'never'}
       </td>
-      <td className="py-2.5 text-right">
+      <td className="py-2.5 pr-1 text-right">
         {account.status === 'ACTIVE' && !isMe && (
           <button
             type="button"
             disabled={action.isPending}
             onClick={() => action.mutate({ id: account.id, action: 'disable' })}
-            className="rounded-md px-2 py-1 text-xs text-red-700 hover:bg-red-50 disabled:opacity-50"
+            className="whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-red-300 hover:bg-red-50 disabled:opacity-50"
           >
             Disable
           </button>
@@ -385,7 +385,7 @@ function AccountRow({ account, isMe }: { account: AdminUser; isMe: boolean }) {
             type="button"
             disabled={action.isPending}
             onClick={() => action.mutate({ id: account.id, action: 'reactivate' })}
-            className="rounded-md px-2 py-1 text-xs text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+            className="whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-300 hover:bg-emerald-50 disabled:opacity-50"
           >
             Re-activate
           </button>
