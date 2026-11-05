@@ -56,7 +56,7 @@ export function PartnersStrip() {
         className="partner-strip marquee relative overflow-hidden rounded-2xl border border-slate-200 bg-surface py-4"
       >
         {/* Faster than the page's other strips (60 s a loop). */}
-        <div className="marquee-track flex w-max" style={{ animationDuration: '30s' }}>
+        <div className="marquee-track flex w-max" style={{ animationDuration: '20s' }}>
           {row(false)}
           {row(true)}
         </div>
