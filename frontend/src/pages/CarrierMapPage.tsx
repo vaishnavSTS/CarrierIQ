@@ -20,7 +20,7 @@ export function CarrierMapPage() {
           Every carrier, <Accent>state by state</Accent>
         </>
       }
-      aside="Click a state for every active or inactive interstate carrier in it: newest, largest, A–Z, new this month, with a Satisfactory rating or hauling hazmat."
+      aside="Click a state for every active or inactive interstate carrier in it: newest, largest, A–Z, with a Satisfactory rating or hauling hazmat."
     />
   )
 }

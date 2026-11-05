@@ -6,7 +6,6 @@ import {
   BadgeCheck,
   Building2,
   CalendarPlus,
-  Sparkles,
   FlaskConical,
   MapPinned,
   Truck,
@@ -65,13 +64,6 @@ const SORTS: {
     note: 'By the fleet each carrier reported. A new USDOT reporting a very large fleet is marked: check it before relying on the number.',
   },
   { key: 'az', label: 'A–Z', icon: Building2, note: 'By company name.' },
-  {
-    key: 'new',
-    label: 'New this month',
-    icon: Sparkles,
-    note: 'Registered in the last 30 days, newest first.',
-    portalOnly: true,
-  },
   {
     key: 'rated',
     label: 'Satisfactory rating',
