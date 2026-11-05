@@ -39,6 +39,10 @@ const SOURCES = [
   },
   { name: 'FMCSA Company Census', href: 'https://data.transportation.gov/d/az4n-8mr2' },
   { name: 'FMCSA out-of-service orders', href: 'https://data.transportation.gov/d/p2mt-9ige' },
+  {
+    name: 'data.transportation.gov (where FMCSA publishes the datasets above)',
+    href: 'https://data.transportation.gov',
+  },
 ]
 
 const WORDS = [
@@ -218,6 +222,9 @@ export function MethodologyPage() {
             </li>
           ))}
         </ul>
+        <Link to="/sources" className="tap inline-block text-sm text-slate-600 hover:underline">
+          Every source Carrier Safety Scan uses →
+        </Link>
       </Block>
 
       <p className="text-sm text-slate-700">
