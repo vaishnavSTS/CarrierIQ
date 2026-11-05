@@ -35,9 +35,22 @@ export function CarrierSnapshot({
   const page = `/portal/carriers/${usdotNumber}`
 
   if (profile.isPending) {
+    // As tall as the snapshot itself, so what follows (the DataQs requests) stays below until it
+    // has loaded, rather than filling the screen first and then being pushed down.
     return (
-      <section className={`${CARD} animate-pulse text-sm text-slate-500`}>
-        Loading your carrier’s FMCSA record…
+      <section
+        aria-busy
+        className={`${CARD} min-h-[calc(100svh-9rem)] animate-pulse space-y-4 text-sm text-slate-500`}
+      >
+        <p>Loading your carrier’s record…</p>
+        <div className="h-8 w-2/5 rounded bg-slate-100" />
+        <div className="h-4 w-3/5 rounded bg-slate-100" />
+        <div className="grid gap-4 pt-2 sm:grid-cols-3">
+          <div className="h-32 rounded-xl bg-slate-100" />
+          <div className="h-32 rounded-xl bg-slate-100" />
+          <div className="h-32 rounded-xl bg-slate-100" />
+        </div>
+        <div className="h-48 rounded-xl bg-slate-100" />
       </section>
     )
   }

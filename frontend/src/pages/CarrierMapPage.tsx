@@ -32,8 +32,8 @@ export function CarrierMapPage() {
       }
       aside={
         agent
-          ? 'Click a state for every active or inactive interstate carrier in it: newest, largest or A–Z.'
-          : 'Click a state for every active interstate carrier in it: newest, largest or A–Z.'
+          ? 'Click a state for every active or inactive interstate carrier in it: newest, largest, A–Z, new this month or with a Satisfactory rating.'
+          : 'Click a state for every active interstate carrier in it: newest, largest, A–Z, new this month or with a Satisfactory rating.'
       }
     />
   )

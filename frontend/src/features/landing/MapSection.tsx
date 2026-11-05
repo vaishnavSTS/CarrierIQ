@@ -243,6 +243,9 @@ function StateList({
       ? 'Most recently registered first. The date a carrier went inactive isn’t recorded.'
       : SORTS.find((s) => s.key === sort)?.note
 
+  const tabs = SORTS.filter((s) => !s.portalOnly || (portal && !inactive))
+  const compact = tabs.length > 3
+
   const choose = (next: DirectorySort) => {
     setSort(next)
     setPage(0)
@@ -270,26 +273,29 @@ function StateList({
         </div>
       </div>
 
-      <div role="tablist" className="flex flex-wrap gap-1 border-b border-slate-100 px-4 pt-3">
-        {SORTS.filter((s) => !s.portalOnly || (portal && !inactive)).map(
-          ({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={sort === key}
-              onClick={() => choose(key)}
-              className={`inline-flex items-center gap-1.5 rounded-t-lg px-3 py-2 text-sm font-medium ${
-                sort === key
-                  ? 'bg-accent-soft text-accent-strong'
-                  : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <Icon className="size-4" aria-hidden />
-              {inactive && key === 'newest' ? 'Recently registered' : label}
-            </button>
-          ),
-        )}
+      {/* Five tabs in the portals: kept on one line, without icons, scrolling sideways if the
+          panel is narrower still. */}
+      <div
+        role="tablist"
+        className={`flex border-b border-slate-100 px-4 pt-3 ${compact ? 'gap-0.5 overflow-x-auto' : 'flex-wrap gap-1'}`}
+      >
+        {tabs.map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={sort === key}
+            onClick={() => choose(key)}
+            className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg py-2 font-medium ${compact ? 'px-2.5 text-[13px]' : 'px-3 text-sm'} ${
+              sort === key
+                ? 'bg-accent-soft text-accent-strong'
+                : 'text-slate-600 hover:bg-slate-50'
+            }`}
+          >
+            {!compact && <Icon className="size-4" aria-hidden />}
+            {inactive && key === 'newest' ? 'Recently registered' : label}
+          </button>
+        ))}
       </div>
 
       {sort === 'az' && (
