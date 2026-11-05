@@ -16,9 +16,12 @@ export interface PublicCarrier {
   registered_on: string | null
   /** A USDOT under 5 years old reporting 1,000+ power units: worth a closer look. */
   fleet_needs_check: boolean
+  /** The date of its Satisfactory safety rating, when it has one */
+  rated_on?: string | null
 }
 
-export type DirectorySort = 'newest' | 'largest' | 'az'
+/** 'new' (last 30 days) and 'rated' (Satisfactory rating) are in the portals' map only. */
+export type DirectorySort = 'newest' | 'largest' | 'az' | 'new' | 'rated'
 /** Active or inactive USDOT numbers */
 export type DirectoryStatus = 'active' | 'inactive'
 

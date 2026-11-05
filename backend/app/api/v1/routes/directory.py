@@ -69,6 +69,7 @@ class PublicCarrierOut(BaseModel):
     power_units: int | None
     registered_on: date | None
     fleet_needs_check: bool
+    rated_on: date | None = None
 
 
 class RecentCarrierOut(BaseModel):
@@ -139,7 +140,7 @@ def state_counts(directory: Directory, status: Literal["active", "inactive"] = "
 def state_carriers(
     directory: Directory,
     state: State,
-    sort: Literal["newest", "largest", "az"] = "newest",
+    sort: Literal["newest", "largest", "az", "new", "rated"] = "newest",
     letter: Letter = None,
     page: Annotated[int, Query(ge=0, lt=MAX_PAGES)] = 0,
     status: Literal["active", "inactive"] = "active",

@@ -112,6 +112,7 @@ def test_state_carriers_sorted_and_without_contact_details(api: TestClient, cens
     new_big, old = body["carriers"]
     assert set(new_big) == {
         "usdot_number", "legal_name", "city", "power_units", "registered_on", "fleet_needs_check",
+        "rated_on",
     }  # fmt: skip
     assert new_big["fleet_needs_check"] is True  # under 5 years old, 1,000+ units reported
     assert old["fleet_needs_check"] is False
@@ -152,6 +153,47 @@ def test_the_portal_map_lists_every_carrier(role: UserRole):
         assert census.queries[-1]["$offset"] == "1000"  # far past the public list
     finally:
         next(client, None)
+
+
+def test_portal_lists_new_this_month_and_satisfactory_ratings(api: TestClient, census: FakeCensus):
+    _as(UserRole.INSURANCE_AGENT)
+    api.get(f"{PORTAL}/states/TX?sort=new")
+    assert "add_date >= '20261005'" in census.queries[-1]["$where"]
+    assert census.queries[-1]["$order"].startswith("add_date DESC")
+
+    census.rows = 2
+    api.get(f"{PORTAL}/states/TX?sort=rated")
+    query = census.queries[-1]
+    assert "safety_rating='S'" in query["$where"]
+    assert query["$order"].startswith("safety_rating_date DESC")
+
+
+def test_rating_date_only_for_a_satisfactory_rating():
+    directory = CarrierDirectory(FakeCensus(), today=lambda: date(2026, 11, 4))  # type: ignore[arg-type]
+    rated = directory._carrier(
+        {
+            "dot_number": "5",
+            "legal_name": "A",
+            "safety_rating": "S",
+            "safety_rating_date": "20240115",
+        }
+    )
+    conditional = directory._carrier(
+        {
+            "dot_number": "6",
+            "legal_name": "B",
+            "safety_rating": "C",
+            "safety_rating_date": "20240115",
+        }
+    )
+    assert rated is not None and rated.rated_on == date(2024, 1, 15)
+    assert conditional is not None and conditional.rated_on is None
+
+
+@pytest.mark.parametrize("sort", ["new", "rated"])
+def test_public_lists_keep_three_sorts(api: TestClient, census: FakeCensus, sort: str):
+    assert api.get(f"{BASE}/states/TX?sort={sort}").status_code == 422
+    assert census.queries == []
 
 
 @pytest.mark.parametrize("role", [UserRole.BROKER_USER, UserRole.BROKER_ADMIN])

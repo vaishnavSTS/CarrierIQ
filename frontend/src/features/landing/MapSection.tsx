@@ -2,8 +2,10 @@ import { useQuery } from '@tanstack/react-query'
 import {
   AlertTriangle,
   ArrowRight,
+  BadgeCheck,
   Building2,
   CalendarPlus,
+  Sparkles,
   MapPinned,
   Truck,
   type LucideIcon,
@@ -34,7 +36,14 @@ import { reveal, SectionHeading } from './landingParts'
  * comes from (the public pages' rule).
  */
 
-const SORTS: { key: DirectorySort; label: string; icon: LucideIcon; note: string }[] = [
+const SORTS: {
+  key: DirectorySort
+  label: string
+  icon: LucideIcon
+  note: string
+  /** Only in the portals, and only for active carriers */
+  portalOnly?: boolean
+}[] = [
   { key: 'newest', label: 'Newest', icon: CalendarPlus, note: 'Newest USDOT registrations first.' },
   {
     key: 'largest',
@@ -43,6 +52,20 @@ const SORTS: { key: DirectorySort; label: string; icon: LucideIcon; note: string
     note: 'By the fleet each carrier reported. A new USDOT reporting a very large fleet is marked: check it before relying on the number.',
   },
   { key: 'az', label: 'A–Z', icon: Building2, note: 'By company name.' },
+  {
+    key: 'new',
+    label: 'New this month',
+    icon: Sparkles,
+    note: 'Registered in the last 30 days, newest first.',
+    portalOnly: true,
+  },
+  {
+    key: 'rated',
+    label: 'Satisfactory rating',
+    icon: BadgeCheck,
+    note: 'Carriers with a Satisfactory safety rating from an FMCSA audit, most recent first. A rating can be many years old: check its date.',
+    portalOnly: true,
+  },
 ]
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
 
@@ -247,24 +270,26 @@ function StateList({
         </div>
       </div>
 
-      <div role="tablist" className="flex gap-1 border-b border-slate-100 px-4 pt-3">
-        {SORTS.map(({ key, label, icon: Icon }) => (
-          <button
-            key={key}
-            type="button"
-            role="tab"
-            aria-selected={sort === key}
-            onClick={() => choose(key)}
-            className={`inline-flex items-center gap-1.5 rounded-t-lg px-3 py-2 text-sm font-medium ${
-              sort === key
-                ? 'bg-accent-soft text-accent-strong'
-                : 'text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            <Icon className="size-4" aria-hidden />
-            {inactive && key === 'newest' ? 'Recently registered' : label}
-          </button>
-        ))}
+      <div role="tablist" className="flex flex-wrap gap-1 border-b border-slate-100 px-4 pt-3">
+        {SORTS.filter((s) => !s.portalOnly || (portal && !inactive)).map(
+          ({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={sort === key}
+              onClick={() => choose(key)}
+              className={`inline-flex items-center gap-1.5 rounded-t-lg px-3 py-2 text-sm font-medium ${
+                sort === key
+                  ? 'bg-accent-soft text-accent-strong'
+                  : 'text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              <Icon className="size-4" aria-hidden />
+              {inactive && key === 'newest' ? 'Recently registered' : label}
+            </button>
+          ),
+        )}
       </div>
 
       {sort === 'az' && (
@@ -343,7 +368,11 @@ function StateList({
                   ? `${number.format(c.power_units)} ${c.power_units === 1 ? 'truck' : 'trucks'}`
                   : '—'}
               </div>
-              <div>Since {formatDate(c.registered_on)}</div>
+              {sort === 'rated' && c.rated_on ? (
+                <div className="font-medium text-emerald-700">Rated {formatDate(c.rated_on)}</div>
+              ) : (
+                <div>Since {formatDate(c.registered_on)}</div>
+              )}
             </div>
           </li>
         ))}

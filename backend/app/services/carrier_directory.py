@@ -53,7 +53,9 @@ PAGE_SIZE = 25
 REPORTED_FLEET_CHECK_UNITS = 1000
 REPORTED_FLEET_CHECK_YEARS = 5
 
-Sort = Literal["newest", "largest", "az"]
+# "new": registered in the last NEW_DAYS days; "rated": a Satisfactory safety rating, newest
+# rating first (the portals' map only).
+Sort = Literal["newest", "largest", "az", "new", "rated"]
 
 
 @dataclass(frozen=True)
@@ -75,6 +77,7 @@ class DirectoryCarrier:
     drivers: int | None
     registered_on: date | None
     fleet_needs_check: bool
+    rated_on: date | None = None  # its Satisfactory rating, in the "rated" list
 
 
 @dataclass(frozen=True)
@@ -213,15 +216,22 @@ class CarrierDirectory:
             "newest": "add_date DESC, dot_number DESC",
             "largest": "power_units::number DESC, dot_number",
             "az": "legal_name, dot_number",
+            "new": "add_date DESC, dot_number DESC",
+            "rated": "safety_rating_date DESC, dot_number",
         }[sort]
         if sort == "largest":
             where += " AND power_units IS NOT NULL"
+        if sort == "new":
+            since = (self._today() - timedelta(days=NEW_DAYS)).strftime("%Y%m%d")
+            where += f" AND add_date >= '{since}'"
+        if sort == "rated":
+            where += " AND safety_rating='S'"
         rows = self.client.get_rows(
             self.dataset,
             {
                 "$select": (
                     "dot_number, legal_name, dba_name, phy_city, phy_cnty, power_units, "
-                    "total_drivers, add_date"
+                    "total_drivers, add_date, safety_rating, safety_rating_date"
                 ),
                 "$where": where,
                 "$order": order,
@@ -259,6 +269,9 @@ class CarrierDirectory:
             drivers=_int(row.get("total_drivers")),
             registered_on=registered,
             fleet_needs_check=bool(young and units and units >= REPORTED_FLEET_CHECK_UNITS),
+            rated_on=_day(row.get("safety_rating_date"))
+            if row.get("safety_rating") == "S"
+            else None,
         )
 
 
