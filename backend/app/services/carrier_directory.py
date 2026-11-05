@@ -1,0 +1,212 @@
+"""The carrier directory: active interstate carriers by state, from FMCSA's Company Census File.
+
+Reads data.transportation.gov live (settings.census_dataset_id) with fixed SoQL: the state comes
+from STATES and the letter is one A-Z character, so nothing a visitor types reaches a query as
+text. State totals change slowly, so they are kept in memory for STATE_COUNTS_TTL.
+
+Only what tells carriers apart is returned (name, city, county code, USDOT, fleet, drivers,
+registration date): never phones, emails or officers.
+
+"Active interstate" = census status_code 'A' and carrier_operation 'A'. Fleet sizes are what the
+carrier reported on its MCS-150; a USDOT under REPORTED_FLEET_CHECK_YEARS old reporting
+REPORTED_FLEET_CHECK_UNITS or more power units is marked for a closer look, the pattern the
+booking check also treats as a fraud sign.
+"""
+
+import threading
+import time
+from dataclasses import dataclass
+from datetime import UTC, date, datetime, timedelta
+from typing import Literal
+
+from app.core.config import get_settings
+from app.ingestion.socrata_client import SocrataClient
+
+# The 50 states and DC, as the census writes them (phy_state).
+STATES: dict[str, str] = {
+    "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas", "CA": "California",
+    "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware", "DC": "District of Columbia",
+    "FL": "Florida", "GA": "Georgia", "HI": "Hawaii", "ID": "Idaho", "IL": "Illinois",
+    "IN": "Indiana", "IA": "Iowa", "KS": "Kansas", "KY": "Kentucky", "LA": "Louisiana",
+    "ME": "Maine", "MD": "Maryland", "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota",
+    "MS": "Mississippi", "MO": "Missouri", "MT": "Montana", "NE": "Nebraska", "NV": "Nevada",
+    "NH": "New Hampshire", "NJ": "New Jersey", "NM": "New Mexico", "NY": "New York",
+    "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio", "OK": "Oklahoma",
+    "OR": "Oregon", "PA": "Pennsylvania", "RI": "Rhode Island", "SC": "South Carolina",
+    "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas", "UT": "Utah", "VT": "Vermont",
+    "VA": "Virginia", "WA": "Washington", "WV": "West Virginia", "WI": "Wisconsin",
+    "WY": "Wyoming",
+}  # fmt: skip
+
+ACTIVE_INTERSTATE = "status_code='A' AND carrier_operation='A'"
+STATE_COUNTS_TTL = 6 * 3600.0
+NEW_DAYS = 30
+PAGE_SIZE = 25
+REPORTED_FLEET_CHECK_UNITS = 1000
+REPORTED_FLEET_CHECK_YEARS = 5
+
+Sort = Literal["newest", "largest", "az"]
+
+
+@dataclass(frozen=True)
+class StateCount:
+    state: str
+    name: str
+    carriers: int
+    new_last_30_days: int
+
+
+@dataclass(frozen=True)
+class DirectoryCarrier:
+    usdot_number: int
+    legal_name: str
+    dba_name: str | None
+    city: str | None
+    county_code: str | None
+    power_units: int | None
+    drivers: int | None
+    registered_on: date | None
+    fleet_needs_check: bool
+
+
+@dataclass(frozen=True)
+class StatePage:
+    state: str
+    name: str
+    sort: Sort
+    letter: str | None
+    page: int
+    carriers: list[DirectoryCarrier]
+    has_more: bool
+
+
+def _int(value: object) -> int | None:
+    try:
+        return int(str(value))
+    except (TypeError, ValueError):
+        return None
+
+
+def _day(value: object) -> date | None:
+    text = str(value or "")
+    try:
+        return datetime.strptime(text[:8], "%Y%m%d").date()
+    except ValueError:
+        return None
+
+
+class CarrierDirectory:
+    def __init__(self, client: SocrataClient, *, now=time.monotonic, today=None) -> None:
+        self.client = client
+        self.dataset = get_settings().census_dataset_id
+        self._now = now
+        self._today = today or (lambda: datetime.now(UTC).date())
+
+    # --- State totals -------------------------------------------------------------------------
+
+    def state_counts(self) -> list[StateCount]:
+        with _CACHE_LOCK:
+            cached = _CACHE.get("states")
+            if cached and self._now() - cached[0] < STATE_COUNTS_TTL:
+                return cached[1]
+        since = (self._today() - timedelta(days=NEW_DAYS)).strftime("%Y%m%d")
+        totals = self._grouped(ACTIVE_INTERSTATE)
+        new = self._grouped(f"{ACTIVE_INTERSTATE} AND add_date >= '{since}'")
+        counts = [
+            StateCount(code, name, totals.get(code, 0), new.get(code, 0))
+            for code, name in STATES.items()
+        ]
+        with _CACHE_LOCK:
+            _CACHE["states"] = (self._now(), counts)
+        return counts
+
+    def _grouped(self, where: str) -> dict[str, int]:
+        rows = self.client.get_rows(
+            self.dataset,
+            {
+                "$select": "phy_state, count(*) AS n",
+                "$where": where,
+                "$group": "phy_state",
+                "$limit": "200",
+            },
+        )
+        return {
+            str(row.get("phy_state")): _int(row.get("n")) or 0
+            for row in rows
+            if row.get("phy_state") in STATES
+        }
+
+    # --- One state's carriers ------------------------------------------------------------------
+
+    def state_carriers(
+        self, state: str, sort: Sort, letter: str | None = None, page: int = 0
+    ) -> StatePage:
+        state = state.upper()
+        if state not in STATES:
+            raise ValueError("Unknown state")
+        if letter is not None and not (len(letter) == 1 and "A" <= letter.upper() <= "Z"):
+            raise ValueError("Letter must be A-Z")
+        where = f"{ACTIVE_INTERSTATE} AND phy_state='{state}'"
+        if letter:
+            where += f" AND starts_with(upper(legal_name), '{letter.upper()}')"
+        order = {
+            "newest": "add_date DESC, dot_number DESC",
+            "largest": "power_units::number DESC, dot_number",
+            "az": "legal_name, dot_number",
+        }[sort]
+        if sort == "largest":
+            where += " AND power_units IS NOT NULL"
+        rows = self.client.get_rows(
+            self.dataset,
+            {
+                "$select": (
+                    "dot_number, legal_name, dba_name, phy_city, phy_cnty, power_units, "
+                    "total_drivers, add_date"
+                ),
+                "$where": where,
+                "$order": order,
+                "$limit": str(PAGE_SIZE + 1),
+                "$offset": str(page * PAGE_SIZE),
+            },
+        )
+        carriers = [self._carrier(row) for row in rows[:PAGE_SIZE]]
+        return StatePage(
+            state=state,
+            name=STATES[state],
+            sort=sort,
+            letter=letter.upper() if letter else None,
+            page=page,
+            carriers=[c for c in carriers if c is not None],
+            has_more=len(rows) > PAGE_SIZE,
+        )
+
+    def _carrier(self, row: dict) -> DirectoryCarrier | None:
+        usdot = _int(row.get("dot_number"))
+        if usdot is None:
+            return None
+        units = _int(row.get("power_units"))
+        registered = _day(row.get("add_date"))
+        young = registered is not None and (self._today() - registered) < timedelta(
+            days=365 * REPORTED_FLEET_CHECK_YEARS
+        )
+        return DirectoryCarrier(
+            usdot_number=usdot,
+            legal_name=str(row.get("legal_name") or "").strip(),
+            dba_name=(str(row["dba_name"]).strip() or None) if row.get("dba_name") else None,
+            city=(str(row["phy_city"]).strip().title() or None) if row.get("phy_city") else None,
+            county_code=str(row["phy_cnty"]) if row.get("phy_cnty") else None,
+            power_units=units,
+            drivers=_int(row.get("total_drivers")),
+            registered_on=registered,
+            fleet_needs_check=bool(young and units and units >= REPORTED_FLEET_CHECK_UNITS),
+        )
+
+
+_CACHE: dict[str, tuple[float, list[StateCount]]] = {}
+_CACHE_LOCK = threading.Lock()
+
+
+def clear_cache() -> None:
+    """Tests start from an empty cache."""
+    with _CACHE_LOCK:
+        _CACHE.clear()

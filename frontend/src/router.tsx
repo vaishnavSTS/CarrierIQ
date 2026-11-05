@@ -12,6 +12,7 @@ import { BrokerInvoicesPage } from './pages/BrokerInvoicesPage'
 import { BrokerRegisterPage } from './pages/BrokerRegisterPage'
 import { CarrierLinkPage } from './pages/CarrierLinkPage'
 import { CarrierProfilePage } from './pages/CarrierProfilePage'
+import { CarrierMapPage } from './pages/CarrierMapPage'
 import { ComparePage } from './pages/ComparePage'
 import { DashboardPage } from './pages/DashboardPage'
 import { DataQsCasePage } from './pages/DataQsCasePage'
@@ -114,6 +115,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <PortalHomePage /> },
           { path: 'dataqs', element: <PortalDataQsPage /> },
+          { path: 'map', element: <CarrierMapPage /> },
           { path: 'dataqs/new', element: <PortalDataQsIntakePage /> },
           { path: 'dataqs/cases/:caseId', element: <DataQsCasePage /> },
           { path: 'search', element: <ClientSearchPage /> },
@@ -132,6 +134,7 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <BrokerHomePage /> },
           { path: 'compare', element: <ComparePage /> },
+          { path: 'map', element: <CarrierMapPage /> },
           { path: 'carriers/:usdot', element: <CarrierProfilePage /> },
           { path: 'invoices', element: <BrokerInvoicesPage /> },
           { path: 'invoices/:invoiceId', element: <InvoicePage /> },

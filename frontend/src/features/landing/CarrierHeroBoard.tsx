@@ -14,7 +14,8 @@ const SECONDS = 5
  * The ISS bands match the app: 1–49 Satisfactory, 50–74 At risk, 75–100 High risk.
  */
 
-type Status = { label: string; value: string; ok: boolean }
+/** A tile: what it is, its value, one line of detail, and whether it's fine or worth a look. */
+type Status = { label: string; value: string; detail: string; ok: boolean }
 type Sample = {
   name: string
   usdot: string
@@ -42,9 +43,9 @@ const SAMPLES: Sample[] = [
     iss: 42,
     band: SATISFACTORY,
     status: [
-      { label: 'Authority', value: 'Active', ok: true },
-      { label: 'Liability', value: 'On file', ok: true },
-      { label: 'BOC-3', value: 'On file', ok: true },
+      { label: 'Authority', value: 'Active', detail: 'Held for 6 years', ok: true },
+      { label: 'Liability', value: '$1,000,000', detail: 'On file · $750,000 required', ok: true },
+      { label: 'Inspections', value: '31', detail: 'Last 24 months', ok: true },
     ],
     checks: [
       { ok: true, text: 'Authority active for over 2 years' },
@@ -58,9 +59,9 @@ const SAMPLES: Sample[] = [
     iss: 63,
     band: AT_RISK,
     status: [
-      { label: 'Authority', value: 'Active', ok: true },
-      { label: 'Liability', value: 'On file', ok: true },
-      { label: 'BOC-3', value: 'On file', ok: true },
+      { label: 'Authority', value: '4 months', detail: 'Active, but new', ok: false },
+      { label: 'Insurance', value: 'Renews soon', detail: 'Expected within 30 days', ok: false },
+      { label: 'Inspections', value: '2', detail: 'Too few to judge', ok: false },
     ],
     checks: [
       { ok: false, text: 'Authority only 4 months old' },
@@ -74,9 +75,9 @@ const SAMPLES: Sample[] = [
     iss: 18,
     band: SATISFACTORY,
     status: [
-      { label: 'Authority', value: 'Active', ok: true },
-      { label: 'Liability', value: 'On file', ok: true },
-      { label: 'BOC-3', value: 'On file', ok: true },
+      { label: 'Fleet', value: '48 trucks', detail: '52 drivers', ok: true },
+      { label: 'Vehicle OOS', value: '9.8%', detail: 'National average 22.3%', ok: true },
+      { label: 'Crashes', value: '0', detail: 'Last 24 months', ok: true },
     ],
     checks: [
       { ok: true, text: 'Out-of-service rates under the national average' },
@@ -181,6 +182,13 @@ export function CarrierHeroBoard() {
           <span className="font-mono text-xs text-white/75">USDOT {sample.usdot}</span>
         </Swap>
         <span className="ml-auto flex items-center gap-2">
+          <span className="hidden items-center gap-1.5 text-[11px] text-white/85 md:flex">
+            <span className="relative flex size-2">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75 motion-reduce:hidden" />
+              <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
+            </span>
+            Checked just now
+          </span>
           <span className="hidden rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-medium text-white ring-1 ring-white/30 sm:inline">
             Sample carriers · example data
           </span>
@@ -203,11 +211,12 @@ export function CarrierHeroBoard() {
       <div className="grid gap-2.5 lg:grid-cols-[1.5fr_1fr]">
         <div className="grid gap-2.5">
           <ul className="grid grid-cols-3 gap-2.5">
-            {sample.status.map(({ label }, i) => {
-              const s = sample.status[i]
+            {sample.status.map((s, i) => {
               return (
                 <li key={i} className="rounded-2xl bg-surface px-3.5 py-3 shadow-sm">
-                  <div className={LABEL}>{label}</div>
+                  <Swap id={`${sample.usdot}-${i}-label`}>
+                    <div className={LABEL}>{s.label}</div>
+                  </Swap>
                   <Swap id={`${sample.usdot}-${i}`} className="mt-1.5">
                     <span
                       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-sm font-semibold ring-1 ${
@@ -223,6 +232,7 @@ export function CarrierHeroBoard() {
                       )}
                       {s.value}
                     </span>
+                    <div className="mt-1.5 text-xs text-slate-500">{s.detail}</div>
                   </Swap>
                 </li>
               )

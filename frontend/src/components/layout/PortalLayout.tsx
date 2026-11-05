@@ -1,4 +1,4 @@
-import { FileSearch, Search, Truck } from 'lucide-react'
+import { FileSearch, MapPinned, Search, Truck } from 'lucide-react'
 import { Outlet } from 'react-router-dom'
 
 import { SubscriptionGate } from '../../features/billing/SubscriptionGate'
@@ -12,6 +12,7 @@ export function PortalLayout() {
   const nav: PortalNavItem[] = [
     { to: '/portal', label: 'My carriers', icon: Truck, end: true },
     { to: '/portal/dataqs', label: 'DataQs', icon: FileSearch },
+    { to: '/portal/map', label: 'Carrier map', icon: MapPinned },
     ...(searchEnabled ? [{ to: '/portal/search', label: 'Search carriers', icon: Search }] : []),
   ]
   return (

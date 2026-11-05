@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 
 import { homeFor, useMe } from '../../hooks/useAuth'
 import type { Audience } from '../audience/audience'
-import { AgentHeroFile } from './AgentHeroFile'
+import { AgentHeroCollage, MinimumStrip } from './AgentHeroCollage'
 import { CarrierHeroBoard } from './CarrierHeroBoard'
 import { PrimaryLink } from './landingParts'
 import { HeroTryForm } from './LandingSections'
@@ -19,8 +19,8 @@ const highlight = (text: string) => (
  * - carrier: headline and search on top, then a dashboard of a sample carrier's own record with
  *   the MCS-150 tool inside it (CarrierHeroBoard);
  * - broker: centred, the search in the middle and the booking check under it (a vetting desk);
- * - agent: a paper underwriting file left (liability minimum, filings, crashes, fleet tabs), text
- *   right (AgentHeroFile).
+ * - agent: text left with a liability-minimum strip, and a photo of an agent with a client with
+ *   facts floating over it, turning through sample carriers (AgentHeroCollage).
  */
 const HERO: Record<
   Audience,
@@ -108,7 +108,8 @@ export function AudienceHero({ audience }: { audience: Audience }) {
       {audience === 'carrier' ? (
         // Carrier: the headline across the top with the search beside it, then a wide dashboard
         // of a sample carrier's own record, with the MCS-150 tool as one of its cards.
-        <section className="relative z-10 mx-auto max-w-6xl px-4 pb-40 pt-8 md:pt-10">
+        // Centred in the screen below the header (6.25rem), so it sits mid-screen at any height.
+        <section className="relative z-10 mx-auto max-w-6xl px-4 pb-40 pt-8 md:pt-10 lg:flex lg:min-h-[calc(100svh-6.25rem+6rem)] lg:flex-col lg:justify-center lg:pb-[7.5rem] lg:pt-6">
           <div className="grid items-end gap-x-12 gap-y-6 text-center lg:grid-cols-[1.2fr_1fr] lg:text-left">
             <div>
               {eyebrow}
@@ -141,23 +142,22 @@ export function AudienceHero({ audience }: { audience: Audience }) {
           </div>
         </section>
       ) : (
-        // Agent: an underwriting file on the left (AgentHeroFile), text right.
-        <section className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 px-4 pb-64 pt-12 md:pt-16 lg:grid-cols-[1.05fr_1fr] lg:pt-20">
-          <div className={`text-center lg:text-left ${audience === 'agent' ? 'lg:order-2' : ''}`}>
+        // Agent: text left with the liability-minimum strip; a photo with floating facts right.
+        <section className="relative z-10 mx-auto grid max-w-6xl items-center gap-12 px-4 pb-56 pt-10 md:pt-12 lg:grid-cols-[1.05fr_1fr] lg:gap-20 lg:pt-14">
+          <div className="text-center lg:text-left">
             {eyebrow}
-            <h1 className="mt-6 text-4xl font-semibold leading-[1.08] tracking-tight text-white md:text-5xl lg:text-[3.4rem]">
+            <h1 className="mt-5 text-4xl font-semibold leading-[1.08] tracking-tight text-white md:text-5xl lg:text-[3.2rem]">
               {page.title}
             </h1>
-            <p className="mx-auto mt-5 max-w-xl text-base text-white/90 md:text-lg lg:mx-0">
+            <p className="mx-auto mt-4 max-w-xl text-base text-white/90 md:text-lg lg:mx-0">
               {page.text}
             </p>
-            <div className="mt-8">{action}</div>
+            <div className="mt-6">{action}</div>
             {facts}
+            <MinimumStrip />
           </div>
-          <div
-            className={`mx-auto mt-6 w-full max-w-md lg:mt-8 lg:max-w-none ${audience === 'agent' ? 'lg:order-1' : ''}`}
-          >
-            <AgentHeroFile />
+          <div className="mx-auto w-full max-w-md px-6 lg:max-w-none lg:px-8">
+            <AgentHeroCollage />
           </div>
         </section>
       )}
