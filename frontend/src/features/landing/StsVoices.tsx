@@ -1,6 +1,6 @@
 import { BadgeCheck, Quote } from 'lucide-react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { Accent, reveal, SectionHeading } from './landingParts'
 
@@ -108,12 +108,25 @@ const QUOTES = [
   },
 ]
 
-const SECONDS = 6
+const SECONDS = 4
 
 export function StsTestimonials({ number }: { number?: string }) {
   const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
   const reduceMotion = useReducedMotion()
+  const list = useRef<HTMLUListElement>(null)
+
+  // The list beside the quote follows it: the current name is scrolled into the list's view
+  // (the list only, never the page).
+  useEffect(() => {
+    const box = list.current
+    const item = box?.children[index] as HTMLElement | undefined
+    if (!box || !item) return
+    const top = item.offsetTop - box.offsetTop
+    if (top < box.scrollTop || top + item.offsetHeight > box.scrollTop + box.clientHeight) {
+      box.scrollTo({ top: top - 8, behavior: reduceMotion ? 'auto' : 'smooth' })
+    }
+  }, [index, reduceMotion])
   const quote = QUOTES[index]
 
   useEffect(() => {
@@ -162,22 +175,12 @@ export function StsTestimonials({ number }: { number?: string }) {
               </figcaption>
             </motion.div>
           </AnimatePresence>
-          <div className="mt-8 flex gap-1.5" role="tablist" aria-label="Testimonials">
-            {QUOTES.map((q, i) => (
-              <button
-                key={q.from}
-                type="button"
-                role="tab"
-                aria-selected={i === index}
-                aria-label={q.from}
-                onClick={() => setIndex(i)}
-                className={`h-2 rounded-full transition-all ${i === index ? 'w-6 bg-amber-300' : 'w-2 bg-white/40 hover:bg-white/70'}`}
-              />
-            ))}
-          </div>
         </figure>
 
-        <ul className="grid min-w-0 max-h-[30rem] grid-cols-1 content-start gap-2 overflow-y-auto overflow-x-hidden pr-1">
+        <ul
+          ref={list}
+          className="grid min-w-0 max-h-[30rem] grid-cols-1 content-start gap-2 overflow-y-auto overflow-x-hidden pr-1"
+        >
           {QUOTES.map((q, i) => (
             <li key={q.from} className="min-w-0">
               <button
