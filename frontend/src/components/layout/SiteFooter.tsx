@@ -35,7 +35,7 @@ export function SiteFooter() {
             How the Estimated ISS works
           </Link>
         </div>
-        <ul className="space-y-2.5 text-sm">
+        <ul className="space-y-2.5 text-sm md:space-y-5 md:pt-1">
           {links.map(({ icon: Icon, label, href }) => (
             <li key={label}>
               <a
