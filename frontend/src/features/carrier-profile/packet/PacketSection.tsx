@@ -430,7 +430,6 @@ export function PacketDocument({
   const allEvents = profile.timeline.filter((e) => e.severity === 'HIGH' || e.severity === 'MEDIUM')
   const events = allEvents.slice(0, MAX_EVENTS)
   const linked = network.linked_carriers.filter((c) => c.shares.some((s) => s.kind !== 'building'))
-  const generated = new Date()
   const fullRecordUrl = `${window.location.origin}/c/${profile.usdot_number}`
   const allToReview = authorityEventsToReview(authority)
   const toReview = allToReview.slice(0, MAX_HISTORY_EVENTS)
@@ -573,6 +572,13 @@ export function PacketDocument({
             <p className="mt-1 text-sm text-slate-600">
               {[`USDOT ${profile.usdot_number}`, ...dockets, address].filter(Boolean).join(' · ')}
             </p>
+          </div>
+          {/* The day the report was made, so a saved PDF shows how current it is. */}
+          <div className="shrink-0 text-right text-xs text-slate-600">
+            <div className="uppercase tracking-[0.12em]">Report date</div>
+            <div className="mt-0.5 text-sm font-semibold text-slate-900">
+              {formatLocalDate(new Date().toISOString())}
+            </div>
           </div>
         </div>
 
@@ -734,18 +740,6 @@ export function PacketDocument({
             ))}
           </ul>
         </div>
-
-        {/* The notes, after the green items (they fill the space the next section leaves). */}
-        <p className="text-sm text-slate-600">
-          Percentile: how the carrier ranks against similar carriers; 0 is best, 100 is worst.
-          Threshold: the percentile at which FMCSA may step in. Measure: violation points divided by
-          inspections, or by fleet size and miles.
-        </p>
-        <p className="text-sm text-slate-600">
-          The Estimated ISS is Carrier Safety Scan’s estimate using FMCSA’s published methods; it is
-          not FMCSA’s official ISS or a safety rating, and this report is not a recommendation to
-          use or avoid any carrier. Generated {formatLocalDate(generated.toISOString())}.
-        </p>
 
         <div className="space-y-2">
           <SectionHeading>Safety categories (CSA BASICs)</SectionHeading>
