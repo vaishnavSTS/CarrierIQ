@@ -17,15 +17,16 @@ const ACCOUNT: Record<Audience, { logIn: string; signUp: string }> = {
 }
 
 const MENU: { to: string; label: string }[] = [
-  { to: '/methodology', label: 'How the score works' },
+  { to: '/methodology', label: 'How score works' },
   { to: '/contact', label: 'Contact' },
 ]
 
 const DEMO = '/contact?demo=1'
 
 /**
- * The public pages' header: a thin announcement bar with STS's phone number, then the logo,
- * the menu, Log in, Free trial and Schedule a demo. Below `xl` the menu folds into a ☰ panel.
+ * The public pages' header: a thin announcement bar with STS's phone number, then the logo and,
+ * on the right, the menu, Log in, Free trial and Schedule a demo. Below `xl` the menu folds into
+ * a ☰ panel.
  * Log in and Create account go to the open page's audience (carrier, broker or agent).
  */
 export function PublicHeader() {
@@ -83,24 +84,23 @@ export function PublicHeader() {
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4">
           <Brand to="/" />
 
-          <nav aria-label="Main" className="ml-6 hidden items-center gap-1 text-sm xl:flex">
-            {MENU.filter((m) => m.to !== '/contact').map(({ to, label }) => (
-              <Link
-                key={to}
-                to={to}
-                aria-current={isActive(to) ? 'page' : undefined}
-                className={`whitespace-nowrap rounded-lg px-3 py-2 transition-colors ${
-                  isActive(to)
-                    ? 'bg-slate-100 font-medium text-slate-950'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'
-                }`}
-              >
-                {label}
-              </Link>
-            ))}
-          </nav>
-
           <div className="ml-auto flex items-center gap-2 whitespace-nowrap text-sm">
+            <nav aria-label="Main" className="hidden items-center gap-1 xl:flex">
+              {MENU.filter((m) => m.to !== '/contact').map(({ to, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  aria-current={isActive(to) ? 'page' : undefined}
+                  className={`rounded-lg px-3 py-2 transition-colors ${
+                    isActive(to)
+                      ? 'bg-slate-100 font-medium text-slate-950'
+                      : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'
+                  }`}
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
             <span className="hidden sm:block">
               <ThemeToggle />
             </span>
