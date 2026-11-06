@@ -1,4 +1,4 @@
-"""The "reset your password" email.
+"""The "reset your password" email, and a new staff member's "choose your password" invite.
 
 Sent after the answer (a background task), so the forgot-password page takes the same time whether
 or not the account exists; a failure is only logged, and the link is never logged. While the test
@@ -58,6 +58,31 @@ def password_reset_email(user: User, token: str, minutes: int) -> PasswordResetE
         subject="Reset your Carrier Safety Scan password",
         text=f"{body}\n\n{link}",
         html=render_html(body, link, "Reset my password", footer=FOOTER),
+    )
+
+
+def staff_invite_email(user: User, token: str, hours: int) -> PasswordResetEmail:
+    """A new staff member's welcome: the same "choose a password" link, valid for longer."""
+    settings = get_settings()
+    first_name = user.full_name.split()[0] if user.full_name.strip() else "there"
+    link = f"{settings.public_app_url.rstrip('/')}/reset-password#token={token}"
+    body = (
+        f"Hi {first_name},\n\n"
+        f"Sky Transport Solutions has made you a Carrier Safety Scan staff account ({user.email}). "
+        f"Use the link below to choose your password. It works once and expires in {hours} hours; "
+        'after that, use "Forgot password?" on the STS team login page.\n\n'
+        "You can also sign in with Google using this email address."
+    )
+    to = [user.email]
+    if settings.dataqs_staff_override_list:
+        body = f"[Test routing: meant for {user.email}]\n\n{body}"
+        to = settings.dataqs_staff_override_list
+    return PasswordResetEmail(
+        user_id=user.id,
+        to=to,
+        subject="Your Carrier Safety Scan staff account",
+        text=f"{body}\n\n{link}",
+        html=render_html(body, link, "Choose my password", footer=FOOTER),
     )
 
 

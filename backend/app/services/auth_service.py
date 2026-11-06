@@ -12,8 +12,11 @@ Rules:
   broker authority for it (services/broker_authority.py). They get a new BROKER organization
   holding that identity and an ACTIVE BROKER_ADMIN account, logged in at once. Brokers can open
   any carrier (broker portal), so no carriers are linked to them.
-- STS staff never self-register: they are created with `python -m app.workers.create_staff_user`.
-  Google sign-in never creates staff; it only logs in staff accounts that already exist.
+- STS staff never self-register: an STS admin adds them on the Accounts page (they choose their
+  password from an emailed link) or runs `python -m app.workers.create_staff_user`. Google
+  sign-in never creates staff; it only logs in staff accounts that already exist.
+- An STS admin can delete an account that no other record names (DataQs work, service requests,
+  invoices); one that is named can only be disabled.
 """
 
 import hashlib
@@ -23,7 +26,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import TypedDict
 
-from sqlalchemy import select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -44,6 +47,7 @@ from app.core.security import (
     read_purpose_token,
     verify_password,
 )
+from app.db.base import Base
 from app.models import CarrierClaim, Organization, OrganizationCarrier, User
 from app.models.enums import OrganizationKind, UserRole, UserStatus
 from app.repositories.user_repository import UserRepository
@@ -92,11 +96,27 @@ PASSWORD_RESET_PURPOSE = "password_reset"
 PASSWORD_RESET_MINUTES = 30
 EMAIL_VERIFY_PURPOSE = "email_verify"
 EMAIL_VERIFY_HOURS = 24
+STAFF_INVITE_HOURS = 72  # a new staff member's "choose your password" link
+
+# What goes with an account when STS deletes it. Any other record that names the account or its
+# company (DataQs work, service requests, invoices) keeps it: such an account is disabled instead.
+_DELETED_WITH_ACCOUNT = {"users", "carrier_claims", "organization_carriers"}
+_RECORD_LABELS = {
+    "compliance_requests": "service requests",
+    "invoices": "invoices",
+    "invoice_lines": "invoices",
+}
 
 
 def _password_fingerprint(user: User) -> str:
     """Changes whenever the password does (a Google-only account has none yet)."""
     return hashlib.sha256((user.password_hash or "").encode()).hexdigest()[:32]
+
+
+def _password_token(user: User, minutes: int) -> str:
+    """A "choose your password" link's token: it stops working once the password changes."""
+    claims = {"sub": str(user.id), "fp": _password_fingerprint(user)}
+    return create_purpose_token(claims, PASSWORD_RESET_PURPOSE, minutes)
 
 
 def check_password_strength(password: str) -> None:
@@ -316,8 +336,7 @@ class AuthService:
         user = self.users.by_email(email)
         if user is None or user.status == UserStatus.DISABLED:
             return None
-        claims = {"sub": str(user.id), "fp": _password_fingerprint(user)}
-        return user, create_purpose_token(claims, PASSWORD_RESET_PURPOSE, PASSWORD_RESET_MINUTES)
+        return user, _password_token(user, PASSWORD_RESET_MINUTES)
 
     def reset_password(self, token: str, password: str) -> User:
         """Sets the new password. The token names the current password, so it stops working once
@@ -536,6 +555,95 @@ class AuthService:
         self.db.commit()
         return self._admin_out(user)
 
+    def invite_staff(self, email: str, full_name: str, role: UserRole) -> tuple[User, str]:
+        """A new staff account and the token for its "choose your password" link. STS made it,
+        so the email counts as confirmed; until they choose a password they can still use Google
+        sign-in with that address."""
+        if not role.is_staff:
+            raise ValidationError("Only STS admin and analyst accounts are made here")
+        if self.users.by_email(email) is not None:
+            raise ConflictError("An account with this email already exists")
+        organization = self.users.sts_organization()
+        if organization is None:
+            organization = Organization(name="STS", kind=OrganizationKind.STS)
+            self.db.add(organization)
+            self.db.flush()
+        user = User(
+            organization_id=organization.id,
+            email=email,
+            full_name=full_name,
+            role=role,
+            status=UserStatus.ACTIVE,
+            email_verified_at=self.now(),
+            seen_at=self.now(),
+        )
+        self.db.add(user)
+        self.db.commit()
+        return user, _password_token(user, STAFF_INVITE_HOURS * 60)
+
+    def delete_account(self, user_id: int, acting_user: User) -> None:
+        """Remove an account for good. When it is the only account of a carrier, broker or
+        insurance company, the company goes too, with its carrier list and USDOT claims (the
+        numbers are free to claim again). Refused while any other record names the account or
+        that company: then it is disabled instead, so the record keeps who did what."""
+        user = self._get(user_id)
+        if user.id == acting_user.id:
+            raise ValidationError("You cannot delete your own account")
+        organization = self.users.organization(user.organization_id)
+        others = self.db.scalar(
+            select(func.count())
+            .select_from(User)
+            .where(User.organization_id == user.organization_id, User.id != user.id)
+        )
+        with_company = (
+            organization is not None and organization.kind != OrganizationKind.STS and not others
+        )
+        records = self._records_naming(user.id, user.organization_id if with_company else None)
+        if records:
+            raise ConflictError(
+                f"{user.email} can't be deleted: it has {', '.join(records)} on record. "
+                "Disable it instead."
+            )
+        if with_company:
+            org_id = user.organization_id
+            self.db.execute(delete(CarrierClaim).where(CarrierClaim.organization_id == org_id))
+            self.db.execute(
+                delete(OrganizationCarrier).where(OrganizationCarrier.organization_id == org_id)
+            )
+            self.db.delete(user)
+            self.db.flush()
+            self.db.delete(organization)
+        else:  # the company stays with its other accounts; claims they made stay the company's
+            self.db.execute(
+                update(CarrierClaim)
+                .where(CarrierClaim.claimed_by_id == user.id)
+                .values(claimed_by_id=None)
+            )
+            self.db.delete(user)
+        self.db.commit()
+
+    def _records_naming(self, user_id: int, organization_id: int | None) -> list[str]:
+        """Plain names of the records that refer to this user (or, if given, this company),
+        other than the rows deleted with the account."""
+        found: set[str] = set()
+        for table in Base.metadata.sorted_tables:
+            if table.name in _DELETED_WITH_ACCOUNT:
+                continue
+            for fk in table.foreign_keys:
+                target = fk.column.table.name
+                key = user_id if target == "users" else organization_id
+                if target not in ("users", "organizations") or key is None:
+                    continue
+                count = self.db.scalar(
+                    select(func.count()).select_from(table).where(fk.parent == key)
+                )
+                if count:
+                    found.add(_record_label(table.name))
+        return sorted(found)
+
+    def admin_out(self, user: User) -> AdminUserOut:
+        return self._admin_out(user)
+
     def _get(self, user_id: int) -> User:
         user = self.users.get(user_id)
         if user is None:
@@ -646,6 +754,12 @@ def _user_fields(user: User, organization: Organization | None) -> _UserFields:
         "created_at": user.created_at,
         "last_login_at": user.last_login_at,
     }
+
+
+def _record_label(table_name: str) -> str:
+    if table_name.startswith("dataqs_"):
+        return "DataQs records"
+    return _RECORD_LABELS.get(table_name, table_name.replace("_", " "))
 
 
 def _broker_out(organization: Organization) -> BrokerOut:

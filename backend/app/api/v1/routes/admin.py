@@ -1,15 +1,17 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path
+from fastapi import APIRouter, BackgroundTasks, Depends, Path, status
 from sqlalchemy.orm import Session
 
 from app.api.auth import require_sts_admin
+from app.api.v1.routes.auth import Mailer
 from app.db.session import get_db
 from app.models import User
-from app.models.enums import UserStatus
+from app.models.enums import UserRole, UserStatus
 from app.repositories.user_repository import UserRepository
-from app.schemas.auth import AddCarrierIn, AdminUserOut, SeenOut
-from app.services.auth_service import AuthService
+from app.schemas.auth import AddCarrierIn, AdminUserOut, SeenOut, StaffInviteIn, StaffInviteOut
+from app.services.auth_service import STAFF_INVITE_HOURS, AuthService
+from app.services.password_reset_email import send_password_reset, staff_invite_email
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -34,6 +36,26 @@ def list_users(
 def mark_new_accounts_seen(_: StsAdmin, service: Service) -> SeenOut:
     """Dismiss the "new sign-up" pop-up for every account in it."""
     return SeenOut(marked=service.mark_new_accounts_seen())
+
+
+@router.post("/staff", response_model=StaffInviteOut, status_code=status.HTTP_201_CREATED)
+def invite_staff(
+    data: StaffInviteIn, _: StsAdmin, service: Service, tasks: BackgroundTasks, mailer: Mailer
+) -> StaffInviteOut:
+    """Add an STS admin or analyst. They get an email with a link to choose their password."""
+    user, token = service.invite_staff(data.email, data.full_name, UserRole(data.role))
+    if mailer is not None:
+        tasks.add_task(
+            send_password_reset, staff_invite_email(user, token, STAFF_INVITE_HOURS), mailer
+        )
+    return StaffInviteOut(account=service.admin_out(user), invite_emailed=mailer is not None)
+
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(user_id: Annotated[int, Path(gt=0)], admin: StsAdmin, service: Service) -> None:
+    """Remove an account for good (and its company, if it was the only account). 409 when other
+    records name it: disable it instead."""
+    service.delete_account(user_id, admin)
 
 
 @router.post("/users/{user_id}/reactivate", response_model=AdminUserOut)

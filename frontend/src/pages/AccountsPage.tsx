@@ -7,8 +7,10 @@ import {
   useAccountAction,
   useAccounts,
   useAddAccountCarrier,
-  useReleaseClaim,
+  useDeleteAccount,
+  useInviteStaff,
   useMarkAccountsSeen,
+  useReleaseClaim,
 } from '../hooks/useAccounts'
 import { useMe } from '../hooks/useAuth'
 import type { AdminUser, Brokerage, CarrierContactCheck, UserRole } from '../types/auth'
@@ -328,8 +330,201 @@ function AddUsdot({ accountId }: { accountId: number }) {
   )
 }
 
-function AccountRow({ account, isMe }: { account: AdminUser; isMe: boolean }) {
+/**
+ * Add an STS admin or analyst. Nobody types a password for them: they get an email with a link to
+ * choose their own (or sign in with Google using that address).
+ */
+function AddStaffForm() {
+  const [open, setOpen] = useState(false)
+  const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
+  const [role, setRole] = useState<'STS_ADMIN' | 'STS_ANALYST'>('STS_ANALYST')
+  const [done, setDone] = useState<{ email: string; emailed: boolean } | null>(null)
+  const invite = useInviteStaff()
+
+  function submit(event: FormEvent) {
+    event.preventDefault()
+    invite.mutate(
+      { email: email.trim(), full_name: fullName.trim(), role },
+      {
+        onSuccess: (result) => {
+          setDone({ email: result.account.email, emailed: result.invite_emailed })
+          setFullName('')
+          setEmail('')
+          setRole('STS_ANALYST')
+          setOpen(false)
+        },
+      },
+    )
+  }
+
+  const field =
+    'mt-1 w-full rounded-md border border-slate-300 bg-canvas px-2.5 py-1.5 text-sm text-slate-900'
+
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-surface p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-900">STS staff</h2>
+          <p className="mt-0.5 text-sm text-slate-500">
+            Add a team member. They get an email to choose their own password.
+          </p>
+        </div>
+        {!open && (
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(true)
+              setDone(null)
+              invite.reset()
+            }}
+            className="flex items-center gap-1.5 rounded-md bg-cta px-3 py-1.5 text-sm font-medium text-cta-ink hover:bg-cta-hover active:bg-cta-active"
+          >
+            <UserPlus className="size-4" aria-hidden />
+            Add staff member
+          </button>
+        )}
+      </div>
+
+      {done && (
+        <p
+          role="status"
+          className={`mt-3 rounded-md px-3 py-2 text-sm ${done.emailed ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}
+        >
+          {done.emailed
+            ? `Account made. ${done.email} has been emailed a link to choose a password (it works for 72 hours).`
+            : `Account made, but no email could be sent from here. Ask ${done.email} to use “Forgot password?” on the STS team login page.`}
+        </p>
+      )}
+
+      {open && (
+        <form onSubmit={submit} className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+          <label className="text-xs font-medium text-slate-600">
+            Full name
+            <input
+              autoFocus
+              required
+              maxLength={200}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className={field}
+            />
+          </label>
+          <label className="text-xs font-medium text-slate-600">
+            Email
+            <input
+              required
+              type="email"
+              maxLength={254}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={field}
+            />
+          </label>
+          <label className="text-xs font-medium text-slate-600">
+            Role
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value as 'STS_ADMIN' | 'STS_ANALYST')}
+              className={field}
+            >
+              <option value="STS_ANALYST">Analyst</option>
+              <option value="STS_ADMIN">Admin (manages accounts)</option>
+            </select>
+          </label>
+          <div className="flex flex-wrap items-center gap-2 sm:col-span-3">
+            <button
+              type="submit"
+              disabled={invite.isPending || !fullName.trim() || !email.trim()}
+              className="rounded-md bg-cta px-3 py-1.5 text-sm font-medium text-cta-ink hover:bg-cta-hover active:bg-cta-active disabled:opacity-50"
+            >
+              {invite.isPending ? 'Adding…' : 'Add and send invite'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="rounded-md px-3 py-1.5 text-sm font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+            {invite.isError && <span className="text-sm text-red-700">{invite.error.message}</span>}
+          </div>
+        </form>
+      )}
+    </section>
+  )
+}
+
+/**
+ * Delete an account for good. The first press asks to confirm, saying what goes with it. The
+ * server refuses accounts that other records name (DataQs work, invoices): its answer says so.
+ */
+function DeleteAccount({ account, withCompany }: { account: AdminUser; withCompany: boolean }) {
+  const remove = useDeleteAccount()
+  const [confirming, setConfirming] = useState(false)
+
+  if (!confirming) {
+    return (
+      <div>
+        <button
+          type="button"
+          onClick={() => {
+            setConfirming(true)
+            remove.reset()
+          }}
+          title="Remove this account for good. Accounts with DataQs work or invoices can only be disabled."
+          className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold text-red-700 ring-1 ring-red-600 hover:bg-red-50"
+        >
+          Delete
+        </button>
+        {remove.isError && (
+          <p className="mt-1 max-w-56 text-left text-xs text-red-700">{remove.error.message}</p>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-64 space-y-1.5 text-left text-xs">
+      <p className="text-slate-700">
+        Delete {account.full_name} for good?
+        {withCompany &&
+          ` This also removes ${account.organization_name} and its USDOT claims, so the numbers can be claimed again.`}{' '}
+        This can’t be undone.
+      </p>
+      <div className="flex gap-1.5">
+        <button
+          type="button"
+          disabled={remove.isPending}
+          onClick={() => remove.mutate(account.id, { onSettled: () => setConfirming(false) })}
+          className="whitespace-nowrap rounded-md bg-red-700 px-3 py-1.5 font-semibold shadow-sm text-surface hover:bg-red-800 disabled:opacity-50"
+        >
+          {remove.isPending ? 'Deleting…' : 'Yes, delete'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setConfirming(false)}
+          className="rounded-md px-3 py-1.5 font-semibold shadow-sm text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function AccountRow({
+  account,
+  isMe,
+  onlyInCompany,
+}: {
+  account: AdminUser
+  isMe: boolean
+  /** No other account shares this account's company */
+  onlyInCompany: boolean
+}) {
   const action = useAccountAction()
+  const isStaff = account.role.startsWith('STS_')
 
   return (
     <tr className="align-top">
@@ -369,7 +564,7 @@ function AccountRow({ account, isMe }: { account: AdminUser; isMe: boolean }) {
       <td className="py-2.5 pr-4 text-xs text-slate-500">
         {account.last_login_at ? formatDateTime(account.last_login_at) : 'never'}
       </td>
-      <td className="py-2.5 pr-1 text-right">
+      <td className="space-y-1.5 py-2.5 pr-1 text-right">
         {account.status === 'ACTIVE' && !isMe && (
           <button
             type="button"
@@ -390,6 +585,11 @@ function AccountRow({ account, isMe }: { account: AdminUser; isMe: boolean }) {
             Re-activate
           </button>
         )}
+        {!isMe && (
+          <div className="flex justify-end">
+            <DeleteAccount account={account} withCompany={onlyInCompany && !isStaff} />
+          </div>
+        )}
       </td>
     </tr>
   )
@@ -408,6 +608,10 @@ export function AccountsPage() {
 
   const newAccounts = data?.filter((a) => a.is_new) ?? []
   const accounts = data ?? []
+  const perCompany = new Map<number, number>()
+  for (const a of accounts) {
+    perCompany.set(a.organization_id, (perCompany.get(a.organization_id) ?? 0) + 1)
+  }
 
   return (
     <div className="space-y-6">
@@ -416,10 +620,11 @@ export function AccountsPage() {
         <h1 className="text-2xl font-semibold tracking-tight text-slate-950">Accounts</h1>
         <p className="mt-1 text-sm text-slate-500">
           Everyone who can log in. Clients get into their portal as soon as they sign up; disable an
-          account to stop it. STS staff accounts are created with the{' '}
-          <code className="text-xs">create_staff_user</code> command.
+          account to stop it, or delete it to remove it for good.
         </p>
       </div>
+
+      <AddStaffForm />
 
       {isPending && <p className="text-sm text-slate-500">Loading…</p>}
       {isError && <p className="text-sm text-red-700">Couldn’t load accounts.</p>}
@@ -442,7 +647,12 @@ export function AccountsPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {accounts.map((a) => (
-                  <AccountRow key={a.id} account={a} isMe={a.id === me.id} />
+                  <AccountRow
+                    key={a.id}
+                    account={a}
+                    isMe={a.id === me.id}
+                    onlyInCompany={perCompany.get(a.organization_id) === 1}
+                  />
                 ))}
               </tbody>
             </table>

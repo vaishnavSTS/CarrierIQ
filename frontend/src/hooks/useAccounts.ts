@@ -2,11 +2,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
   addAccountCarrier,
-  releaseClaim,
+  deleteAccount,
   disableAccount,
   fetchAccounts,
+  inviteStaff,
   markAccountsSeen,
   reactivateAccount,
+  releaseClaim,
 } from '../api/admin'
 import { useMe } from './useAuth'
 
@@ -51,6 +53,22 @@ export function useReleaseClaim() {
   return useMutation({
     mutationFn: ({ id, usdotNumber }: { id: number; usdotNumber: number }) =>
       releaseClaim(id, usdotNumber),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY }),
+  })
+}
+
+export function useInviteStaff() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: inviteStaff,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY }),
+  })
+}
+
+export function useDeleteAccount() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: deleteAccount,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY }),
   })
 }

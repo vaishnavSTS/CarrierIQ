@@ -16,6 +16,29 @@ export function markAccountsSeen(): Promise<{ marked: number }> {
   return apiRequest<{ marked: number }>('/admin/users/seen', { method: 'POST' })
 }
 
+export interface StaffInvite {
+  email: string
+  full_name: string
+  role: 'STS_ADMIN' | 'STS_ANALYST'
+}
+
+/** Adds an STS admin or analyst; they get an email with a link to choose their password. */
+export function inviteStaff(
+  invite: StaffInvite,
+): Promise<{ account: AdminUser; invite_emailed: boolean }> {
+  return apiRequest('/admin/staff', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(invite),
+  })
+}
+
+/** Removes an account for good (and its company, if it was the only account). Refused (409)
+ * while other records, such as DataQs work or invoices, name it: disable it instead. */
+export function deleteAccount(id: number): Promise<null> {
+  return apiRequest<null>(`/admin/users/${id}`, { method: 'DELETE' })
+}
+
 /** Closes an account; it can no longer log in. */
 export function disableAccount(id: number): Promise<AdminUser> {
   return apiRequest<AdminUser>(`/admin/users/${id}/disable`, { method: 'POST' })

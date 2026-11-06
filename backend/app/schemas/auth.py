@@ -257,6 +257,24 @@ class AddCarrierIn(BaseModel):
     usdot_number: int = Field(gt=0, lt=100_000_000)
 
 
+class StaffInviteIn(BaseModel):
+    """An STS admin adds a staff member; they choose their own password from the emailed link."""
+
+    email: str = Field(max_length=254)
+    full_name: str = Field(min_length=1, max_length=200)
+    role: Literal["STS_ADMIN", "STS_ANALYST"]
+
+    _normalize_email = field_validator("email")(_email)
+
+    @field_validator("full_name")
+    @classmethod
+    def _strip_name(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Enter their name")
+        return value
+
+
 class CarrierContactCheckOut(BaseModel):
     """Does the sign-up's phone / email match FMCSA's census record for a USDOT number they gave?
 
@@ -285,6 +303,12 @@ class AdminUserOut(UserOut):
     is_new: bool  # a client or broker sign-up STS has not seen yet (the Accounts pop-up)
     carrier_checks: list[CarrierContactCheckOut]
     broker: "BrokerOut | None" = None  # broker accounts: the brokerage FMCSA confirmed
+
+
+class StaffInviteOut(BaseModel):
+    account: AdminUserOut
+    # False when no email service is set up: the new staff member uses "Forgot password?" instead
+    invite_emailed: bool
 
 
 class PortalCarrierOut(BaseModel):
