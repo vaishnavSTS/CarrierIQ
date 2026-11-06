@@ -15,6 +15,9 @@ function where(i: InspectionDetail): string {
   return [location, i.state].filter(Boolean).join(', ') || '—'
 }
 
+/** An inspection with this many violations or more has its count marked in red, to stand out. */
+const MANY_VIOLATIONS = 7
+
 function outOfService(i: InspectionDetail): string {
   if (i.vehicle_oos && i.driver_oos) return 'Vehicle and driver'
   if (i.vehicle_oos) return 'Vehicle'
@@ -70,7 +73,18 @@ export function InspectionList({
                   <td className="whitespace-nowrap py-1.5 pr-3 text-slate-500">
                     {stoppedHere ? <OosLabel>{outOfService(i)}</OosLabel> : outOfService(i)}
                   </td>
-                  <td className="py-1.5 text-right tabular-nums">{i.violation_count}</td>
+                  <td className="py-1.5 text-right tabular-nums">
+                    {i.violation_count >= MANY_VIOLATIONS ? (
+                      <span
+                        className="rounded border border-red-600 bg-red-50 px-1.5 font-bold text-red-700"
+                        title={`${i.violation_count} violations on one inspection`}
+                      >
+                        {i.violation_count}
+                      </span>
+                    ) : (
+                      i.violation_count
+                    )}
+                  </td>
                 </tr>
                 {/* Its violations, one per line; a clean inspection's 0 says it all. */}
                 {(i.violations.length > 0 || i.violation_count > 0) && (
