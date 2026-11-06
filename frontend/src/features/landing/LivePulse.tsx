@@ -19,18 +19,33 @@ const shortDay = new Intl.DateTimeFormat('en-US', {
   timeZone: 'UTC',
 })
 
+/**
+ * Keep asking until the numbers come: the backend can take a while to wake up or restart, and
+ * the strip waits with "…" rather than giving up. Every few seconds at first, then every 15.
+ */
+const KEEP_TRYING = {
+  retry: true,
+  retryDelay: (attempt: number) => Math.min(2000 * 2 ** attempt, 15_000),
+} as const
+
 /** The live numbers and the carriers that just registered (shared by the section and the strip). */
 function usePulse({ withInactive = true }: { withInactive?: boolean } = {}) {
   const active = useQuery({
     queryKey: ['public-directory', 'states', 'active'],
     queryFn: () => getPublicStateCounts('active'),
+    ...KEEP_TRYING,
   })
   const inactive = useQuery({
     queryKey: ['public-directory', 'states', 'inactive'],
     queryFn: () => getPublicStateCounts('inactive'),
     enabled: withInactive,
+    ...KEEP_TRYING,
   })
-  const recent = useQuery({ queryKey: ['public-directory', 'recent'], queryFn: getRecentCarriers })
+  const recent = useQuery({
+    queryKey: ['public-directory', 'recent'],
+    queryFn: getRecentCarriers,
+    ...KEEP_TRYING,
+  })
 
   const sum = (rows: { carriers: number }[] | undefined) =>
     rows ? rows.reduce((total, s) => total + s.carriers, 0) : null
@@ -82,11 +97,10 @@ function RecentRow({ list, hidden }: { list: Recent; hidden: boolean }) {
  * The home page's short version, one slim line under the free search so it shows on the first
  * screen: two live numbers that count up, then the carriers that just registered scrolling past.
  * "Active carriers" are interstate carriers with an active USDOT number (the map's count); the
- * hover title says so. Nothing shows until the numbers have loaded.
+ * hover title says so. It is always there: until the numbers load it shows "…" and keeps trying.
  */
 export function LiveStrip() {
   const { activeCarriers, newest, items } = usePulse({ withInactive: false })
-  if (activeCarriers == null) return null
   return (
     <motion.section
       {...reveal(0.1)}
@@ -117,13 +131,13 @@ export function LiveStrip() {
           <span className="text-xs text-white/75">new in 30 days</span>
         </span>
       </div>
-      {items.length > 0 && (
-        <div
-          aria-label="Carriers that just registered"
-          role="region"
-          className="marquee relative min-w-0 flex-1 overflow-hidden border-t border-white/10 bg-white/5 py-2.5 lg:border-l lg:border-t-0"
-        >
-          {/* Slower than the section's strips: about 3 seconds per carrier. */}
+      <div
+        aria-label="Carriers that just registered"
+        role="region"
+        className="marquee relative min-w-0 flex-1 overflow-hidden border-t border-white/10 bg-white/5 py-2.5 lg:border-l lg:border-t-0"
+      >
+        {items.length > 0 ? (
+          /* Slower than the section's strips: about 3 seconds per carrier. */
           <div
             className="marquee-track flex w-max"
             style={{ animationDuration: `${Math.max(90, items.length * 3)}s` }}
@@ -131,8 +145,12 @@ export function LiveStrip() {
             <RecentRow list={items} hidden={false} />
             <RecentRow list={items} hidden />
           </div>
-        </div>
-      )}
+        ) : (
+          <p className="animate-pulse px-4 text-center text-sm text-white/65 lg:text-left">
+            Loading the carriers that just registered…
+          </p>
+        )}
+      </div>
     </motion.section>
   )
 }
