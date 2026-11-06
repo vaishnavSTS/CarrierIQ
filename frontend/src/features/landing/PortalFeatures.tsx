@@ -297,6 +297,7 @@ function Tile({
   const { title, text, sample } = item
   const tone = TONE[item.tone]
 
+  // The list item only springs in; the card inside it lifts and glows under the spotlight.
   return (
     <motion.li
       initial={reduce ? { opacity: 0 } : { opacity: 0, y: 28, scale: 0.96 }}
@@ -312,41 +313,50 @@ function Tile({
               delay: (index % 3) * 0.08 + Math.floor(index / 3) * 0.05,
             }
       }
-      whileHover={reduce ? undefined : { y: -4 }}
       onPointerEnter={onPoint}
-      className={`group relative flex flex-col rounded-2xl border p-5 transition-shadow duration-300 ${
-        plan
-          ? 'border-accent-strong/40 bg-accent-strong/5'
-          : 'border-slate-200 bg-surface hover:shadow-lg'
-      } ${lit ? 'shadow-lg' : ''}`}
+      className={`relative flex ${lit ? 'z-10' : ''}`}
     >
-      {lit && (
-        <motion.span
-          layoutId={spotlightId}
-          aria-hidden
-          className="pointer-events-none absolute -inset-px rounded-2xl ring-2 ring-accent/70 shadow-[0_0_0_6px_var(--color-accent-soft)]"
-          transition={{ type: 'spring', stiffness: 220, damping: 28 }}
-        />
-      )}
+      <motion.div
+        animate={lit ? { y: -6, scale: 1.03 } : { y: 0, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+        className={`relative flex w-full flex-col rounded-2xl border p-5 transition-shadow duration-300 ${
+          plan ? 'border-accent-strong/40 bg-accent-strong/5' : 'border-slate-200 bg-surface'
+        } ${lit ? 'shadow-[0_22px_50px_-18px_var(--color-accent)]' : ''}`}
+      >
+        {lit && (
+          <motion.span
+            layoutId={spotlightId}
+            aria-hidden
+            className="pointer-events-none absolute -inset-px rounded-2xl bg-gradient-to-br from-accent-soft via-accent-soft/40 to-transparent ring-2 ring-accent shadow-[0_0_0_5px_var(--color-accent-soft)]"
+            transition={{ type: 'spring', stiffness: 220, damping: 28 }}
+          />
+        )}
 
-      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-      <p className="mt-1 text-sm leading-relaxed text-slate-600">{text}</p>
-
-      <div className="mt-auto pt-4">
-        <span
-          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${tone.chip}`}
+        <h3
+          className={`relative text-sm font-semibold transition-colors duration-300 ${
+            lit ? 'text-accent-strong' : 'text-slate-900'
+          }`}
         >
-          <span aria-hidden className="relative flex size-1.5">
-            {lit && (
-              <span
-                className={`absolute inline-flex size-full animate-ping rounded-full opacity-75 ${tone.dot}`}
-              />
-            )}
-            <span className={`relative inline-flex size-1.5 rounded-full ${tone.dot}`} />
+          {title}
+        </h3>
+        <p className="relative mt-1 text-sm leading-relaxed text-slate-600">{text}</p>
+
+        <div className="relative mt-auto pt-4">
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${tone.chip}`}
+          >
+            <span aria-hidden className="relative flex size-1.5">
+              {lit && (
+                <span
+                  className={`absolute inline-flex size-full animate-ping rounded-full opacity-75 ${tone.dot}`}
+                />
+              )}
+              <span className={`relative inline-flex size-1.5 rounded-full ${tone.dot}`} />
+            </span>
+            {sample}
           </span>
-          {sample}
-        </span>
-      </div>
+        </div>
+      </motion.div>
     </motion.li>
   )
 }
