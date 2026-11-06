@@ -33,6 +33,7 @@ import { countiesOf, countyLabel, useCountyShapes } from '../directory/counties'
 import { CarrierCardDialog } from '../directory/CarrierCardDialog'
 import { CountyMap } from '../directory/CountyMap'
 import { number, stateFips, UsMap } from '../directory/UsMap'
+import { newTabOnWide, useWideScreen } from '../directory/useWideScreen'
 import { CountUp } from './CountUp'
 import { reveal, SectionHeading } from './landingParts'
 
@@ -152,7 +153,8 @@ export function MapSection({
       {/* The map alone, centred, until a state is picked; then the state's list slides in. */}
       <motion.div
         {...reveal()}
-        className={`mt-10 grid items-start gap-6 ${current ? 'lg:grid-cols-[1.45fr_1fr]' : ''}`}
+        // minmax(0, …): a long carrier name or the tab row can't widen the page on a phone
+        className={`mt-10 grid grid-cols-1 items-start gap-6 ${current ? 'lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]' : ''}`}
       >
         <motion.div
           layout
@@ -347,6 +349,8 @@ function StateList({
         : getPublicStateCarriers(state.state, sort, letter, status, county?.county ?? null),
   })
   const [open, setOpen] = useState<PublicCarrier | null>(null)
+  // Laptops: a carrier opens in a new tab, so the map stays as it is in this one
+  const wide = useWideScreen()
   const linkFor = (usdot: number) => (portal ? (carrierLink?.(usdot) ?? null) : `/try?q=${usdot}`)
   // The census has no date for going inactive: for inactive carriers "newest" means registered.
   const note =
@@ -520,7 +524,11 @@ function StateList({
               ) : linkFor(c.usdot_number) ? (
                 <Link
                   to={linkFor(c.usdot_number)!}
-                  title={portal ? 'Open this carrier' : 'Open it with your free search'}
+                  {...newTabOnWide(wide)}
+                  title={
+                    (portal ? 'Open this carrier' : 'Open it with your free search') +
+                    (wide ? ' (new tab)' : '')
+                  }
                   className="font-medium text-slate-900 hover:text-accent-strong hover:underline"
                 >
                   {c.legal_name}

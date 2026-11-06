@@ -1,6 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, Mail, MapPin, Phone, Smartphone, Truck, X } from 'lucide-react'
-import { useEffect, useRef, type ReactNode } from 'react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  ExternalLink,
+  Mail,
+  MapPin,
+  Phone,
+  Smartphone,
+  Truck,
+  X,
+} from 'lucide-react'
+import { useCallback, useEffect, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 
@@ -8,6 +18,7 @@ import { ApiError } from '../../api/client'
 import { getCarrierContact, type PublicCarrier } from '../../api/directory'
 import { formatDate, formatPhone } from '../../utils/format'
 import { number } from './UsMap'
+import { newTabOnWide, useWideScreen } from './useWideScreen'
 
 /*
  * The pop-up for a carrier clicked in the broker portal's map (brokers and insurance agents): that
@@ -25,6 +36,8 @@ export function CarrierCardDialog({
   onClose: () => void
 }) {
   const close = useRef<HTMLButtonElement>(null)
+  // Laptops: the full record opens in a new tab, and the map stays here
+  const wide = useWideScreen()
   const card = useQuery({
     queryKey: ['directory', 'carrier', carrier.usdot_number],
     queryFn: () => getCarrierContact(carrier.usdot_number),
@@ -32,37 +45,67 @@ export function CarrierCardDialog({
     staleTime: 10 * 60_000,
   })
 
+  // The card is a step of its own in the browser's history: the phone's back gesture (or the
+  // browser's Back) closes it and leaves the map and list just as they were.
+  const marker = carrier.usdot_number
+  const latestClose = useRef(onClose)
+  useEffect(() => {
+    latestClose.current = onClose
+  })
+  useEffect(() => {
+    if (window.history.state?.carrierCard !== marker) {
+      window.history.pushState({ ...window.history.state, carrierCard: marker }, '')
+    }
+    const onPop = () => latestClose.current()
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [marker])
+  // Closing by hand steps back too, so Back afterwards doesn't land on the card's history entry.
+  const requestClose = useCallback(() => {
+    if (window.history.state?.carrierCard === marker) window.history.back()
+    else latestClose.current()
+  }, [marker])
+
   useEffect(() => {
     close.current?.focus()
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') requestClose()
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [requestClose])
 
   const c = card.data
   const limited = card.error instanceof ApiError && card.error.status === 429
 
   // On the page itself, not inside the sliding list (its transform would hold a fixed pop-up).
+  // Phones: a full screen of its own. Wider screens: a pop-up over the map.
   return createPortal(
     <div
-      className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/60 p-4"
+      className="fixed inset-0 z-50 overflow-y-auto bg-surface sm:grid sm:place-items-center sm:bg-black/60 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="carrier-card-title"
       onClick={(event) => {
-        if (event.target === event.currentTarget) onClose()
+        if (event.target === event.currentTarget) requestClose()
       }}
     >
-      <div className="relative w-full max-w-md overflow-hidden rounded-3xl bg-surface shadow-2xl ring-1 ring-black/5">
-        <div className="bg-[#101853] px-6 pb-5 pt-6 text-white">
+      <div className="relative min-h-full w-full bg-surface sm:min-h-0 sm:max-w-md sm:overflow-hidden sm:rounded-3xl sm:shadow-2xl sm:ring-1 sm:ring-black/5">
+        <div className="bg-[#101853] px-6 pb-5 pt-4 text-white sm:pt-6">
+          <button
+            type="button"
+            onClick={requestClose}
+            className="-ml-2 mb-2 inline-flex min-h-10 items-center gap-1.5 rounded-lg px-2 text-sm font-medium text-white/85 hover:bg-white/10 hover:text-white sm:hidden"
+          >
+            <ArrowLeft className="size-4" aria-hidden />
+            Back to the map
+          </button>
           <button
             ref={close}
             type="button"
             aria-label="Close"
-            onClick={onClose}
-            className="absolute right-3 top-3 grid size-10 place-items-center rounded-lg text-white/70 hover:bg-white/10 hover:text-white"
+            onClick={requestClose}
+            className="absolute right-3 top-3 hidden size-10 place-items-center rounded-lg text-white/70 hover:bg-white/10 hover:text-white sm:grid"
           >
             <X className="size-5" aria-hidden />
           </button>
@@ -148,10 +191,18 @@ export function CarrierCardDialog({
           {openTo && (
             <Link
               to={openTo}
+              {...newTabOnWide(wide)}
               className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 px-4 py-2.5 font-medium text-slate-900 hover:bg-slate-50"
             >
               Open the full record
-              <ArrowRight className="size-4" aria-hidden />
+              {wide ? (
+                <>
+                  <ExternalLink className="size-4" aria-hidden />
+                  <span className="sr-only">(opens in a new tab)</span>
+                </>
+              ) : (
+                <ArrowRight className="size-4" aria-hidden />
+              )}
             </Link>
           )}
         </div>
