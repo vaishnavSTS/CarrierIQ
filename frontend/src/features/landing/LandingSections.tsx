@@ -213,14 +213,14 @@ export function DataQsSection({ number }: { number?: string }) {
           initial={{ scaleX: 0 }}
           whileInView={{ scaleX: 1 }}
           viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 2.2, ease: [0.16, 1, 0.3, 1] }}
           className="absolute left-[16.6%] right-[16.6%] top-[5.5rem] hidden h-0.5 origin-left bg-gradient-to-r from-amber-300 via-amber-200 to-emerald-300 md:block"
         />
         <div className="relative grid gap-5 md:grid-cols-3">
           {DATAQS_STEPS.map(({ photo, alt, icon: Icon, title, text }, i) => (
             <motion.article
               key={title}
-              {...reveal(0.15 + i * 0.3)}
+              {...reveal(0.15 + i * 0.6, 1)}
               className="group overflow-hidden rounded-2xl bg-surface shadow-2xl shadow-black/25 ring-1 ring-white/10 transition-transform duration-300 hover:-translate-y-1.5"
             >
               <div className="relative h-44 overflow-hidden">

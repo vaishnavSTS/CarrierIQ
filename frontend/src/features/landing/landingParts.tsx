@@ -6,11 +6,11 @@ import { Link } from 'react-router-dom'
 const ease = [0.16, 1, 0.3, 1] as const
 
 /** Fades in once when scrolled into view. */
-export const reveal = (delay = 0) => ({
+export const reveal = (delay = 0, duration = 0.6) => ({
   initial: { opacity: 0, y: 24 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: '-60px' },
-  transition: { duration: 0.6, delay, ease },
+  transition: { duration, delay, ease },
 })
 
 export function PrimaryLink({
