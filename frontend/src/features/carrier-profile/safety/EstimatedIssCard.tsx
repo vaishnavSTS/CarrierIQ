@@ -4,6 +4,8 @@ import type { EstimatedIss, IssHistoryEntry } from '../../../types/carrierSafety
 import { formatLocalDate, formatMonth, ordinal } from '../../../utils/format'
 import { Empty } from '../Section'
 import { IssGauge } from './IssGauge'
+import { IssMonthlyChart } from './IssMonthlyChart'
+import { issByMonth } from './issMonths'
 import { ISS_BAND, NEAR_THRESHOLD_POINTS } from './issBand'
 
 function monthLabel(isoDate: string): string {
@@ -77,7 +79,7 @@ export function EstimatedIssCard({
         </ul>
       )}
 
-      <ScoreHistory history={history} />
+      <ScoreHistory iss={iss} history={history} />
 
       <p className="mt-3 text-xs text-slate-500">
         Follows FMCSA’s published ISS-CSA and SMS methods, using FMCSA’s monthly SMS national file
@@ -106,14 +108,27 @@ function BasicIcon({ basic: b }: { basic: Basic }) {
   )
 }
 
-/** The saved scores, newest first, so a change (and when it happened) is visible. */
-function ScoreHistory({ history }: { history: IssHistoryEntry[] }) {
+/**
+ * The score month by month (once there are two FMCSA months to draw), then the saved scores,
+ * newest first, so a change (and when it happened) is visible.
+ */
+function ScoreHistory({ iss, history }: { iss: EstimatedIss; history: IssHistoryEntry[] }) {
   if (history.length === 0) return null
+  const months = issByMonth(iss, history)
   return (
     <div className="mt-3 border-t border-slate-200 pt-3">
       <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
         Score history
       </div>
+      {months.length >= 2 ? (
+        <div className="mt-2">
+          <IssMonthlyChart months={months} />
+        </div>
+      ) : (
+        <p className="mt-1 text-xs text-slate-500">
+          The monthly graph starts once FMCSA’s next monthly data is in.
+        </p>
+      )}
       {history.length === 1 ? (
         <p className="mt-1 text-xs text-slate-500">
           Saved since {formatLocalDate(history[0].recorded_at)}. Each change is added here.
