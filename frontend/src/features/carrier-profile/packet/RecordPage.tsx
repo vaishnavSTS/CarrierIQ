@@ -167,41 +167,47 @@ export function RecordPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 align-top tabular-nums text-slate-700">
-                {codes.slice(0, maxCodes).map((r) => (
-                  <tr key={r.code}>
-                    <td className="py-1 pr-2">
-                      {plainGroup(r.group) && (
-                        <span className="font-semibold text-slate-900">
-                          {plainGroup(r.group)}:{' '}
-                        </span>
-                      )}
-                      {afterLabel(violationText(r.description, '—'), plainGroup(r.group))}
-                    </td>
-                    <td className="py-1 pl-3 pr-2 text-xs">{basicName(r.basic)}</td>
-                    <td className="py-1 pl-3 text-center">{r.count}</td>
-                    <td
-                      className={`py-1 pl-3 text-center ${r.outOfService > 0 ? 'font-semibold text-red-700' : ''}`}
-                    >
-                      {r.outOfService}
-                    </td>
-                    <td
-                      className={`whitespace-nowrap py-1 pl-3 text-center ${
-                        r.severity >= HIGH_SEVERITY ? 'font-semibold text-red-700' : ''
-                      }`}
-                    >
-                      {r.severity}
-                      <span
-                        className={`text-[11px] ${r.severity >= HIGH_SEVERITY ? 'text-red-700/70' : 'text-slate-400'}`}
+                {codes.slice(0, maxCodes).map((r) => {
+                  const high = r.severity >= HIGH_SEVERITY
+                  return (
+                    <tr key={r.code}>
+                      {/* A high-severity violation reads red, like its severity. */}
+                      <td className={`py-1 pr-2 ${high ? 'text-red-700' : ''}`}>
+                        {plainGroup(r.group) && (
+                          <span
+                            className={`font-semibold ${high ? 'text-red-700' : 'text-slate-900'}`}
+                          >
+                            {plainGroup(r.group)}:{' '}
+                          </span>
+                        )}
+                        {afterLabel(violationText(r.description, '—'), plainGroup(r.group))}
+                      </td>
+                      <td className="py-1 pl-3 pr-2 text-xs">{basicName(r.basic)}</td>
+                      <td className="py-1 pl-3 text-center">{r.count}</td>
+                      <td
+                        className={`py-1 pl-3 text-center ${r.outOfService > 0 ? 'font-semibold text-red-700' : ''}`}
                       >
-                        {' '}
-                        / 10
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap py-1 pl-3 font-mono text-[11px] text-slate-500">
-                      {violationCode(r.code)}
-                    </td>
-                  </tr>
-                ))}
+                        {r.outOfService}
+                      </td>
+                      <td
+                        className={`whitespace-nowrap py-1 pl-3 text-center ${
+                          high ? 'font-semibold text-red-700' : ''
+                        }`}
+                      >
+                        {r.severity}
+                        <span
+                          className={`text-[11px] ${high ? 'text-red-700/70' : 'text-slate-400'}`}
+                        >
+                          {' '}
+                          / 10
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap py-1 pl-3 font-mono text-[11px] text-slate-500">
+                        {violationCode(r.code)}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </ScrollX>
