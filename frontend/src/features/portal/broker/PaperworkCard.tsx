@@ -63,7 +63,7 @@ export function PaperworkCard() {
               >
                 <span
                   className={`grid size-5 shrink-0 place-items-center rounded-md border transition-colors ${
-                    on ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300'
+                    on ? 'border-emerald-600 bg-emerald-600 text-surface' : 'border-slate-300'
                   }`}
                 >
                   {on && <Check className="size-3.5" aria-hidden />}

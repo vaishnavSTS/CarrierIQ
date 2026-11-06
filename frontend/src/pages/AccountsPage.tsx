@@ -112,7 +112,7 @@ function AccountClaims({ account }: { account: AdminUser }) {
                     { onSettled: () => setReleasing(null) },
                   )
                 }
-                className="rounded-md bg-red-700 px-3 py-1.5 font-semibold shadow-sm text-white hover:bg-red-800 disabled:opacity-50"
+                className="rounded-md bg-red-700 px-3 py-1.5 font-semibold shadow-sm text-surface hover:bg-red-800 disabled:opacity-50"
               >
                 {release.isPending ? 'Releasing…' : 'Yes, release'}
               </button>
@@ -132,7 +132,7 @@ function AccountClaims({ account }: { account: AdminUser }) {
                 type="button"
                 onClick={() => setReleasing(n)}
                 title="Free this USDOT number so another carrier account can sign up with it. This account keeps the carrier in its portal."
-                className="whitespace-nowrap rounded-md bg-red-700 px-3 py-1.5 font-semibold shadow-sm text-white hover:bg-red-800"
+                className="whitespace-nowrap rounded-md bg-red-700 px-3 py-1.5 font-semibold shadow-sm text-surface hover:bg-red-800"
               >
                 Release claim
               </button>
@@ -375,7 +375,7 @@ function AccountRow({ account, isMe }: { account: AdminUser; isMe: boolean }) {
             type="button"
             disabled={action.isPending}
             onClick={() => action.mutate({ id: account.id, action: 'disable' })}
-            className="whitespace-nowrap rounded-md bg-red-700 px-3 py-1.5 text-xs font-semibold shadow-sm text-white hover:bg-red-800 disabled:opacity-50"
+            className="whitespace-nowrap rounded-md bg-red-700 px-3 py-1.5 text-xs font-semibold shadow-sm text-surface hover:bg-red-800 disabled:opacity-50"
           >
             Disable
           </button>
@@ -385,7 +385,7 @@ function AccountRow({ account, isMe }: { account: AdminUser; isMe: boolean }) {
             type="button"
             disabled={action.isPending}
             onClick={() => action.mutate({ id: account.id, action: 'reactivate' })}
-            className="whitespace-nowrap rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-semibold shadow-sm text-white hover:bg-emerald-800 disabled:opacity-50"
+            className="whitespace-nowrap rounded-md bg-emerald-700 px-3 py-1.5 text-xs font-semibold shadow-sm text-surface hover:bg-emerald-800 disabled:opacity-50"
           >
             Re-activate
           </button>

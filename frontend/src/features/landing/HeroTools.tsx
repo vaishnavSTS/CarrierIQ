@@ -229,7 +229,7 @@ const START: Record<string, boolean> = {
 }
 /** As in vetting.ts: any stop → do not book; a major item or 3+ minor ones → high risk. */
 const VERDICTS = {
-  do_not_book: { label: 'Do not book', style: 'bg-red-600 text-white', icon: CircleX },
+  do_not_book: { label: 'Do not book', style: 'bg-red-600 text-surface', icon: CircleX },
   high_risk: { label: 'High risk', style: 'bg-red-100 text-red-800', icon: TriangleAlert },
   review: { label: 'Book with review', style: 'bg-amber-100 text-amber-800', icon: TriangleAlert },
   ready: { label: 'Ready to book', style: 'bg-emerald-100 text-emerald-800', icon: CircleCheck },

@@ -76,7 +76,7 @@ export function InvoicePage() {
                 type="button"
                 onClick={() => voiding.mutate(inv.id, { onSuccess: () => setConfirmVoid(false) })}
                 disabled={voiding.isPending}
-                className={`${button} bg-red-600 text-white hover:bg-red-700 disabled:opacity-50`}
+                className={`${button} bg-red-600 text-surface hover:bg-red-700 disabled:opacity-50`}
               >
                 {voiding.isPending ? 'Voiding…' : `Yes, void invoice ${inv.number}`}
               </button>

@@ -29,7 +29,7 @@ export function SolutionsBox({
             key={s.key}
             className="flex break-inside-avoid gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-2"
           >
-            <span className="grid size-5 shrink-0 place-items-center rounded-full bg-emerald-700 text-[11px] font-bold text-white">
+            <span className="grid size-5 shrink-0 place-items-center rounded-full bg-emerald-700 text-[11px] font-bold text-surface">
               {n + 1}
             </span>
             <div className="min-w-0 text-sm">

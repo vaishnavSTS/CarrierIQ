@@ -192,6 +192,18 @@
   --color-sky-200: #1d4468;
   --color-sky-600: #5fb2f7;
   --color-sky-700: #7cc4ff;
+  /* Pale notes and badges (bg-amber-50 text-amber-900 and the like): dark fill, light text */
+  --color-red-100: #3b1a20;
+  --color-amber-100: #3a2b10;
+  --color-amber-800: #fcd34d;
+  --color-amber-900: #fde68a;
+  --color-emerald-100: #0f3326;
+  --color-emerald-800: #a7f3d0;
+  --color-emerald-900: #d1fae5;
+  --color-sky-800: #bae6fd;
+  --color-sky-900: #e0f2fe;
+  --color-orange-50: #2d1a0e;
+  --color-orange-800: #fed7aa;
 }
 
 body {
@@ -909,6 +921,18 @@ body {
     --color-sky-200: #bfdbfe;
     --color-sky-600: #0b62b8;
     --color-sky-700: #0b62b8;
+    /* Pale-note pairs (background 100 / text 800-900) with no light-theme override: Tailwind's own */
+    --color-red-100: #fee2e2;
+    --color-amber-100: #fef3c7;
+    --color-amber-800: #92400e;
+    --color-amber-900: #78350f;
+    --color-emerald-100: #d1fae5;
+    --color-emerald-800: #065f46;
+    --color-emerald-900: #064e3b;
+    --color-sky-800: #075985;
+    --color-sky-900: #0c4a6e;
+    --color-orange-50: #fff7ed;
+    --color-orange-800: #9a3412;
     --color-panel-a: #5b21b6;
     --color-panel-b: #1e3a8a;
     --color-violet-600: #6d28d9;

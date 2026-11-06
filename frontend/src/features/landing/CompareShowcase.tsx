@@ -202,7 +202,7 @@ function SampleTable({ who }: { who: Who }) {
                       >
                         {value}
                         {best && (
-                          <span className="ml-1.5 rounded bg-emerald-600 px-1 py-px text-[9.5px] font-semibold uppercase text-white">
+                          <span className="ml-1.5 rounded bg-emerald-600 px-1 py-px text-[9.5px] font-semibold uppercase text-surface">
                             Best
                           </span>
                         )}

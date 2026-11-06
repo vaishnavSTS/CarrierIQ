@@ -386,7 +386,7 @@ const VISUALS: Record<VisualKey, () => ReactNode> = {
             {...appear(i)}
             className="flex items-center gap-3 rounded-lg border border-slate-200 bg-canvas px-3 py-2"
           >
-            <span className="grid size-6 shrink-0 place-items-center rounded-full bg-emerald-600 text-xs font-semibold text-white">
+            <span className="grid size-6 shrink-0 place-items-center rounded-full bg-emerald-600 text-xs font-semibold text-surface">
               {i + 1}
             </span>
             <span className="text-sm font-medium text-slate-900">{step}</span>

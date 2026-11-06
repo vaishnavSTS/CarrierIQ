@@ -191,7 +191,7 @@ export function MapSection({
                     className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
                       status === s
                         ? s === 'inactive'
-                          ? 'bg-red-600 text-white shadow'
+                          ? 'bg-red-600 text-surface shadow'
                           : 'bg-[#101853] text-white shadow'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}

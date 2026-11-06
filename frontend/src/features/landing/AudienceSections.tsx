@@ -32,7 +32,7 @@ const GRADES: Group[] = [
     icon: CircleX,
     label: 'Do not book',
     rule: 'Any one of these',
-    tag: 'bg-red-600 text-white',
+    tag: 'bg-red-600 text-surface',
     items: [
       'Operating authority not active, or a revocation pending',
       'No liability insurance on file, or less than the legal minimum',

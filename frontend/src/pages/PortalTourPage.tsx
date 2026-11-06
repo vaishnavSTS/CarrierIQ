@@ -118,7 +118,9 @@ export function PortalTourPage({ audience }: { audience: Audience }) {
         aria-label="Parts of the portal"
         className="sticky top-[97px] z-20 border-y border-slate-200 bg-canvas/90 backdrop-blur sm:top-[101px]"
       >
-        <ul className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 py-2 [scrollbar-width:none]">
+        {/* Wide screens: every part on show (two rows if needed). Narrower: one row that scrolls,
+            faded at the right edge so it's clear there's more. */}
+        <ul className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 py-2 [mask-image:linear-gradient(to_right,black_88%,transparent)] [scrollbar-width:none] lg:flex-wrap lg:justify-center lg:overflow-visible lg:[mask-image:none]">
           {tour.sections.map((s, i) => (
             <li key={s.id} className="shrink-0">
               <button

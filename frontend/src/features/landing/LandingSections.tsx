@@ -107,7 +107,7 @@ export function HeroTryForm({
               aria-pressed={mode === id}
               className={`rounded-full px-3 py-1 text-xs font-medium ring-1 transition-colors ${
                 mode === id
-                  ? 'bg-white text-slate-950 ring-white'
+                  ? 'bg-white text-[#101853] ring-white'
                   : 'bg-white/10 text-white ring-white/30 hover:bg-white/20'
               }`}
             >
@@ -174,7 +174,7 @@ function CaseStage() {
   }, [stage, reduceMotion])
   const { label, style } = CASE_STAGES[stage]
   return (
-    <span className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-lg">
+    <span className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-full bg-surface/95 px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-lg ring-1 ring-black/5">
       Case 12
       <AnimatePresence mode="wait" initial={false}>
         <motion.span

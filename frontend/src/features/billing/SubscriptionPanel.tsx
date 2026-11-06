@@ -52,7 +52,7 @@ export function SubscriptionPanel() {
               type="button"
               disabled={cancel.isPending}
               onClick={() => cancel.mutate(undefined, { onSuccess: () => setAsking(false) })}
-              className="tap rounded-lg bg-red-700 px-3 py-1.5 font-medium text-white hover:bg-red-800 disabled:opacity-50"
+              className="tap rounded-lg bg-red-700 px-3 py-1.5 font-medium text-surface hover:bg-red-800 disabled:opacity-50"
             >
               {cancel.isPending ? 'Cancelling…' : 'Yes, cancel'}
             </button>
