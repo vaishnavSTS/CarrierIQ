@@ -156,6 +156,23 @@ export function AudienceChooserPage() {
             <HeroTryForm centered chips={false} note={false} />
           </div>
 
+          {/* The trial terms right under the search, so they show on the first screen; on a dark
+              pill so they read on the gradient. */}
+          <div className="mt-4 flex justify-center">
+            <ul className="flex flex-wrap justify-center gap-x-5 gap-y-1.5 rounded-2xl bg-[#060d24]/55 px-5 py-2 text-sm font-medium text-white ring-1 ring-white/15 backdrop-blur sm:rounded-full">
+              {['30 days free', 'No card needed to start', 'Cancel any time'].map((fact) => (
+                <li key={fact} className="flex items-center gap-1.5">
+                  <Check
+                    className="size-4 shrink-0 text-[var(--hero-highlight)]"
+                    strokeWidth={3}
+                    aria-hidden
+                  />
+                  {fact}
+                </li>
+              ))}
+            </ul>
+          </div>
+
           <LiveStrip />
 
           <div className="mt-8 grid gap-5 md:grid-cols-3">
@@ -196,22 +213,6 @@ export function AudienceChooserPage() {
                 </span>
               </button>
             ))}
-          </div>
-
-          {/* The trial terms, on a dark pill so they read on the bright gradient. */}
-          <div className="mt-8 flex justify-center">
-            <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2 rounded-2xl bg-[#060d24]/60 px-6 py-3 text-[15px] font-medium text-white shadow-lg ring-1 ring-white/15 backdrop-blur sm:rounded-full">
-              {['30 days free', 'No card needed to start', 'Cancel any time'].map((fact) => (
-                <li key={fact} className="flex items-center gap-2">
-                  <Check
-                    className="size-4 shrink-0 text-[var(--hero-highlight)]"
-                    strokeWidth={3}
-                    aria-hidden
-                  />
-                  {fact}
-                </li>
-              ))}
-            </ul>
           </div>
         </section>
       </div>
