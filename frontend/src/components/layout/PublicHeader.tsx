@@ -86,7 +86,7 @@ export function PublicHeader() {
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4">
           <Brand to="/" />
 
-          <nav aria-label="Main" className="ml-6 hidden items-center gap-1 text-sm lg:flex">
+          <nav aria-label="Main" className="ml-6 hidden items-center gap-1 text-sm xl:flex">
             {MENU.filter((m) => m.to !== '/contact').map(({ to, label }) => (
               <Link
                 key={to}
@@ -137,7 +137,7 @@ export function PublicHeader() {
               aria-expanded={open}
               aria-controls="public-menu"
               aria-label={open ? 'Close menu' : 'Open menu'}
-              className="grid size-10 place-items-center rounded-lg text-slate-700 hover:bg-slate-100 lg:hidden"
+              className="grid size-10 place-items-center rounded-lg text-slate-700 hover:bg-slate-100 xl:hidden"
             >
               {open ? (
                 <X className="size-5" aria-hidden />
@@ -152,7 +152,7 @@ export function PublicHeader() {
           <nav
             id="public-menu"
             aria-label="Menu"
-            className="border-t border-slate-200 bg-canvas px-4 pb-5 pt-2 lg:hidden"
+            className="border-t border-slate-200 bg-canvas px-4 pb-5 pt-2 xl:hidden"
           >
             <ul className="mx-auto max-w-7xl">
               {MENU.map(({ to, label }) => (

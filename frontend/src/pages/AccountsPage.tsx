@@ -427,7 +427,7 @@ export function AccountsPage() {
         <section className="rounded-2xl border border-slate-200 bg-surface p-5">
           <h2 className="text-sm font-semibold text-slate-900">All accounts</h2>
           <div className="mt-3 relative overflow-x-auto">
-            <table className="w-full text-left text-sm">
+            <table className="w-full min-w-[60rem] text-left text-sm">
               <thead className="text-xs text-slate-500">
                 <tr>
                   <th className="pb-2 pr-4 font-medium">Name</th>

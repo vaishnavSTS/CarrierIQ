@@ -31,8 +31,8 @@ function navClass({ isActive }: { isActive: boolean }): string {
 
 /**
  * The logged-in portals' frame: a bar across the top (logo, the portal's name, its pages, and who
- * is logged in with the theme switch and log out), the page below it. Phones and tablets get the
- * pages and the user's menu behind a menu button. Uses the public site's type (.portal-type in
+ * is logged in with the theme switch and log out), the page below it. Phones, tablets and small laptops
+ * (below 1280px) get the pages and the user's menu behind a menu button. Uses the public site's type (.portal-type in
  * index.css); the Safety Score Report keeps the app font.
  */
 export function PortalShell({
@@ -77,11 +77,11 @@ export function PortalShell({
           <span className="hidden rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700 xl:inline">
             {label}
           </span>
-          <nav aria-label={label} className="ml-4 hidden items-center gap-1 text-sm lg:flex">
+          <nav aria-label={label} className="ml-4 hidden items-center gap-1 text-sm xl:flex">
             {links}
           </nav>
-          <UserMenu />
-          <MobileMenu>{links}</MobileMenu>
+          <UserMenu from="xl" />
+          <MobileMenu from="xl">{links}</MobileMenu>
         </div>
       </header>
 
