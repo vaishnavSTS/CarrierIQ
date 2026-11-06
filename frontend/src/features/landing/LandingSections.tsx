@@ -206,17 +206,8 @@ export function DataQsSection({ number }: { number?: string }) {
         }
         aside="A violation cited by mistake counts against your safety record until it’s corrected. If a challenge is accepted, the violation is removed and stops counting."
       />
-      <div className="relative mt-12">
-        {/* The path from one step to the next, drawn as the section comes into view. */}
-        <motion.div
-          aria-hidden
-          initial={{ scaleX: 0 }}
-          whileInView={{ scaleX: 1 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 2.2, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute left-[16.6%] right-[16.6%] top-[5.5rem] hidden h-0.5 origin-left bg-gradient-to-r from-amber-300 via-amber-200 to-emerald-300 md:block"
-        />
-        <div className="relative grid gap-5 md:grid-cols-3">
+      <div className="mt-12">
+        <div className="grid gap-5 md:grid-cols-3">
           {DATAQS_STEPS.map(({ photo, alt, icon: Icon, title, text }, i) => (
             <motion.article
               key={title}
