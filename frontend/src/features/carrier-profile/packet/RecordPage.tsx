@@ -195,12 +195,6 @@ export function RecordPage({
                         }`}
                       >
                         {r.severity}
-                        <span
-                          className={`text-[11px] ${high ? 'text-red-700/70' : 'text-slate-400'}`}
-                        >
-                          {' '}
-                          / 10
-                        </span>
                       </td>
                       <td className="whitespace-nowrap py-1 pl-3 font-mono text-[11px] text-slate-500">
                         {violationCode(r.code)}

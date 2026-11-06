@@ -360,7 +360,8 @@ body {
 .marquee-reverse .marquee-track {
   animation-direction: reverse;
 }
-.marquee:hover .marquee-track {
+/* Pauses under the pointer, except the live carrier strips (.marquee-nonstop), which keep moving. */
+.marquee:not(.marquee-nonstop):hover .marquee-track {
   animation-play-state: paused;
 }
 @keyframes marquee {
