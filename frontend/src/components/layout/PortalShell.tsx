@@ -4,6 +4,7 @@ import { NavLink } from 'react-router-dom'
 import { BackgroundSpotlight } from './BackgroundSpotlight'
 import { Brand } from './Brand'
 import { MobileMenu } from './MobileMenu'
+import { PageMeta } from './PageMeta'
 import { ScrollToTop } from './ScrollToTop'
 import { SiteFooter } from './SiteFooter'
 import { TalkToSky } from './TalkToSky'
@@ -70,6 +71,7 @@ export function PortalShell({
       className="portal-page portal-type relative isolate flex min-h-screen flex-col"
     >
       <ScrollToTop />
+      <PageMeta />
       <BackgroundSpotlight />
       <header className="sticky top-0 z-30 border-b border-slate-200 bg-canvas/85 backdrop-blur print:hidden">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">

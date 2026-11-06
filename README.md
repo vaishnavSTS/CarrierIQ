@@ -112,6 +112,10 @@ monthly Estimated ISS reference is not rebuilt, and older carriers are not refre
 2. **Vercel (frontend).** New Project → this repository, Root Directory `frontend` (Vite is
    detected). If the Render URL is not `https://carrieriq-api.onrender.com`, change it in
    `frontend/vercel.json` first.
+   **Search engines:** each page's title and description are in `frontend/src/seo/pages.ts`;
+   `robots.txt` and `sitemap.xml` are built from the same file. Set `VITE_SITE_URL` in Vercel's
+   Environment Variables to the site's own address (e.g. `https://www.carriersafetyscan.com`) once
+   the domain is live, and redeploy; until then they use `https://carriersafetyscan.vercel.app`.
    Every push to `main` redeploys both: Vercel and Render each build from GitHub on their own
    servers (not GitHub Actions). Render applies database migrations on start.
    **Client search:** `CLIENT_SEARCH_ENABLED` is `false` (the default, and in `render.yaml`), so
