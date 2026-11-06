@@ -15,6 +15,8 @@ Rules:
 - STS staff never self-register: an STS admin adds them on the Accounts page (they choose their
   password from an emailed link) or runs `python -m app.workers.create_staff_user`. Google
   sign-in never creates staff; it only logs in staff accounts that already exist.
+- An STS admin can also add a carrier account with what a sign-up gives (company, mobile number,
+  USDOT). They choose their password from an emailed link; their trial starts when they do.
 - An STS admin can delete an account that no other record names (DataQs work, service requests,
   invoices); one that is named can only be disabled.
 """
@@ -58,6 +60,7 @@ from app.schemas.auth import (
     BrokerOut,
     BrokerRegisterIn,
     CarrierContactCheckOut,
+    ClientInviteIn,
     GoogleSignupIn,
     InsuranceGoogleSignupIn,
     InsuranceRegisterIn,
@@ -96,7 +99,7 @@ PASSWORD_RESET_PURPOSE = "password_reset"
 PASSWORD_RESET_MINUTES = 30
 EMAIL_VERIFY_PURPOSE = "email_verify"
 EMAIL_VERIFY_HOURS = 24
-STAFF_INVITE_HOURS = 72  # a new staff member's "choose your password" link
+ACCOUNT_INVITE_HOURS = 72  # the "choose your password" link of an account STS adds
 
 # What goes with an account when STS deletes it. Any other record that names the account or its
 # company (DataQs work, service requests, invoices) keeps it: such an account is disabled instead.
@@ -161,10 +164,14 @@ class AuthService:
         password_hash: str | None = None,
         google_sub: str | None = None,
         verified: bool = True,
+        added_by_sts: bool = False,
     ) -> User:
         """A new CLIENT organization with one ACTIVE account, ready to log in, and its USDOT
         (unconfirmed: `verified` marks carriers STS itself linked or checked). The USDOT is
-        claimed for this account: one account per number (models/carrier_claim.py)."""
+        claimed for this account: one account per number (models/carrier_claim.py).
+
+        `added_by_sts`: an STS admin made it on the Accounts page. Its carrier counts as verified,
+        it never shows as a new sign-up, and nobody ticked "I agree" yet."""
         if self._claim_of(usdot_number) is not None:
             raise ConflictError(USDOT_CLAIMED)
         organization = Organization(name=company_name, kind=OrganizationKind.CLIENT)
@@ -182,11 +189,17 @@ class AuthService:
             last_login_at=self.now() if verified else None,
             email_verified_at=self.now() if verified else None,
             trial_ends_at=self.now() + TRIAL,  # then $49/month (app/services/subscription.py)
-            terms_accepted_at=self.now(),  # every sign-up form requires "I agree"
-            terms_version=TERMS_VERSION,
+            # Every sign-up form requires "I agree"
+            terms_accepted_at=None if added_by_sts else self.now(),
+            terms_version=None if added_by_sts else TERMS_VERSION,
+            seen_at=self.now() if added_by_sts else None,
         )
         self.db.add(user)
-        self.db.add(OrganizationCarrier(organization_id=organization.id, usdot_number=usdot_number))
+        self.db.add(
+            OrganizationCarrier(
+                organization_id=organization.id, usdot_number=usdot_number, verified=added_by_sts
+            )
+        )
         self.db.flush()
         self.db.add(
             CarrierClaim(
@@ -579,7 +592,29 @@ class AuthService:
         )
         self.db.add(user)
         self.db.commit()
-        return user, _password_token(user, STAFF_INVITE_HOURS * 60)
+        return user, _password_token(user, ACCOUNT_INVITE_HOURS * 60)
+
+    def invite_client(self, data: ClientInviteIn, admin: User) -> tuple[User, str]:
+        """A carrier account made by STS, with what a sign-up gives (company, mobile number,
+        USDOT, claimed for them) and the token for its "choose your password" link. The email
+        is confirmed, and the 30-day trial starts, when they use that link or sign in with Google.
+        DataQs drafts STS held for the carrier move to the new company."""
+        if self.users.by_email(data.email) is not None:
+            raise ConflictError("An account with this email already exists")
+        user = self._create_client(
+            email=data.email,
+            full_name=data.full_name,
+            company_name=data.company_name,
+            phone=data.phone,
+            usdot_number=data.usdot_number,
+            verified=False,
+            added_by_sts=True,
+        )
+        DataQsCaseService(self.db).hand_over_held_cases(
+            data.usdot_number, user.organization_id, admin
+        )
+        self.db.commit()
+        return user, _password_token(user, ACCOUNT_INVITE_HOURS * 60)
 
     def delete_account(self, user_id: int, acting_user: User) -> None:
         """Remove an account for good. When it is the only account of a carrier, broker or

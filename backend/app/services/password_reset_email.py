@@ -61,26 +61,39 @@ def password_reset_email(user: User, token: str, minutes: int) -> PasswordResetE
     )
 
 
-def staff_invite_email(user: User, token: str, hours: int) -> PasswordResetEmail:
-    """A new staff member's welcome: the same "choose a password" link, valid for longer."""
+def account_invite_email(user: User, token: str, hours: int) -> PasswordResetEmail:
+    """The welcome for an account STS added (staff or carrier): the same "choose a password"
+    link, valid for longer."""
     settings = get_settings()
     first_name = user.full_name.split()[0] if user.full_name.strip() else "there"
     link = f"{settings.public_app_url.rstrip('/')}/reset-password#token={token}"
+    staff = user.role.is_staff
+    made = "a Carrier Safety Scan staff account" if staff else "your Carrier Safety Scan account"
+    login_page = "the STS team login page" if staff else "the login page"
     body = (
         f"Hi {first_name},\n\n"
-        f"Sky Transport Solutions has made you a Carrier Safety Scan staff account ({user.email}). "
-        f"Use the link below to choose your password. It works once and expires in {hours} hours; "
-        'after that, use "Forgot password?" on the STS team login page.\n\n'
+        f"Sky Transport Solutions has set up {made} ({user.email}). Use the link below to choose "
+        f"your password. It works once and expires in {hours} hours; after that, use "
+        f'"Forgot password?" on {login_page}.\n\n'
         "You can also sign in with Google using this email address."
     )
+    if not staff:
+        body += " Your one-month free trial starts when you first sign in."
     to = [user.email]
-    if settings.dataqs_staff_override_list:
+    override = (
+        settings.dataqs_staff_override_list if staff else settings.dataqs_carrier_override_list
+    )
+    if override:
         body = f"[Test routing: meant for {user.email}]\n\n{body}"
-        to = settings.dataqs_staff_override_list
+        to = override
     return PasswordResetEmail(
         user_id=user.id,
         to=to,
-        subject="Your Carrier Safety Scan staff account",
+        subject=(
+            "Your Carrier Safety Scan staff account"
+            if staff
+            else "Your Carrier Safety Scan account is ready"
+        ),
         text=f"{body}\n\n{link}",
         html=render_html(body, link, "Choose my password", footer=FOOTER),
     )

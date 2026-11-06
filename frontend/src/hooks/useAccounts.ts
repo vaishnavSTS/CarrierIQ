@@ -5,6 +5,7 @@ import {
   deleteAccount,
   disableAccount,
   fetchAccounts,
+  inviteCarrier,
   inviteStaff,
   markAccountsSeen,
   reactivateAccount,
@@ -61,6 +62,14 @@ export function useInviteStaff() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: inviteStaff,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY }),
+  })
+}
+
+export function useInviteCarrier() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: inviteCarrier,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ACCOUNTS_KEY }),
   })
 }

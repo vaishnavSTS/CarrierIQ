@@ -22,11 +22,34 @@ export interface StaffInvite {
   role: 'STS_ADMIN' | 'STS_ANALYST'
 }
 
+/** A carrier account as a sign-up makes it, without the password and "I agree". */
+export interface CarrierInvite {
+  full_name: string
+  company_name: string
+  email: string
+  phone: string
+  usdot_number: number
+}
+
+/** An account an admin added, and whether its "choose your password" email went out. */
+export interface AccountInvite {
+  account: AdminUser
+  invite_emailed: boolean
+}
+
 /** Adds an STS admin or analyst; they get an email with a link to choose their password. */
-export function inviteStaff(
-  invite: StaffInvite,
-): Promise<{ account: AdminUser; invite_emailed: boolean }> {
+export function inviteStaff(invite: StaffInvite): Promise<AccountInvite> {
   return apiRequest('/admin/staff', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(invite),
+  })
+}
+
+/** Adds a carrier account with its USDOT verified and claimed; they get an email with a link to
+ * choose their password, and their free trial starts when they do. */
+export function inviteCarrier(invite: CarrierInvite): Promise<AccountInvite> {
+  return apiRequest('/admin/clients', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(invite),

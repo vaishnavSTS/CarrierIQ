@@ -1,4 +1,4 @@
-"""STS admins add staff (who choose their own password) and delete accounts."""
+"""STS admins add carriers and staff (who choose their own password) and delete accounts."""
 
 from collections.abc import Iterator
 
@@ -43,6 +43,88 @@ def as_admin(api: TestClient, db: Session) -> User:
 
 def invite(api: TestClient, email: str = "New.Person@STS.test", role: str = "STS_ANALYST"):  # noqa: ANN201
     return api.post(STAFF, json={"email": email, "full_name": " New Person ", "role": role})
+
+
+# --- Adding a carrier -----------------------------------------------------------------------------
+
+CLIENTS = "/api/v1/admin/clients"
+CARRIER = {
+    "full_name": " Pat Owner ",
+    "company_name": "Client Trucking LLC",
+    "email": "Owner@Client.com",
+    "phone": "(610) 590-0223",
+    "usdot_number": 295017,
+}
+
+
+def test_admin_adds_a_carrier_who_chooses_a_password_and_starts_the_trial(
+    api: TestClient, db: Session, sender: FakeSender
+) -> None:
+    as_admin(api, db)
+
+    answer = api.post(CLIENTS, json=CARRIER)
+
+    assert answer.status_code == 201, answer.text
+    body = answer.json()
+    assert body["invite_emailed"] is True
+    account = body["account"]
+    assert (account["full_name"], account["email"], account["phone"]) == (
+        "Pat Owner",
+        "owner@client.com",
+        "6105900223",
+    )
+    assert (account["role"], account["portal"], account["organization_name"]) == (
+        "CLIENT_ADMIN",
+        "client",
+        "Client Trucking LLC",
+    )
+    assert account["usdot_numbers"] == [295017]
+    assert account["verified_usdot_numbers"] == [295017]  # STS added it: verified
+    assert account["claimed_usdot_numbers"] == [295017]
+    assert account["is_new"] is False  # no "new sign-up" pop-up for it
+    assert sender.sent[0]["to"] == ["owner@client.com"]
+    assert "free trial starts when you first sign in" in str(sender.sent[0]["text"])
+
+    user = db.scalar(select(User).where(User.email == "owner@client.com"))
+    assert user is not None
+    assert user.password_hash is None and user.terms_accepted_at is None
+    assert user.email_verified_at is None  # confirmed when they use the link
+
+    # The link sets the password, confirms the email and starts the month from then.
+    reset = {"token": token_from(sender), "password": NEW_PASSWORD}
+    api.post("/api/v1/auth/logout")
+    assert api.post("/api/v1/auth/password/reset", json=reset).status_code == 200
+    me = api.post(
+        "/api/v1/auth/login", json={"email": "owner@client.com", "password": NEW_PASSWORD}
+    )
+    assert me.status_code == 200, me.text
+    assert me.json()["billing"]["state"] == "trial"
+    db.refresh(user)
+    assert user.email_verified_at is not None
+    assert user.trial_ends_at is not None and user.trial_ends_at > user.email_verified_at
+
+
+def test_adding_a_carrier_refuses_a_used_email_or_claimed_usdot_and_bad_details(
+    api: TestClient, db: Session
+) -> None:
+    register(api)  # owner@client.com, USDOT 295017
+    api.post("/api/v1/auth/logout")
+    as_admin(api, db)
+
+    assert api.post(CLIENTS, json=CARRIER).status_code == 409  # email in use
+    claimed = api.post(CLIENTS, json={**CARRIER, "email": "other@client.com"})
+    assert claimed.status_code == 409
+    assert "already in use" in claimed.json()["error"]["message"]
+    for bad in ({"phone": "123"}, {"usdot_number": 0}, {"company_name": " "}, {"email": "x"}):
+        answer = api.post(CLIENTS, json={**CARRIER, "email": "new@client.com", **bad})
+        assert answer.status_code == 422, bad
+
+
+def test_only_sts_admins_add_carriers(api: TestClient, db: Session) -> None:
+    make_user(db, "analyst@sts.test", UserRole.STS_ANALYST, UserStatus.ACTIVE)
+    log_in(api, "analyst@sts.test")
+
+    assert api.post(CLIENTS, json=CARRIER).status_code == 403
 
 
 # --- Adding staff ---------------------------------------------------------------------------------

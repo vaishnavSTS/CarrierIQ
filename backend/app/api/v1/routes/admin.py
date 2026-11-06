@@ -9,9 +9,17 @@ from app.db.session import get_db
 from app.models import User
 from app.models.enums import UserRole, UserStatus
 from app.repositories.user_repository import UserRepository
-from app.schemas.auth import AddCarrierIn, AdminUserOut, SeenOut, StaffInviteIn, StaffInviteOut
-from app.services.auth_service import STAFF_INVITE_HOURS, AuthService
-from app.services.password_reset_email import send_password_reset, staff_invite_email
+from app.schemas.auth import (
+    AccountInviteOut,
+    AddCarrierIn,
+    AdminUserOut,
+    ClientInviteIn,
+    SeenOut,
+    StaffInviteIn,
+)
+from app.services.auth_service import ACCOUNT_INVITE_HOURS, AuthService
+from app.services.dataqs_email import EmailSender
+from app.services.password_reset_email import account_invite_email, send_password_reset
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -38,17 +46,37 @@ def mark_new_accounts_seen(_: StsAdmin, service: Service) -> SeenOut:
     return SeenOut(marked=service.mark_new_accounts_seen())
 
 
-@router.post("/staff", response_model=StaffInviteOut, status_code=status.HTTP_201_CREATED)
+def _invited(
+    service: AuthService,
+    user: User,
+    token: str,
+    tasks: BackgroundTasks,
+    mailer: EmailSender | None,
+) -> AccountInviteOut:
+    """Email the new account its "choose your password" link (after answering)."""
+    if mailer is not None:
+        email = account_invite_email(user, token, ACCOUNT_INVITE_HOURS)
+        tasks.add_task(send_password_reset, email, mailer)
+    return AccountInviteOut(account=service.admin_out(user), invite_emailed=mailer is not None)
+
+
+@router.post("/staff", response_model=AccountInviteOut, status_code=status.HTTP_201_CREATED)
 def invite_staff(
     data: StaffInviteIn, _: StsAdmin, service: Service, tasks: BackgroundTasks, mailer: Mailer
-) -> StaffInviteOut:
+) -> AccountInviteOut:
     """Add an STS admin or analyst. They get an email with a link to choose their password."""
     user, token = service.invite_staff(data.email, data.full_name, UserRole(data.role))
-    if mailer is not None:
-        tasks.add_task(
-            send_password_reset, staff_invite_email(user, token, STAFF_INVITE_HOURS), mailer
-        )
-    return StaffInviteOut(account=service.admin_out(user), invite_emailed=mailer is not None)
+    return _invited(service, user, token, tasks, mailer)
+
+
+@router.post("/clients", response_model=AccountInviteOut, status_code=status.HTTP_201_CREATED)
+def invite_client(
+    data: ClientInviteIn, admin: StsAdmin, service: Service, tasks: BackgroundTasks, mailer: Mailer
+) -> AccountInviteOut:
+    """Add a carrier account, as a sign-up would make it, with its USDOT verified and claimed.
+    They get an email with a link to choose their password; their trial starts when they do."""
+    user, token = service.invite_client(data, admin)
+    return _invited(service, user, token, tasks, mailer)
 
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)

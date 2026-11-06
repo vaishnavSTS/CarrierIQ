@@ -275,6 +275,28 @@ class StaffInviteIn(BaseModel):
         return value
 
 
+class ClientInviteIn(BaseModel):
+    """An STS admin adds a carrier account with what a sign-up asks for, except the password
+    (they choose it from the emailed link) and "I agree" (STS made the account)."""
+
+    full_name: str = Field(min_length=1, max_length=200)
+    company_name: str = Field(min_length=1, max_length=200)
+    email: str = Field(max_length=254)
+    phone: str = Field(max_length=30)  # mobile number; stored as 10 digits
+    usdot_number: int = Field(gt=0, lt=100_000_000)
+
+    _normalize_email = field_validator("email")(_email)
+    _normalize_phone = field_validator("phone")(normalize_phone)
+
+    @field_validator("full_name", "company_name")
+    @classmethod
+    def _strip(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Required")
+        return value
+
+
 class CarrierContactCheckOut(BaseModel):
     """Does the sign-up's phone / email match FMCSA's census record for a USDOT number they gave?
 
@@ -305,9 +327,11 @@ class AdminUserOut(UserOut):
     broker: "BrokerOut | None" = None  # broker accounts: the brokerage FMCSA confirmed
 
 
-class StaffInviteOut(BaseModel):
+class AccountInviteOut(BaseModel):
+    """An account an STS admin added, and whether its "choose your password" email was sent."""
+
     account: AdminUserOut
-    # False when no email service is set up: the new staff member uses "Forgot password?" instead
+    # False when no email service is set up: they use "Forgot password?" instead
     invite_emailed: bool
 
 
