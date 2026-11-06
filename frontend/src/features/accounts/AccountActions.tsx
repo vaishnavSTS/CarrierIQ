@@ -1,14 +1,15 @@
-import { MoreHorizontal } from 'lucide-react'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
+import { StatusBadge } from '../../components/StatusBadge'
 import { useAccountAction, useDeleteAccount, useReleaseClaim } from '../../hooks/useAccounts'
 import type { AdminUser } from '../../types/auth'
 
-type Pending = { kind: 'disable' } | { kind: 'delete' } | { kind: 'release'; usdot: number }
+const OUTLINE =
+  'whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-semibold ring-1 disabled:opacity-50'
 
 /**
- * The row's "⋯" menu: re-activate or disable, release a USDOT claim, delete. Anything that takes
- * access away or can't be undone asks first, in a pop-up that says what will happen.
+ * The row's Actions column: Disable (or Re-activate) and Delete. Disable and Delete ask first, in
+ * a pop-up that says what will happen; if the server refuses, the pop-up shows why.
  */
 export function AccountActions({
   account,
@@ -18,109 +19,52 @@ export function AccountActions({
   /** Deleting it also removes its company (the company's only account, not STS) */
   withCompany: boolean
 }) {
-  const [open, setOpen] = useState(false)
-  const [pending, setPending] = useState<Pending | null>(null)
-  const menu = useRef<HTMLDivElement>(null)
+  const [pending, setPending] = useState<'disable' | 'delete' | null>(null)
   const action = useAccountAction()
   const remove = useDeleteAccount()
-  const release = useReleaseClaim()
 
-  useEffect(() => {
-    if (!open) return
-    const close = (event: MouseEvent | KeyboardEvent) => {
-      if (
-        event instanceof KeyboardEvent
-          ? event.key === 'Escape'
-          : !menu.current?.contains(event.target as Node)
-      )
-        setOpen(false)
-    }
-    document.addEventListener('mousedown', close)
-    document.addEventListener('keydown', close)
-    return () => {
-      document.removeEventListener('mousedown', close)
-      document.removeEventListener('keydown', close)
-    }
-  }, [open])
+  function open(next: 'disable' | 'delete') {
+    action.reset()
+    remove.reset()
+    setPending(next)
+  }
 
-  function closePending() {
+  function close() {
     setPending(null)
     action.reset()
     remove.reset()
-    release.reset()
   }
-
-  function choose(next: Pending | 'reactivate') {
-    setOpen(false)
-    action.reset()
-    remove.reset()
-    release.reset()
-    if (next === 'reactivate') action.mutate({ id: account.id, action: 'reactivate' })
-    else setPending(next)
-  }
-
-  const claimed = account.claimed_usdot_numbers ?? []
-  const item =
-    'block w-full whitespace-nowrap px-3 py-1.5 text-left text-sm hover:bg-slate-50 focus:bg-slate-50 focus:outline-none'
 
   return (
-    <div ref={menu} className="relative inline-block text-left">
+    <div className="flex justify-end gap-1.5">
+      {account.status === 'DISABLED' ? (
+        <button
+          type="button"
+          disabled={action.isPending}
+          onClick={() => {
+            action.reset()
+            action.mutate({ id: account.id, action: 'reactivate' })
+          }}
+          className={`${OUTLINE} text-emerald-700 ring-emerald-600 hover:bg-emerald-50`}
+        >
+          {action.isPending ? 'Re-activating…' : 'Re-activate'}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => open('disable')}
+          className={`${OUTLINE} text-slate-700 ring-slate-300 hover:bg-slate-50`}
+        >
+          Disable
+        </button>
+      )}
       <button
         type="button"
-        aria-label={`Actions for ${account.full_name}`}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
-        className="grid size-8 place-items-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+        onClick={() => open('delete')}
+        className={`${OUTLINE} text-red-700 ring-red-600 hover:bg-red-50`}
       >
-        <MoreHorizontal className="size-4" aria-hidden />
+        Delete
       </button>
-      {open && (
-        <div
-          role="menu"
-          className="absolute right-0 z-20 mt-1 min-w-48 overflow-hidden rounded-lg border border-slate-200 bg-surface py-1 shadow-lg"
-        >
-          {account.status === 'DISABLED' ? (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => choose('reactivate')}
-              className={`${item} text-slate-800`}
-            >
-              Re-activate
-            </button>
-          ) : (
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => choose({ kind: 'disable' })}
-              className={`${item} text-slate-800`}
-            >
-              Disable
-            </button>
-          )}
-          {claimed.map((usdot) => (
-            <button
-              key={usdot}
-              type="button"
-              role="menuitem"
-              onClick={() => choose({ kind: 'release', usdot })}
-              className={`${item} text-slate-800`}
-            >
-              Release claim on {usdot}
-            </button>
-          ))}
-          <div className="my-1 border-t border-slate-100" />
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => choose({ kind: 'delete' })}
-            className={`${item} text-red-700`}
-          >
-            Delete account…
-          </button>
-        </div>
-      )}
 
       {/* Re-activate has no pop-up: if it fails, say why in one. */}
       {action.isError && !pending && (
@@ -128,19 +72,18 @@ export function AccountActions({
           title="That didn’t work"
           error={action.error.message}
           busy={false}
-          onCancel={() => action.reset()}
+          onCancel={close}
         >
           {account.full_name}’s account was not changed.
         </ConfirmDialog>
       )}
-
-      {pending?.kind === 'disable' && (
+      {pending === 'disable' && (
         <ConfirmDialog
           title={`Disable ${account.full_name}?`}
           confirm="Disable"
           busy={action.isPending}
           error={action.isError ? action.error.message : null}
-          onCancel={closePending}
+          onCancel={close}
           onConfirm={() =>
             action.mutate(
               { id: account.id, action: 'disable' },
@@ -152,31 +95,13 @@ export function AccountActions({
           later.
         </ConfirmDialog>
       )}
-      {pending?.kind === 'release' && (
-        <ConfirmDialog
-          title={`Release the claim on USDOT ${pending.usdot}?`}
-          confirm="Release claim"
-          busy={release.isPending}
-          error={release.isError ? release.error.message : null}
-          onCancel={closePending}
-          onConfirm={() =>
-            release.mutate(
-              { id: account.id, usdotNumber: pending.usdot },
-              { onSuccess: () => setPending(null) },
-            )
-          }
-        >
-          Another carrier account can then sign up with this number. {account.full_name} keeps the
-          carrier in their portal.
-        </ConfirmDialog>
-      )}
-      {pending?.kind === 'delete' && (
+      {pending === 'delete' && (
         <ConfirmDialog
           title={`Delete ${account.full_name} for good?`}
           confirm="Delete account"
           busy={remove.isPending}
           error={remove.isError ? remove.error.message : null}
-          onCancel={closePending}
+          onCancel={close}
           onConfirm={() => remove.mutate(account.id, { onSuccess: () => setPending(null) })}
         >
           {account.email} will be removed and can’t log in again.
@@ -184,6 +109,63 @@ export function AccountActions({
             ` ${account.organization_name} goes too, with its carrier list and USDOT claims, so those numbers can be claimed again.`}{' '}
           This can’t be undone. Accounts with DataQs work, service requests or invoices can only be
           disabled.
+        </ConfirmDialog>
+      )}
+    </div>
+  )
+}
+
+/**
+ * The Claim column: each USDOT this carrier account has claimed (no other carrier account can
+ * sign up with it), with Release, which asks first. The account keeps the carrier in its portal.
+ */
+export function ClaimCell({ account }: { account: AdminUser }) {
+  const [releasing, setReleasing] = useState<number | null>(null)
+  const release = useReleaseClaim()
+  const claimed = account.claimed_usdot_numbers ?? []
+
+  if (claimed.length === 0) return <span className="text-xs text-slate-400">—</span>
+
+  function close() {
+    setReleasing(null)
+    release.reset()
+  }
+
+  return (
+    <div className="space-y-1.5">
+      {claimed.map((usdot) => (
+        <div key={usdot} className="flex flex-wrap items-center gap-1.5">
+          <StatusBadge label="Claimed" tone="ok" />
+          {claimed.length > 1 && <span className="font-mono text-xs text-slate-600">{usdot}</span>}
+          <button
+            type="button"
+            onClick={() => {
+              release.reset()
+              setReleasing(usdot)
+            }}
+            title="Free this USDOT number so another carrier account can sign up with it."
+            className={`${OUTLINE} text-slate-700 ring-slate-300 hover:bg-slate-50`}
+          >
+            Release
+          </button>
+        </div>
+      ))}
+      {releasing !== null && (
+        <ConfirmDialog
+          title={`Release the claim on USDOT ${releasing}?`}
+          confirm="Release claim"
+          busy={release.isPending}
+          error={release.isError ? release.error.message : null}
+          onCancel={close}
+          onConfirm={() =>
+            release.mutate(
+              { id: account.id, usdotNumber: releasing },
+              { onSuccess: () => setReleasing(null) },
+            )
+          }
+        >
+          Another carrier account can then sign up with this number. {account.full_name} keeps the
+          carrier in their portal.
         </ConfirmDialog>
       )}
     </div>
@@ -220,7 +202,7 @@ function ConfirmDialog({
         <h2 id="confirm-title" className="text-base font-semibold text-slate-950">
           {title}
         </h2>
-        <p className="mt-2 text-sm text-slate-600">{children}</p>
+        <p className="mt-2 text-sm font-normal text-slate-600">{children}</p>
         {error && (
           <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}

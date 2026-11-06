@@ -3,7 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 
 import { StatusBadge } from '../components/StatusBadge'
-import { AccountActions } from '../features/accounts/AccountActions'
+import { AccountActions, ClaimCell } from '../features/accounts/AccountActions'
 import {
   AddCarrierForm,
   AddedNote,
@@ -161,12 +161,11 @@ function AddUsdot({ accountId }: { accountId: number }) {
 
 /**
  * A carrier account's USDOT numbers: verified or not (Verify confirms it is theirs, needed for
- * DataQs), whether this account holds the claim, and FMCSA's record against what they gave.
+ * DataQs) and FMCSA's record against what they gave. The claim has its own column.
  */
 function CarrierCell({ account }: { account: AdminUser }) {
   const verify = useAddAccountCarrier()
   const active = account.status !== 'DISABLED'
-  const claimed = account.claimed_usdot_numbers ?? []
   return (
     <div className="space-y-1.5">
       {account.usdot_numbers.length === 0 && (
@@ -188,7 +187,6 @@ function CarrierCell({ account }: { account: AdminUser }) {
                 label={verified ? 'Verified' : 'Not verified'}
                 tone={verified ? 'ok' : 'warn'}
               />
-              {claimed.includes(n) && <span className="text-xs text-slate-500">· claimed</span>}
               {!verified && active && (
                 <button
                   type="button"
@@ -270,12 +268,15 @@ function AccountRow({
         )}
       </td>
       <td className="py-3 pr-4">
+        <ClaimCell account={account} />
+      </td>
+      <td className="py-3 pr-4">
         <StatusBadge label={status.label} tone={status.tone} />
       </td>
       <td className="whitespace-nowrap py-3 pr-4 text-xs text-slate-500">
         {account.last_login_at ? formatDateTime(account.last_login_at) : 'Never'}
       </td>
-      <td className="py-3 text-right">
+      <td className="py-3">
         {!isMe && (
           <AccountActions
             account={account}
@@ -515,17 +516,16 @@ export function AccountsPage() {
         )}
         {shown.length > 0 && (
           <div className="overflow-x-auto px-5 pb-2">
-            <table className="w-full min-w-[56rem] text-left text-sm">
+            <table className="w-full min-w-[64rem] text-left text-sm">
               <thead className="text-xs text-slate-500">
                 <tr className="border-b border-slate-100">
                   <th className="py-2.5 pr-4 font-medium">Name</th>
                   <th className="py-2.5 pr-4 font-medium">Company and role</th>
                   <th className="py-2.5 pr-4 font-medium">Carrier / brokerage</th>
+                  <th className="py-2.5 pr-4 font-medium">Claim</th>
                   <th className="py-2.5 pr-4 font-medium">Status</th>
                   <th className="py-2.5 pr-4 font-medium">Last login</th>
-                  <th className="w-10 py-2.5">
-                    <span className="sr-only">Actions</span>
-                  </th>
+                  <th className="py-2.5 text-right font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
