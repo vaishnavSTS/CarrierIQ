@@ -74,21 +74,20 @@ export function ContactPage() {
   ]
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-10 md:py-16">
+    // Compact, so the whole form and its Send button fit on a laptop's first screen.
+    <div className="mx-auto max-w-5xl px-4 py-6 md:py-8">
       <header className="text-center">
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">
-          Contact us
-        </h1>
-        <p className="mx-auto mt-3 max-w-xl text-sm text-slate-600 md:text-base">
+        <h1 className="text-3xl font-semibold tracking-tight text-slate-950">Contact us</h1>
+        <p className="mx-auto mt-2 max-w-xl text-sm text-slate-600">
           Questions about Carrier Safety Scan, your safety score or a DataQs challenge? The Sky
           Transport Solutions team can help.
         </p>
       </header>
 
-      <div className="mt-10 grid gap-6 lg:grid-cols-[1fr_1.4fr]">
-        <aside className="rounded-2xl border border-slate-200 bg-surface p-6 sm:p-8">
-          <img src={stsLogo} alt="Sky Transport Solutions" className="h-14 w-auto object-contain" />
-          <h2 className="mt-5 font-semibold text-slate-900">{STS_CONTACT.company}</h2>
+      <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_1.4fr]">
+        <aside className="rounded-2xl border border-slate-200 bg-surface p-6">
+          <img src={stsLogo} alt="Sky Transport Solutions" className="h-12 w-auto object-contain" />
+          <h2 className="mt-3 font-semibold text-slate-900">{STS_CONTACT.company}</h2>
           <ul className="mt-4 space-y-3 text-sm text-slate-700">
             {reach.map(({ icon: Icon, label, href }) => (
               <li key={label}>
@@ -117,7 +116,7 @@ export function ContactPage() {
           </ul>
         </aside>
 
-        <section className="rounded-2xl border border-slate-200 bg-surface p-6 sm:p-8">
+        <section className="rounded-2xl border border-slate-200 bg-surface p-6">
           {send.isSuccess ? (
             <div role="status">
               <h2 className="text-lg font-semibold text-slate-900">Thank you, {form.full_name}</h2>
@@ -126,63 +125,79 @@ export function ContactPage() {
               </p>
             </div>
           ) : (
-            <form onSubmit={submit} className="space-y-4">
+            <form onSubmit={submit} className="space-y-3">
               <h2 className="text-lg font-semibold text-slate-900">Send us a message</h2>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field
-                  label="Your name"
-                  autoComplete="name"
-                  required
-                  maxLength={200}
-                  value={form.full_name}
-                  onChange={set('full_name')}
-                />
-                <Field
-                  label="Email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  maxLength={254}
-                  value={form.email}
-                  onChange={set('email')}
-                />
-                <Field
-                  label="Phone (optional)"
-                  type="tel"
-                  autoComplete="tel"
-                  maxLength={30}
-                  value={form.phone}
-                  onChange={set('phone')}
-                />
-                <Field
-                  label="Company (optional)"
-                  autoComplete="organization"
-                  maxLength={200}
-                  value={form.company}
-                  onChange={set('company')}
-                />
+              {/* Name and email on one row; phone, company and USDOT on the next. */}
+              <div className="grid gap-3 sm:grid-cols-6">
+                <div className="sm:col-span-3">
+                  <Field
+                    label="Your name"
+                    autoComplete="name"
+                    required
+                    maxLength={200}
+                    value={form.full_name}
+                    onChange={set('full_name')}
+                  />
+                </div>
+                <div className="sm:col-span-3">
+                  <Field
+                    label="Email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    maxLength={254}
+                    value={form.email}
+                    onChange={set('email')}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Field
+                    label="Phone (optional)"
+                    type="tel"
+                    autoComplete="tel"
+                    maxLength={30}
+                    value={form.phone}
+                    onChange={set('phone')}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Field
+                    label="Company (optional)"
+                    autoComplete="organization"
+                    maxLength={200}
+                    value={form.company}
+                    onChange={set('company')}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Field
+                    label="USDOT (optional)"
+                    inputMode="numeric"
+                    maxLength={8}
+                    value={form.usdot}
+                    onChange={set('usdot')}
+                  />
+                </div>
               </div>
-              <Field
-                label="USDOT number (optional)"
-                inputMode="numeric"
-                maxLength={8}
-                value={form.usdot}
-                onChange={set('usdot')}
-              />
               <label className="block">
                 <span className="text-sm font-medium text-slate-700">How can we help?</span>
                 <textarea
                   required
-                  rows={5}
+                  rows={3}
                   maxLength={5000}
                   value={form.message}
                   onChange={set('message')}
                   className="mt-1.5 w-full rounded-xl border border-slate-300 bg-canvas/70 px-3.5 py-2.5 text-sm text-slate-900 transition-shadow placeholder:text-slate-400 focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/20"
                 />
               </label>
-              {human.widget}
               <FormError message={error} />
-              <SubmitButton busy={send.isPending}>Send message</SubmitButton>
+              {/* The security check and Send side by side; stacked on phones. */}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="min-w-0 sm:min-w-[300px] sm:flex-1">{human.widget}</div>
+                <div className="sm:w-48">
+                  <SubmitButton busy={send.isPending}>Send message</SubmitButton>
+                </div>
+              </div>
             </form>
           )}
         </section>
