@@ -220,7 +220,7 @@ export function DataQsSection({ number }: { number?: string }) {
           {DATAQS_STEPS.map(({ photo, alt, icon: Icon, title, text }, i) => (
             <motion.article
               key={title}
-              {...reveal(0.15 + i * 0.25)}
+              {...reveal(0.15 + i * 0.3)}
               className="group overflow-hidden rounded-2xl bg-surface shadow-2xl shadow-black/25 ring-1 ring-white/10 transition-transform duration-300 hover:-translate-y-1.5"
             >
               <div className="relative h-44 overflow-hidden">

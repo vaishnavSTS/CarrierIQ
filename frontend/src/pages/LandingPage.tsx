@@ -362,7 +362,8 @@ export function LandingPage({ audience }: { audience: Audience }) {
               {content.features.map(({ title, text }, i) => (
                 <motion.article
                   key={title}
-                  {...reveal(i * 0.08)}
+                  // One after another, 0.3 s apart
+                  {...reveal(i * 0.3)}
                   className="group rounded-2xl border border-slate-200 bg-surface p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-xl hover:shadow-brand-glow/15"
                 >
                   <div className="relative -mx-6 -mt-6 mb-1 h-40 overflow-hidden rounded-t-2xl bg-slate-200">
