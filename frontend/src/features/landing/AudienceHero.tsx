@@ -1,4 +1,4 @@
-import { BadgeCheck, FileCheck2, ShieldAlert, Truck, type LucideIcon } from 'lucide-react'
+import { BadgeCheck } from 'lucide-react'
 import type { ReactNode } from 'react'
 
 import { homeFor, useMe } from '../../hooks/useAuth'
@@ -22,46 +22,39 @@ const highlight = (text: string) => (
  * - agent: text left with a liability-minimum strip, and a photo of an agent with a client with
  *   facts floating over it, turning through sample carriers (AgentHeroCollage).
  */
-const HERO: Record<
-  Audience,
-  { eyebrow: string; icon: LucideIcon; title: ReactNode; text: string; facts: string[] }
-> = {
-  carrier: {
-    eyebrow: 'For carriers · your own record',
-    icon: Truck,
-    title: <>See your carrier {highlight('the way brokers do')}, and know exactly what to fix</>,
-    text: 'Carrier Safety Scan gives you a clear picture of your authority, insurance, safety and registration health, and explains what to do about each item.',
-    facts: ['What brokers see', 'What to fix first', 'DataQs filed for you'],
-  },
-  broker: {
-    eyebrow: 'For freight brokers · the vetting desk',
-    icon: ShieldAlert,
-    title: (
-      <>Vet any carrier {highlight('before you book the load')}, and spot the red flags early</>
-    ),
-    text: 'Check a carrier’s authority, insurance and safety record in one place, see the carriers it shares a phone, email or address with, and compare up to 3 side by side.',
-    facts: ['Booking check', 'Chameleon check', 'Compare up to 3'],
-  },
-  agent: {
-    eyebrow: 'For insurance agents · underwriting',
-    icon: FileCheck2,
-    title: <>Understand a trucking risk {highlight('before you quote it')}</>,
-    text: 'Look up any carrier’s insurance filings, authority, safety record, crashes and fleet, and save a dated Safety Score Report for your file.',
-    facts: ['Filings & renewal month', 'Crashes & roadside record', 'Fleet by VIN'],
-  },
-}
+const HERO: Record<Audience, { eyebrow: string; title: ReactNode; text: string; facts: string[] }> =
+  {
+    carrier: {
+      eyebrow: 'For carriers · your own record',
+      title: <>See your carrier {highlight('the way brokers do')}, and know exactly what to fix</>,
+      text: 'Carrier Safety Scan gives you a clear picture of your authority, insurance, safety and registration health, and explains what to do about each item.',
+      facts: ['What brokers see', 'What to fix first', 'DataQs filed for you'],
+    },
+    broker: {
+      eyebrow: 'For freight brokers · the vetting desk',
+      title: (
+        <>Vet any carrier {highlight('before you book the load')}, and spot the red flags early</>
+      ),
+      text: 'Check a carrier’s authority, insurance and safety record in one place, see the carriers it shares a phone, email or address with, and compare up to 3 side by side.',
+      facts: ['Booking check', 'Chameleon check', 'Compare up to 3'],
+    },
+    agent: {
+      eyebrow: 'For insurance agents · underwriting',
+      title: <>Understand a trucking risk {highlight('before you quote it')}</>,
+      text: 'Look up any carrier’s insurance filings, authority, safety record, crashes and fleet, and save a dated Safety Score Report for your file.',
+      facts: ['Filings & renewal month', 'Crashes & roadside record', 'Fleet by VIN'],
+    },
+  }
 
 export function AudienceHero({ audience }: { audience: Audience }) {
   const { data: user } = useMe()
   const page = HERO[audience]
   const centered = audience === 'broker'
-  const Icon = page.icon
 
   const eyebrow = (
     <p
       className={`font-label inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white ring-1 ring-white/25 backdrop-blur`}
     >
-      <Icon className="size-3.5 text-[var(--hero-highlight)]" aria-hidden />
       {page.eyebrow}
     </p>
   )
