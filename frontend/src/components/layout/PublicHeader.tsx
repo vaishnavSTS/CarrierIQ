@@ -2,7 +2,7 @@ import { ArrowRight, Menu, Phone, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
-import { AUDIENCE_PATH, audienceOfPath, type Audience } from '../../features/audience/audience'
+import { audienceOfPath, type Audience } from '../../features/audience/audience'
 import { STS_CONTACT } from '../../features/carrier-profile/packet/contact'
 import { homeFor, useMe } from '../../hooks/useAuth'
 import { formatPhone } from '../../utils/format'
@@ -17,9 +17,6 @@ const ACCOUNT: Record<Audience, { logIn: string; signUp: string }> = {
 }
 
 const MENU: { to: string; label: string }[] = [
-  { to: AUDIENCE_PATH.carrier, label: 'For carriers' },
-  { to: AUDIENCE_PATH.broker, label: 'For brokers' },
-  { to: AUDIENCE_PATH.agent, label: 'For insurance agents' },
   { to: '/methodology', label: 'How the score works' },
   { to: '/contact', label: 'Contact' },
 ]
@@ -28,8 +25,8 @@ const DEMO = '/contact?demo=1'
 
 /**
  * The public pages' header: a thin announcement bar with STS's phone number, then the logo,
- * the menu (the open audience highlighted), Log in, Free trial and Schedule a demo. Below
- * `lg` the menu folds into a ☰ panel.
+ * the menu, Log in, Free trial and Schedule a demo. Below `xl` the menu folds into a ☰ panel.
+ * Log in and Create account go to the open page's audience (carrier, broker or agent).
  */
 export function PublicHeader() {
   const { data: user } = useMe()
