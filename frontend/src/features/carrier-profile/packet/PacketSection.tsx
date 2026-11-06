@@ -243,7 +243,7 @@ function ItemBox({
       <div className={`font-semibold ${title}`}>{item.title}</div>
       {item.detail && <p className="mt-0.5 text-slate-700">{item.detail}</p>}
       {solution ? (
-        <p className="mt-1.5 rounded-md border border-emerald-200 bg-white/80 px-2.5 py-1 text-slate-700">
+        <p className="mt-1.5 rounded-md border border-emerald-200 bg-surface/80 px-2.5 py-1 text-slate-700">
           <span className="font-semibold text-emerald-700">How to fix it: </span>
           {solution.title && (
             <span className="font-semibold text-slate-900">{solution.title}. </span>
