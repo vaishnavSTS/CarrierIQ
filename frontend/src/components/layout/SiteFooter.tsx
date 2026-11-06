@@ -66,11 +66,7 @@ export function SiteFooter() {
       </div>
       <p className="mx-auto mt-6 max-w-7xl border-t border-slate-200 pt-4 text-center text-xs text-slate-500">
         © {new Date().getFullYear()} Sky Transport Solutions. All rights reserved. Carrier Safety
-        Scan™ is a trademark of Sky Transport Solutions.{' '}
-        {/* Kept small and last: the sources aren't part of the pages' own wording. */}
-        <Link to="/sources" className="text-slate-400 hover:text-slate-600 hover:underline">
-          Sources
-        </Link>
+        Scan™ is a trademark of Sky Transport Solutions.
       </p>
     </footer>
   )

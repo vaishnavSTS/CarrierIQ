@@ -1,5 +1,4 @@
 import { useMutation } from '@tanstack/react-query'
-import { Clock, Globe, Mail, MapPin, Phone } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
@@ -8,13 +7,12 @@ import { sendContactMessage } from '../api/contact'
 import { Field, FormError, SubmitButton } from '../features/auth/AuthCard'
 import { useTurnstile } from '../features/auth/useTurnstile'
 import { STS_CONTACT } from '../features/carrier-profile/packet/contact'
-import stsLogo from '../features/carrier-profile/packet/sts-logo.png'
-import { STS_HOURS, STS_LOCATIONS } from '../features/landing/stsInfo'
 import { formatPhone } from '../utils/format'
 
 const EMPTY = { full_name: '', email: '', phone: '', company: '', usdot: '', message: '' }
 
-/** Contact Us: how to reach Sky Transport Solutions, and a form that emails the team. */
+/** Contact Us: a form that emails the Sky Transport Solutions team. How else to reach them
+ * (phone, email, offices, hours) is in the site footer, shown once on every page. */
 export function ContactPage() {
   const [params] = useSearchParams()
   // "Fix it with Sky Transport Solutions" on a carrier's page says which carrier and what for.
@@ -63,16 +61,6 @@ export function ContactPage() {
         ? `We couldn’t send your message. Please call us at ${formatPhone(STS_CONTACT.phone)}.`
         : null)
 
-  const reach = [
-    {
-      icon: Phone,
-      label: formatPhone(STS_CONTACT.phone),
-      href: `tel:+1${STS_CONTACT.phone}`,
-    },
-    { icon: Mail, label: STS_CONTACT.email, href: `mailto:${STS_CONTACT.email}` },
-    { icon: Globe, label: STS_CONTACT.websiteLabel, href: STS_CONTACT.website },
-  ]
-
   return (
     // Compact, so the whole form and its Send button fit on a laptop's first screen.
     <div className="mx-auto max-w-5xl px-4 py-6 md:py-8">
@@ -84,38 +72,7 @@ export function ContactPage() {
         </p>
       </header>
 
-      <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_1.4fr]">
-        <aside className="rounded-2xl border border-slate-200 bg-surface p-6">
-          <img src={stsLogo} alt="Sky Transport Solutions" className="h-12 w-auto object-contain" />
-          <h2 className="mt-3 font-semibold text-slate-900">{STS_CONTACT.company}</h2>
-          <ul className="mt-4 space-y-3 text-sm text-slate-700">
-            {reach.map(({ icon: Icon, label, href }) => (
-              <li key={label}>
-                <a
-                  href={href}
-                  className="tap flex items-center gap-2.5 break-all font-medium text-accent-strong hover:underline"
-                >
-                  <Icon className="size-4 shrink-0" aria-hidden />
-                  {label}
-                </a>
-              </li>
-            ))}
-            {STS_LOCATIONS.map(({ label, address }) => (
-              <li key={label} className="flex gap-2.5">
-                <MapPin className="mt-0.5 size-4 shrink-0 text-slate-500" aria-hidden />
-                <span>
-                  <span className="block font-medium text-slate-900">{label}</span>
-                  {address}
-                </span>
-              </li>
-            ))}
-            <li className="flex gap-2.5">
-              <Clock className="mt-0.5 size-4 shrink-0 text-slate-500" aria-hidden />
-              {STS_HOURS}
-            </li>
-          </ul>
-        </aside>
-
+      <div className="mx-auto mt-6 max-w-2xl">
         <section className="rounded-2xl border border-slate-200 bg-surface p-6">
           {send.isSuccess ? (
             <div role="status">
