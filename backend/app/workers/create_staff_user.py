@@ -8,6 +8,7 @@ Asks for the password without echoing it. Creates the STS organization on first 
 
 import getpass
 import sys
+from datetime import UTC, datetime
 
 from app.core.exceptions import ConflictError
 from app.core.security import hash_password
@@ -38,6 +39,8 @@ def create_staff_user(email: str, full_name: str, role: UserRole, password: str)
             password_hash=hash_password(password),
             role=role,
             status=UserStatus.ACTIVE,
+            # Made by an admin, not a sign-up: no confirmation email is sent, so none is required.
+            email_verified_at=datetime.now(UTC),
         )
         db.add(user)
         db.commit()
