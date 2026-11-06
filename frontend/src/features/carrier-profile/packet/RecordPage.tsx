@@ -17,6 +17,8 @@ import { SectionHeading } from './SectionHeading'
 const MAX_STEPS = 6
 const MAX_CRASHES = 6
 const MAX_CODES = 10
+/** FMCSA severity (1–10) from which a violation is marked in red in the summary. */
+const HIGH_SEVERITY = 7
 
 const day = (value: Date) =>
   value.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
@@ -155,7 +157,12 @@ export function RecordPage({
                   <th className="py-1 pl-3 font-medium">Safety category</th>
                   <th className="w-16 py-1 pl-3 text-center font-medium">Count</th>
                   <th className="w-16 py-1 pl-3 text-center font-medium">Out of service</th>
-                  <th className="w-16 py-1 pl-3 text-center font-medium">Severity</th>
+                  <th
+                    className="w-20 py-1 pl-3 text-center font-medium"
+                    title="FMCSA's weight for this kind of violation: 1 least serious, 10 most"
+                  >
+                    Severity (1–10)
+                  </th>
                   <th className="py-1 pl-3 font-medium">Violation code</th>
                 </tr>
               </thead>
@@ -177,7 +184,19 @@ export function RecordPage({
                     >
                       {r.outOfService}
                     </td>
-                    <td className="py-1 pl-3 text-center">{r.severity}</td>
+                    <td
+                      className={`whitespace-nowrap py-1 pl-3 text-center ${
+                        r.severity >= HIGH_SEVERITY ? 'font-semibold text-red-700' : ''
+                      }`}
+                    >
+                      {r.severity}
+                      <span
+                        className={`text-[11px] ${r.severity >= HIGH_SEVERITY ? 'text-red-700/70' : 'text-slate-400'}`}
+                      >
+                        {' '}
+                        / 10
+                      </span>
+                    </td>
                     <td className="whitespace-nowrap py-1 pl-3 font-mono text-[11px] text-slate-500">
                       {violationCode(r.code)}
                     </td>
