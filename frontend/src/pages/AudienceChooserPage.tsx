@@ -198,11 +198,16 @@ export function AudienceChooserPage() {
             ))}
           </div>
 
-          <div className="mt-6 flex justify-center text-sm text-white/90">
-            <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+          {/* The trial terms, on a dark pill so they read on the bright gradient. */}
+          <div className="mt-8 flex justify-center">
+            <ul className="flex flex-wrap justify-center gap-x-6 gap-y-2 rounded-2xl bg-[#060d24]/60 px-6 py-3 text-[15px] font-medium text-white shadow-lg ring-1 ring-white/15 backdrop-blur sm:rounded-full">
               {['30 days free', 'No card needed to start', 'Cancel any time'].map((fact) => (
                 <li key={fact} className="flex items-center gap-2">
-                  <Check className="size-4 text-[var(--hero-highlight)]" aria-hidden />
+                  <Check
+                    className="size-4 shrink-0 text-[var(--hero-highlight)]"
+                    strokeWidth={3}
+                    aria-hidden
+                  />
                   {fact}
                 </li>
               ))}
