@@ -43,6 +43,7 @@ TABLES = {
     "carrier_claims",
     "users",
     "organization_carriers",
+    "monitored_carriers",  # Admin Monitored DOTs
     # Estimated ISS lookup tables
     "iss_references",
     "iss_snapshots",

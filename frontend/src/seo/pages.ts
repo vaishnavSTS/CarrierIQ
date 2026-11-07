@@ -141,6 +141,7 @@ const SECTIONS: [prefix: string, title: string][] = [
   ['/service-requests', 'Service requests'],
   ['/invoices', 'Invoices'],
   ['/high-iss', 'High Safety Score'],
+  ['/monitored', 'Admin Monitored DOTs'],
 ]
 
 /** The title and description for an address; unknown public addresses are "Page not found". */
@@ -171,6 +172,7 @@ export const ROBOTS_DISALLOW = [
   '/service-requests',
   '/invoices',
   '/high-iss',
+  '/monitored',
   '/try/',
   '/c/',
   '/register/google',

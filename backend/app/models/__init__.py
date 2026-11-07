@@ -37,6 +37,7 @@ from app.models.iss_pull_in_rate import IssPullInRate
 from app.models.iss_reference import IssReference
 from app.models.iss_snapshot import IssSnapshot
 from app.models.job import Job
+from app.models.monitored_carrier import MonitoredCarrier
 from app.models.officer import Officer
 from app.models.organization import Organization
 from app.models.organization_carrier import OrganizationCarrier
@@ -93,6 +94,7 @@ __all__ = [
     "IssReference",
     "IssSnapshot",
     "Job",
+    "MonitoredCarrier",
     "Officer",
     "Organization",
     "OrganizationCarrier",

@@ -50,7 +50,7 @@ from app.core.security import (
     verify_password,
 )
 from app.db.base import Base
-from app.models import CarrierClaim, Organization, OrganizationCarrier, User
+from app.models import CarrierClaim, MonitoredCarrier, Organization, OrganizationCarrier, User
 from app.models.enums import OrganizationKind, UserRole, UserStatus
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import (
@@ -104,6 +104,8 @@ ACCOUNT_INVITE_HOURS = 72  # the "choose your password" link of an account STS a
 # What goes with an account when STS deletes it. Any other record that names the account or its
 # company (DataQs work, service requests, invoices) keeps it: such an account is disabled instead.
 _DELETED_WITH_ACCOUNT = {"users", "carrier_claims", "organization_carriers"}
+# Records that only note who added them: they stay, without the name (Admin Monitored DOTs).
+_UNNAMED_WITH_ACCOUNT = {"monitored_carriers"}
 _RECORD_LABELS = {
     "compliance_requests": "service requests",
     "invoices": "invoices",
@@ -639,6 +641,11 @@ class AuthService:
                 f"{user.email} can't be deleted: it has {', '.join(records)} on record. "
                 "Disable it instead."
             )
+        self.db.execute(
+            update(MonitoredCarrier)
+            .where(MonitoredCarrier.added_by_id == user.id)
+            .values(added_by_id=None)
+        )
         if with_company:
             org_id = user.organization_id
             self.db.execute(delete(CarrierClaim).where(CarrierClaim.organization_id == org_id))
@@ -662,7 +669,7 @@ class AuthService:
         other than the rows deleted with the account."""
         found: set[str] = set()
         for table in Base.metadata.sorted_tables:
-            if table.name in _DELETED_WITH_ACCOUNT:
+            if table.name in _DELETED_WITH_ACCOUNT | _UNNAMED_WITH_ACCOUNT:
                 continue
             for fk in table.foreign_keys:
                 target = fk.column.table.name

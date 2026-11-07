@@ -43,6 +43,7 @@ import { ServiceRequestsPage } from './pages/ServiceRequestsPage'
 import { InvoicePage } from './pages/InvoicePage'
 import { InvoicesPage } from './pages/InvoicesPage'
 import { HighIssPage } from './pages/HighIssPage'
+import { MonitoredDotsPage } from './pages/MonitoredDotsPage'
 
 /**
  * Public: landing, login, sign-up (clients at /register, brokers at /broker/register).
@@ -103,6 +104,7 @@ export const router = createBrowserRouter([
           { path: 'service-requests', element: <ServiceRequestsPage /> },
           { path: 'invoices', element: <InvoicesPage /> },
           { path: 'high-iss', element: <HighIssPage /> },
+          { path: 'monitored', element: <MonitoredDotsPage /> },
           { path: 'invoices/:invoiceId', element: <InvoicePage /> },
         ],
       },
