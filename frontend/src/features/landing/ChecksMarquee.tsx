@@ -52,8 +52,8 @@ const CHECKS: Record<Audience, string[]> = {
 }
 
 /**
- * A strip under the hero with what gets checked, scrolling slowly sideways (paused on hover;
- * still, and wrapping, for people who prefer reduced motion).
+ * A strip under the hero with what gets checked, scrolling slowly sideways, without stopping
+ * (still, and wrapping, for people who prefer reduced motion).
  */
 export function ChecksMarquee({ audience }: { audience: Audience }) {
   const checks = CHECKS[audience]

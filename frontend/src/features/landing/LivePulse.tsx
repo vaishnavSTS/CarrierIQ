@@ -134,7 +134,7 @@ export function LiveStrip() {
       <div
         aria-label="Carriers that just registered"
         role="region"
-        className="marquee marquee-nonstop relative min-w-0 flex-1 overflow-hidden border-t border-white/10 bg-white/5 py-2.5 lg:border-l lg:border-t-0"
+        className="marquee relative min-w-0 flex-1 overflow-hidden border-t border-white/10 bg-white/5 py-2.5 lg:border-l lg:border-t-0"
       >
         {items.length > 0 ? (
           /* Slower than the section's strips: about 3 seconds per carrier. */
@@ -208,7 +208,7 @@ export function LivePulse({ number }: { number?: string }) {
                 aria-label={
                   i === 0 ? 'Carriers that just registered' : 'More carriers that just registered'
                 }
-                className={`marquee marquee-nonstop relative overflow-hidden rounded-2xl bg-white/6 py-3.5 ring-1 ring-white/10 ${i === 1 ? 'marquee-reverse' : ''}`}
+                className={`marquee relative overflow-hidden rounded-2xl bg-white/6 py-3.5 ring-1 ring-white/10 ${i === 1 ? 'marquee-reverse' : ''}`}
               >
                 <div className="marquee-track flex w-max">
                   <RecentRow list={list} hidden={false} />

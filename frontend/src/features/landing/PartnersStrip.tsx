@@ -26,7 +26,7 @@ const PARTNERS = [
   { name: 'Summit Truck Center', logo: summit },
 ]
 
-/** A strip of partner logos, moving sideways (paused on hover; still with reduced motion). */
+/** A strip of partner logos, moving sideways without stopping (still with reduced motion). */
 export function PartnersStrip() {
   const row = (hidden: boolean) => (
     <ul
