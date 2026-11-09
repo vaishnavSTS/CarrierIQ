@@ -32,10 +32,11 @@ function Report({ usdotNumber }: { usdotNumber: number }) {
     if (error) document.body.dataset.reportError = error.message
   }, [error])
 
-  // Ready once paginateReport has filled the A4 pages and nothing is still loading.
+  // Ready once the fonts have loaded and paginateReport has filled the A4 pages.
   useEffect(() => {
     const timer = window.setInterval(() => {
-      const laidOut = document.querySelector('#carrier-packet-pages .print-page')
+      const fontsLoaded = !document.fonts || document.fonts.status === 'loaded'
+      const laidOut = fontsLoaded && document.querySelector('#carrier-packet-pages .print-page')
       const failed = document
         .querySelector('#carrier-packet')
         ?.textContent?.includes('Could not load every section')

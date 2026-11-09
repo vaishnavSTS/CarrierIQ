@@ -5,8 +5,11 @@ import { RouterProvider } from 'react-router-dom'
 
 import { ApiError } from './api/client'
 import { ME_KEY } from './hooks/useAuth'
-// The public pages' type (self-hosted, so no request to a font service): scoped to .landing-page
-// in index.css; the portals and the Safety Score Report keep the app font.
+// The app font (Inter) and the public pages' type, all self-hosted (no request to a font service),
+// so every computer, and the server printing Safety Score Reports, draws the same letters. The
+// public pages' faces are scoped to .landing-page in index.css; the portals and the Safety Score
+// Report keep the app font.
+import '@fontsource-variable/inter'
 import '@fontsource-variable/bricolage-grotesque/opsz.css'
 import '@fontsource-variable/jetbrains-mono'
 import '@fontsource-variable/manrope'

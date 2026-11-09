@@ -81,6 +81,9 @@ class BrowserReportRenderer:
                             raise ReportUnavailableError(
                                 failed or "The Safety Score Report could not be built"
                             )
+                        # The bundled fonts (Inter, JetBrains Mono) must be in before printing, or
+                        # the server's own fonts would stand in for them.
+                        page.evaluate("document.fonts.ready.then(() => true)")
                         # Lay the report out on its A4 pages again, as printing from the app does.
                         page.evaluate("window.dispatchEvent(new Event('beforeprint'))")
                         page.wait_for_timeout(500)
