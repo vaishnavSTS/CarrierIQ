@@ -104,8 +104,9 @@ ACCOUNT_INVITE_HOURS = 72  # the "choose your password" link of an account STS a
 # What goes with an account when STS deletes it. Any other record that names the account or its
 # company (DataQs work, service requests, invoices) keeps it: such an account is disabled instead.
 _DELETED_WITH_ACCOUNT = {"users", "carrier_claims", "organization_carriers"}
-# Records that only note who added them: they stay, without the name (Admin Monitored DOTs).
-_UNNAMED_WITH_ACCOUNT = {"monitored_carriers"}
+# Records that only note who added or did them: they stay, without the name (Admin Monitored DOTs,
+# and the account log, which keeps the email).
+_UNNAMED_WITH_ACCOUNT = {"monitored_carriers", "account_events"}
 _RECORD_LABELS = {
     "compliance_requests": "service requests",
     "invoices": "invoices",

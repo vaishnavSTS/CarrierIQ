@@ -44,6 +44,7 @@ TABLES = {
     "users",
     "organization_carriers",
     "monitored_carriers",  # Admin Monitored DOTs
+    "account_events",  # Account logs
     # Estimated ISS lookup tables
     "iss_references",
     "iss_snapshots",
@@ -99,6 +100,7 @@ APPEND_ONLY_TABLES = {
     "carrier_snapshots",
     "authority_history",
     "dataqs_audit_events",
+    "account_events",
 }
 
 

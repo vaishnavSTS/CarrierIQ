@@ -1,4 +1,4 @@
-import { Search, Truck, UserPlus, X } from 'lucide-react'
+import { History, Search, Truck, UserPlus, X } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -275,6 +275,12 @@ function AccountRow({
       </td>
       <td className="whitespace-nowrap py-3 pr-4 text-xs text-slate-500">
         {account.last_login_at ? formatDateTime(account.last_login_at) : 'Never'}
+        <Link
+          to={`/account-logs?account=${account.id}`}
+          className="mt-1 block text-accent-strong hover:underline"
+        >
+          History
+        </Link>
       </td>
       <td className="py-3">
         {!isMe && (
@@ -401,6 +407,13 @@ export function AccountsPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link
+            to="/account-logs"
+            className="flex items-center gap-1.5 rounded-md bg-surface px-3 py-2 text-sm font-medium text-slate-800 ring-1 ring-slate-300 hover:bg-slate-50"
+          >
+            <History className="size-4" aria-hidden />
+            Account logs
+          </Link>
           <button
             type="button"
             onClick={() => startAdding('carrier')}

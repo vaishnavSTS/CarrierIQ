@@ -7,6 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api.bot_protection import FAILED_LOGINS_PER_EMAIL, LOGIN_PER_IP, get_turnstile_verifier
+from app.api.v1.routes.account_log import get_account_log
 from app.api.v1.routes.auth import get_auth_service
 from app.core.config import get_settings
 from app.core.exceptions import RateLimitedError, UnauthorizedError
@@ -20,6 +21,16 @@ BODY = {"email": "a@b.co", "password": "wrong-password"}
 class FakeService:
     def login(self, data: object) -> None:
         raise UnauthorizedError("Email or password is incorrect")
+
+
+class FakeLog:
+    """The account log, without a database."""
+
+    def account(self, email: str) -> None:
+        return None
+
+    def record(self, *args: object, **kwargs: object) -> None:
+        pass
 
 
 class FakeVerifier:
@@ -36,8 +47,10 @@ class FakeVerifier:
 def api() -> Iterator[TestClient]:
     limiter.reset()
     app.dependency_overrides[get_auth_service] = lambda: FakeService()
+    app.dependency_overrides[get_account_log] = lambda: FakeLog()
     yield TestClient(app)
     app.dependency_overrides.pop(get_auth_service, None)
+    app.dependency_overrides.pop(get_account_log, None)
     app.dependency_overrides.pop(get_turnstile_verifier, None)
     limiter.reset()
 

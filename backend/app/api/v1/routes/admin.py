@@ -1,12 +1,13 @@
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Path, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Path, Request, status
 from sqlalchemy.orm import Session
 
 from app.api.auth import require_sts_admin
+from app.api.v1.routes.account_log import Log
 from app.api.v1.routes.auth import Mailer
 from app.db.session import get_db
-from app.models import User
+from app.models import AccountEventKind, User
 from app.models.enums import UserRole, UserStatus
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import (
@@ -30,6 +31,7 @@ def get_auth_service(db: Annotated[Session, Depends(get_db)]) -> AuthService:
 
 Service = Annotated[AuthService, Depends(get_auth_service)]
 StsAdmin = Annotated[User, Depends(require_sts_admin)]
+E = AccountEventKind
 
 
 @router.get("/users", response_model=list[AdminUserOut])
@@ -62,59 +64,111 @@ def _invited(
 
 @router.post("/staff", response_model=AccountInviteOut, status_code=status.HTTP_201_CREATED)
 def invite_staff(
-    data: StaffInviteIn, _: StsAdmin, service: Service, tasks: BackgroundTasks, mailer: Mailer
+    data: StaffInviteIn,
+    request: Request,
+    admin: StsAdmin,
+    service: Service,
+    tasks: BackgroundTasks,
+    mailer: Mailer,
+    log: Log,
 ) -> AccountInviteOut:
     """Add an STS admin or analyst. They get an email with a link to choose their password."""
     user, token = service.invite_staff(data.email, data.full_name, UserRole(data.role))
+    role = "STS admin" if user.role == UserRole.STS_ADMIN else "STS analyst"
+    log.record(E.INVITED, user=user, detail=f"Added as {role}", actor=admin, request=request)
     return _invited(service, user, token, tasks, mailer)
 
 
 @router.post("/clients", response_model=AccountInviteOut, status_code=status.HTTP_201_CREATED)
 def invite_client(
-    data: ClientInviteIn, admin: StsAdmin, service: Service, tasks: BackgroundTasks, mailer: Mailer
+    data: ClientInviteIn,
+    request: Request,
+    admin: StsAdmin,
+    service: Service,
+    tasks: BackgroundTasks,
+    mailer: Mailer,
+    log: Log,
 ) -> AccountInviteOut:
     """Add a carrier account, as a sign-up would make it, with its USDOT verified and claimed.
     They get an email with a link to choose their password; their trial starts when they do."""
     user, token = service.invite_client(data, admin)
+    detail = f"Added as a carrier, USDOT {data.usdot_number}"
+    log.record(E.INVITED, user=user, detail=detail, actor=admin, request=request)
     return _invited(service, user, token, tasks, mailer)
 
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(user_id: Annotated[int, Path(gt=0)], admin: StsAdmin, service: Service) -> None:
+def delete_user(
+    user_id: Annotated[int, Path(gt=0)],
+    request: Request,
+    admin: StsAdmin,
+    service: Service,
+    log: Log,
+) -> None:
     """Remove an account for good (and its company, if it was the only account). 409 when other
-    records name it: disable it instead."""
+    records name it: disable it instead. Its account log stays, under its email."""
+    target = service.users.get(user_id)
+    email, name = (target.email, target.full_name) if target else (None, None)
     service.delete_account(user_id, admin)
+    log.record(E.DELETED, email=email, detail=name, actor=admin, request=request)
 
 
 @router.post("/users/{user_id}/reactivate", response_model=AdminUserOut)
 def reactivate_user(
-    user_id: Annotated[int, Path(gt=0)], _: StsAdmin, service: Service
+    user_id: Annotated[int, Path(gt=0)],
+    request: Request,
+    admin: StsAdmin,
+    service: Service,
+    log: Log,
 ) -> AdminUserOut:
     """Let a disabled account log in again."""
-    return service.reactivate(user_id)
+    out = service.reactivate(user_id)
+    log.record(E.REACTIVATED, user=service.users.get(user_id), actor=admin, request=request)
+    return out
 
 
 @router.post("/users/{user_id}/disable", response_model=AdminUserOut)
 def disable_user(
-    user_id: Annotated[int, Path(gt=0)], admin: StsAdmin, service: Service
+    user_id: Annotated[int, Path(gt=0)],
+    request: Request,
+    admin: StsAdmin,
+    service: Service,
+    log: Log,
 ) -> AdminUserOut:
-    return service.disable(user_id, admin)
+    out = service.disable(user_id, admin)
+    log.record(E.DISABLED, user=service.users.get(user_id), actor=admin, request=request)
+    return out
 
 
 @router.post("/users/{user_id}/carriers", response_model=AdminUserOut)
 def add_carrier(
-    user_id: Annotated[int, Path(gt=0)], data: AddCarrierIn, admin: StsAdmin, service: Service
+    user_id: Annotated[int, Path(gt=0)],
+    data: AddCarrierIn,
+    request: Request,
+    admin: StsAdmin,
+    service: Service,
+    log: Log,
 ) -> AdminUserOut:
     """Link a USDOT number to the client's organization, verified; it shows in their portal."""
-    return service.add_carrier(user_id, data.usdot_number, admin)
+    out = service.add_carrier(user_id, data.usdot_number, admin)
+    detail = f"USDOT {data.usdot_number}, verified"
+    user = service.users.get(user_id)
+    log.record(E.CARRIER_LINKED, user=user, detail=detail, actor=admin, request=request)
+    return out
 
 
 @router.post("/users/{user_id}/claims/{usdot_number}/release", response_model=AdminUserOut)
 def release_claim(
     user_id: Annotated[int, Path(gt=0)],
     usdot_number: Annotated[int, Path(gt=0, lt=100_000_000)],
-    _: StsAdmin,
+    request: Request,
+    admin: StsAdmin,
     service: Service,
+    log: Log,
 ) -> AdminUserOut:
     """Free a USDOT number this account claimed, so another carrier can sign up with it."""
-    return service.release_claim(user_id, usdot_number)
+    out = service.release_claim(user_id, usdot_number)
+    user = service.users.get(user_id)
+    detail = f"USDOT {usdot_number}"
+    log.record(E.CLAIM_RELEASED, user=user, detail=detail, actor=admin, request=request)
+    return out

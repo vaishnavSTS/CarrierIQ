@@ -20,19 +20,27 @@ from app.api.bot_protection import (
     record_failed_login,
     require_human,
 )
+from app.api.v1.routes.account_log import Log
 from app.core.config import get_settings
 from app.core.exceptions import (
     AccountDisabledError,
     AccountPendingError,
     CarrierSafetyScanError,
+    EmailNotVerifiedError,
     NotFoundError,
+    RateLimitedError,
     UnauthorizedError,
 )
 from app.core.google_oauth import GoogleIdentity, GoogleOAuthClient
-from app.core.security import create_purpose_token, create_session_token, read_purpose_token
+from app.core.security import (
+    create_purpose_token,
+    create_session_token,
+    read_purpose_token,
+    read_session_token,
+)
 from app.db.session import get_db
 from app.ingestion.socrata_client import SocrataClient
-from app.models import User
+from app.models import AccountEventKind, User
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth import (
     AuthOptionsOut,
@@ -151,6 +159,55 @@ def _start_session(response: Response, user: User) -> None:
     )
 
 
+# --- Account log (Account logs page): every login, failed login, logout and sign-up -------------
+
+E = AccountEventKind
+
+
+def _log_in(response: Response, user: User, log: Log, request: Request, how: str) -> None:
+    """Starts the session and writes the login to the account log."""
+    _start_session(response, user)
+    log.record(E.LOGIN, user=user, detail=how, request=request)
+
+
+def _signed_up(
+    log: Log, request: Request, user: User, kind: str, method: str, *, confirmed: bool = True
+) -> None:
+    detail = f"{kind} sign-up, {method}"
+    if not confirmed:
+        detail += "; waiting for the emailed link to be clicked"
+    log.record(E.SIGNED_UP, user=user, detail=detail, request=request)
+
+
+def _refusal(error: CarrierSafetyScanError) -> str | None:
+    """Why a login was refused, when the account's state was the reason."""
+    if isinstance(error, RateLimitedError):
+        return "Too many wrong passwords: locked for a while"
+    if isinstance(error, AccountPendingError):
+        return "Account waiting for approval"
+    if isinstance(error, AccountDisabledError):
+        return "Account is disabled"
+    if isinstance(error, EmailNotVerifiedError):
+        return "Email not confirmed yet"
+    return None
+
+
+def _password_refusal(error: CarrierSafetyScanError, user: User | None) -> str:
+    if (reason := _refusal(error)) is not None:
+        return reason
+    if user is None:
+        return "No account with this email"
+    if user.password_hash is None:
+        return "No password set (signs in with Google, or never chose one)"
+    return "Wrong password"
+
+
+def _session_user(request: Request, db: Session) -> User | None:
+    token = request.cookies.get(get_settings().auth_cookie_name)
+    user_id = read_session_token(token) if token else None
+    return UserRepository(db).get(user_id) if user_id is not None else None
+
+
 @router.get("/options", response_model=AuthOptionsOut)
 def options() -> AuthOptionsOut:
     """Which sign-in methods the login and sign-up pages should offer, and whether clients may
@@ -170,16 +227,23 @@ def options() -> AuthOptionsOut:
     dependencies=[Depends(limit_signup), Depends(require_human)],
 )
 def register(
-    data: RegisterIn, response: Response, service: Service, tasks: BackgroundTasks, mailer: Mailer
+    data: RegisterIn,
+    request: Request,
+    response: Response,
+    service: Service,
+    tasks: BackgroundTasks,
+    mailer: Mailer,
+    log: Log,
 ) -> UserOut:
     """A client signs up and is logged in at once; STS sees the new account in a pop-up. They get
     a welcome email."""
     must_confirm = _must_confirm_email(mailer)
     user = service.register(data, verified=not must_confirm)
+    _signed_up(log, request, user, "Carrier", "with a password", confirmed=not must_confirm)
     if must_confirm:
         _send_link(tasks, service, user, mailer)
     else:
-        _start_session(response, user)
+        _log_in(response, user, log, request, "Right after signing up")
         _welcome(tasks, user, data.company_name, mailer)
     return service.user_out(user)
 
@@ -192,6 +256,8 @@ def register(
 )
 def register_broker(
     data: BrokerRegisterIn,
+    request: Request,
+    log: Log,
     response: Response,
     service: Service,
     checker: Checker,
@@ -203,10 +269,11 @@ def register_broker(
     authority = checker.check(data.id_kind, data.id_number)
     must_confirm = _must_confirm_email(mailer)
     user = service.register_broker(data, authority, verified=not must_confirm)
+    _signed_up(log, request, user, "Broker", "with a password", confirmed=not must_confirm)
     if must_confirm:
         _send_link(tasks, service, user, mailer)
     else:
-        _start_session(response, user)
+        _log_in(response, user, log, request, "Right after signing up")
         _welcome(tasks, user, data.company_name, mailer)
     return service.user_out(user)
 
@@ -219,6 +286,8 @@ def register_broker(
 )
 def register_insurance_agent(
     data: InsuranceRegisterIn,
+    request: Request,
+    log: Log,
     response: Response,
     service: Service,
     tasks: BackgroundTasks,
@@ -228,10 +297,11 @@ def register_insurance_agent(
     to check: the license number they give is shown to STS on the Accounts page."""
     must_confirm = _must_confirm_email(mailer)
     user = service.register_insurance_agent(data, verified=not must_confirm)
+    _signed_up(log, request, user, "Insurance agent", "with a password", confirmed=not must_confirm)
     if must_confirm:
         _send_link(tasks, service, user, mailer)
     else:
-        _start_session(response, user)
+        _log_in(response, user, log, request, "Right after signing up")
         _welcome(tasks, user, data.company_name, mailer)
     return service.user_out(user)
 
@@ -241,16 +311,23 @@ def register_insurance_agent(
     response_model=UserOut,
     dependencies=[Depends(limit_login), Depends(require_human)],
 )
-def login(data: LoginIn, response: Response, service: Service) -> UserOut:
-    """Sets the session cookie. `portal` in the answer says which portal to open."""
-    check_failed_logins(data.email)
+def login(
+    data: LoginIn, request: Request, response: Response, service: Service, log: Log
+) -> UserOut:
+    """Sets the session cookie. `portal` in the answer says which portal to open. Every try is
+    written to the account log, with why a refused one was refused (never the password)."""
     try:
+        check_failed_logins(data.email)
         user = service.login(data)
-    except UnauthorizedError:
-        record_failed_login(data.email)
+    except CarrierSafetyScanError as error:
+        if isinstance(error, UnauthorizedError):
+            record_failed_login(data.email)
+        known = log.account(data.email)
+        reason = _password_refusal(error, known)
+        log.record(E.LOGIN_FAILED, user=known, email=data.email, detail=reason, request=request)
         raise
     clear_failed_logins(data.email)
-    _start_session(response, user)
+    _log_in(response, user, log, request, "Password")
     return service.user_out(user)
 
 
@@ -259,6 +336,8 @@ def login(data: LoginIn, response: Response, service: Service) -> UserOut:
 )
 def verify_email(
     data: VerifyEmailIn,
+    request: Request,
+    log: Log,
     response: Response,
     service: Service,
     tasks: BackgroundTasks,
@@ -270,7 +349,8 @@ def verify_email(
     user = service.verify_email(data.token)
     if user is None:
         return None
-    _start_session(response, user)
+    log.record(E.EMAIL_CONFIRMED, user=user, request=request)
+    _log_in(response, user, log, request, "Email confirmation link")
     _welcome(tasks, user, service.users.organization(user.organization_id).name, mailer)
     return service.user_out(user)
 
@@ -297,7 +377,12 @@ def resend_verification(
     dependencies=[Depends(limit_forgot_password), Depends(require_human)],
 )
 def forgot_password(
-    data: ForgotPasswordIn, service: Service, tasks: BackgroundTasks, mailer: Mailer
+    data: ForgotPasswordIn,
+    request: Request,
+    service: Service,
+    tasks: BackgroundTasks,
+    mailer: Mailer,
+    log: Log,
 ) -> dict[str, bool]:
     """Emails a reset link if the account exists. The answer never says whether it does."""
     found = service.reset_token_for(data.email)
@@ -305,19 +390,28 @@ def forgot_password(
         user, token = found
         email = password_reset_email(user, token, PASSWORD_RESET_MINUTES)
         tasks.add_task(send_password_reset, email, mailer)
+        log.record(E.PASSWORD_RESET_ASKED, user=user, detail="Reset link emailed", request=request)
     return {"ok": True}
 
 
 @router.post("/password/reset", dependencies=[Depends(limit_reset_password)])
-def reset_password(data: ResetPasswordIn, service: Service) -> dict[str, bool]:
+def reset_password(
+    data: ResetPasswordIn, request: Request, service: Service, log: Log
+) -> dict[str, bool]:
     """Sets a new password from an emailed link. The user then logs in with it."""
     user = service.reset_password(data.token, data.password)
     clear_failed_logins(user.email)
+    log.record(E.PASSWORD_CHANGED, user=user, detail="Set with the emailed link", request=request)
     return {"ok": True}
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-def logout(response: Response) -> None:
+def logout(
+    request: Request, response: Response, log: Log, db: Annotated[Session, Depends(get_db)]
+) -> None:
+    user = _session_user(request, db)
+    if user is not None:
+        log.record(E.LOGOUT, user=user, request=request)
     _clear_cookie(response, get_settings().auth_cookie_name)
 
 
@@ -351,20 +445,28 @@ def google_callback(
     request: Request,
     google: Google,
     service: Service,
+    log: Log,
     code: str | None = None,
     state: str | None = None,
 ) -> RedirectResponse:
     expected = request.cookies.get(GOOGLE_STATE_COOKIE)
     if not code or not state or not expected or not secrets.compare_digest(state, expected):
         return _to_login("failed")  # cancelled on Google's page, or a forged / stale request
+    identity: GoogleIdentity | None = None
     try:
         identity = google.exchange(code)
         user = service.google_sign_in(identity)
-    except AccountPendingError:
-        return _to_login("pending")
-    except AccountDisabledError:
-        return _to_login("disabled")
-    except CarrierSafetyScanError:
+    except CarrierSafetyScanError as error:
+        if identity is not None:  # Google said who it was: keep the refusal in the account log
+            known = log.account(identity.email)
+            reason = f"Google: {_refusal(error) or error}"
+            log.record(
+                E.LOGIN_FAILED, user=known, email=identity.email, detail=reason, request=request
+            )
+        if isinstance(error, AccountPendingError):
+            return _to_login("pending")
+        if isinstance(error, AccountDisabledError):
+            return _to_login("disabled")
         return _to_login("failed")
 
     if user is None:
@@ -381,7 +483,7 @@ def google_callback(
         _set_cookie(response, GOOGLE_SIGNUP_COOKIE, token, GOOGLE_SIGNUP_MINUTES * 60)
     else:
         response = RedirectResponse(HOME[user.role.portal], status_code=302)
-        _start_session(response, user)
+        _log_in(response, user, log, request, "Google")
     _clear_cookie(response, GOOGLE_STATE_COOKIE)
     _clear_cookie(response, GOOGLE_PORTAL_COOKIE)
     return response
@@ -428,6 +530,7 @@ def google_signup_pending(request: Request) -> GoogleSignupPendingOut:
 def google_signup_complete(
     data: GoogleSignupIn,
     request: Request,
+    log: Log,
     response: Response,
     service: Service,
     tasks: BackgroundTasks,
@@ -436,7 +539,8 @@ def google_signup_complete(
     """Company, mobile number and USDOT for a new Google user, who is then logged in."""
     user = service.complete_google_signup(_pending_google_signup(request), data)
     _clear_cookie(response, GOOGLE_SIGNUP_COOKIE)
-    _start_session(response, user)
+    _signed_up(log, request, user, "Carrier", "with Google")
+    _log_in(response, user, log, request, "Right after signing up")
     _welcome(tasks, user, data.company_name, mailer)
     return service.user_out(user)
 
@@ -450,6 +554,7 @@ def google_signup_complete(
 def broker_google_signup_complete(
     data: BrokerGoogleSignupIn,
     request: Request,
+    log: Log,
     response: Response,
     service: Service,
     checker: Checker,
@@ -461,7 +566,8 @@ def broker_google_signup_complete(
     authority = checker.check(data.id_kind, data.id_number)
     user = service.complete_google_broker_signup(identity, data, authority)
     _clear_cookie(response, GOOGLE_SIGNUP_COOKIE)
-    _start_session(response, user)
+    _signed_up(log, request, user, "Broker", "with Google")
+    _log_in(response, user, log, request, "Right after signing up")
     _welcome(tasks, user, data.company_name, mailer)
     return service.user_out(user)
 
@@ -475,6 +581,7 @@ def broker_google_signup_complete(
 def insurance_google_signup_complete(
     data: InsuranceGoogleSignupIn,
     request: Request,
+    log: Log,
     response: Response,
     service: Service,
     tasks: BackgroundTasks,
@@ -483,6 +590,7 @@ def insurance_google_signup_complete(
     """Agency, mobile number and NPN for a new Google user signing up as an insurance agent."""
     user = service.complete_google_insurance_signup(_pending_google_signup(request), data)
     _clear_cookie(response, GOOGLE_SIGNUP_COOKIE)
-    _start_session(response, user)
+    _signed_up(log, request, user, "Insurance agent", "with Google")
+    _log_in(response, user, log, request, "Right after signing up")
     _welcome(tasks, user, data.company_name, mailer)
     return service.user_out(user)

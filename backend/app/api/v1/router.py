@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends
 
 from app.api.auth import require_staff
 from app.api.v1.routes import (
+    account_log,
     admin,
     auth,
     billing,
@@ -46,6 +47,7 @@ api_router.include_router(iss.router, dependencies=staff_only)
 
 api_router.include_router(admin.router)
 api_router.include_router(monitored.router)  # Admin Monitored DOTs (STS admins)
+api_router.include_router(account_log.router)  # Account logs (STS admins)
 api_router.include_router(portal.router)
 api_router.include_router(portal.broker_router)
 # DataQs: staff (/dataqs) and client (/portal/dataqs) routes check their own login per route.

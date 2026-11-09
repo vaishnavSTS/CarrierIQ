@@ -5,6 +5,7 @@ import { AppLayout } from './components/layout/AppLayout'
 import { BrokerLayout } from './components/layout/BrokerLayout'
 import { PortalLayout } from './components/layout/PortalLayout'
 import { PublicLayout } from './components/layout/PublicLayout'
+import { AccountLogsPage } from './pages/AccountLogsPage'
 import { AccountsPage } from './pages/AccountsPage'
 import { BrokerGoogleSignupPage } from './pages/BrokerGoogleSignupPage'
 import { BrokerHomePage } from './pages/BrokerHomePage'
@@ -101,6 +102,7 @@ export const router = createBrowserRouter([
           { path: 'dataqs/new', element: <PortalDataQsIntakePage /> },
           { path: 'dataqs/cases/:caseId', element: <DataQsCasePage /> },
           { path: 'accounts', element: <AccountsPage /> },
+          { path: 'account-logs', element: <AccountLogsPage /> },
           { path: 'service-requests', element: <ServiceRequestsPage /> },
           { path: 'invoices', element: <InvoicesPage /> },
           { path: 'high-iss', element: <HighIssPage /> },

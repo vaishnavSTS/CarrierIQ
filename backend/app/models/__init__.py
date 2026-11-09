@@ -1,5 +1,6 @@
 """ORM models, one per table. Importing this package registers every table on Base.metadata."""
 
+from app.models.account_event import AccountEvent, AccountEventKind
 from app.models.address import Address
 from app.models.authority import Authority
 from app.models.authority_history import AuthorityHistory
@@ -55,6 +56,8 @@ from app.models.vehicle import Vehicle
 from app.models.worker_heartbeat import WorkerHeartbeat
 
 __all__ = [
+    "AccountEvent",
+    "AccountEventKind",
     "Address",
     "Authority",
     "AuthorityHistory",
