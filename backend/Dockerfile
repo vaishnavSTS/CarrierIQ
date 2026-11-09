@@ -8,6 +8,8 @@ WORKDIR /app
 COPY pyproject.toml ./
 COPY app ./app
 RUN pip install --no-cache-dir .
+# Chromium for the Score Card Sharing API (prints the Safety Score Report page as a PDF).
+RUN playwright install --with-deps chromium
 
 COPY alembic.ini ./
 COPY alembic ./alembic

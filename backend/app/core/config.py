@@ -180,6 +180,11 @@ class Settings(BaseSettings):
     dataqs_verification_escalate_days: int = 60
     # Where the app's pages are, for links in emails (the frontend's address).
     public_app_url: str = "http://localhost:5173"
+    # Score Card Sharing API (services/report_render.py): where the headless browser opens the
+    # report page (default: public_app_url), and which browser: None = Playwright's Chromium
+    # (in the Docker image); "msedge" uses an installed Edge, e.g. on a Windows dev machine.
+    report_app_url: str | None = None
+    report_browser_channel: str | None = None
 
     # "Continue with Google" (OAuth 2.0 / OpenID Connect). Off unless both are set. The redirect
     # URI must match the one registered in Google Cloud Console exactly; in development it goes

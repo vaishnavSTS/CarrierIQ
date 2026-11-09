@@ -26,6 +26,7 @@ from app.api.v1.routes import (
     monitored,
     partner,
     portal,
+    report_render,
     signals,
     try_now,
     twilio_webhooks,
@@ -37,6 +38,8 @@ api_router.include_router(auth.router)
 api_router.include_router(try_now.router)
 api_router.include_router(contact.router)
 api_router.include_router(partner.router)  # its own API keys (routes/partner.py)
+# The bare report page's data while the Score Card Sharing API prints it: report pass only.
+api_router.include_router(report_render.router)
 
 staff_only = [Depends(require_staff)]
 api_router.include_router(carriers.router, dependencies=staff_only)

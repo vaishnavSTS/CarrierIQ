@@ -18,6 +18,7 @@ dependencies = [
     "python-multipart>=0.0.12",  # file uploads (DataQs evidence)
     "openpyxl>=3.1",  # Excel downloads (High ISS list)
     "reportlab>=4.2",  # invoice PDFs (emailed when paid)
+    "playwright>=1.48",  # Score Card Sharing API: prints the report page as a PDF
 ]
 
 [project.optional-dependencies]

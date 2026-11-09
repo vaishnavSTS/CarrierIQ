@@ -31,6 +31,7 @@ import { LoginPage } from './pages/LoginPage'
 import { ResetPasswordPage } from './pages/ResetPasswordPage'
 import { VerifyEmailPage } from './pages/VerifyEmailPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { ReportRenderPage } from './pages/ReportRenderPage'
 import { PortalTourPage } from './pages/PortalTourPage'
 import { ClientSearchPage } from './pages/ClientSearchPage'
 import { PortalDataQsIntakePage } from './pages/PortalDataQsIntakePage'
@@ -149,6 +150,8 @@ export const router = createBrowserRouter([
       },
     ],
   },
+  // Score Card Sharing API: the bare report page the server prints as a PDF (no menus, no login).
+  { path: 'render/safety-score-report/:usdot', element: <ReportRenderPage /> },
   {
     element: <PublicLayout />,
     children: [{ path: '*', element: <NotFoundPage /> }],

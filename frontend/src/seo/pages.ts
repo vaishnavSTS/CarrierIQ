@@ -177,6 +177,7 @@ export const ROBOTS_DISALLOW = [
   '/monitored',
   '/try/',
   '/c/',
+  '/render/',
   '/register/google',
   '/reset-password',
   '/verify-email',

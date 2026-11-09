@@ -17,6 +17,12 @@ export function useIsTryMode(): boolean {
   return useContext(TryModeContext)
 }
 
+/**
+ * True on the bare report page the Score Card Sharing API prints (ReportRenderPage): it reads
+ * /report-render/carriers/... with a short-lived report pass the printing browser adds.
+ */
+export const ReportRenderContext = createContext(false)
+
 export function usePortalMode(): Portal {
   return useContext(PortalModeContext)
 }
@@ -30,7 +36,12 @@ export function useIsBrokerPortal(): boolean {
   return usePortalMode() === 'broker'
 }
 
-export type CarrierApiBase = '/carriers' | '/portal/carriers' | '/broker/carriers' | '/try/carriers'
+export type CarrierApiBase =
+  | '/carriers'
+  | '/portal/carriers'
+  | '/broker/carriers'
+  | '/try/carriers'
+  | '/report-render/carriers'
 
 const API_BASE: Record<Portal, CarrierApiBase> = {
   internal: '/carriers',
@@ -41,7 +52,10 @@ const API_BASE: Record<Portal, CarrierApiBase> = {
 /** API path prefix for carrier data in the current portal. */
 export function useCarrierApiBase(): CarrierApiBase {
   const base = API_BASE[usePortalMode()]
-  return useIsTryMode() ? '/try/carriers' : base
+  const rendering = useContext(ReportRenderContext)
+  const trying = useIsTryMode()
+  if (rendering) return '/report-render/carriers'
+  return trying ? '/try/carriers' : base
 }
 
 const PAGE_BASE: Record<Portal, string> = {
