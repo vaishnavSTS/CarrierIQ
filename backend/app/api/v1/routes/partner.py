@@ -11,8 +11,11 @@ prints it (services/report_render.py). The first report for a carrier also loads
     GET /api/v1/partner/score-card/{usdot_number}
     X-Api-Key: <the partner's key>
 
-Keys are given out by STS (python -m app.workers.new_partner_key) and only their SHA-256 hashes
-are kept, in PARTNER_API_KEY_HASHES. Each key may ask 60 times a minute, of which 10 reports.
+Each API has its own keys: a key for one doesn't open the other. STS makes them with
+python -m app.workers.new_partner_key (add --score-card for the Score Card Sharing API) and
+keeps only their SHA-256 hashes: PARTNER_API_KEY_HASHES for the Estimated ISS API,
+SCORE_CARD_API_KEY_HASHES for the Score Card Sharing API. Each key may ask 60 times a minute;
+a score card key, 10 reports a minute.
 """
 
 import hashlib
@@ -45,18 +48,26 @@ def key_hash(key: str) -> str:
     return hashlib.sha256(key.encode()).hexdigest()
 
 
-def require_partner_key(x_api_key: Annotated[str | None, Header()] = None) -> str:
-    """The calling partner, known by its key's hash; 401 without a key we gave out."""
-    allowed = [
-        h.strip().lower() for h in get_settings().partner_api_key_hashes.split(",") if h.strip()
-    ]
+def _known_key(x_api_key: str | None, hashes: str, scope: str) -> str:
+    """The caller, known by its key's hash, if the hash is in `hashes`; 401 otherwise."""
+    allowed = [h.strip().lower() for h in hashes.split(",") if h.strip()]
     given = key_hash(x_api_key) if x_api_key else ""
     if not given or not any(hmac.compare_digest(given, h) for h in allowed):
         raise UnauthorizedError("A valid X-Api-Key header is required")
     if get_settings().rate_limit_enabled:
         limit, window = REQUESTS_PER_KEY
-        limiter.hit(f"partner:{given}", limit, window)
+        limiter.hit(f"{scope}:{given}", limit, window)
     return given
+
+
+def require_partner_key(x_api_key: Annotated[str | None, Header()] = None) -> str:
+    """An Estimated ISS API key (PARTNER_API_KEY_HASHES)."""
+    return _known_key(x_api_key, get_settings().partner_api_key_hashes, "partner")
+
+
+def require_score_card_key(x_api_key: Annotated[str | None, Header()] = None) -> str:
+    """A Score Card Sharing API key (SCORE_CARD_API_KEY_HASHES)."""
+    return _known_key(x_api_key, get_settings().score_card_api_key_hashes, "score-card")
 
 
 def get_partner_iss_service(
@@ -89,7 +100,7 @@ def partner_iss(
 )
 def score_card(
     usdot_number: Annotated[int, Path(gt=0, lt=100_000_000)],
-    key: Annotated[str, Depends(require_partner_key)],
+    key: Annotated[str, Depends(require_score_card_key)],
     refresh: Refresh,
     renderer: Annotated[ReportRenderer, Depends(get_report_renderer)],
 ) -> Response:

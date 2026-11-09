@@ -102,6 +102,9 @@ class Settings(BaseSettings):
     # Partner API (routes/partner.py): SHA-256 hashes of the keys given out, comma-separated.
     # Empty: the partner API answers 401 to everyone.
     partner_api_key_hashes: str = ""
+    # Score Card Sharing API (routes/partner.py score_card): its own keys, the same way. A key in
+    # one list doesn't open the other API. Empty: the Score Card Sharing API answers 401.
+    score_card_api_key_hashes: str = ""
     auth_min_password_length: int = 10
 
     # Off: clients see only their own carriers, with no search. CLIENT_SEARCH_ENABLED=true lets

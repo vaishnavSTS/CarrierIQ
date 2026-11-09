@@ -25,7 +25,8 @@ from tests.api.test_monitored_carriers import KNOWN, UNKNOWN, FakeRefresh
 from tests.ingestion.helpers import FakeDotApi, load_inspection_rows
 from tests.services.test_carrier_search import UNITED
 
-KEY = "css_test-score-card-key"
+KEY = "css_sc_test-score-card-key"
+ISS_KEY = "css_test-estimated-iss-key"  # a key for the other partner API
 HEADERS = {"X-Api-Key": KEY}
 SCORE_CARD = "/api/v1/partner/score-card"
 UNITED_USDOT = 295017  # UNITED MOVING AND STORAGE INC in the fake FMCSA answers
@@ -56,7 +57,10 @@ def api(
 ) -> Iterator[TestClient]:
     limiter.reset()
     monkeypatch.setattr(
-        get_settings(), "partner_api_key_hashes", hashlib.sha256(KEY.encode()).hexdigest()
+        get_settings(), "score_card_api_key_hashes", hashlib.sha256(KEY.encode()).hexdigest()
+    )
+    monkeypatch.setattr(
+        get_settings(), "partner_api_key_hashes", hashlib.sha256(ISS_KEY.encode()).hexdigest()
     )
     refresh = FakeRefresh(db)
     app.dependency_overrides[get_db] = lambda: db
@@ -84,6 +88,15 @@ def test_no_report_without_a_valid_key(api: TestClient, renderer: FakeRenderer) 
     assert api.get(f"{SCORE_CARD}/{KNOWN}").status_code == 401
     assert api.get(f"{SCORE_CARD}/{KNOWN}", headers={"X-Api-Key": "wrong"}).status_code == 401
     assert renderer.printed == []
+
+
+def test_each_api_has_its_own_keys(api: TestClient, renderer: FakeRenderer) -> None:
+    # An Estimated ISS key doesn't open the Score Card Sharing API...
+    iss_key = {"X-Api-Key": ISS_KEY}
+    assert api.get(f"{SCORE_CARD}/{KNOWN}", headers=iss_key).status_code == 401
+    assert renderer.printed == []
+    # ...and a Score Card key doesn't open the Estimated ISS API.
+    assert api.get(f"/api/v1/partner/iss/{KNOWN}", headers=HEADERS).status_code == 401
 
 
 def test_unknown_or_impossible_usdot(api: TestClient, renderer: FakeRenderer) -> None:
