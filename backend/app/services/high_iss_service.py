@@ -15,7 +15,7 @@ from openpyxl.utils import get_column_letter
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Address, Carrier, IssSnapshot, Phone
+from app.models import Address, Carrier, IssSnapshot, Officer, Phone
 from app.models.enums import AddressType, PhoneType
 from app.schemas.high_iss import HighIssCarrierOut, HighIssOut
 from app.services.iss_service import latest_reference
@@ -63,6 +63,17 @@ def high_iss(db: Session, min_score: int = 75) -> HighIssOut:
     ):
         places[address.carrier_id] = ", ".join(p for p in [address.city, address.state] if p)
 
+    # The carrier's current officers, as FMCSA lists them (the carrier page shows the same).
+    officers: dict[int, list[str]] = {}
+    for officer in db.scalars(
+        select(Officer)
+        .where(Officer.carrier_id.in_(carrier_ids), Officer.is_current.is_(True))
+        .order_by(Officer.carrier_id, Officer.id)
+    ):
+        names = officers.setdefault(officer.carrier_id, [])
+        if officer.name not in names:
+            names.append(officer.name)
+
     reference = latest_reference(db)
     return HighIssOut(
         min_score=min_score,
@@ -72,6 +83,7 @@ def high_iss(db: Session, min_score: int = 75) -> HighIssOut:
                 usdot_number=carrier.usdot_number,
                 legal_name=carrier.legal_name,
                 dba_name=carrier.dba_name,
+                officers=officers.get(carrier.id, []),
                 phone=_pretty(phones[carrier.id]) if carrier.id in phones else None,
                 location=places.get(carrier.id) or None,
                 fleet_size=carrier.fleet_size,
@@ -88,6 +100,7 @@ COLUMNS = [
     ("ISS score", 10),
     ("Carrier name", 40),
     ("DBA", 28),
+    ("Officers", 34),
     ("USDOT", 12),
     ("Phone", 16),
     ("Location", 24),
@@ -117,6 +130,7 @@ def high_iss_xlsx(result: HighIssOut) -> bytes:
                 c.iss,
                 c.legal_name,
                 c.dba_name,
+                ", ".join(c.officers) or None,
                 c.usdot_number,
                 c.phone,
                 c.location,
@@ -125,7 +139,7 @@ def high_iss_xlsx(result: HighIssOut) -> bytes:
                 c.score_since,
             ]
         )
-        sheet.cell(row=sheet.max_row, column=9).number_format = "mmm yyyy"
+        sheet.cell(row=sheet.max_row, column=10).number_format = "mmm yyyy"
     for i, (_, width) in enumerate(COLUMNS, start=1):
         sheet.column_dimensions[get_column_letter(i)].width = width
     sheet.freeze_panes = "A4"

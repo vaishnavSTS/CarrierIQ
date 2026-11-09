@@ -9,6 +9,7 @@ class HighIssCarrierOut(BaseModel):
     usdot_number: int
     legal_name: str | None
     dba_name: str | None
+    officers: list[str] = []  # current officers (FMCSA census), first listed first
     phone: str | None  # e.g. (209) 555-0123
     location: str | None  # physical address: city, state
     fleet_size: int | None

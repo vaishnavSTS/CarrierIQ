@@ -10,6 +10,8 @@ interface HighIssCarrier {
   usdot_number: number
   legal_name: string | null
   dba_name: string | null
+  /** Current officers, as FMCSA lists them */
+  officers: string[]
   phone: string | null
   location: string | null
   fleet_size: number | null
@@ -138,6 +140,7 @@ export function HighIssPage() {
               <tr>
                 <th className={cellClass}>ISS</th>
                 <th className={cellClass}>Carrier</th>
+                <th className={cellClass}>Officer</th>
                 <th className={cellClass}>USDOT</th>
                 <th className={cellClass}>Phone</th>
                 <th className={cellClass}>Location</th>
@@ -163,6 +166,17 @@ export function HighIssPage() {
                       {c.legal_name ?? `USDOT ${c.usdot_number}`}
                     </Link>
                     {c.dba_name && <div className="text-xs text-slate-600">DBA {c.dba_name}</div>}
+                  </td>
+                  <td className={cellClass}>
+                    {c.officers.length > 0 ? (
+                      c.officers.map((name) => (
+                        <div key={name} className="whitespace-nowrap">
+                          {name}
+                        </div>
+                      ))
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
                   </td>
                   <td className={`${cellClass} font-mono`}>{c.usdot_number}</td>
                   <td className={`${cellClass} whitespace-nowrap`}>

@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.main import app
-from app.models import Address, IssReference, IssSnapshot, Phone
+from app.models import Address, IssReference, IssSnapshot, Officer, Phone
 from app.models.enums import AddressType, PhoneType
 from tests.factories import make_carrier, make_raw_record
 
@@ -83,6 +83,8 @@ def carriers(db: Session) -> None:
                 **seen,
                 **trace,
             ),
+            Officer(carrier_id=worst.id, name="JANE ROAD", title="PRESIDENT", **seen, **trace),
+            Officer(carrier_id=worst.id, name="JOHN ROAD", **seen, **trace),
             IssReference(
                 data_month=OCT, version="iss-est test", dataset_id="x", carriers=1, tables={}
             ),
@@ -105,6 +107,8 @@ def test_the_list_has_each_carriers_latest_score_75_and_up(api: TestClient, carr
         "TRACY, CA",
         12,
     )
+    assert worst["officers"] == ["JANE ROAD", "JOHN ROAD"]
+    assert body["carriers"][1]["officers"] == []  # none on record
     assert body["carriers"][1]["score_since"] == "2026-09-01"
     assert [c["iss"] for c in api.get("/api/v1/iss/high?min_score=90").json()["carriers"]] == [91]
     assert api.get("/api/v1/iss/high?min_score=0").status_code == 422
@@ -118,10 +122,11 @@ def test_the_excel_file(api: TestClient, carriers: None) -> None:
     sheet = load_workbook(BytesIO(answer.content)).active
     assert sheet is not None
     assert "October 2026" in str(sheet["A1"].value)
-    assert [c.value for c in sheet[3]][:5] == ["ISS score", "Carrier name", "DBA", "USDOT", "Phone"]
-    assert [(r[0], r[1], r[3]) for r in sheet.iter_rows(min_row=4, values_only=True)] == [
-        (91, "WORST TRUCKING LLC", 1000001),
-        (75, "HIGH HAULERS INC", 1000002),
+    headers = [c.value for c in sheet[3]][:6]
+    assert headers == ["ISS score", "Carrier name", "DBA", "Officers", "USDOT", "Phone"]
+    assert [(r[0], r[1], r[3], r[4]) for r in sheet.iter_rows(min_row=4, values_only=True)] == [
+        (91, "WORST TRUCKING LLC", "JANE ROAD, JOHN ROAD", 1000001),
+        (75, "HIGH HAULERS INC", None, 1000002),
     ]
 
 
