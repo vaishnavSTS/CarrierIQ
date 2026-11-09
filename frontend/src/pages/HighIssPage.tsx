@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { Download, Phone } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -29,6 +29,16 @@ const month = (iso: string | null) =>
     ? new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
     : '—'
 
+/**
+ * What the "ISS at least" box keeps from what was typed: a whole number held to 1–100 (above 100
+ * becomes 100, 0 becomes 1), or empty while a new number is being typed.
+ */
+function boxScore(text: string): string {
+  const digits = text.replace(/\D/g, '').slice(0, 3)
+  if (!digits) return ''
+  return String(Math.min(100, Math.max(1, Number(digits))))
+}
+
 /** Red from 90, amber below: how bad the score is at a glance. */
 function scoreClass(iss: number): string {
   return iss >= 90
@@ -42,9 +52,14 @@ function scoreClass(iss: number): string {
  */
 export function HighIssPage() {
   const [minScore, setMinScore] = useState(75)
+  // What's in the box: always 1–100, or empty while a new number is typed; the list follows it.
+  const [typed, setTyped] = useState(String(minScore))
+  const typedValid = typed !== ''
   const { data, isPending, error } = useQuery({
     queryKey: ['iss', 'high', minScore],
     queryFn: () => apiGet<HighIss>(`/iss/high?min_score=${minScore}`),
+    // Keep the list on screen while the next one loads, instead of flashing "Loading…".
+    placeholderData: keepPreviousData,
   })
 
   const rows = data?.carriers ?? []
@@ -79,14 +94,28 @@ export function HighIssPage() {
             type="number"
             min={1}
             max={100}
-            value={minScore}
+            value={typed}
+            aria-invalid={!typedValid}
+            aria-describedby={typedValid ? undefined : 'iss-min-hint'}
             onChange={(e) => {
-              const n = Number(e.target.value)
-              if (n >= 1 && n <= 100) setMinScore(n)
+              const score = boxScore(e.target.value)
+              setTyped(score)
+              if (score) setMinScore(Number(score))
             }}
-            className="mt-1 w-24 rounded-md border border-slate-300 bg-surface px-2.5 py-1.5"
+            // Left empty: back to the score the list shows.
+            onBlur={() => {
+              if (!typedValid) setTyped(String(minScore))
+            }}
+            className={`mt-1 w-24 rounded-md border bg-surface px-2.5 py-1.5 ${
+              typedValid ? 'border-slate-300' : 'border-red-400'
+            }`}
           />
         </div>
+        {!typedValid && (
+          <span id="iss-min-hint" className="pb-1.5 text-red-700">
+            Enter a number from 1 to 100
+          </span>
+        )}
         {data && (
           <span className="pb-1.5 text-slate-600">
             {rows.length} {rows.length === 1 ? 'carrier' : 'carriers'}
