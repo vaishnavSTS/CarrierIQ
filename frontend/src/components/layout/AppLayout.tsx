@@ -58,19 +58,17 @@ export function AppLayout() {
 function AppFrame() {
   const { data: me } = useMe()
   const newAccounts = useNewAccountCount()
+  const isAdmin = me?.role === 'STS_ADMIN'
+  // Staff tabs in STS's order; Admin Monitored DOTs and Accounts are for STS admins only.
   const links = (
     <>
       <NavItem to="/dashboard" label="Dashboard" />
-      <NavItem to="/dataqs" label="DataQs" />
       <NavItem to="/high-iss" label="High Safety Score" />
+      {isAdmin && <NavItem to="/monitored" label="Admin Monitored DOTs" />}
+      <NavItem to="/dataqs" label="DataQs" />
       <NavItem to="/service-requests" label="Service requests" />
       <NavItem to="/invoices" label="Invoices" />
-      {me?.role === 'STS_ADMIN' && (
-        <>
-          <NavItem to="/accounts" label="Accounts" badge={newAccounts} />
-          <NavItem to="/monitored" label="Admin Monitored DOTs" />
-        </>
-      )}
+      {isAdmin && <NavItem to="/accounts" label="Accounts" badge={newAccounts} />}
     </>
   )
 

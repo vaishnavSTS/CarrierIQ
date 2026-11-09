@@ -5,11 +5,19 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# Chromium for the Score Card Sharing API (prints the Safety Score Report page as a PDF).
+# Playwright's installer runs its own Node, which needs libatomic1 (not in the slim image);
+# --with-deps then adds Chromium's libraries. Done before the app code is copied, so code changes
+# reuse this layer instead of downloading Chromium again; `pip install .` keeps this Playwright.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libatomic1 \
+    && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir "playwright>=1.48" \
+    && playwright install --with-deps chromium
+
 COPY pyproject.toml ./
 COPY app ./app
 RUN pip install --no-cache-dir .
-# Chromium for the Score Card Sharing API (prints the Safety Score Report page as a PDF).
-RUN playwright install --with-deps chromium
 
 COPY alembic.ini ./
 COPY alembic ./alembic

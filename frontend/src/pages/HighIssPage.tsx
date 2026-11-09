@@ -10,8 +10,8 @@ interface HighIssCarrier {
   usdot_number: number
   legal_name: string | null
   dba_name: string | null
-  /** Current officers, as FMCSA lists them */
-  officers: string[]
+  /** Current officers, as FMCSA lists them (missing from an older backend) */
+  officers?: string[]
   phone: string | null
   location: string | null
   fleet_size: number | null
@@ -168,7 +168,7 @@ export function HighIssPage() {
                     {c.dba_name && <div className="text-xs text-slate-600">DBA {c.dba_name}</div>}
                   </td>
                   <td className={cellClass}>
-                    {c.officers.length > 0 ? (
+                    {c.officers?.length ? (
                       c.officers.map((name) => (
                         <div key={name} className="whitespace-nowrap">
                           {name}
