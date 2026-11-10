@@ -7,7 +7,8 @@ import { comparePath, MAX_COMPARE, useCompareList } from '../../compare/compareC
 
 /** The tabs an agent opens most, linked straight from each picked carrier. */
 const QUICK_TABS = [
-  ['authority', 'Authority & Insurance'],
+  ['authority', 'Authority'],
+  ['insurance', 'Insurance'],
   ['safety', 'Inspections'],
   ['safety-score-report', 'Report'],
 ] as const

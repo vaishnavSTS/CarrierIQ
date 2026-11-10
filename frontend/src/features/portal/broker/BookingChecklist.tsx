@@ -30,7 +30,10 @@ const CHECKS: Check[] = [
     icon: ShieldCheck,
     title: 'Authority and insurance',
     text: 'Authority active with no revocation pending, how long since it was granted, liability on file (most brokers want $1,000,000) and the estimated next renewal.',
-    tabs: [['authority', 'Authority & Insurance']],
+    tabs: [
+      ['authority', 'Authority'],
+      ['insurance', 'Insurance'],
+    ],
   },
   {
     icon: Gauge,

@@ -10,8 +10,10 @@ came from and how current it is.
 
 from datetime import date
 from decimal import Decimal
+from typing import Any
 
 from sqlalchemy import BigInteger, Date, ForeignKey, Numeric, String, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -46,3 +48,6 @@ class Authority(IdMixin, UpdatedAtMixin, SourceTraceMixin, Base):
     bond_required: Mapped[bool | None]
     bond_on_file: Mapped[bool | None]
     revocation_pending: Mapped[bool | None]
+    # Each kind of authority under the docket with its own status (normalizer AuthorityKind):
+    # L&I common / contract / broker, or each Motus authority type. None: loaded before it existed.
+    kinds: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB)

@@ -5,11 +5,13 @@ from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from app.api.v1.routes.carriers import get_socrata_client
 from app.db.session import get_db
 from app.main import app
+from app.models import Authority
 from tests.services.fmcsa import fmcsa_api
 
 
@@ -40,6 +42,9 @@ def test_authority_endpoint(api_client: TestClient) -> None:
         "MOTUS",
     )
     assert docket["authority_type"] == "Motor Carrier of Household Goods"
+    assert [(k["kind"], k["status"]) for k in docket["kinds"]] == [
+        ("Motor Carrier of Household Goods", "ACTIVE")
+    ]
     assert float(docket["bipd_on_file"]) == 1_000_000
     assert {f["insurance_type"] for f in body["current_insurance"]} == {"BIPD", "CARGO"}
     assert len(body["insurance_history"]) == 10
@@ -50,6 +55,20 @@ def test_authority_endpoint(api_client: TestClient) -> None:
     assert actions.count(("2021-06-15", "REINSTATED")) == 1  # reported by both systems
     assert ("2021-06-08", "REVOKED") in actions
     assert actions == sorted(actions, key=lambda a: a[0] or "", reverse=True)
+
+
+def test_dockets_loaded_before_kinds_were_kept_read_them_from_their_fmcsa_row(
+    api_client: TestClient, db: Session
+) -> None:
+    api_client.get("/api/v1/carriers/295017/authority")
+    db.execute(update(Authority).values(kinds=None))  # as loaded before migration 0056
+    db.flush()
+
+    (docket,) = api_client.get("/api/v1/carriers/295017/authority").json()["dockets"]
+
+    assert [(k["kind"], k["status"]) for k in docket["kinds"]] == [
+        ("Motor Carrier of Household Goods", "ACTIVE")
+    ]
 
 
 def test_profile_reports_insurance_status_and_timeline(api_client: TestClient) -> None:

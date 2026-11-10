@@ -9,6 +9,7 @@ import pytest
 from app.ingestion.operating_authority_normalizer import (
     legacy_current,
     legacy_events,
+    merge_motus,
     motus_current,
     motus_events,
     parse_docket,
@@ -94,6 +95,65 @@ def test_legacy_revocation_pending() -> None:
 
     assert values is not None
     assert values.revocation_pending is True
+
+
+def test_legacy_kinds_give_common_contract_and_broker_each_its_status() -> None:
+    # e.g. STINGRAY EXPRESS INC (MC787470): contract authority only.
+    row = {
+        **rows("6eyk-hxee")[0],
+        "common_stat": "N",
+        "contract_stat": "A",
+        "broker_stat": "N",
+        "broker_app_pend": "Y",
+        "contract_rev_pend": "Y",
+    }
+    values = legacy_current(row, FROZEN)
+
+    assert values is not None
+    assert [(k.kind, k.status) for k in values.kinds] == [
+        ("Common carrier", "NONE"),
+        ("Contract carrier", "ACTIVE"),
+        ("Broker", "PENDING"),  # applied for, not granted yet
+    ]
+    contract = values.kinds[1]
+    assert contract.revocation_pending is True
+
+
+def test_motus_kind_is_its_authority_type() -> None:
+    values = motus_current(rows("inys-ebih")[0], TODAY)
+
+    assert values is not None
+    assert [(k.kind, k.status) for k in values.kinds] == [
+        ("Motor Carrier of Household Goods", "ACTIVE")
+    ]
+
+
+def test_motus_rows_for_one_docket_are_merged() -> None:
+    """Motus lists each authority type under a docket as its own row; none may be lost."""
+    base = rows("inys-ebih")[0]
+    carrier = motus_current({**base, "op_auth_type": "Motor Carrier of Property"}, TODAY)
+    broker = motus_current(
+        {
+            **base,
+            "op_auth_type": "Broker of Property",
+            "op_auth_status": "Inactive",
+            "min_cov_amount": "0",
+            "bipd_file": "0",
+        },
+        TODAY,
+    )
+    assert carrier is not None and broker is not None
+
+    merged = merge_motus([broker, carrier])
+
+    assert merged.status == "ACTIVE"  # active if any kind is active
+    assert merged.authority_type == "Broker of Property · Motor Carrier of Property"
+    assert [(k.kind, k.status) for k in merged.kinds] == [
+        ("Broker of Property", "INACTIVE"),
+        ("Motor Carrier of Property", "ACTIVE"),
+    ]
+    assert merged.bipd_required == Decimal("750000.00")  # the carrier row's, not the broker's 0
+    assert merge_motus([carrier]) == carrier
 
 
 def test_legacy_history_has_original_and_disposition_actions() -> None:

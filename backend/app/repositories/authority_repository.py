@@ -3,13 +3,14 @@
 from collections.abc import Sequence
 from dataclasses import asdict
 from datetime import date
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.ingestion.company_census_normalizer import AuthorityValues
 from app.ingestion.operating_authority_normalizer import MOTUS, CurrentAuthorityValues
-from app.models import Authority
+from app.models import Authority, RawRecord
 
 CENSUS = "CENSUS"
 
@@ -104,6 +105,15 @@ class AuthorityRepository:
         authority.status_as_of = values.status_as_of
         authority.raw_record_id = raw_record_id
         self.db.flush()
+
+    def source_rows(self, raw_record_ids: Sequence[int]) -> dict[int, dict[str, Any]]:
+        """The FMCSA rows the dockets were last set from, by raw record id."""
+        if not raw_record_ids:
+            return {}
+        rows = self.db.execute(
+            select(RawRecord.id, RawRecord.payload).where(RawRecord.id.in_(raw_record_ids))
+        )
+        return {raw_id: payload for raw_id, payload in rows}
 
     def for_carriers(self, carrier_ids: Sequence[int]) -> dict[int, list[Authority]]:
         by_carrier: dict[int, list[Authority]] = {carrier_id: [] for carrier_id in carrier_ids}

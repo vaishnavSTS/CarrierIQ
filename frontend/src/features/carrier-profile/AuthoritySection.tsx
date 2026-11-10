@@ -19,7 +19,7 @@ import type {
   Renewal,
 } from '../../types/carrierAuthority'
 import { formatDate, formatDocket, formatMoney, humanize, sourceLabel } from '../../utils/format'
-import { statusTone } from '../../utils/status'
+import { statusTone, type Tone } from '../../utils/status'
 import { Empty, Section } from './Section'
 import { cellClass, headClass, tableClass } from './styles'
 
@@ -152,7 +152,55 @@ function ProcessAgentLine({ agents }: { agents: ProcessAgent[] | null }) {
   )
 }
 
-function DocketCard({
+const KIND_STATUS: Record<string, { label: string; tone: Tone }> = {
+  ACTIVE: { label: 'Active', tone: 'ok' },
+  INACTIVE: { label: 'Inactive', tone: 'down' },
+  PENDING: { label: 'Pending', tone: 'warn' },
+  WITHDRAWN: { label: 'Withdrawn', tone: 'neutral' },
+  NONE: { label: 'None', tone: 'neutral' },
+}
+
+/** "Contract carrier" -> "Contract carrier authority"; Motus types read as FMCSA writes them. */
+function kindLabel(kind: string): string {
+  return /^(common carrier|contract carrier|broker)$/i.test(kind) ? `${kind} authority` : kind
+}
+
+/** Each kind of authority under the docket (common, contract, broker; or Motus types). */
+function AuthorityKinds({ docket }: { docket: DocketDetail }) {
+  const kinds = docket.kinds ?? []
+  if (kinds.length === 0) {
+    return <div className="mt-1 text-slate-700">{authorityTypeLabel(docket.authority_type)}</div>
+  }
+  return (
+    <ul className="mt-2 divide-y divide-slate-100 rounded-md border border-slate-100">
+      {kinds.map((k) => {
+        const status = KIND_STATUS[k.status ?? ''] ?? {
+          label: k.status ? humanize(k.status.toLowerCase()) : 'Unknown',
+          tone: 'neutral' as Tone,
+        }
+        return (
+          <li
+            key={k.kind}
+            className="flex flex-wrap items-center justify-between gap-2 px-2.5 py-1.5"
+          >
+            <span className={k.status === 'NONE' ? 'text-slate-500' : 'text-slate-800'}>
+              {kindLabel(k.kind)}
+            </span>
+            <span className="flex flex-wrap items-center gap-1.5">
+              {k.revocation_pending && <StatusBadge label="revocation pending" tone="warn" />}
+              {k.application_pending && k.status !== 'PENDING' && (
+                <StatusBadge label="application pending" tone="pending" />
+              )}
+              <StatusBadge label={status.label} tone={status.tone} />
+            </span>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
+function AuthorityCard({
   docket,
   agents,
   granted,
@@ -162,9 +210,6 @@ function DocketCard({
   /** First grant date from the authority history, if any */
   granted: string | null
 }) {
-  const required = docket.bipd_required ? Number(docket.bipd_required) : 0
-  const onFile = docket.bipd_on_file ? Number(docket.bipd_on_file) : 0
-  const short = docket.status === 'ACTIVE' && required > 0 && onFile < required
   return (
     <div className="rounded-md border border-slate-200 p-3 text-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -174,45 +219,66 @@ function DocketCard({
           {docket.status && <StatusBadge label={docket.status} tone={statusTone(docket.status)} />}
         </div>
       </div>
-      <div className="mt-1 text-slate-700">{authorityTypeLabel(docket.authority_type)}</div>
+      <AuthorityKinds docket={docket} />
       {granted && (
-        <div className="mt-0.5 text-slate-700">
+        <div className="mt-2 text-slate-700">
           Authority {ageSince(granted)} · granted {formatDate(granted)}
         </div>
       )}
       <div className="mt-1 text-xs text-slate-500">
         Status: {sourceLabel(docket.status_source, docket.status_as_of)}
       </div>
-      {docket.status_source !== 'CENSUS' && (
-        <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-          <dt className="text-slate-500">Liability insurance (BI&PD) required</dt>
-          <dd>
-            {docket.bipd_required === null ? 'Unknown' : required ? formatMoney(required) : 'None'}
-          </dd>
-          <dt className="text-slate-500">Liability insurance (BI&PD) on file</dt>
-          <dd className={short ? 'font-medium text-red-700' : ''}>
-            {onFile ? formatMoney(onFile) : 'None on file'}
-            {short && ' (below required)'}
-          </dd>
-          <dt className="text-slate-500">Cargo</dt>
-          <dd>
-            <YesNo
-              required={docket.cargo_required}
-              onFile={docket.cargo_on_file}
-              active={docket.status === 'ACTIVE'}
-            />
-          </dd>
-          <dt className="text-slate-500">Bond</dt>
-          <dd>
-            <YesNo
-              required={docket.bond_required}
-              onFile={docket.bond_on_file}
-              active={docket.status === 'ACTIVE'}
-            />
-          </dd>
-        </dl>
-      )}
       <ProcessAgentLine agents={agents} />
+    </div>
+  )
+}
+
+/** What insurance FMCSA requires for the docket's authority, next to what is on file. */
+function RequirementCard({ docket }: { docket: DocketDetail }) {
+  const required = docket.bipd_required ? Number(docket.bipd_required) : 0
+  const onFile = docket.bipd_on_file ? Number(docket.bipd_on_file) : 0
+  const short = docket.status === 'ACTIVE' && required > 0 && onFile < required
+  return (
+    <div className="rounded-md border border-slate-200 p-3 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-mono font-medium">{formatDocket(docket.prefix, docket.number)}</span>
+        {docket.status && (
+          <span className="flex items-center gap-1.5 text-xs text-slate-500">
+            Authority
+            <StatusBadge label={docket.status} tone={statusTone(docket.status)} />
+          </span>
+        )}
+      </div>
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+        <dt className="text-slate-500">Liability insurance (BI&PD) required</dt>
+        <dd>
+          {docket.bipd_required === null ? 'Unknown' : required ? formatMoney(required) : 'None'}
+        </dd>
+        <dt className="text-slate-500">Liability insurance (BI&PD) on file</dt>
+        <dd className={short ? 'font-medium text-red-700' : ''}>
+          {onFile ? formatMoney(onFile) : 'None on file'}
+          {short && ' (below required)'}
+        </dd>
+        <dt className="text-slate-500">Cargo</dt>
+        <dd>
+          <YesNo
+            required={docket.cargo_required}
+            onFile={docket.cargo_on_file}
+            active={docket.status === 'ACTIVE'}
+          />
+        </dd>
+        <dt className="text-slate-500">Bond</dt>
+        <dd>
+          <YesNo
+            required={docket.bond_required}
+            onFile={docket.bond_on_file}
+            active={docket.status === 'ACTIVE'}
+          />
+        </dd>
+      </dl>
+      <div className="mt-2 text-xs text-slate-500">
+        {sourceLabel(docket.status_source, docket.status_as_of)}
+      </div>
     </div>
   )
 }
@@ -388,18 +454,10 @@ function NotForHire({ classification }: { classification: string | null }) {
   )
 }
 
-export function AuthoritySection({
-  usdotNumber,
-  classification,
-}: {
-  usdotNumber: number
-  classification: string | null
-}) {
+/** Shared by both tabs: the carrier's authority data, and whether it needs authority at all. */
+function useAuthorityData(usdotNumber: number, classification: string | null) {
   const { data, error, isPending } = useCarrierAuthority(usdotNumber)
-  const [allInsurance, setAllInsurance] = useState(false)
-  const [allActions, setAllActions] = useState(false)
-
-  // A private carrier with nothing on file: one notice, not three empty sections.
+  // A private carrier with nothing on file: one notice, not empty sections.
   const notForHire =
     !!data &&
     data.dockets.length === 0 &&
@@ -407,10 +465,23 @@ export function AuthoritySection({
     data.current_insurance.length === 0 &&
     data.insurance_history.length === 0 &&
     data.authority_history.length === 0
+  return { data, error, isPending, notForHire }
+}
+
+/** The Authority tab: each docket's authority kinds and status, then the authority history. */
+export function AuthoritySection({
+  usdotNumber,
+  classification,
+}: {
+  usdotNumber: number
+  classification: string | null
+}) {
+  const { data, error, isPending, notForHire } = useAuthorityData(usdotNumber, classification)
+  const [allActions, setAllActions] = useState(false)
 
   return (
-    <Section id="authority" title="Authority & Insurance">
-      {isPending && <p className="text-sm text-slate-500">Loading authority and insurance…</p>}
+    <Section id="authority" title="Authority">
+      {isPending && <p className="text-sm text-slate-500">Loading operating authority…</p>}
       {error && (
         <p className="text-sm text-red-700">Could not load authority data: {error.message}</p>
       )}
@@ -423,7 +494,7 @@ export function AuthoritySection({
           ) : (
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {data.dockets.map((d) => (
-                <DocketCard
+                <AuthorityCard
                   key={`${d.prefix}${d.number}`}
                   docket={d}
                   granted={grantDate(data.authority_history, d)}
@@ -437,50 +508,6 @@ export function AuthoritySection({
                 />
               ))}
             </div>
-          )}
-
-          <SubHeading source={filingSources(data.current_insurance) || SOURCES.insurance}>
-            Insurance on file
-          </SubHeading>
-          {data.current_insurance.length === 0 ? (
-            <Empty>No insurance filings on file with FMCSA.</Empty>
-          ) : (
-            <>
-              <FilingsTable filings={data.current_insurance} past={false} />
-              <p className="mt-2 text-xs text-slate-500">
-                {data.current_insurance.some((f) => f.termination_date)
-                  ? 'A cancellation date means the insurer has filed a notice with FMCSA that the policy ends on that date. FMCSA needs a replacement filing before then, or it revokes the authority.'
-                  : 'No insurer has filed a cancellation notice for these policies.'}{' '}
-                An insurance filing with FMCSA has no end date: it stays in force until the insurer
-                files a cancellation notice, which takes effect no sooner than 30 days after FMCSA
-                receives it (49 CFR 387.313). FMCSA does not record when the policy itself expires;
-                that date is on the carrier’s certificate of insurance.
-              </p>
-            </>
-          )}
-          <Renewals renewals={data.renewals ?? []} />
-
-          <SubHeading source={SOURCES.insuranceHistory}>Insurance history</SubHeading>
-          {data.insurance_history.length === 0 ? (
-            <Empty>No past insurance filings in FMCSA records.</Empty>
-          ) : (
-            <>
-              <FilingsTable
-                filings={
-                  allInsurance
-                    ? data.insurance_history
-                    : data.insurance_history.slice(0, PREVIEW_ROWS)
-                }
-                past
-              />
-              {!allInsurance && (
-                <ShowMore
-                  total={data.insurance_history.length}
-                  shown={PREVIEW_ROWS}
-                  onClick={() => setAllInsurance(true)}
-                />
-              )}
-            </>
           )}
 
           <SubHeading source={SOURCES.authorityHistory}>Authority history</SubHeading>
@@ -530,6 +557,87 @@ export function AuthoritySection({
                   total={data.authority_history.length}
                   shown={PREVIEW_ROWS}
                   onClick={() => setAllActions(true)}
+                />
+              )}
+            </>
+          )}
+        </>
+      )}
+    </Section>
+  )
+}
+
+/** The Insurance tab: required next to on file per docket, the filings, renewals and history. */
+export function InsuranceSection({
+  usdotNumber,
+  classification,
+}: {
+  usdotNumber: number
+  classification: string | null
+}) {
+  const { data, error, isPending, notForHire } = useAuthorityData(usdotNumber, classification)
+  const [allInsurance, setAllInsurance] = useState(false)
+  const withAuthority = (data?.dockets ?? []).filter((d) => d.status_source !== 'CENSUS')
+
+  return (
+    <Section id="insurance" title="Insurance">
+      {isPending && <p className="text-sm text-slate-500">Loading insurance…</p>}
+      {error && (
+        <p className="text-sm text-red-700">Could not load insurance data: {error.message}</p>
+      )}
+      {data && notForHire && <NotForHire classification={classification} />}
+      {data && !notForHire && (
+        <>
+          {withAuthority.length > 0 && (
+            <>
+              <SubHeading source={SOURCES.authority}>Required and on file</SubHeading>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {withAuthority.map((d) => (
+                  <RequirementCard key={`${d.prefix}${d.number}`} docket={d} />
+                ))}
+              </div>
+            </>
+          )}
+
+          <SubHeading source={filingSources(data.current_insurance) || SOURCES.insurance}>
+            Insurance on file
+          </SubHeading>
+          {data.current_insurance.length === 0 ? (
+            <Empty>No insurance filings on file with FMCSA.</Empty>
+          ) : (
+            <>
+              <FilingsTable filings={data.current_insurance} past={false} />
+              <p className="mt-2 text-xs text-slate-500">
+                {data.current_insurance.some((f) => f.termination_date)
+                  ? 'A cancellation date means the insurer has filed a notice with FMCSA that the policy ends on that date. FMCSA needs a replacement filing before then, or it revokes the authority.'
+                  : 'No insurer has filed a cancellation notice for these policies.'}{' '}
+                An insurance filing with FMCSA has no end date: it stays in force until the insurer
+                files a cancellation notice, which takes effect no sooner than 30 days after FMCSA
+                receives it (49 CFR 387.313). FMCSA does not record when the policy itself expires;
+                that date is on the carrier’s certificate of insurance.
+              </p>
+            </>
+          )}
+          <Renewals renewals={data.renewals ?? []} />
+
+          <SubHeading source={SOURCES.insuranceHistory}>Insurance history</SubHeading>
+          {data.insurance_history.length === 0 ? (
+            <Empty>No past insurance filings in FMCSA records.</Empty>
+          ) : (
+            <>
+              <FilingsTable
+                filings={
+                  allInsurance
+                    ? data.insurance_history
+                    : data.insurance_history.slice(0, PREVIEW_ROWS)
+                }
+                past
+              />
+              {!allInsurance && (
+                <ShowMore
+                  total={data.insurance_history.length}
+                  shown={PREVIEW_ROWS}
+                  onClick={() => setAllInsurance(true)}
                 />
               )}
             </>

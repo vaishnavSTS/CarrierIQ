@@ -4,6 +4,7 @@ import {
   Gauge,
   Network,
   ScrollText,
+  ShieldCheck,
   Truck,
   type LucideIcon,
 } from 'lucide-react'
@@ -29,11 +30,25 @@ export interface ChecklistItem {
 export const CHECKLIST: ChecklistItem[] = [
   {
     tab: 'authority',
-    label: 'Authority & Insurance',
+    label: 'Authority',
     icon: ScrollText,
-    question: 'Is the authority active, and is the right coverage on file?',
+    question: 'Is the authority active, and which kind?',
     shows: [
-      'Each MC, MX or FF docket: its status, any revocation pending, and when it was granted',
+      'Each MC, MX or FF docket with its status, any revocation pending, and when it was granted',
+      'Common carrier, contract carrier and broker authority, each with its own status (or each Motus authority type)',
+      'The process agent (BOC-3) on file, and every authority action in FMCSA’s history',
+    ],
+    howTo: [
+      'Check that the kind of authority fits the work: a contract carrier hauls under contracts, a common carrier for the public, and broker authority arranges loads without hauling them.',
+      'A revocation pending means FMCSA will revoke the authority unless the carrier fixes the cause, usually missing insurance or a BOC-3.',
+    ],
+  },
+  {
+    tab: 'insurance',
+    label: 'Insurance',
+    icon: ShieldCheck,
+    question: 'Is the right coverage on file?',
+    shows: [
       'Liability insurance (BI&PD) required next to on file, flagged when it is below; cargo and bond',
       'Filings on file with insurer, policy, coverage and any cancellation date, plus past filings and how they ended',
       'Expected renewal: an estimate from past filing dates, since FMCSA publishes no renewal date',

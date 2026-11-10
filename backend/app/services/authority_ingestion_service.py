@@ -16,8 +16,10 @@ from app.core.exceptions import CarrierNotFoundError
 from app.ingestion.operating_authority import OperatingAuthorityAdapter
 from app.ingestion.operating_authority_normalizer import (
     AuthorityEventValues,
+    CurrentAuthorityValues,
     legacy_current,
     legacy_events,
+    merge_motus,
     motus_current,
     motus_events,
 )
@@ -122,13 +124,20 @@ class AuthorityIngestionService:
                     carrier.id, values, source=a.source, raw_record_id=legacy_raws[key(row)][0].id
                 )
                 updated += 1
+        # Motus lists each authority type under a docket as its own row: apply each docket once,
+        # with all its kinds, so a second row (e.g. broker authority) doesn't replace the first.
+        by_docket: dict[tuple[str, str], list[tuple[CurrentAuthorityValues, int]]] = {}
         for row in motus_rows:
             values = motus_current(row, today)
             if values is not None:
-                self.authorities.apply_operating_authority(
-                    carrier.id, values, source=a.source, raw_record_id=motus_raws[key(row)][0].id
-                )
-                updated += 1
+                docket = (values.docket_prefix.value, values.docket_number)
+                by_docket.setdefault(docket, []).append((values, motus_raws[key(row)][0].id))
+        for rows_for_docket in by_docket.values():
+            merged = merge_motus([values for values, _ in rows_for_docket])
+            self.authorities.apply_operating_authority(
+                carrier.id, merged, source=a.source, raw_record_id=rows_for_docket[0][1]
+            )
+            updated += 1
 
         events: list[tuple[AuthorityEventValues, int]] = [
             (event, lhist_raws[key(row)][0].id)

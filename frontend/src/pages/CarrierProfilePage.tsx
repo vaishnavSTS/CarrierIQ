@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { ApiError } from '../api/client'
-import { AuthoritySection } from '../features/carrier-profile/AuthoritySection'
+import { AuthoritySection, InsuranceSection } from '../features/carrier-profile/AuthoritySection'
 import { ChameleonSection } from '../features/carrier-profile/chameleon/ChameleonSection'
 import { EquipmentSection } from '../features/carrier-profile/EquipmentSection'
 import { IdentitySection } from '../features/carrier-profile/IdentitySection'
@@ -22,7 +22,8 @@ import { usePortalMode, useSearchPath } from '../hooks/usePortalMode'
 
 const TABS = [
   ['identity', 'Overview'],
-  ['authority', 'Authority & Insurance'],
+  ['authority', 'Authority'],
+  ['insurance', 'Insurance'],
   ['safety', 'Inspections'],
   ['equipment', 'Equipment'],
   ['network', 'Linked carriers'],
@@ -40,6 +41,7 @@ type TabId = (typeof TABS)[number][0]
 const CLIENT_TABS: readonly TabId[] = [
   'identity',
   'authority',
+  'insurance',
   'safety',
   'equipment',
   'network',
@@ -169,6 +171,12 @@ export function CarrierProfilePage() {
         {tab === 'identity' && <IdentitySection profile={profile} />}
         {tab === 'authority' && (
           <AuthoritySection
+            usdotNumber={profile.usdot_number}
+            classification={profile.operation_classification}
+          />
+        )}
+        {tab === 'insurance' && (
+          <InsuranceSection
             usdotNumber={profile.usdot_number}
             classification={profile.operation_classification}
           />

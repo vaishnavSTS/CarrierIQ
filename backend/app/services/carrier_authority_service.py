@@ -2,15 +2,23 @@
 
 import re
 from collections.abc import Callable
+from dataclasses import asdict
 from datetime import UTC, date, datetime
 
 from app.core.exceptions import CarrierNotFoundError
-from app.models import Insurance
+from app.ingestion.operating_authority_normalizer import (
+    LEGACY,
+    MOTUS,
+    legacy_kinds,
+    motus_kinds,
+)
+from app.models import Authority, Insurance
 from app.repositories.authority_history_repository import AuthorityHistoryRepository
 from app.repositories.authority_repository import AuthorityRepository
 from app.repositories.insurance_repository import InsuranceRepository
 from app.schemas.carrier_authority import (
     AuthorityActionOut,
+    AuthorityKindOut,
     CarrierAuthorityOut,
     DocketDetailOut,
     InsuranceFilingOut,
@@ -47,6 +55,11 @@ class CarrierAuthorityService:
             raise CarrierNotFoundError(f"No carrier with USDOT {usdot_number}")
 
         filings = self.insurance.for_carrier(carrier.id)  # newest effective date first
+        dockets = self.authorities.for_carrier(carrier.id)
+        # Dockets loaded before kinds were kept: read them from the FMCSA row they came from.
+        source_rows = self.authorities.source_rows(
+            [a.raw_record_id for a in dockets if a.kinds is None and a.raw_record_id]
+        )
         actions: dict[tuple[str, object, str], AuthorityActionOut] = {}
         for row in self.history.for_carrier(carrier.id):  # newest first
             docket = f"{row.docket_prefix.value}{row.docket_number}"
@@ -79,8 +92,9 @@ class CarrierAuthorityService:
                     bond_required=a.bond_required,
                     bond_on_file=a.bond_on_file,
                     revocation_pending=a.revocation_pending,
+                    kinds=_kinds(a, source_rows),
                 )
-                for a in self.authorities.for_carrier(carrier.id)
+                for a in dockets
             ],
             current_insurance=[_filing(f) for f in filings if f.on_file],
             insurance_history=[
@@ -129,3 +143,20 @@ def _filing(f: Insurance) -> InsuranceFilingOut:
         source_system=f.source_system,
         status_as_of=f.status_as_of,
     )
+
+
+def _kinds(docket: Authority, source_rows: dict[int, dict[str, object]]) -> list[AuthorityKindOut]:
+    """Each kind of authority under the docket with its status (common / contract / broker for
+    old L&I dockets, each authority type for Motus). None for a census-only docket."""
+    if docket.kinds is not None:
+        return [AuthorityKindOut(**k) for k in docket.kinds]
+    row = source_rows.get(docket.raw_record_id)
+    if not row:
+        return []
+    if docket.status_source == LEGACY:
+        kinds = legacy_kinds(row)
+    elif docket.status_source == MOTUS:
+        kinds = motus_kinds(row)
+    else:
+        return []
+    return [AuthorityKindOut(**asdict(k)) for k in kinds]

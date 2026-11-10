@@ -6,6 +6,16 @@ from decimal import Decimal
 from pydantic import BaseModel
 
 
+class AuthorityKindOut(BaseModel):
+    """One kind of authority under a docket: L&I's common carrier / contract carrier / broker, or
+    a Motus authority type such as "Motor Carrier of Property (Except Household Goods)"."""
+
+    kind: str
+    status: str | None  # ACTIVE | INACTIVE | PENDING | WITHDRAWN | NONE (never held)
+    application_pending: bool | None = None
+    revocation_pending: bool | None = None
+
+
 class DocketDetailOut(BaseModel):
     prefix: str
     number: str
@@ -21,6 +31,7 @@ class DocketDetailOut(BaseModel):
     bond_required: bool | None
     bond_on_file: bool | None
     revocation_pending: bool | None
+    kinds: list[AuthorityKindOut] = []  # each kind of authority with its own status
 
 
 class InsuranceFilingOut(BaseModel):

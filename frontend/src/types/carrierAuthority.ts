@@ -1,5 +1,18 @@
 /** Mirrors backend/app/schemas/carrier_authority.py */
 
+/**
+ * One kind of authority under a docket with its own status: FMCSA's old L&I lists common carrier,
+ * contract carrier and broker authority; Motus lists each authority type, e.g. "Motor Carrier of
+ * Property (Except Household Goods)".
+ */
+export interface AuthorityKind {
+  kind: string
+  /** ACTIVE | INACTIVE | PENDING | WITHDRAWN | NONE (never held) */
+  status: string | null
+  application_pending?: boolean | null
+  revocation_pending?: boolean | null
+}
+
 export interface DocketDetail {
   prefix: string
   number: string
@@ -15,6 +28,8 @@ export interface DocketDetail {
   bond_required: boolean | null
   bond_on_file: boolean | null
   revocation_pending: boolean | null
+  /** Each kind of authority with its own status (missing from an older backend) */
+  kinds?: AuthorityKind[]
 }
 
 export interface InsuranceFiling {

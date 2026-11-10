@@ -8,7 +8,7 @@ same policy/docket in both systems on 2026-10-08:
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from datetime import date
 from decimal import Decimal
 from typing import Any
@@ -39,6 +39,18 @@ _LEGACY_CLASSES = (
 
 
 @dataclass(frozen=True)
+class AuthorityKind:
+    """One kind of authority under a docket and its own status. Old L&I: common carrier, contract
+    carrier, broker. Motus: its authority type, e.g. "Motor Carrier of Property (Except Household
+    Goods)" or "Broker of Property (Except Household Goods)"."""
+
+    kind: str
+    status: str | None  # ACTIVE | INACTIVE | PENDING | WITHDRAWN | NONE (L&I: never held)
+    application_pending: bool | None = None  # L&I only
+    revocation_pending: bool | None = None  # L&I only
+
+
+@dataclass(frozen=True)
 class CurrentAuthorityValues:
     docket_prefix: DocketPrefix
     docket_number: str
@@ -53,6 +65,7 @@ class CurrentAuthorityValues:
     bond_required: bool | None
     bond_on_file: bool | None
     revocation_pending: bool | None
+    kinds: list[AuthorityKind] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -92,6 +105,7 @@ def motus_current(row: Row, as_of: date) -> CurrentAuthorityValues | None:
         bond_required=yes(row, "bond_req"),
         bond_on_file=yes(row, "bond_file"),
         revocation_pending=None,  # not in Motus
+        kinds=motus_kinds(row),
     )
 
 
@@ -123,6 +137,73 @@ def legacy_current(row: Row, frozen_on: date) -> CurrentAuthorityValues | None:
         bond_required=yes(row, "bond_req"),
         bond_on_file=yes(row, "bond_file"),
         revocation_pending=any(yes(row, f"{kind}_rev_pend") for kind, _ in _LEGACY_KINDS),
+        kinds=legacy_kinds(row),
+    )
+
+
+_LEGACY_STAT = {"A": "ACTIVE", "I": "INACTIVE", "N": "NONE"}
+_STATUS_RANK = ["ACTIVE", "PENDING", "INACTIVE", "WITHDRAWN", "NONE"]
+
+
+def legacy_kinds(row: Row) -> list[AuthorityKind]:
+    """Common, contract and broker authority under an L&I docket, each with its own status."""
+    kinds = []
+    for kind, label in _LEGACY_KINDS:
+        pending = yes(row, f"{kind}_app_pend")
+        status = _LEGACY_STAT.get(upper(row, f"{kind}_stat") or "")
+        if status in (None, "NONE") and pending:
+            status = "PENDING"
+        kinds.append(
+            AuthorityKind(
+                kind=label,
+                status=status or "NONE",
+                application_pending=pending,
+                revocation_pending=yes(row, f"{kind}_rev_pend"),
+            )
+        )
+    return kinds
+
+
+def motus_kinds(row: Row) -> list[AuthorityKind]:
+    """A Motus row is one authority type under a docket."""
+    return [
+        AuthorityKind(
+            kind=text(row, "op_auth_type") or "Authority", status=upper(row, "op_auth_status")
+        )
+    ]
+
+
+def merge_motus(values: list[CurrentAuthorityValues]) -> CurrentAuthorityValues:
+    """Motus lists each authority type under a docket as its own row (e.g. a motor carrier of
+    property and of household goods): one docket, all its kinds. Active if any kind is active."""
+    first = values[0]
+    if len(values) == 1:
+        return first
+    statuses = [v.status for v in values if v.status]
+    status = min(
+        statuses, key=lambda s: _STATUS_RANK.index(s) if s in _STATUS_RANK else 99, default=None
+    )
+    types = list(dict.fromkeys(v.authority_type for v in values if v.authority_type))
+
+    def most(name: str) -> Decimal | None:
+        found = [getattr(v, name) for v in values if getattr(v, name) is not None]
+        return max(found) if found else None
+
+    def any_yes(name: str) -> bool | None:
+        found = [getattr(v, name) for v in values if getattr(v, name) is not None]
+        return any(found) if found else None
+
+    return replace(
+        first,
+        authority_type=" · ".join(types) or None,
+        status=status,
+        bipd_required=most("bipd_required"),
+        bipd_on_file=most("bipd_on_file"),
+        cargo_required=any_yes("cargo_required"),
+        cargo_on_file=any_yes("cargo_on_file"),
+        bond_required=any_yes("bond_required"),
+        bond_on_file=any_yes("bond_on_file"),
+        kinds=[k for v in values for k in v.kinds],
     )
 
 
