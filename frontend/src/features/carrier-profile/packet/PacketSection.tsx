@@ -38,6 +38,7 @@ import { ContactStrip } from './ContactStrip'
 import logo from '../../../assets/carriersafetyscan-logo.png'
 import { authorityEventsToReview, packetItems, type PacketItem } from './packetItems'
 import { FixWithSky } from '../FixWithSky'
+import { TabActions } from '../tabActions'
 import { afterLabel, plainGroup } from './plainLabels'
 import { InspectionList } from './InspectionList'
 import { paginateReport, PrintCopy, units, type PageNumbers } from './printFit'
@@ -967,6 +968,7 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
   const safety = useCarrierSafety(profile.usdot_number)
   const inspections = useAllCarrierInspections(profile.usdot_number)
   const portal = usePortalMode()
+  const tabActions = useContext(TabActions)
   const printCopy = useRef<HTMLDivElement>(null)
   const printPages = useRef<HTMLDivElement>(null)
   const [pages, setPages] = useState<PageNumbers | null>(null)
@@ -1013,6 +1015,17 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
     document.title = title
   }
 
+  const pdfButton = (
+    <button
+      type="button"
+      onClick={saveAsPdf}
+      title="Download or save the report as a PDF"
+      className="flex items-center gap-2 whitespace-nowrap rounded-full bg-cta px-4 py-2 text-sm font-medium text-cta-ink shadow hover:bg-cta-hover active:bg-cta-active"
+    >
+      <Printer className="size-4" aria-hidden />
+      Save as PDF
+    </button>
+  )
   const document_ = (
     <PacketDocument
       profile={profile}
@@ -1026,16 +1039,12 @@ export function PacketSection({ profile }: { profile: CarrierProfile }) {
   )
   return (
     <article id="carrier-packet" className="space-y-6 print:hidden">
-      <div className="flex justify-end print:hidden">
-        <button
-          type="button"
-          onClick={saveAsPdf}
-          className="flex items-center gap-2 rounded-md bg-cta px-3 py-1.5 text-sm font-medium text-cta-ink shadow hover:bg-cta-hover active:bg-cta-active"
-        >
-          <Printer className="size-4" aria-hidden />
-          Download / Save as PDF
-        </button>
-      </div>
+      {/* In the tab bar on the carrier page (it stays in view while the report scrolls). */}
+      {tabActions ? (
+        createPortal(pdfButton, tabActions)
+      ) : (
+        <div className="flex justify-end print:hidden">{pdfButton}</div>
+      )}
       <Pages.Provider value={pages}>{document_}</Pages.Provider>
       {/* The printed copy sits directly in <body>, outside the app, so the browser prints it at
           full A4 size (inside the app the hidden menu bar would make it shrink everything). It is

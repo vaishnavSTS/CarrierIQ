@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 import { reportCarrierView } from '../api/accountLog'
@@ -9,6 +9,7 @@ import { EquipmentSection } from '../features/carrier-profile/EquipmentSection'
 import { IdentitySection } from '../features/carrier-profile/IdentitySection'
 import { IntelligenceSection } from '../features/carrier-profile/intelligence/IntelligenceSection'
 import { NetworkSection } from '../features/carrier-profile/network/NetworkSection'
+import { TabActions } from '../features/carrier-profile/tabActions'
 import { ComplianceSection } from '../features/carrier-profile/compliance/ComplianceSection'
 import { PacketSection } from '../features/carrier-profile/packet/PacketSection'
 import { ProfileHeader } from '../features/carrier-profile/ProfileHeader'
@@ -76,6 +77,8 @@ export function CarrierProfilePage() {
   const ownCarriersOnly = portal === 'client' && !clientSearch
   const { data: profile, error, isPending } = useCarrierProfile(usdotNumber)
   const navigate = useNavigate()
+  // The tab bar's right end, where the open tab can put its own buttons (TabActions).
+  const [actions, setActions] = useState<HTMLDivElement | null>(null)
   // The open tab lives in the URL (?tab=safety) so a refresh or shared link keeps it.
   const [params, setParams] = useSearchParams()
   // ?tab=packet: the tab's old name, from links shared before it was renamed.
@@ -146,63 +149,70 @@ export function CarrierProfilePage() {
         <BrokerVerdict usdotNumber={profile.usdot_number} />
       )}
 
-      <div
-        role="tablist"
-        aria-label="Profile sections"
-        className="sticky top-[calc(var(--sticky-top)+0.5rem)] z-20 flex gap-1 overflow-x-auto rounded-2xl border border-slate-200 bg-surface/90 p-1.5 shadow-sm backdrop-blur [scrollbar-width:none] print:hidden"
-      >
-        {tabs.map(([id, label]) => (
-          <button
-            key={id}
-            id={`tab-${id}`}
-            type="button"
-            role="tab"
-            aria-selected={tab === id}
-            aria-controls={`panel-${id}`}
-            onClick={() => openTab(id)}
-            className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm transition-colors ${
-              tab === id
-                ? 'bg-[#101853] font-semibold text-white shadow-sm'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      <div className="sticky top-[calc(var(--sticky-top)+0.5rem)] z-20 flex items-center gap-2 rounded-2xl border border-slate-200 bg-surface/90 p-1.5 shadow-sm backdrop-blur print:hidden">
+        <div
+          role="tablist"
+          aria-label="Profile sections"
+          className="flex min-w-0 flex-1 gap-1 overflow-x-auto [scrollbar-width:none]"
+        >
+          {tabs.map(([id, label]) => (
+            <button
+              key={id}
+              id={`tab-${id}`}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              aria-controls={`panel-${id}`}
+              onClick={() => openTab(id)}
+              className={`flex-auto shrink-0 whitespace-nowrap rounded-full px-3 py-2 text-sm transition-colors ${
+                tab === id
+                  ? 'bg-[#101853] font-semibold text-white shadow-sm'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div ref={setActions} className="flex shrink-0 items-center empty:hidden" />
       </div>
 
-      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
-        {tab === 'safety-score-report' && <PacketSection profile={profile} />}
-        {tab === 'compliance' && <ComplianceSection profile={profile} />}
-        {tab === 'invoices' && <CarrierInvoicesSection usdotNumber={profile.usdot_number} />}
-        {tab === 'identity' && <IdentitySection profile={profile} />}
-        {tab === 'authority' && (
-          <AuthoritySection
-            usdotNumber={profile.usdot_number}
-            classification={profile.operation_classification}
-          />
-        )}
-        {tab === 'insurance' && (
-          <InsuranceSection
-            usdotNumber={profile.usdot_number}
-            classification={profile.operation_classification}
-          />
-        )}
-        {tab === 'safety' && (
-          <SafetySection
-            usdotNumber={profile.usdot_number}
-            safety={profile.safety}
-            homeState={profile.addresses.find((a) => a.address_type === 'PHYSICAL')?.state ?? null}
-          />
-        )}
-        {tab === 'equipment' && <EquipmentSection usdotNumber={profile.usdot_number} />}
-        {tab === 'network' && <NetworkSection profile={profile} />}
-        {tab === 'chameleon' && <ChameleonSection usdotNumber={profile.usdot_number} />}
-        {tab === 'intelligence' && <IntelligenceSection usdotNumber={profile.usdot_number} />}
-        {tab === 'timeline' && (
-          <TimelineSection events={profile.timeline} changes={profile.recent_changes} />
-        )}
-      </div>
+      <TabActions.Provider value={actions}>
+        <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+          {tab === 'safety-score-report' && <PacketSection profile={profile} />}
+          {tab === 'compliance' && <ComplianceSection profile={profile} />}
+          {tab === 'invoices' && <CarrierInvoicesSection usdotNumber={profile.usdot_number} />}
+          {tab === 'identity' && <IdentitySection profile={profile} />}
+          {tab === 'authority' && (
+            <AuthoritySection
+              usdotNumber={profile.usdot_number}
+              classification={profile.operation_classification}
+            />
+          )}
+          {tab === 'insurance' && (
+            <InsuranceSection
+              usdotNumber={profile.usdot_number}
+              classification={profile.operation_classification}
+            />
+          )}
+          {tab === 'safety' && (
+            <SafetySection
+              usdotNumber={profile.usdot_number}
+              safety={profile.safety}
+              homeState={
+                profile.addresses.find((a) => a.address_type === 'PHYSICAL')?.state ?? null
+              }
+            />
+          )}
+          {tab === 'equipment' && <EquipmentSection usdotNumber={profile.usdot_number} />}
+          {tab === 'network' && <NetworkSection profile={profile} />}
+          {tab === 'chameleon' && <ChameleonSection usdotNumber={profile.usdot_number} />}
+          {tab === 'intelligence' && <IntelligenceSection usdotNumber={profile.usdot_number} />}
+          {tab === 'timeline' && (
+            <TimelineSection events={profile.timeline} changes={profile.recent_changes} />
+          )}
+        </div>
+      </TabActions.Provider>
     </div>
   )
 }

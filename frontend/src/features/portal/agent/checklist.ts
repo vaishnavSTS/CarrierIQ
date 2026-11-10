@@ -132,7 +132,7 @@ export const CHECKLIST: ChecklistItem[] = [
       'Authority, liability insurance (BI&PD), safety scores, inspections and linked carriers in one document',
     ],
     howTo: [
-      'Open the tab and choose Download / Save as PDF.',
+      'Open the tab and choose Save as PDF (at the right end of the tab bar).',
       'Keep it with the submission, so you can show what the record said on the day you quoted.',
     ],
   },
