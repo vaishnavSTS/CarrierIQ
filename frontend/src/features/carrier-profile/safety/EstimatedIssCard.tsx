@@ -1,11 +1,20 @@
-import { AlertTriangle, CircleAlert, CircleCheck, Minus } from 'lucide-react'
+import {
+  AlertTriangle,
+  CircleAlert,
+  CircleCheck,
+  Minus,
+  MoveRight,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react'
+import type { ReactNode } from 'react'
 
 import type { EstimatedIss, IssHistoryEntry } from '../../../types/carrierSafety'
 import { formatLocalDate, formatMonth, ordinal } from '../../../utils/format'
 import { Empty } from '../Section'
 import { IssGauge } from './IssGauge'
 import { IssHistoryChart } from './IssHistoryChart'
-import { issChanges, issPoints } from './issPoints'
+import { issChanges, issPoints, type IssPoint } from './issPoints'
 import { ISS_BAND, NEAR_THRESHOLD_POINTS } from './issBand'
 
 function monthLabel(isoDate: string): string {
@@ -111,6 +120,69 @@ function BasicIcon({ basic: b }: { basic: Basic }) {
 /** Score changes listed under the graph */
 const MAX_CHANGES = 12
 
+const BAND_EDGE: Record<NonNullable<EstimatedIss['band']>, string> = {
+  PASS: 'border-l-emerald-500',
+  OPTIONAL: 'border-l-amber-500',
+  INSPECT: 'border-l-red-500',
+}
+
+function Stat({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2">
+      <div className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{label}</div>
+      <div className="mt-0.5 flex items-baseline gap-1.5 text-sm text-slate-900">{children}</div>
+    </div>
+  )
+}
+
+/** Latest, change since the first saved check, lowest, highest and how many checks. */
+function HistoryStats({ points }: { points: IssPoint[] }) {
+  const scored = points.filter((p): p is IssPoint & { value: number } => p.value !== null)
+  if (scored.length === 0) return null
+  const first = scored[0]
+  const latest = scored[scored.length - 1]
+  const change = latest.value - first.value
+  const values = scored.map((p) => p.value)
+  const Trend = change < 0 ? TrendingDown : change > 0 ? TrendingUp : MoveRight
+  return (
+    <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-5">
+      <Stat label="Latest">
+        <span className="text-xl font-semibold tabular-nums">{latest.value}</span>
+        {latest.band && (
+          <span className="text-xs text-slate-600">{ISS_BAND[latest.band].status}</span>
+        )}
+      </Stat>
+      {scored.length > 1 && (
+        <>
+          <Stat label={`Since ${formatLocalDate(first.at)}`}>
+            <Trend
+              className={`size-4 self-center ${
+                change < 0 ? 'text-emerald-600' : change > 0 ? 'text-red-600' : 'text-slate-400'
+              }`}
+              aria-hidden
+            />
+            <span className="text-xl font-semibold tabular-nums">
+              {change === 0 ? '0' : change > 0 ? `+${change}` : change}
+            </span>
+            <span className="text-xs text-slate-600">
+              {change < 0 ? 'better' : change > 0 ? 'worse' : 'no change'}
+            </span>
+          </Stat>
+          <Stat label="Lowest">
+            <span className="text-xl font-semibold tabular-nums">{Math.min(...values)}</span>
+          </Stat>
+          <Stat label="Highest">
+            <span className="text-xl font-semibold tabular-nums">{Math.max(...values)}</span>
+          </Stat>
+        </>
+      )}
+      <Stat label="Checks saved">
+        <span className="text-xl font-semibold tabular-nums">{points.length}</span>
+      </Stat>
+    </div>
+  )
+}
+
 /**
  * Every saved score as a graph (one point per day the carrier was checked, and per change), then
  * the changes, newest first, so a change (and when it happened) is visible.
@@ -120,39 +192,44 @@ function ScoreHistory({ iss, history }: { iss: EstimatedIss; history: IssHistory
   const points = issPoints(iss, history)
   const changes = issChanges(history).slice(0, MAX_CHANGES)
   return (
-    <div className="mt-3 border-t border-slate-200 pt-3">
-      <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
-        Score history
+    <div className="mt-4 rounded-xl border border-slate-200 bg-gradient-to-b from-white to-slate-50 p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <div className="text-sm font-semibold text-slate-900">Score history</div>
+        <div className="text-xs text-slate-500">
+          Saved since {formatLocalDate(points[0].at)} · a point is added each day the carrier is
+          checked
+        </div>
       </div>
-      <div className="mt-2">
+      <HistoryStats points={points} />
+      <div className="mt-3">
         <IssHistoryChart points={points} />
       </div>
-      {points.length === 1 && (
-        <p className="mt-1 text-xs text-slate-500">
-          One point so far: a new one is added each day the carrier is checked.
-        </p>
-      )}
-      {history.length === 1 ? (
-        <p className="mt-1 text-xs text-slate-500">
-          Saved since {formatLocalDate(history[0].recorded_at)}.
-        </p>
-      ) : (
-        <ol className="mt-2 flex flex-wrap gap-2">
-          {changes.map((h, i) => {
-            const band = h.band ? ISS_BAND[h.band] : null
-            return (
-              <li
-                key={`${h.recorded_at}-${i}`}
-                className="rounded-md border border-slate-200 px-2.5 py-1 text-xs"
-                title={`${h.reason} · FMCSA data for ${monthLabel(h.data_month)} · ${h.version}`}
-              >
-                <span className="font-semibold tabular-nums text-slate-900">{h.value ?? '—'}</span>
-                {band && <span className="text-slate-600"> {band.status}</span>}
-                <span className="block text-slate-500">{formatLocalDate(h.recorded_at)}</span>
-              </li>
-            )
-          })}
-        </ol>
+      {changes.length > 1 && (
+        <>
+          <div className="mt-3 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            Changes
+          </div>
+          <ol className="mt-1.5 flex flex-wrap gap-2">
+            {changes.map((h, i) => {
+              const band = h.band ? ISS_BAND[h.band] : null
+              return (
+                <li
+                  key={`${h.recorded_at}-${i}`}
+                  className={`rounded-md border border-l-4 border-slate-200 bg-white px-2.5 py-1 text-xs ${
+                    h.band ? BAND_EDGE[h.band] : 'border-l-slate-300'
+                  }`}
+                  title={`${h.reason} · FMCSA data for ${monthLabel(h.data_month)} · ${h.version}`}
+                >
+                  <span className="font-semibold tabular-nums text-slate-900">
+                    {h.value ?? '—'}
+                  </span>
+                  {band && <span className="text-slate-600"> {band.status}</span>}
+                  <span className="block text-slate-500">{formatLocalDate(h.recorded_at)}</span>
+                </li>
+              )
+            })}
+          </ol>
+        </>
       )}
     </div>
   )
