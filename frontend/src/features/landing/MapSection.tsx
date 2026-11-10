@@ -8,11 +8,12 @@ import {
   CalendarPlus,
   FlaskConical,
   MapPinned,
+  Search,
   Truck,
   type LucideIcon,
 } from 'lucide-react'
 import { AnimatePresence, motion } from 'motion/react'
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import {
@@ -82,6 +83,28 @@ const SORTS: {
   },
 ]
 const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+
+/**
+ * What the open tab narrows the list to, in words, for the USDOT search's messages: the search
+ * only finds carriers that also pass this filter (e.g. Hazmat: only hazmat carriers).
+ */
+function tabFilter(sort: DirectorySort, letter: string | null): string | null {
+  if (sort === 'hazmat') return 'hauling hazmat'
+  if (sort === 'rated') return 'with a Satisfactory rating'
+  if (sort === 'largest') return 'with a reported fleet size'
+  if (sort === 'az' && letter) return `named ${letter}…`
+  return null
+}
+
+/** What was typed, once typing pauses (so the list doesn't reload on every key). */
+function useSettled(value: string, ms = 350): string {
+  const [settled, setSettled] = useState(value)
+  useEffect(() => {
+    const timer = setTimeout(() => setSettled(value), ms)
+    return () => clearTimeout(timer)
+  }, [value, ms])
+  return settled
+}
 
 /** A county as the list and its drop-down show it */
 type CountyOption = CountyCount & { label: string }
@@ -322,6 +345,10 @@ function StateList({
   const inactive = status === 'inactive'
   const [sort, setSort] = useState<DirectorySort>('newest')
   const [letter, setLetter] = useState<string | null>(null)
+  // Logged in (brokers, insurance agents): search the state's carriers by USDOT. The list follows
+  // once typing pauses; digits only, up to 8.
+  const [typed, setTyped] = useState('')
+  const usdot = useSettled(portal ? typed : '')
   // The page goes back to the first whenever the county changes.
   const [paging, setPaging] = useState<{ county: string | null; page: number }>({
     county: null,
@@ -342,10 +369,19 @@ function StateList({
       sort,
       letter,
       page,
+      usdot,
     ],
     queryFn: () =>
       portal
-        ? getStateCarriers(state.state, sort, letter, page, status, county?.county ?? null)
+        ? getStateCarriers(
+            state.state,
+            sort,
+            letter,
+            page,
+            status,
+            county?.county ?? null,
+            usdot || null,
+          )
         : getPublicStateCarriers(state.state, sort, letter, status, county?.county ?? null),
   })
   const [open, setOpen] = useState<PublicCarrier | null>(null)
@@ -353,8 +389,12 @@ function StateList({
   const wide = useWideScreen()
   const linkFor = (usdot: number) => (portal ? (carrierLink?.(usdot) ?? null) : `/try?q=${usdot}`)
   // The census has no date for going inactive: for inactive carriers "newest" means registered.
-  const note =
-    inactive && sort === 'newest'
+  const place = county ? `${county.label}, ${state.state}` : state.name
+  const filter = tabFilter(sort, letter)
+  const tabName = SORTS.find((s) => s.key === sort)?.label ?? sort
+  const note = usdot
+    ? `${inactive ? 'Inactive' : 'Active'} carriers in ${place}${filter ? ` ${filter}` : ''} whose USDOT starts with ${usdot}.`
+    : inactive && sort === 'newest'
       ? 'Most recently registered first. The date a carrier went inactive isn’t recorded.'
       : SORTS.find((s) => s.key === sort)?.note
 
@@ -468,6 +508,30 @@ function StateList({
         ))}
       </div>
 
+      {portal && (
+        <div className="border-b border-slate-100 px-4 py-2.5">
+          <label className="relative block">
+            <span className="sr-only">Search {place} by USDOT number</span>
+            <Search
+              className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-slate-400"
+              aria-hidden
+            />
+            <input
+              type="search"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder={`Search ${place} by USDOT number`}
+              value={typed}
+              onChange={(e) => {
+                setTyped(e.target.value.replace(/\D/g, '').slice(0, 8))
+                setPage(0)
+              }}
+              className="w-full rounded-lg border border-slate-300 bg-canvas py-1.5 pl-8 pr-2.5 font-mono text-sm text-slate-900 placeholder:font-sans focus:border-accent focus:outline-none"
+            />
+          </label>
+        </div>
+      )}
+
       {sort === 'az' && (
         <div className="flex flex-wrap gap-1 border-b border-slate-100 px-4 py-2.5">
           <button
@@ -506,7 +570,15 @@ function StateList({
           </li>
         )}
         {list.data?.carriers.length === 0 && (
-          <li className="px-4 py-6 text-sm text-slate-600">No carriers here.</li>
+          <li className="px-4 py-6 text-sm text-slate-600">
+            {usdot
+              ? `No ${inactive ? 'inactive' : 'active'} interstate carrier in ${place}${filter ? ` ${filter}` : ''} has a USDOT starting with ${usdot}. ${
+                  filter
+                    ? `The carrier may not be in the ${tabName}${sort === 'az' && letter ? ` ${letter}` : ''} list: open Newest to search every ${inactive ? 'inactive' : 'active'} carrier.`
+                    : `It may be ${inactive ? 'active' : 'inactive'}, registered in another state, or intrastate only.`
+                }`
+              : 'No carriers here.'}
+          </li>
         )}
         {list.data?.carriers.map((c) => (
           <li key={c.usdot_number} className="flex items-start gap-3 px-4 py-2.5">

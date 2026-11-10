@@ -204,6 +204,47 @@ def test_portal_lists_new_this_month_and_satisfactory_ratings(api: TestClient, c
     assert query["$order"].startswith("safety_rating_date DESC")
 
 
+@pytest.mark.parametrize("role", [UserRole.BROKER_USER, UserRole.INSURANCE_AGENT])
+def test_brokers_and_agents_search_a_state_by_usdot(
+    api: TestClient, census: FakeCensus, role: UserRole
+):
+    _as(role)
+    body = api.get(f"{PORTAL}/states/CA?usdot=230658&sort=az").json()
+    where = census.queries[-1]["$where"]
+    assert "phy_state='CA'" in where
+    assert "starts_with(dot_number::text, '230658')" in where  # the census keeps it as a number
+    assert body["usdot"] == "230658"
+
+    # Digits only, so nothing typed reaches the query as text; at most 8 digits.
+    for bad in ("23a", "123456789", "' OR 1=1"):
+        assert api.get(f"{PORTAL}/states/CA", params={"usdot": bad}).status_code == 422
+
+
+@pytest.mark.parametrize(
+    ("tab", "tab_filter"),
+    [
+        ("hazmat", "hm_ind='Y'"),
+        ("rated", "safety_rating='S'"),
+        ("largest", "power_units IS NOT NULL"),
+    ],
+)
+def test_the_usdot_search_keeps_the_tab_filter(
+    api: TestClient, census: FakeCensus, tab: str, tab_filter: str
+):
+    """On the Hazmat tab, a searched USDOT that isn't a hazmat carrier isn't listed."""
+    _as(UserRole.BROKER_USER)
+    api.get(f"{PORTAL}/states/CA?sort={tab}&usdot=2465630&status=active")
+    where = census.queries[-1]["$where"]
+    assert tab_filter in where
+    assert "starts_with(dot_number::text, '2465630')" in where
+    assert "status_code='A'" in where or "status_code = 'A'" in where
+
+
+def test_the_public_map_has_no_usdot_search(api: TestClient, census: FakeCensus):
+    api.get(f"{BASE}/states/CA?usdot=230658")
+    assert "dot_number" not in census.queries[-1]["$where"]
+
+
 def test_rating_date_only_for_a_satisfactory_rating():
     directory = CarrierDirectory(FakeCensus(), today=lambda: date(2026, 11, 4))  # type: ignore[arg-type]
     rated = directory._carrier(

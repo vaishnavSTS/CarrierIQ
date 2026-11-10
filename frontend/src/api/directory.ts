@@ -86,7 +86,10 @@ export const getStateCounts = (status: DirectoryStatus) =>
 export const getCountyCounts = (state: string, status: DirectoryStatus) =>
   apiGet<CountyCount[]>(`/directory/states/${state}/counties?status=${status}`)
 
-/** Logged in: every carrier in the state (or one of its counties), 25 a page. */
+/**
+ * Logged in: every carrier in the state (or one of its counties), 25 a page; `usdot`: only USDOT
+ * numbers starting with those digits (the brokers' and agents' search).
+ */
 export const getStateCarriers = (
   state: string,
   sort: DirectorySort,
@@ -94,10 +97,12 @@ export const getStateCarriers = (
   page: number,
   status: DirectoryStatus,
   county: string | null = null,
+  usdot: string | null = null,
 ) => {
   const params = new URLSearchParams({ sort, page: String(page), status })
   if (letter && sort === 'az') params.set('letter', letter)
   if (county) params.set('county', county)
+  if (usdot) params.set('usdot', usdot)
   return apiGet<PublicStateList>(`/directory/states/${state}?${params}`)
 }
 

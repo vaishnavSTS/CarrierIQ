@@ -129,6 +129,7 @@ class StatePage:
     carriers: list[DirectoryCarrier]
     has_more: bool
     county: str | None = None
+    usdot: str | None = None  # USDOT numbers starting with these digits
 
 
 def is_county_code(value: object) -> bool:
@@ -299,6 +300,7 @@ class CarrierDirectory:
         status: Status = "active",
         size: int = PAGE_SIZE,
         county: str | None = None,
+        usdot: str | None = None,
     ) -> StatePage:
         state = state.upper()
         if state not in STATES:
@@ -307,11 +309,16 @@ class CarrierDirectory:
             raise ValueError("County must be a 3-digit code")
         if letter is not None and not (len(letter) == 1 and "A" <= letter.upper() <= "Z"):
             raise ValueError("Letter must be A-Z")
+        # Digits only, so it is safe in the query: USDOT numbers starting with them.
+        if usdot is not None and not (usdot.isdigit() and 1 <= len(usdot) <= 8):
+            raise ValueError("USDOT must be 1 to 8 digits")
         where = f"{INTERSTATE[status]} AND phy_state='{state}'"
         if county:
             where += f" AND phy_cnty='{county}'"
         if letter:
             where += f" AND starts_with(upper(legal_name), '{letter.upper()}')"
+        if usdot:
+            where += f" AND starts_with(dot_number::text, '{usdot.lstrip('0') or '0'}')"
         order = {
             "newest": "add_date DESC, dot_number DESC",
             "largest": "power_units::number DESC, dot_number",
@@ -352,6 +359,7 @@ class CarrierDirectory:
             carriers=[c for c in carriers if c is not None],
             has_more=len(rows) > size,
             county=county,
+            usdot=usdot,
         )
 
     # --- One carrier's contact card (the portals' map only) --------------------------------------

@@ -116,6 +116,7 @@ class PublicStateOut(BaseModel):
     carriers: list[PublicCarrierOut]
     has_more: bool
     county: str | None = None
+    usdot: str | None = None  # the USDOT search, when there is one
 
 
 def get_carrier_directory() -> Iterator[CarrierDirectory]:
@@ -145,6 +146,8 @@ def public_recent(directory: Directory) -> list:
 State = Annotated[str, Path(min_length=2, max_length=2)]
 Letter = Annotated[str | None, Query(pattern=r"^[A-Za-z]$")]
 County = Annotated[str | None, Query(pattern=r"^[0-9]{3}$")]
+# The start of a USDOT number (the logged-in map's search): digits only.
+Usdot = Annotated[str | None, Query(pattern=r"^[0-9]{1,8}$")]
 
 
 @public_router.get("/states/{state}/counties", response_model=list[CountyCountOut])
@@ -190,9 +193,11 @@ def state_carriers(
     page: Annotated[int, Query(ge=0, lt=MAX_PAGES)] = 0,
     status: Literal["active", "inactive"] = "active",
     county: County = None,
+    usdot: Usdot = None,
 ):
-    """Every carrier in the state (or one of its counties), PAGE_SIZE a page."""
-    return _state_page(directory, state, sort, letter, page, status, PAGE_SIZE, county)
+    """Every carrier in the state (or one of its counties), PAGE_SIZE a page; `usdot`: only
+    USDOT numbers starting with those digits (brokers' and insurance agents' map search)."""
+    return _state_page(directory, state, sort, letter, page, status, PAGE_SIZE, county, usdot)
 
 
 @router.get("/carriers/{usdot_number}", response_model=CarrierContactOut)
@@ -228,11 +233,12 @@ def _state_page(
     status: Status,
     size: int,
     county: str | None = None,
+    usdot: str | None = None,
 ) -> PublicStateOut:
     if state.upper() not in STATES:
         raise NotFoundError(f"No state {state.upper()}")
     result = directory.state_carriers(
-        state, sort, letter if sort == "az" else None, page, status, size, county
+        state, sort, letter if sort == "az" else None, page, status, size, county, usdot
     )
     return PublicStateOut(
         state=result.state,
@@ -246,4 +252,5 @@ def _state_page(
         ],
         has_more=result.has_more,
         county=result.county,
+        usdot=result.usdot,
     )
