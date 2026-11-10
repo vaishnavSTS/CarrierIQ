@@ -33,6 +33,9 @@ const FIX: Record<string, string> = {
 const RENEWAL_FIX =
   'A current certificate of insurance from the carrier or its insurer, showing the policy dates.'
 
+const COVERAGE_FIX =
+  'Having the insurer file liability coverage that meets the minimum (a new BMC-91X), then checking the authority status in Motus; FMCSA reinstates a suspended authority once enough coverage is on file.'
+
 const KIND_LABEL = { phone: 'phone', email: 'email', address: 'address' }
 
 /** Turn public-record findings into the checklist a broker's vetting is likely to run. */
@@ -50,7 +53,9 @@ export function brokerFlags(network: CarrierNetwork, profile: CarrierProfile): B
         FIX[check.key] ??
         (check.key.startsWith('renewal_')
           ? RENEWAL_FIX
-          : 'Reviewing the carrier’s record and correcting it if needed.'),
+          : check.key.startsWith('coverage_')
+            ? COVERAGE_FIX
+            : 'Reviewing the carrier’s record and correcting it if needed.'),
     })
   }
 

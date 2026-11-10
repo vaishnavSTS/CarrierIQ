@@ -1,3 +1,4 @@
+import { Info } from 'lucide-react'
 import { SOURCES } from '../../utils/sources'
 import { useState, type ReactNode } from 'react'
 
@@ -20,6 +21,7 @@ import type {
 } from '../../types/carrierAuthority'
 import { formatDate, formatDocket, formatMoney, humanize, sourceLabel } from '../../utils/format'
 import { statusTone, type Tone } from '../../utils/status'
+import { kindLabel, mixedAuthorityNote } from './authorityKinds'
 import { Empty, Section } from './Section'
 import { cellClass, headClass, tableClass } from './styles'
 
@@ -160,11 +162,6 @@ const KIND_STATUS: Record<string, { label: string; tone: Tone }> = {
   NONE: { label: 'None', tone: 'neutral' },
 }
 
-/** "Contract carrier" -> "Contract carrier authority"; Motus types read as FMCSA writes them. */
-function kindLabel(kind: string): string {
-  return /^(common carrier|contract carrier|broker)$/i.test(kind) ? `${kind} authority` : kind
-}
-
 /** Each kind of authority under the docket (common, contract, broker; or Motus types). */
 function AuthorityKinds({ docket }: { docket: DocketDetail }) {
   const kinds = docket.kinds ?? []
@@ -200,6 +197,18 @@ function AuthorityKinds({ docket }: { docket: DocketDetail }) {
   )
 }
 
+/** Why one MC can read active in one FMCSA system and inactive in another (see authorityKinds). */
+function MixedAuthorityNote({ docket }: { docket: DocketDetail }) {
+  const note = mixedAuthorityNote(formatDocket(docket.prefix, docket.number), docket.kinds ?? [])
+  if (!note) return null
+  return (
+    <p className="mt-2 flex gap-1.5 rounded-md bg-sky-50 px-2.5 py-2 text-xs text-sky-900">
+      <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+      <span>{note}</span>
+    </p>
+  )
+}
+
 function AuthorityCard({
   docket,
   agents,
@@ -220,6 +229,7 @@ function AuthorityCard({
         </div>
       </div>
       <AuthorityKinds docket={docket} />
+      <MixedAuthorityNote docket={docket} />
       {granted && (
         <div className="mt-2 text-slate-700">
           Authority {ageSince(granted)} · granted {formatDate(granted)}

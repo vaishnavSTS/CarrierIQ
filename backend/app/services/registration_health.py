@@ -15,6 +15,7 @@ Pure function over stored records, so it is easy to test and never fetches anyth
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
+from decimal import Decimal
 from typing import Any
 
 from app.models import Address, Authority, Carrier, Insurance
@@ -22,6 +23,8 @@ from app.services.boc3_service import ProcessAgent
 from app.services.insurance_renewal import describe, renewals
 
 MCS150_MONTHS = 24  # FMCSA requires an MCS-150 update at least every 24 months
+# 49 CFR 387.9: $750,000 for general freight, at least $1,000,000 for hazardous materials.
+HAZMAT_BIPD_MIN = Decimal(1_000_000)
 CHECK_STATUSES = ("ok", "attention", "alert", "info", "unknown")
 
 
@@ -101,6 +104,7 @@ def registration_checks(
         _oos(oos_orders),
         _revocations(revocations, today),
         _addresses(addresses, census, address_peers),
+        *_coverage(authorities, census),
         *_renewals(insurance, today),
     ]
     return [c for c in checks if c is not None]
@@ -389,4 +393,72 @@ def _renewals(insurance: Sequence[Insurance], today: date) -> list[Check]:
                 r.expected,
             )
         )
+    return checks
+
+
+def _money(amount: Decimal) -> str:
+    return f"${amount:,.0f}"
+
+
+def _hauls_freight(a: Authority) -> bool:
+    """An active carrier kind under the docket (a broker-only docket files a bond, not BI&PD)."""
+    kinds = [k for k in a.kinds or [] if str(k.get("status") or "").upper() == "ACTIVE"]
+    if kinds:
+        return any("broker" not in str(k.get("kind") or "").lower() for k in kinds)
+    return "broker" not in (a.authority_type or "").lower()
+
+
+def _coverage(authorities: Sequence[Authority], census: dict[str, Any]) -> list[Check]:
+    """Liability on file below what FMCSA requires: FMCSA suspends the authority for it.
+
+    Two checks, because the requirement FMCSA's data lists can be out of date (old L&I
+    records stopped updating, and Motus' public data leaves many carriers out):
+    - on file below the minimum FMCSA's own record lists for the docket;
+    - a carrier the census registers as hauling hazardous materials with less than the
+      $1,000,000 hazmat minimum on file, whatever minimum the record lists.
+    """
+    hazmat = str(census.get("hm_ind") or "").upper() == "Y"
+    checks = []
+    for a in authorities:
+        if not (a.status or "").upper().startswith("ACTIVE") or a.bipd_on_file is None:
+            continue
+        docket = f"{a.docket_prefix.value}{a.docket_number}"
+        on_file = a.bipd_on_file
+        required = a.bipd_required
+        if required and on_file < required:
+            checks.append(
+                Check(
+                    f"coverage_{docket.lower()}",
+                    f"Liability insurance below the minimum ({docket})",
+                    "alert",
+                    f"FMCSA's record for {docket} lists {_money(on_file)} of liability "
+                    f"(BI&PD) on file against a required {_money(required)}. FMCSA suspends "
+                    "authority when the insurance on file does not meet the minimum; check "
+                    "the current status in Motus before booking.",
+                    "FMCSA operating authority",
+                    a.status_as_of,
+                )
+            )
+        elif hazmat and on_file < HAZMAT_BIPD_MIN and _hauls_freight(a):
+            listed = (
+                f" FMCSA's record lists {_money(required)} as the minimum, which may be out "
+                "of date."
+                if required
+                else ""
+            )
+            checks.append(
+                Check(
+                    f"coverage_{docket.lower()}",
+                    f"Hazmat carrier with less than $1,000,000 liability ({docket})",
+                    "alert",
+                    f"FMCSA's census registers this carrier as hauling hazardous materials, "
+                    f"and {_money(on_file)} of liability (BI&PD) is on file for {docket}. FMCSA "
+                    f"requires at least {_money(HAZMAT_BIPD_MIN)} for hazardous materials "
+                    f"(49 CFR 387.9), and up to $5,000,000 for some.{listed} Motus, FMCSA's "
+                    "current system, may show the authority suspended for it; check there "
+                    "before booking.",
+                    "FMCSA census / operating authority",
+                    a.status_as_of,
+                )
+            )
     return checks

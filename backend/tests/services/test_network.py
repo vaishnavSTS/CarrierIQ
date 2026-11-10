@@ -3,6 +3,7 @@
 
 from collections.abc import Iterator
 from datetime import date
+from decimal import Decimal
 from typing import Any
 
 import pytest
@@ -319,3 +320,56 @@ def test_identity_event_validation(api: TestClient) -> None:
     }
     assert api.post(url, json=bad_correction).status_code == 422
     assert api.post("/api/v1/carriers/999999/identity-events", json=base).status_code == 404
+
+
+def covered(on_file: int, required: int | None, **kw: Any) -> Authority:
+    return Authority(
+        docket_prefix=DocketPrefix.MC,
+        docket_number="787470",
+        status="ACTIVE",
+        status_source="LEGACY_LI",
+        bipd_on_file=Decimal(on_file),
+        bipd_required=None if required is None else Decimal(required),
+        **kw,
+    )
+
+
+def test_liability_below_the_listed_minimum() -> None:
+    found = checks(authorities=[covered(750_000, 1_000_000)])["coverage_mc787470"]
+    assert found.status == "alert"
+    assert "$750,000 of liability (BI&PD) on file against a required $1,000,000" in found.detail
+    assert "check the current status in Motus" in found.detail
+    assert "coverage_mc787470" not in checks(authorities=[covered(1_000_000, 750_000)])
+
+
+def test_hazmat_carrier_with_general_freight_liability() -> None:
+    # STINGRAY EXPRESS: hazmat, $750,000 on file, the old record still lists $750,000 required;
+    # Motus suspended the authority for it.
+    hazmat = {"hm_ind": "Y"}
+    found = checks(census=hazmat, authorities=[covered(750_000, 750_000)])["coverage_mc787470"]
+    assert found.status == "alert"
+    assert "registers this carrier as hauling hazardous materials" in found.detail
+    assert "at least $1,000,000 for hazardous materials (49 CFR 387.9)" in found.detail
+    assert "lists $750,000 as the minimum, which may be out of date" in found.detail
+
+    def flagged(**kw: Any) -> bool:
+        return "coverage_mc787470" in checks(**kw)
+
+    assert not flagged(census=hazmat, authorities=[covered(1_000_000, 750_000)])
+    assert not flagged(census={"hm_ind": "N"}, authorities=[covered(750_000, 750_000)])
+    assert not flagged(
+        census=hazmat,
+        authorities=[
+            covered(
+                750_000,
+                750_000,
+                kinds=[
+                    {"kind": "Broker", "status": "ACTIVE"},
+                    {"kind": "Common carrier", "status": "NONE"},
+                ],
+            )
+        ],
+    )
+    inactive = covered(750_000, 750_000)
+    inactive.status = "INACTIVE"
+    assert not flagged(census=hazmat, authorities=[inactive])
