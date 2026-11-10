@@ -1,4 +1,5 @@
-"""Account log: every login, failed login, logout and change to an account, append-only.
+"""Account log: every login, failed login, logout and change to an account, and what each person
+searched and which carriers and tabs they opened. Append-only.
 
 STS admins read it on the Account logs page (all accounts, or one account's history). Rows are
 never changed or removed: when an account is deleted its rows stay, with `user_id` cleared and the
@@ -31,6 +32,9 @@ class AccountEventKind(StrEnum):
     DELETED = "DELETED"
     CARRIER_LINKED = "CARRIER_LINKED"
     CLAIM_RELEASED = "CLAIM_RELEASED"
+    # Activity: what the person looked up
+    SEARCHED = "SEARCHED"  # a carrier search (detail: what was typed, and how many results)
+    CARRIER_VIEWED = "CARRIER_VIEWED"  # a carrier page tab opened (usdot_number, page)
 
 
 class AccountEvent(IdMixin, Base):
@@ -50,3 +54,6 @@ class AccountEvent(IdMixin, Base):
     )
     ip: Mapped[str | None] = mapped_column(String(64))
     user_agent: Mapped[str | None] = mapped_column(String(400))
+    # Activity: the carrier searched for or opened, and the tab opened (e.g. "safety")
+    usdot_number: Mapped[int | None] = mapped_column(BigInteger)
+    page: Mapped[str | None] = mapped_column(String(40))

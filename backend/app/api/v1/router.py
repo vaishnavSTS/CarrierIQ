@@ -51,6 +51,8 @@ api_router.include_router(iss.router, dependencies=staff_only)
 api_router.include_router(admin.router)
 api_router.include_router(monitored.router)  # Admin Monitored DOTs (STS admins)
 api_router.include_router(account_log.router)  # Account logs (STS admins)
+# Carrier pages report the tabs each logged-in person opens (any portal).
+api_router.include_router(account_log.activity_router)
 api_router.include_router(portal.router)
 api_router.include_router(portal.broker_router)
 # DataQs: staff (/dataqs) and client (/portal/dataqs) routes check their own login per route.

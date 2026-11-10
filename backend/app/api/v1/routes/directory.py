@@ -24,10 +24,12 @@ from pydantic import BaseModel
 
 from app.api.auth import CurrentUser
 from app.api.bot_protection import client_ip
+from app.api.v1.routes.account_log import Log
 from app.core.config import get_settings
 from app.core.exceptions import ForbiddenError, NotFoundError
 from app.core.rate_limit import limiter
 from app.ingestion.socrata_client import SocrataClient
+from app.models import AccountEventKind
 from app.services.carrier_directory import PAGE_SIZE, STATES, CarrierDirectory, Sort, Status
 
 PUBLIC_LIST_SIZE = 10
@@ -148,6 +150,7 @@ Letter = Annotated[str | None, Query(pattern=r"^[A-Za-z]$")]
 County = Annotated[str | None, Query(pattern=r"^[0-9]{3}$")]
 # The start of a USDOT number (the logged-in map's search): digits only.
 Usdot = Annotated[str | None, Query(pattern=r"^[0-9]{1,8}$")]
+MAP_SEARCH_LOGGED_FROM = 6  # digits typed before a map search is recorded
 
 
 @public_router.get("/states/{state}/counties", response_model=list[CountyCountOut])
@@ -194,10 +197,29 @@ def state_carriers(
     status: Literal["active", "inactive"] = "active",
     county: County = None,
     usdot: Usdot = None,
+    *,
+    user: CurrentUser,
+    request: Request,
+    log: Log,
 ):
     """Every carrier in the state (or one of its counties), PAGE_SIZE a page; `usdot`: only
     USDOT numbers starting with those digits (brokers' and insurance agents' map search)."""
-    return _state_page(directory, state, sort, letter, page, status, PAGE_SIZE, county, usdot)
+    result = _state_page(directory, state, sort, letter, page, status, PAGE_SIZE, county, usdot)
+    # The map search reloads as the person types: only near-whole USDOTs go in their history.
+    if usdot and len(usdot) >= MAP_SEARCH_LOGGED_FROM and page == 0:
+        where = f"{result.name}" + (f", county {county}" if county else "")
+        tab = {"hazmat": "Hazmat", "rated": "Satisfactory rating", "largest": "Largest"}.get(sort)
+        detail = f"Carrier map · {where}{f' · {tab}' if tab else ''} · {status} · USDOT {usdot}"
+        found = len(result.carriers)
+        log.record(
+            AccountEventKind.SEARCHED,
+            user=user,
+            detail=f"{detail} · {found}{'+' if result.has_more else ''} result"
+            f"{'' if found == 1 else 's'}",
+            request=request,
+            usdot_number=int(usdot),
+        )
+    return result
 
 
 @router.get("/carriers/{usdot_number}", response_model=CarrierContactOut)

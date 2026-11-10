@@ -1,9 +1,11 @@
 from collections.abc import Iterator
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path, Query, status
+from fastapi import APIRouter, Depends, Path, Query, Request, status
 from sqlalchemy.orm import Session
 
+from app.api.auth import require_staff
+from app.api.v1.routes.account_log import Log
 from app.api.v1.routes.jobs import get_job_status_service
 from app.core.config import get_settings
 from app.db.session import get_db
@@ -11,6 +13,7 @@ from app.ingestion.company_census import CompanyCensusAdapter
 from app.ingestion.registration_orders import RegistrationOrdersAdapter
 from app.ingestion.socrata_client import SocrataClient
 from app.ingestion.vpic import VpicClient
+from app.models import User
 from app.repositories.authority_history_repository import AuthorityHistoryRepository
 from app.repositories.authority_repository import AuthorityRepository
 from app.repositories.carrier_history_repository import CarrierHistoryRepository
@@ -106,8 +109,13 @@ def get_carrier_search_service(
 def search_carriers(
     q: Annotated[str, Query(min_length=1, max_length=100, description="USDOT, MC/MX/FF or name")],
     service: Annotated[CarrierSearchService, Depends(get_carrier_search_service)],
+    user: Annotated[User, Depends(require_staff)],
+    request: Request,
+    log: Log,
 ) -> CarrierSearchResponse:
-    return service.search(q)
+    found = service.search(q)
+    log.searched(user, q, len(found.results), request)  # the staff member's account history
+    return found
 
 
 def get_carrier_profile_service(

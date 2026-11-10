@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
+import { reportCarrierView } from '../api/accountLog'
 import { ApiError } from '../api/client'
 import { AuthoritySection, InsuranceSection } from '../features/carrier-profile/AuthoritySection'
 import { ChameleonSection } from '../features/carrier-profile/chameleon/ChameleonSection'
@@ -96,6 +97,12 @@ export function CarrierProfilePage() {
         ([id, label]) => [id, (ownCarrier && CLIENT_LABELS[id]) || label] as const,
       )
     : TABS
+
+  // Each tab opened goes into the person's account history (STS admins' Account logs).
+  const loaded = profile?.usdot_number
+  useEffect(() => {
+    if (loaded) reportCarrierView(loaded, tab)
+  }, [loaded, tab])
 
   function openTab(id: TabId) {
     // replace: switching tabs shouldn't fill the history, so Back still returns to the search.

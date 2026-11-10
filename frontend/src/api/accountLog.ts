@@ -1,5 +1,5 @@
 import type { UserRole } from '../types/auth'
-import { apiGet } from './client'
+import { apiGet, apiRequest } from './client'
 
 export type AccountEventKind =
   | 'LOGIN'
@@ -15,9 +15,11 @@ export type AccountEventKind =
   | 'DELETED'
   | 'CARRIER_LINKED'
   | 'CLAIM_RELEASED'
+  | 'SEARCHED'
+  | 'CARRIER_VIEWED'
 
 /** Which events the log shows. */
-export type LogGroup = 'all' | 'logins' | 'failed' | 'account'
+export type LogGroup = 'all' | 'logins' | 'failed' | 'account' | 'activity'
 
 /** One line of the account log (STS admins). */
 export interface AccountEvent {
@@ -35,6 +37,12 @@ export interface AccountEvent {
   actor_name: string | null
   ip: string | null
   user_agent: string | null
+  /** Activity: the carrier searched for or opened */
+  usdot_number?: number | null
+  /** Its name, when Carrier Safety Scan has it */
+  carrier_name?: string | null
+  /** Activity: the carrier page tab opened, e.g. "safety" */
+  page?: string | null
 }
 
 /** One account, above its history. */
@@ -76,4 +84,16 @@ export function fetchAccountLog(
   if (filter.query.trim()) params.set('q', filter.query.trim())
   if (before) params.set('before', String(before))
   return apiGet<AccountLogPage>(`/admin/account-log?${params}`)
+}
+
+/**
+ * The carrier page reports each tab the logged-in person opens, for their account history. Never
+ * gets in the way: a failed report is ignored.
+ */
+export function reportCarrierView(usdotNumber: number, tab: string): void {
+  apiRequest<null>('/activity/carrier-view', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ usdot_number: usdotNumber, tab }),
+  }).catch(() => undefined)
 }

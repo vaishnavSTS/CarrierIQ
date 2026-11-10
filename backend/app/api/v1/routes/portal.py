@@ -7,10 +7,11 @@ no portal version."""
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Path, Query
+from fastapi import APIRouter, Depends, Path, Query, Request
 from sqlalchemy.orm import Session
 
 from app.api.auth import require_broker, require_client, require_own_carrier
+from app.api.v1.routes.account_log import Log
 from app.api.v1.routes.carriers import (
     get_carrier_authority_service,
     get_carrier_equipment_service,
@@ -126,14 +127,18 @@ def overview(
 @router.get("/search", response_model=CarrierSearchResponse)
 def client_carrier_search(
     q: Annotated[str, Query(min_length=1, max_length=100, description="USDOT, MC/MX/FF or name")],
-    _: Annotated[User, Depends(require_client)],
+    user: Annotated[User, Depends(require_client)],
     service: Annotated[CarrierSearchService, Depends(get_carrier_search_service)],
+    request: Request,
+    log: Log,
 ) -> CarrierSearchResponse:
     """Carrier search, without STS review status or signal counts (only while
     CLIENT_SEARCH_ENABLED is on)."""
     if not get_settings().client_search_enabled:
         raise NotFoundError("Carrier search is not available in the client portal")
-    return client_search(service.search(q))
+    found = client_search(service.search(q))
+    log.searched(user, q, len(found.results), request)
+    return found
 
 
 add_carrier_routes(router, require_own_carrier)
@@ -154,11 +159,16 @@ def broker_overview(
 @broker_router.get("/search", response_model=CarrierSearchResponse)
 def broker_search(
     q: Annotated[str, Query(min_length=1, max_length=100, description="USDOT, MC/MX/FF or name")],
-    _: Annotated[User, Depends(require_broker)],
+    user: Annotated[User, Depends(require_broker)],
     service: Annotated[CarrierSearchService, Depends(get_carrier_search_service)],
+    request: Request,
+    log: Log,
 ) -> CarrierSearchResponse:
-    """Carrier search, without STS review status or signal counts."""
-    return client_search(service.search(q))
+    """Carrier search, without STS review status or signal counts (brokers and insurance
+    agents)."""
+    found = client_search(service.search(q))
+    log.searched(user, q, len(found.results), request)
+    return found
 
 
 add_carrier_routes(broker_router, any_carrier)

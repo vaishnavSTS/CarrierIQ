@@ -3,12 +3,12 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models.enums import UserRole, UserStatus
 
 # Which events a filter shows (app/services/account_log.py GROUPS)
-LogGroup = Literal["all", "logins", "failed", "account"]
+LogGroup = Literal["all", "logins", "failed", "account", "activity"]
 
 
 class AccountEventOut(BaseModel):
@@ -22,6 +22,31 @@ class AccountEventOut(BaseModel):
     actor_name: str | None  # the STS admin who did it; None: the account holder
     ip: str | None
     user_agent: str | None
+    usdot_number: int | None = None  # activity: the carrier searched for or opened
+    carrier_name: str | None = None  # its name, when Carrier Safety Scan has it
+    page: str | None = None  # activity: the carrier page tab opened (e.g. "safety")
+
+
+# The carrier page tabs a view can name (frontend pages/CarrierProfilePage.tsx TABS).
+CarrierTab = Literal[
+    "identity",
+    "authority",
+    "insurance",
+    "safety",
+    "equipment",
+    "network",
+    "chameleon",
+    "safety-score-report",
+    "compliance",
+    "invoices",
+    "intelligence",
+    "timeline",
+]
+
+
+class CarrierViewIn(BaseModel):
+    usdot_number: int = Field(gt=0, lt=100_000_000)
+    tab: CarrierTab
 
 
 class AccountSummaryOut(BaseModel):

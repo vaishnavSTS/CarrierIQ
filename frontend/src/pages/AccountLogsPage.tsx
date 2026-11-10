@@ -25,12 +25,15 @@ const EVENTS: Record<AccountEventKind, { label: string; tone: Tone }> = {
   DELETED: { label: 'Deleted', tone: 'down' },
   CARRIER_LINKED: { label: 'USDOT linked', tone: 'pending' },
   CLAIM_RELEASED: { label: 'Claim released', tone: 'warn' },
+  SEARCHED: { label: 'Searched', tone: 'pending' },
+  CARRIER_VIEWED: { label: 'Opened carrier', tone: 'neutral' },
 }
 
 const GROUPS: { id: LogGroup; label: string }[] = [
   { id: 'all', label: 'Everything' },
   { id: 'logins', label: 'Logins' },
   { id: 'failed', label: 'Failed logins' },
+  { id: 'activity', label: 'Activity' },
   { id: 'account', label: 'Account changes' },
 ]
 
@@ -105,6 +108,55 @@ function AccountCard({ account }: { account: AccountSummary }) {
   )
 }
 
+/** The carrier page's tabs, by the name the person saw. */
+const TAB_NAMES: Record<string, string> = {
+  identity: 'Overview',
+  authority: 'Authority',
+  insurance: 'Insurance',
+  safety: 'Inspections',
+  equipment: 'Equipment',
+  network: 'Linked carriers',
+  chameleon: 'Chameleon check',
+  'safety-score-report': 'Safety Score Report',
+  compliance: 'Compliance',
+  invoices: 'Invoices',
+  intelligence: 'Intelligence',
+  timeline: 'History',
+}
+
+/** What the entry says: for activity, the carrier (linked) and the tab opened. */
+function EventDetail({ event }: { event: AccountEvent }) {
+  const usdot = event.usdot_number
+  const carrier = usdot ? (
+    <Link
+      to={`/carriers/${usdot}${event.page && event.page !== 'identity' ? `?tab=${event.page}` : ''}`}
+      className="font-medium text-accent-strong hover:underline"
+    >
+      {event.carrier_name ?? `USDOT ${usdot}`}
+    </Link>
+  ) : null
+  if (event.event === 'CARRIER_VIEWED') {
+    return (
+      <>
+        {carrier}
+        <div className="text-xs text-slate-500">
+          {event.carrier_name && <span className="font-mono">USDOT {usdot} · </span>}
+          {TAB_NAMES[event.page ?? ''] ?? event.page} tab
+        </div>
+      </>
+    )
+  }
+  if (event.event === 'SEARCHED') {
+    return (
+      <>
+        {event.detail}
+        {carrier && <div className="text-xs">{carrier}</div>}
+      </>
+    )
+  }
+  return <>{event.detail ?? <span className="text-slate-400">—</span>}</>
+}
+
 function EventRow({ event, oneAccount }: { event: AccountEvent; oneAccount: boolean }) {
   const kind = EVENTS[event.event] ?? { label: event.event, tone: 'neutral' as Tone }
   const device = describeDevice(event.user_agent)
@@ -134,7 +186,7 @@ function EventRow({ event, oneAccount }: { event: AccountEvent; oneAccount: bool
         <StatusBadge label={kind.label} tone={kind.tone} />
       </td>
       <td className="py-2.5 pr-4 text-slate-700">
-        {event.detail ?? <span className="text-slate-400">—</span>}
+        <EventDetail event={event} />
         {event.actor_name && (
           <div className="text-xs text-slate-500">By {event.actor_name} (STS)</div>
         )}
@@ -191,8 +243,8 @@ export function AccountLogsPage() {
         </h1>
         <p className="mt-1 text-sm text-slate-500">
           {accountId
-            ? 'Every login, failed login and change to this account, newest first.'
-            : 'Every login, failed login, logout and account change, for every account. Newest first.'}
+            ? 'Every login, failed login, change to this account, search and carrier opened, newest first.'
+            : 'Every login, failed login, logout, account change, search and carrier opened, for every account. Newest first.'}
         </p>
       </div>
 
