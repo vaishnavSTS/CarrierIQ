@@ -65,9 +65,21 @@ export function formatMoney(value: string | number | null): string {
 }
 
 /** Where an authority / insurance status came from, for display. */
-export function sourceLabel(source: string | null, asOf: string | null): string {
+/**
+ * Where authority or insurance data came from. Every refresh checks Motus (FMCSA's current system)
+ * first; the old L&I copy (frozen May 14, 2026) is used only when Motus has no record, so an L&I
+ * source also says the carrier wasn't in Motus, and when that was checked (`motusCheckedAt`).
+ */
+export function sourceLabel(
+  source: string | null,
+  asOf: string | null,
+  motusCheckedAt: string | null = null,
+): string {
   if (source === 'MOTUS') return `FMCSA Motus · as of ${formatDate(asOf)}`
-  if (source === 'LEGACY_LI') return `FMCSA L&I · as of ${formatDate(asOf)} (no longer updated)`
+  if (source === 'LEGACY_LI') {
+    const checked = motusCheckedAt ? ` (checked ${formatLocalDate(motusCheckedAt)})` : ''
+    return `FMCSA L&I · as of ${formatDate(asOf)} (no longer updated) · not in Motus${checked}`
+  }
   if (source === 'CENSUS') return 'Census docket status only — no authority record found'
   if (source === 'MIXED') return `FMCSA Motus and L&I · as of ${formatDate(asOf)}`
   return '—'

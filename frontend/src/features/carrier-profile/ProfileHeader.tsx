@@ -94,7 +94,11 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
           label="Authority"
           source={
             profile.authority.status
-              ? sourceLabel(profile.authority.source_system, profile.authority.as_of)
+              ? sourceLabel(
+                  profile.authority.source_system,
+                  profile.authority.as_of,
+                  profile.last_refreshed_at,
+                )
               : undefined
           }
         >
@@ -121,7 +125,11 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
           label="Insurance"
           source={
             profile.insurance.status
-              ? sourceLabel(profile.insurance.source_system, profile.insurance.as_of)
+              ? sourceLabel(
+                  profile.insurance.source_system,
+                  profile.insurance.as_of,
+                  profile.last_refreshed_at,
+                )
               : undefined
           }
         >
