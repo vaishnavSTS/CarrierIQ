@@ -4,9 +4,9 @@ import { CHROME, INK } from '../../../components/charts/chartTheme'
 import { Tooltip, TooltipRow, TooltipTitle } from '../../../components/charts/Tooltip'
 import { useElementWidth } from '../../../components/charts/useElementWidth'
 import type { EstimatedIss } from '../../../types/carrierSafety'
-import { formatMonth } from '../../../utils/format'
+import { formatDateTime, formatMonth } from '../../../utils/format'
 import { ISS_BAND } from './issBand'
-import type { IssMonth } from './issMonths'
+import type { IssPoint } from './issPoints'
 
 const MARGIN = { top: 10, right: 16, bottom: 24, left: 32 }
 const HEIGHT = 180
@@ -24,21 +24,26 @@ const DOT: Record<NonNullable<EstimatedIss['band']>, string> = {
   INSPECT: 'fill-red-600',
 }
 
-/** The Estimated ISS month by month on a fixed 0–100 scale, over FMCSA's bands. */
-export function IssMonthlyChart({ months }: { months: IssMonth[] }) {
+/** Short date for the axis: "Nov 10" */
+function day(at: string): string {
+  return new Date(at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+}
+
+/** Every saved Estimated ISS, oldest first, on a fixed 0–100 scale over FMCSA's bands. */
+export function IssHistoryChart({ points }: { points: IssPoint[] }) {
   const [ref, width] = useElementWidth<HTMLDivElement>()
   const [active, setActive] = useState<number | null>(null)
 
   const plotW = Math.max(width - MARGIN.left - MARGIN.right, 50)
   const plotH = HEIGHT - MARGIN.top - MARGIN.bottom
-  const step = months.length > 1 ? plotW / (months.length - 1) : 0
-  const x = (i: number) => MARGIN.left + (months.length > 1 ? step * i : plotW / 2)
+  const step = points.length > 1 ? plotW / (points.length - 1) : 0
+  const x = (i: number) => MARGIN.left + (points.length > 1 ? step * i : plotW / 2)
   const y = (v: number) => MARGIN.top + plotH - (v / 100) * plotH
   const labelEvery = Math.max(1, Math.ceil(56 / Math.max(step, 1)))
 
   let path = ''
   let drawing = false
-  months.forEach((m, i) => {
+  points.forEach((m, i) => {
     if (m.value === null) {
       drawing = false
       return
@@ -50,21 +55,21 @@ export function IssMonthlyChart({ months }: { months: IssMonth[] }) {
   function moveTo(event: PointerEvent<SVGRectElement>) {
     const box = event.currentTarget.getBoundingClientRect()
     const offset = event.clientX - box.left
-    setActive(Math.min(months.length - 1, Math.max(0, Math.round(offset / Math.max(step, 1)))))
+    setActive(Math.min(points.length - 1, Math.max(0, Math.round(offset / Math.max(step, 1)))))
   }
 
   function onKey(event: KeyboardEvent<SVGRectElement>) {
     if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
       event.preventDefault()
       const delta = event.key === 'ArrowRight' ? 1 : -1
-      setActive((i) => Math.min(months.length - 1, Math.max(0, (i ?? months.length - 1) + delta)))
+      setActive((i) => Math.min(points.length - 1, Math.max(0, (i ?? points.length - 1) + delta)))
     }
   }
 
-  const shown = active === null ? null : months[active]
-  const label = `Estimated ISS by month, ${formatMonth(months[0].month)} to ${formatMonth(
-    months[months.length - 1].month,
-  )}`
+  const shown = active === null ? null : points[active]
+  const label = `Estimated ISS, ${points.length} saved ${points.length === 1 ? 'check' : 'checks'} from ${day(
+    points[0].at,
+  )} to ${day(points[points.length - 1].at)}`
 
   return (
     <div ref={ref} className="relative w-full min-w-0 overflow-hidden">
@@ -103,18 +108,19 @@ export function IssMonthlyChart({ months }: { months: IssMonth[] }) {
           </g>
         ))}
 
-        {months.map(
+        {points.map(
           (m, i) =>
-            i % labelEvery === 0 && (
+            // Counted back from the newest, so the latest check always has its date.
+            (points.length - 1 - i) % labelEvery === 0 && (
               <text
-                key={m.month}
+                key={m.at}
                 x={x(i)}
                 y={HEIGHT - 6}
-                textAnchor="middle"
+                textAnchor={points.length > 1 && i === points.length - 1 ? 'end' : 'middle'}
                 fontSize={11}
                 fill={INK.muted}
               >
-                {formatMonth(m.month)}
+                {day(m.at)}
               </text>
             ),
         )}
@@ -137,14 +143,14 @@ export function IssMonthlyChart({ months }: { months: IssMonth[] }) {
           strokeLinejoin="round"
           strokeLinecap="round"
         />
-        {months.map(
+        {points.map(
           (m, i) =>
             m.value !== null && (
               <circle
-                key={m.month}
+                key={m.at}
                 cx={x(i)}
                 cy={y(m.value)}
-                r={active === i ? 5 : 4}
+                r={active === i ? 5 : points.length > 60 ? 2.5 : 4}
                 className={m.band ? DOT[m.band] : 'fill-slate-400'}
                 stroke={CHROME.surface}
                 strokeWidth={2}
@@ -159,10 +165,10 @@ export function IssMonthlyChart({ months }: { months: IssMonth[] }) {
           height={plotH}
           fill="transparent"
           tabIndex={0}
-          aria-label={`${label}. Use left and right arrow keys to read each month.`}
+          aria-label={`${label}. Use left and right arrow keys to read each check.`}
           onPointerMove={moveTo}
           onPointerLeave={() => setActive(null)}
-          onFocus={() => setActive((i) => i ?? months.length - 1)}
+          onFocus={() => setActive((i) => i ?? points.length - 1)}
           onBlur={() => setActive(null)}
           onKeyDown={onKey}
           className="outline-none"
@@ -171,14 +177,12 @@ export function IssMonthlyChart({ months }: { months: IssMonth[] }) {
 
       {shown && active !== null && (
         <Tooltip x={x(active)} y={MARGIN.top + 8}>
-          <TooltipTitle>{formatMonth(shown.month)}</TooltipTitle>
+          <TooltipTitle>{formatDateTime(shown.at)}</TooltipTitle>
           <TooltipRow
             value={shown.value === null ? 'n/a' : String(shown.value)}
             label={shown.band ? ISS_BAND[shown.band].status : 'Not enough data'}
           />
-          {shown.carried && (
-            <div className="mt-1 text-slate-500">Unchanged from the month before</div>
-          )}
+          <div className="mt-1 text-slate-500">FMCSA data: {formatMonth(shown.data_month)}</div>
         </Tooltip>
       )}
     </div>

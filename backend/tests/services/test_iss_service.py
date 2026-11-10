@@ -2,11 +2,12 @@
 (requires TEST_DATABASE_URL)."""
 
 import json
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
+import pytest
 from sqlalchemy.orm import Session
 
 from app.intelligence.iss_estimate import VERSION
@@ -15,6 +16,7 @@ from app.jobs.queue import PostgresJobQueue
 from app.jobs.scheduler import schedule_iss_reference
 from app.models import IssReference, IssSnapshot, SmsResult
 from app.schemas.carrier_safety import CarrierSafetyOut
+from app.services import iss_service
 from app.services.client_view import client_safety
 from app.services.iss_service import build_iss_reference, iss_for, iss_history, snapshot_all
 from tests.factories import make_carrier, make_raw_record
@@ -154,3 +156,21 @@ def test_scheduled_once_a_month(db: Session) -> None:
     assert schedule_iss_reference(db, queue, datetime(2026, 10, 20, tzinfo=UTC)) is False
     job = queue.claim("test")
     assert job is not None and job.job_type == BUILD_ISS_REFERENCE
+
+
+def test_an_unchanged_score_is_saved_once_a_day(
+    db: Session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    load_majha(db)
+    store_tables(db)
+
+    iss_for(db, 4157195)
+    iss_for(db, 4157195)  # same day, same score: one point
+    assert db.query(IssSnapshot).count() == 1
+
+    # Checked again on a later day: a new point for the graph, even with the same score.
+    tomorrow = datetime.now(UTC) + timedelta(days=1)
+    monkeypatch.setattr(iss_service, "_now", lambda: tomorrow)
+    iss_for(db, 4157195)
+    iss_for(db, 4157195)
+    assert [h.value for h in iss_history(db, 4157195)] == [55, 55]

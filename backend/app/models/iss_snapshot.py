@@ -2,8 +2,9 @@
 
 The estimate itself is recalculated from stored inputs whenever it is shown (app/services/
 iss_service.py). A snapshot is saved each time that result differs from the carrier's previous
-snapshot, so the rows are the carrier's score history: what it was, when, from which FMCSA month
-and by which method version. History rows never change.
+snapshot, and otherwise once a day the carrier is checked, so the rows are the carrier's score
+history: what it was, when, from which FMCSA month and by which method version. History rows
+never change.
 """
 
 from datetime import date

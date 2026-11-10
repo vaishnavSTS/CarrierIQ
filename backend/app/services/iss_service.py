@@ -4,14 +4,16 @@
 of minutes) and the SMS Input crash file with the census facts of carriers with two or more
 crashes (the Crash Indicator), turns them into lookup tables and stores them for the month.
 `iss_for` reads a carrier's own SMS row (already ingested on refresh), the newest tables and any
-active out-of-service order, and returns the estimate for the Safety tab. Each result that differs
-from the carrier's previous one is saved as an `IssSnapshot`: `iss_history` reads them back.
+active out-of-service order, and returns the estimate for the Safety tab. Each result is saved as
+an `IssSnapshot` when it differs from the carrier's previous one, and otherwise once a day the
+carrier is checked, so the history graph has a point for every day it was looked up:
+`iss_history` reads them back.
 """
 
 import logging
 from collections import defaultdict
 from collections.abc import Sequence
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -60,7 +62,7 @@ DOTS_PER_REQUEST = 400
 VEHICLE_LEVELS = (1, 2, 5, 6)
 DRIVER_LEVELS = (1, 2, 3, 6)
 DOWNLOAD_TIMEOUT_SECONDS = 300.0
-HISTORY_LIMIT = 24  # saved results shown on the Safety tab
+HISTORY_LIMIT = 400  # saved results for the Safety tab's graph (about a year of daily checks)
 
 
 def month_start(day: date) -> date:
@@ -312,8 +314,13 @@ def snapshot_all(db: Session) -> int:
     return len(usdots)
 
 
+def _now() -> datetime:
+    return datetime.now(UTC)
+
+
 def _record(db: Session, carrier_id: int, result: EstimatedIssOut) -> None:
-    """Save the result unless the carrier's last snapshot already says the same."""
+    """Save the result unless the carrier's last snapshot, saved today, already says the same."""
+    now = _now()
     last = db.scalars(
         select(IssSnapshot)
         .where(IssSnapshot.carrier_id == carrier_id)
@@ -328,15 +335,18 @@ def _record(db: Session, carrier_id: int, result: EstimatedIssOut) -> None:
         result.data_month,
         result.version,
     )
-    if last is not None and key == (
-        last.value,
-        last.band,
-        last.group,
-        last.algorithm,
-        last.data_month,
-        last.version,
-    ):
-        return
+    if last is not None:
+        same = key == (
+            last.value,
+            last.band,
+            last.group,
+            last.algorithm,
+            last.data_month,
+            last.version,
+        )
+        today = last.created_at is None or last.created_at.astimezone(UTC).date() >= now.date()
+        if same and today:
+            return
     db.add(
         IssSnapshot(
             carrier_id=carrier_id,
@@ -348,6 +358,7 @@ def _record(db: Session, carrier_id: int, result: EstimatedIssOut) -> None:
             data_month=result.data_month,
             version=result.version,
             basics=[b.model_dump() for b in result.basics],
+            created_at=now,
         )
     )
     db.commit()
