@@ -161,7 +161,8 @@ export function RecordPage({
                     className="w-20 py-1 pl-3 text-center font-medium"
                     title="FMCSA's weight for this kind of violation: 1 least serious, 10 most"
                   >
-                    Severity (1–10)
+                    Severity
+                    <span className="block whitespace-nowrap">(1–10)</span>
                   </th>
                   <th className="py-1 pl-3 font-medium">Violation code</th>
                 </tr>
