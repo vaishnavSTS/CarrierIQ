@@ -67,8 +67,8 @@ export function ContactPage() {
       <header className="text-center">
         <h1 className="text-3xl font-semibold tracking-tight text-slate-950">Contact us</h1>
         <p className="mx-auto mt-2 max-w-xl text-sm text-slate-600">
-          Questions about Carrier Safety Scan, your safety score or a DataQs challenge? The Sky
-          Transport Solutions team can help.
+          Questions about Carrier Safety Scan, your safety score or a DataQs challenge?
+          <span className="block">The Sky Transport Solutions team can help.</span>
         </p>
       </header>
 
