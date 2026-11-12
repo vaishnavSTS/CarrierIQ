@@ -111,9 +111,11 @@ class Settings(BaseSettings):
     # them search and open any carrier (used for STS team testing).
     client_search_enabled: bool = False
 
-    # DataQs evidence files (docs/DataQ.md): a private bucket reached over the S3 protocol
-    # (Supabase Storage → S3 Configuration). The keys are secrets: environment only, backend only.
-    # Uploads are refused (503) while these are unset.
+    # DataQs evidence files (docs/DataQ.md): either a folder on the server (DATAQS_STORAGE_DIR, e.g.
+    # a Docker volume on our own VM), or a private bucket reached over the S3 protocol (Supabase
+    # Storage → S3 Configuration). The folder wins when both are set. The S3 keys are secrets:
+    # environment only, backend only. Uploads are refused (503) while neither is set.
+    dataqs_storage_dir: str | None = None
     dataqs_storage_endpoint: str | None = None
     dataqs_storage_region: str = "us-east-1"
     dataqs_storage_access_key_id: str | None = None
@@ -246,7 +248,7 @@ class Settings(BaseSettings):
 
     @property
     def dataqs_storage_enabled(self) -> bool:
-        return bool(
+        return bool(self.dataqs_storage_dir) or bool(
             self.dataqs_storage_endpoint
             and self.dataqs_storage_access_key_id
             and self.dataqs_storage_secret_access_key
