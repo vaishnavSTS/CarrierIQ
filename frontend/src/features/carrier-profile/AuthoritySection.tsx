@@ -24,6 +24,7 @@ import { statusTone, type Tone } from '../../utils/status'
 import { kindLabel, mixedAuthorityNote } from './authorityKinds'
 import { Empty, Section } from './Section'
 import { cellClass, headClass, tableClass } from './styles'
+import { ENDING_SOON_DAYS, policyEnd } from './insuranceEnd'
 
 const TYPE_LABEL: Record<string, string> = {
   BIPD: 'Liability (BI&PD)',
@@ -312,6 +313,36 @@ function filingSources(filings: InsuranceFiling[]): string {
     .join('; ')
 }
 
+/** End of the current policy year (one calendar year after the effective date), or the cancellation if sooner. */
+function EndDate({ filing }: { filing: InsuranceFiling }) {
+  const end = policyEnd(filing.effective_date)
+  if (!end) return <span className="text-slate-500">—</span>
+  // A filed cancellation that takes effect first ends the coverage then.
+  if (filing.termination_date && filing.termination_date < end.date) {
+    return (
+      <span className="text-slate-500">
+        See cancellation
+        <span className="block text-[11px]">before the policy year ends</span>
+      </span>
+    )
+  }
+  const soon = end.daysLeft <= ENDING_SOON_DAYS
+  return (
+    <span title="FMCSA records no expiry date: estimated as one year after the effective date (same date next year), a year at a time while the filing stays on file">
+      <span className={`font-medium ${soon ? 'text-amber-700' : ''}`}>{formatDate(end.date)}</span>
+      <span className={`block text-[11px] ${soon ? 'text-amber-700' : 'text-slate-500'}`}>
+        {end.daysLeft === 0
+          ? 'Ends today'
+          : soon
+            ? `Ends in ${end.daysLeft} day${end.daysLeft === 1 ? '' : 's'}`
+            : end.renewals > 0
+              ? 'Estimated (renewed yearly)'
+              : 'Estimated (1 policy year)'}
+      </span>
+    </span>
+  )
+}
+
 function FilingsTable({ filings, past }: { filings: InsuranceFiling[]; past: boolean }) {
   return (
     <div className="relative overflow-x-auto">
@@ -331,6 +362,7 @@ function FilingsTable({ filings, past }: { filings: InsuranceFiling[]; past: boo
             ) : (
               <>
                 <th className={cellClass}>Status</th>
+                <th className={cellClass}>End date</th>
                 <th className={cellClass}>Cancellation date</th>
               </>
             )}
@@ -368,6 +400,9 @@ function FilingsTable({ filings, past }: { filings: InsuranceFiling[]; past: boo
               ) : (
                 <>
                   <td className={cellClass}>{filingStatus(f.status)}</td>
+                  <td className={`${cellClass} whitespace-nowrap`}>
+                    <EndDate filing={f} />
+                  </td>
                   <td className={`${cellClass} whitespace-nowrap`}>
                     {f.termination_date ? (
                       <span className="font-medium">{formatDate(f.termination_date)}</span>
