@@ -20,6 +20,7 @@ from app.api.v1.routes import (
     dataqs,
     directory,
     health,
+    insurance_reminders,
     invoices,
     iss,
     jobs,
@@ -37,6 +38,7 @@ api_router.include_router(health.router)
 api_router.include_router(auth.router)
 api_router.include_router(try_now.router)
 api_router.include_router(contact.router)
+api_router.include_router(insurance_reminders.router)  # unsubscribe link (public)
 api_router.include_router(partner.router)  # its own API keys (routes/partner.py)
 # The bare report page's data while the Score Card Sharing API prints it: report pass only.
 api_router.include_router(report_render.router)

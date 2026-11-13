@@ -315,7 +315,7 @@ function filingSources(filings: InsuranceFiling[]): string {
 
 /** End of the current policy year (one calendar year after the effective date), or the cancellation if sooner. */
 function EndDate({ filing }: { filing: InsuranceFiling }) {
-  const end = policyEnd(filing.effective_date)
+  const end = policyEnd(filing.effective_date, filing.status_as_of)
   if (!end) return <span className="text-slate-500">—</span>
   // A filed cancellation that takes effect first ends the coverage then.
   if (filing.termination_date && filing.termination_date < end.date) {
@@ -326,9 +326,21 @@ function EndDate({ filing }: { filing: InsuranceFiling }) {
       </span>
     )
   }
+  // Passed, and FMCSA's data stops before it: whether it renewed can't be seen.
+  if (end.unconfirmed) {
+    return (
+      <span title="FMCSA's data for this filing stops before this date, so it can't show whether the policy renewed. Check the carrier's certificate of insurance.">
+        <span className="font-medium text-amber-700">{formatDate(end.date)}</span>
+        <span className="block text-[11px] text-amber-700">
+          Passed · renewal not confirmed
+          {filing.status_as_of && ` (FMCSA data from ${formatDate(filing.status_as_of)})`}
+        </span>
+      </span>
+    )
+  }
   const soon = end.daysLeft <= ENDING_SOON_DAYS
   return (
-    <span title="FMCSA records no expiry date: estimated as one year after the effective date (same date next year), a year at a time while the filing stays on file">
+    <span title="FMCSA records no expiry date: estimated as one year after the effective date (same date next year), moving on a year only when FMCSA's data shows the filing still on file after that date">
       <span className={`font-medium ${soon ? 'text-amber-700' : ''}`}>{formatDate(end.date)}</span>
       <span className={`block text-[11px] ${soon ? 'text-amber-700' : 'text-slate-500'}`}>
         {end.daysLeft === 0

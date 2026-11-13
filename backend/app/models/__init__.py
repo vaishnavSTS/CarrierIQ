@@ -32,6 +32,7 @@ from app.models.identity_event import IdentityEvent
 from app.models.ingestion_run import IngestionRun
 from app.models.inspection import Inspection
 from app.models.insurance import Insurance
+from app.models.insurance_reminder import InsuranceReminder, InsuranceReminderOptOut
 from app.models.intelligence_signal import IntelligenceSignal
 from app.models.invoice import Invoice, InvoiceLine
 from app.models.iss_pull_in_rate import IssPullInRate
@@ -110,6 +111,8 @@ __all__ = [
     "SmsViolation",
     "TimelineEvent",
     "TryUse",
+    "InsuranceReminder",
+    "InsuranceReminderOptOut",
     "CarrierClaim",
     "User",
     "Vehicle",

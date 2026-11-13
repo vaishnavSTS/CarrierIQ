@@ -753,6 +753,9 @@ Names only — values live in `backend/.env`, Render and Vercel. Full list in
   `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_SECURITY`, `RESEND_API_KEY`, `DATAQS_EMAIL_FROM`,
   `DATAQS_EMAIL_REPLY_TO`, `DATAQS_EMAIL_CARRIER_OVERRIDE`, `DATAQS_EMAIL_STAFF_OVERRIDE`,
   `COMPLIANCE_REQUEST_EMAIL`.
+- Insurance renewal reminders (services/insurance_reminders.py, sent from the worker's scheduling
+  round): `INSURANCE_REMINDERS_ENABLED`, `INSURANCE_REMINDERS_CENSUS_EMAIL`,
+  `INSURANCE_REMINDER_DAYS`, `INSURANCE_REMINDERS_COPY_TO`.
 - Stripe: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`. Twilio: `TWILIO_ACCOUNT_SID`,
   `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`.
 - Frontend: `VITE_SHOW_WORKER_ALERT` (Vercel), `API_PROXY_TARGET` (Vite dev proxy).

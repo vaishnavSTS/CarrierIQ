@@ -31,6 +31,8 @@ from app.jobs.queue import JobQueue, PostgresJobQueue
 from app.jobs.scheduler import Schedule, schedule_iss_reference, schedule_stale_refreshes
 from app.models.enums import JobStatus
 from app.repositories.job_repository import JobRepository
+from app.services.dataqs_email import get_email_sender
+from app.services.insurance_reminders import send_due_reminders
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +102,19 @@ class Worker:
         with self.session_factory() as db:
             queue, now = self.queue_factory(db), datetime.now(UTC)
             schedule_iss_reference(db, queue, now)  # once a month: Estimated ISS tables
-            return schedule_stale_refreshes(db, queue, now)
+            queued = schedule_stale_refreshes(db, queue, now)
+        self.send_insurance_reminders()
+        return queued
+
+    def send_insurance_reminders(self) -> None:
+        """Insurance renewal reminders due now (off unless INSURANCE_REMINDERS_ENABLED)."""
+        if not get_settings().insurance_reminders_enabled:
+            return
+        try:
+            with self.session_factory() as db:
+                send_due_reminders(db, get_email_sender())
+        except Exception:  # a failed round must not stop the scheduling
+            logger.exception("Insurance reminders failed")
 
     def beat(self, started: datetime) -> None:
         """Check in, so the app can show that a worker is running."""

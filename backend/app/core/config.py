@@ -181,6 +181,16 @@ class Settings(BaseSettings):
     # Compliance-tab service requests are emailed here (comma-separated); empty: to
     # DATAQS_EMAIL_REPLY_TO. DATAQS_EMAIL_STAFF_OVERRIDE (testing) still wins.
     compliance_request_email: str | None = None  # wipe expired login codes from a thread of the API
+    # Insurance renewal reminders (services/insurance_reminders.py): emails before the estimated
+    # end of each liability and cargo policy on file (one calendar year after it took effect), to
+    # the users of client organizations linked to the carrier. Off until turned on; sent from the
+    # worker's scheduling round. DATAQS_EMAIL_CARRIER_OVERRIDE (testing) still redirects them.
+    insurance_reminders_enabled: bool = False
+    # Also email carriers on the Admin Monitored DOTs list at the email on their MCS-150 (census).
+    insurance_reminders_census_email: bool = False
+    insurance_reminder_days: str = "30,7"  # days before the end date, one email each
+    # A summary of each round's reminders for STS (comma-separated); empty: none.
+    insurance_reminders_copy_to: str | None = None
     dataqs_verification_check_hours: int = 24
     dataqs_verification_escalate_days: int = 60
     # Where the app's pages are, for links in emails (the frontend's address).
@@ -229,6 +239,16 @@ class Settings(BaseSettings):
     @property
     def dataqs_carrier_override_list(self) -> list[str]:
         return _emails(self.dataqs_email_carrier_override)
+
+    @property
+    def insurance_reminder_stages(self) -> list[int]:
+        """Days before the end date, largest first, e.g. [30, 7]."""
+        days = {int(part) for part in self.insurance_reminder_days.split(",") if part.strip()}
+        return sorted((d for d in days if d >= 0), reverse=True)
+
+    @property
+    def insurance_reminders_copy_list(self) -> list[str]:
+        return _emails(self.insurance_reminders_copy_to)
 
     @property
     def dataqs_staff_override_list(self) -> list[str]:

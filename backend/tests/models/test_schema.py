@@ -45,6 +45,8 @@ TABLES = {
     "organization_carriers",
     "monitored_carriers",  # Admin Monitored DOTs
     "account_events",  # Account logs
+    "insurance_reminders",  # insurance renewal reminders sent
+    "insurance_reminder_opt_outs",  # who unsubscribed from them
     # Estimated ISS lookup tables
     "iss_references",
     "iss_snapshots",
