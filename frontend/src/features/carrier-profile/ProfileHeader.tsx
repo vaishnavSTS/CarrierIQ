@@ -4,6 +4,7 @@ import { StatusBadge } from '../../components/StatusBadge'
 import type { CarrierProfile } from '../../types/carrierProfile'
 import { needsForHireAuthority } from '../../utils/classification'
 import { censusLabel, formatDateTime, formatDocket, sourceLabel } from '../../utils/format'
+import { hazmatLabel, operatingArea } from '../../utils/operation'
 import { saferUrl, smsUrl } from '../../utils/sources'
 import { useIsClientPortal } from '../../hooks/usePortalMode'
 import { reviewLabel } from '../../utils/review'
@@ -16,6 +17,8 @@ import { INSURANCE_LABEL, insuranceTone, severityTone, statusTone } from '../../
 
 export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
   const dockets = profile.authority.dockets
+  const area = operatingArea(profile.operation)
+  const hazmat = hazmatLabel(profile.operation)
   const client = useIsClientPortal()
   return (
     <header className="relative overflow-hidden rounded-2xl border border-slate-200 bg-surface p-5 shadow-sm md:p-6">
@@ -48,6 +51,27 @@ export function ProfileHeader({ profile }: { profile: CarrierProfile }) {
                 {formatDocket(d.prefix, d.number)}
               </span>
             ))}
+            {/* From the MCS-150 (census): where it operates, and hazmat in orange. */}
+            {area && (
+              <span
+                title="Operating area on the carrier's MCS-150 (FMCSA Company Census)"
+                className="rounded-full bg-sky-50 px-3 py-1 font-sans font-semibold text-sky-800 ring-1 ring-inset ring-sky-600/20"
+              >
+                {area}
+              </span>
+            )}
+            {hazmat && (
+              <span
+                title="Hazardous materials on the carrier's MCS-150 (FMCSA Company Census)"
+                className={`rounded-full px-3 py-1 font-sans font-semibold ring-1 ring-inset ${
+                  profile.operation?.hazmat
+                    ? 'bg-orange-50 text-orange-800 ring-orange-600/30'
+                    : 'bg-slate-100 text-slate-600 ring-slate-500/20'
+                }`}
+              >
+                {hazmat}
+              </span>
+            )}
           </p>
           <p className="mt-2 text-xs text-slate-500">
             Official records:{' '}

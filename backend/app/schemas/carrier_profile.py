@@ -118,6 +118,21 @@ class EquipmentOut(BaseModel):
     vehicles: list[VehicleOut]  # most recently seen first
 
 
+class OperationOut(BaseModel):
+    """Where the carrier operates and what it hauls, as reported on its MCS-150 (census)."""
+
+    operation: str | None  # INTERSTATE | INTRASTATE_HAZMAT | INTRASTATE_NON_HAZMAT
+    hazmat: bool | None  # census HM_IND
+    interstate_drivers: int | None
+    intrastate_drivers: int | None
+    cdl_drivers: int | None
+    interstate_beyond_100_miles: int | None  # drivers in each operating range
+    interstate_within_100_miles: int | None
+    intrastate_beyond_100_miles: int | None
+    intrastate_within_100_miles: int | None
+    cargo: list[str]  # cargo classifications checked on the MCS-150
+
+
 class ChangeOut(BaseModel):
     attribute: str
     old_value: str | None
@@ -148,6 +163,7 @@ class CarrierProfile(BaseModel):
     insurance: InsuranceOut
     safety: SafetyOut
     equipment: EquipmentOut
+    operation: OperationOut | None = None  # None without a stored census row
     recent_changes: list[ChangeOut]  # newest first; the first load is not a change
     timeline: list[TimelineEventOut]  # authority / insurance events, newest first
     # OPEN_SIGNALS | NO_OPEN_SIGNALS: active signals above INFO not yet reviewed.

@@ -22,6 +22,7 @@ from app.repositories.inspection_repository import InspectionRepository
 from app.repositories.insurance_repository import InsuranceRepository
 from app.repositories.iss_pull_in_rate_repository import IssPullInRateRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
+from app.repositories.raw_record_repository import RawRecordRepository
 from app.repositories.relationship_repository import RelationshipRepository
 from app.repositories.signal_repository import SignalRepository
 from app.repositories.timeline_repository import TimelineRepository
@@ -131,6 +132,7 @@ def get_carrier_profile_service(
         InsuranceRepository(db),
         TimelineRepository(db),
         SignalRepository(db),
+        RawRecordRepository(db),
     )
 
 

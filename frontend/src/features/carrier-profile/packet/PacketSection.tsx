@@ -29,6 +29,7 @@ import {
   formatPhone,
   humanize,
 } from '../../../utils/format'
+import { operationSummary } from '../../../utils/operation'
 import { brokerFlags } from '../network/brokerFlags'
 import { groupTip, improvementSummary } from '../safety/improvementTips'
 import { IssGauge } from '../safety/IssGauge'
@@ -846,6 +847,7 @@ export function PacketDocument({
                 .map(classificationLabel)
                 .join(', ') || null}
             </Fact>
+            <Fact label="Operating area · hazmat">{operationSummary(profile.operation)}</Fact>
             <Fact label="Last company update (MCS-150)">
               {formatDate(profile.last_mcs150_date)}
             </Fact>

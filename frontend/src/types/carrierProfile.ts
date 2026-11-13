@@ -105,6 +105,22 @@ export interface TimelineEvent {
   signal_id: number | null
 }
 
+/** Where the carrier operates and what it hauls, as reported on its MCS-150 (census). */
+export interface Operation {
+  /** INTERSTATE | INTRASTATE_HAZMAT | INTRASTATE_NON_HAZMAT */
+  operation: string | null
+  hazmat: boolean | null
+  interstate_drivers: number | null
+  intrastate_drivers: number | null
+  cdl_drivers: number | null
+  interstate_beyond_100_miles: number | null
+  interstate_within_100_miles: number | null
+  intrastate_beyond_100_miles: number | null
+  intrastate_within_100_miles: number | null
+  /** Cargo classifications checked on the MCS-150 */
+  cargo: string[]
+}
+
 export interface CarrierProfile {
   usdot_number: number
   legal_name: string
@@ -136,6 +152,8 @@ export interface CarrierProfile {
   timeline: TimelineEvent[]
   safety: Safety
   equipment: Equipment
+  /** null without a stored census row */
+  operation?: Operation | null
   recent_changes: Change[]
   /** OPEN_SIGNALS | NO_OPEN_SIGNALS: active signals above INFO not yet reviewed */
   review_status: string | null

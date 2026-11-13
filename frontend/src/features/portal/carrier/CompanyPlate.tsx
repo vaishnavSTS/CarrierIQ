@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 
 import type { CarrierProfile } from '../../../types/carrierProfile'
 import { formatDateTime, formatDocket } from '../../../utils/format'
+import { hazmatLabel, operatingArea } from '../../../utils/operation'
 import { greeting } from '../greeting'
 import { PortalHeroBackdrop } from '../PortalHeroBackdrop'
 import { ease } from './ui'
@@ -43,6 +44,13 @@ export function CompanyPlate({
       .map((d) => ({ label: 'Docket', value: formatDocket(d.prefix, d.number) })),
     { label: 'Registration', value: carrier.registration_status ?? '—' },
     { label: 'Authority', value: carrier.authority.status ?? 'None on file' },
+    // From the carrier's MCS-150 (census), so it can see what brokers see.
+    ...(operatingArea(carrier.operation)
+      ? [{ label: 'Operation', value: operatingArea(carrier.operation) ?? '' }]
+      : []),
+    ...(hazmatLabel(carrier.operation)
+      ? [{ label: 'Hazmat', value: carrier.operation?.hazmat ? 'Yes' : 'No' }]
+      : []),
   ]
 
   return (

@@ -17,6 +17,7 @@ from app.repositories.carrier_history_repository import CarrierHistoryRepository
 from app.repositories.inspection_repository import InspectionRepository
 from app.repositories.insurance_repository import InsuranceRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
+from app.repositories.raw_record_repository import RawRecordRepository
 from app.repositories.signal_repository import SignalRepository
 from app.repositories.timeline_repository import TimelineRepository
 from app.services.carrier_profile_service import CarrierProfileService
@@ -42,6 +43,7 @@ def profile_service(
         InsuranceRepository(db),
         TimelineRepository(db),
         SignalRepository(db),
+        RawRecordRepository(db),
     )
 
 
@@ -62,6 +64,20 @@ def test_profile_of_a_real_carrier(db: Session, api: FakeDotApi) -> None:
     ]
     assert profile.officers == ["SHAUNA WASHBURN", "CRAIG LOIDHAMER"]
     assert profile.domains == ["united-moving.com"]
+
+    # Operation (census): interstate, no hazmat, household goods
+    operation = profile.operation
+    assert operation is not None
+    assert (operation.operation, operation.hazmat, operation.cargo) == (
+        "INTERSTATE",
+        False,
+        ["Household goods"],
+    )
+    assert (operation.interstate_drivers, operation.intrastate_drivers, operation.cdl_drivers) == (
+        4,
+        20,
+        7,
+    )
 
     # Authority & insurance
     assert profile.authority.status == "ACTIVE"

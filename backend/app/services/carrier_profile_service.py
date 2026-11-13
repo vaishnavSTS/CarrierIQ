@@ -6,14 +6,17 @@ from collections.abc import Callable, Sequence
 from datetime import UTC, date, datetime, timedelta
 from itertools import pairwise
 
+from app.core.config import get_settings
 from app.core.exceptions import CarrierNotFoundError
 from app.core.inspection_levels import NATIONAL_DRIVER_OOS_RATE, NATIONAL_VEHICLE_OOS_RATE
+from app.ingestion.company_census import CompanyCensusAdapter
 from app.models import Address, Authority, Carrier, CarrierAttributeHistory, Domain, Officer, Phone
 from app.repositories.authority_repository import AuthorityRepository
 from app.repositories.carrier_history_repository import CarrierHistoryRepository
 from app.repositories.inspection_repository import InspectionRepository
 from app.repositories.insurance_repository import InsuranceRepository
 from app.repositories.observed_value_repository import ObservedValueRepository
+from app.repositories.raw_record_repository import RawRecordRepository
 from app.repositories.signal_repository import SignalRepository
 from app.repositories.timeline_repository import TimelineRepository
 from app.schemas.carrier_profile import (
@@ -26,12 +29,14 @@ from app.schemas.carrier_profile import (
     InspectionYearOut,
     InsuranceOut,
     OosWindowOut,
+    OperationOut,
     PhoneOut,
     SafetyOut,
     TimelineEventOut,
     VehicleOut,
 )
 from app.schemas.carrier_search import DocketOut
+from app.services.carrier_operation import operation_from_census
 from app.services.carrier_refresh_service import CarrierRefreshService
 from app.services.carrier_search_service import authority_status
 from app.services.insurance_status import insurance_status
@@ -56,6 +61,7 @@ class CarrierProfileService:
         insurance: InsuranceRepository,
         timeline: TimelineRepository,
         signals: SignalRepository,
+        raw_records: RawRecordRepository | None = None,
         today: Callable[[], date] = lambda: datetime.now(UTC).date(),
     ) -> None:
         self.today = today
@@ -67,6 +73,7 @@ class CarrierProfileService:
         self.insurance = insurance
         self.timeline = timeline
         self.signals = signals
+        self.raw_records = raw_records
 
     def get(self, usdot_number: int) -> CarrierProfile:
         outcome = self.refresh.ensure_fresh(usdot_number)
@@ -127,6 +134,7 @@ class CarrierProfileService:
             ],
             safety=self._safety(carrier),
             equipment=self._equipment(carrier),
+            operation=self._operation(carrier),
             review_status=review.review_status,
             open_signal_count=review.count,
             highest_open_severity=review.highest_severity,
@@ -182,6 +190,17 @@ class CarrierProfileService:
             safety_rating=carrier.safety_rating,
             safety_rating_date=carrier.safety_rating_date,
         )
+
+    def _operation(self, carrier: Carrier) -> OperationOut | None:
+        """Interstate/intrastate, hazmat and cargo from the carrier's latest census row."""
+        if self.raw_records is None:
+            return None
+        census = self.raw_records.latest(
+            CompanyCensusAdapter.source,
+            get_settings().census_dataset_id,
+            str(carrier.usdot_number),
+        )
+        return operation_from_census(census.payload if census else None)
 
     def _equipment(self, carrier: Carrier) -> EquipmentOut:
         total, vehicles = self.inspections.vehicles(carrier.id, VEHICLES_LISTED)

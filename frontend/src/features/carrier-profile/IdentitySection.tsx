@@ -3,6 +3,7 @@ import { StatusBadge } from '../../components/StatusBadge'
 import type { CarrierProfile } from '../../types/carrierProfile'
 import { classificationLabel, classifications } from '../../utils/classification'
 import { formatDate, formatLocalDate, formatPhone } from '../../utils/format'
+import { driverSplit, operatingArea, rangeSplit } from '../../utils/operation'
 import { Empty, Field, Section } from './Section'
 
 // CARSHIP codes from the MCMIS Company Census data dictionary.
@@ -53,6 +54,8 @@ function ageText(months: number): string {
 export function IdentitySection({ profile }: { profile: CarrierProfile }) {
   const mcs150Months = profile.last_mcs150_date ? monthsSince(profile.last_mcs150_date) : null
   const powerUnits = profile.equipment.power_units
+  const op = profile.operation
+  const state = profile.addresses.find((a) => a.address_type === 'PHYSICAL')?.state
   return (
     <Section
       id="identity"
@@ -117,6 +120,62 @@ export function IdentitySection({ profile }: { profile: CarrierProfile }) {
             : '—'}
         </Field>
       </dl>
+
+      {op && (
+        <>
+          <h3 className="mt-6 text-xs font-medium uppercase tracking-wide text-slate-500">
+            Operation (from the MCS-150)
+          </h3>
+          <dl className="mt-2 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Field label="Operating area">
+              {operatingArea(op) ? (
+                <>
+                  {operatingArea(op)}
+                  {op.operation !== 'INTERSTATE' && state ? ` (${state})` : ''}
+                  <span className="block text-xs text-slate-500">
+                    {op.operation === 'INTERSTATE'
+                      ? 'Crosses state lines; FMCSA rules apply'
+                      : 'Stays within its state; state rules apply'}
+                  </span>
+                </>
+              ) : (
+                '—'
+              )}
+            </Field>
+            <Field label="Hazardous materials">
+              {op.hazmat == null ? (
+                '—'
+              ) : op.hazmat ? (
+                <>
+                  <StatusBadge label="Hazmat" tone="warn" />
+                  <span className="block text-xs text-slate-500">
+                    Liability minimum $1,000,000 ($5,000,000 for some materials); FMCSA flags hazmat
+                    carriers at lower safety scores
+                  </span>
+                </>
+              ) : (
+                'No'
+              )}
+            </Field>
+            <Field label="Drivers">
+              {driverSplit(op) ?? '—'}
+              {[
+                rangeSplit(op.interstate_beyond_100_miles, op.interstate_within_100_miles) &&
+                  `Interstate: ${rangeSplit(op.interstate_beyond_100_miles, op.interstate_within_100_miles)}`,
+                rangeSplit(op.intrastate_beyond_100_miles, op.intrastate_within_100_miles) &&
+                  `Intrastate: ${rangeSplit(op.intrastate_beyond_100_miles, op.intrastate_within_100_miles)}`,
+              ]
+                .filter(Boolean)
+                .map((line) => (
+                  <span key={String(line)} className="block text-xs text-slate-500">
+                    {line}
+                  </span>
+                ))}
+            </Field>
+            <Field label="Cargo carried">{op.cargo.length ? op.cargo.join(', ') : '—'}</Field>
+          </dl>
+        </>
+      )}
 
       <h3 className="mt-6 text-xs font-medium uppercase tracking-wide text-slate-500">Addresses</h3>
       {profile.addresses.length === 0 ? (
