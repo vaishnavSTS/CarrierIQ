@@ -112,7 +112,7 @@ def test_they_confirm_their_email_like_everyone_else(
 
     assert answer.json()["email_verified"] is False
     assert api.get("/api/v1/auth/me").status_code == 401
-    assert [e["subject"] for e in sender.sent] == ["Confirm your email for Carrier Safety Scan"]
+    assert [e["subject"] for e in sender.sent] == ["Confirm your email"]
 
 
 def test_the_welcome_email_speaks_to_agents(api: TestClient, sender: FakeSender) -> None:

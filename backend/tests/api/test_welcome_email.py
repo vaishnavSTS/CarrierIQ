@@ -34,7 +34,7 @@ def test_a_new_client_gets_a_welcome_email(
     register(api)
     [email] = sender.sent
     assert email["to"] == ["owner@client.com"]
-    assert email["subject"] == "Welcome to Carrier Safety Scan"
+    assert email["subject"] == "Welcome aboard"
     assert "Your free trial runs until" in email["text"] and "$49 a month" in email["text"]
     assert email["text"].rstrip().endswith("http://localhost:5173/portal")
     assert "Open Carrier Safety Scan" in email["html"]

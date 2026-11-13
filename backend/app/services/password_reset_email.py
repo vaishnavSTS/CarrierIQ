@@ -55,7 +55,7 @@ def password_reset_email(user: User, token: str, minutes: int) -> PasswordResetE
     return PasswordResetEmail(
         user_id=user.id,
         to=to,
-        subject="Reset your Carrier Safety Scan password",
+        subject="Reset your password",
         text=f"{body}\n\n{link}",
         html=render_html(body, link, "Reset my password", footer=FOOTER),
     )
@@ -89,11 +89,7 @@ def account_invite_email(user: User, token: str, hours: int) -> PasswordResetEma
     return PasswordResetEmail(
         user_id=user.id,
         to=to,
-        subject=(
-            "Your Carrier Safety Scan staff account"
-            if staff
-            else "Your Carrier Safety Scan account is ready"
-        ),
+        subject=("Your staff account" if staff else "Your account is ready"),
         text=f"{body}\n\n{link}",
         html=render_html(body, link, "Choose my password", footer=FOOTER),
     )

@@ -89,7 +89,7 @@ def test_smtp_sends_a_text_and_html_email_with_starttls_and_login() -> None:
     assert message["To"] == "carrier@acme.test"
     assert message["From"] == "Sky Transport Solutions <dataqs@sts.test>"
     assert message["Reply-To"] == "info@sts.test"
-    assert message["Subject"] == "Your DataQs file 7 is closed"
+    assert message["Subject"] == "Carrier Safety Scan | Your DataQs file 7 is closed"
     assert "dataqs-msg-7-u3" in message_id
     kinds = [part.get_content_type() for part in message.iter_parts()]
     assert kinds == ["text/plain", "text/html"]
@@ -188,7 +188,7 @@ def test_gmail_api_sends_the_email_with_a_fresh_access_token(google: FakeGoogle)
     message = email.message_from_bytes(base64.urlsafe_b64decode(call["json"]["raw"]))
     assert message["To"] == "carrier@acme.test"
     assert message["Reply-To"] == "info@sts.test"
-    assert message["Subject"] == "Filed"
+    assert message["Subject"] == "Carrier Safety Scan | Filed"
     assert "dataqs-msg-9-u1" in message["Message-ID"]
 
     _gmail_send()  # the access token is reused until it expires
@@ -239,3 +239,11 @@ def test_the_authorize_helper_replaces_or_adds_the_token_line() -> None:
     assert replaced == "A=1\nGMAIL_REFRESH_TOKEN=new\nB=2\n"
     added = set_env_value("A=1\n", "GMAIL_REFRESH_TOKEN", "new")
     assert added == "A=1\nGMAIL_REFRESH_TOKEN=new\n"
+
+
+def test_every_subject_starts_with_the_product_name() -> None:
+    assert dataqs_email.branded("Service request: MCP for USDOT 1") == (
+        "Carrier Safety Scan | Service request: MCP for USDOT 1"
+    )
+    assert dataqs_email.branded("Carrier Safety Scan | Paid") == "Carrier Safety Scan | Paid"
+    assert dataqs_email.branded("  ") == "Carrier Safety Scan"

@@ -78,7 +78,7 @@ def welcome_email(user: User, company: str) -> WelcomeEmail:
     return WelcomeEmail(
         user_id=user.id,
         to=to,
-        subject="Welcome to Carrier Safety Scan",
+        subject="Welcome aboard",
         text=f"{body}\n\n{link}",
         html=render_html(body, link, "Open Carrier Safety Scan", footer=FOOTER),
     )

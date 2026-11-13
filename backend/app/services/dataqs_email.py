@@ -26,6 +26,7 @@ from app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 
+BRAND = "Carrier Safety Scan"
 RESEND_URL = "https://api.resend.com/emails"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GMAIL_SEND_URL = "https://gmail.googleapis.com/gmail/v1/users/me/messages/send"
@@ -61,6 +62,15 @@ class EmailSender(Protocol):
     ) -> str: ...
 
 
+def branded(subject: str) -> str:
+    """Every email's subject starts with the product name, added here when it's sent (so the
+    subjects kept on DataQs cases and in the outbox stay plain): "Carrier Safety Scan | ..."."""
+    subject = subject.strip()
+    if subject.startswith(BRAND):
+        return subject
+    return f"{BRAND} | {subject}" if subject else BRAND
+
+
 def build_message(
     sender: str,
     reply_to: str,
@@ -77,7 +87,7 @@ def build_message(
     message["From"] = sender
     message["To"] = ", ".join(to)
     message["Reply-To"] = reply_to
-    message["Subject"] = subject
+    message["Subject"] = branded(subject)
     message["Date"] = formatdate(localtime=False)
     domain = sender.rsplit("@", 1)[-1].rstrip(">").strip() or None
     message["Message-ID"] = make_msgid(idstring=key.replace("@", "-"), domain=domain)
@@ -117,7 +127,7 @@ class ResendSender:
                     "from": self.sender,
                     "to": to,
                     "reply_to": self.reply_to,
-                    "subject": subject,
+                    "subject": branded(subject),
                     "text": text,
                     "html": html,
                     **(

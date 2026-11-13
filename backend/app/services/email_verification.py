@@ -49,7 +49,7 @@ def verification_email(user: User, token: str, hours: int) -> VerificationEmail:
     return VerificationEmail(
         user_id=user.id,
         to=to,
-        subject="Confirm your email for Carrier Safety Scan",
+        subject="Confirm your email",
         text=f"{body}\n\n{link}",
         html=render_html(body, link, "Confirm my email", footer=FOOTER),
     )
