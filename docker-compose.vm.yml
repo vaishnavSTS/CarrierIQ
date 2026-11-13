@@ -1,0 +1,23 @@
+# The production VM: used together with docker-compose.yml and docker-compose.localdb.yml by
+# ./deploy.sh (see the top of that file). Nginx runs on the VM itself (not in Docker), serves
+# frontend/dist and passes /api/ to the backend on 127.0.0.1:8000.
+#
+# - db: never published. Docker's published ports skip the Ubuntu firewall (ufw), so a published
+#   5432 would be open to the internet. Only the backend and worker reach it (Docker network).
+# - backend: published on 127.0.0.1 only, so just Nginx on this VM reaches the API.
+# - DataQs files live in /srv/carrieriq/dataqs on the VM (DATAQS_STORAGE_DIR=/data/dataqs).
+# - Everything restarts by itself after a crash or a reboot.
+# `!reset` / `!override` need Docker Compose 2.24 or newer (get.docker.com installs a newer one).
+services:
+  db:
+    ports: !reset []
+    restart: unless-stopped
+  backend:
+    ports: !override ["127.0.0.1:8000:8000"]
+    restart: unless-stopped
+    volumes:
+      - /srv/carrieriq/dataqs:/data/dataqs
+  worker:
+    restart: unless-stopped
+    volumes:
+      - /srv/carrieriq/dataqs:/data/dataqs

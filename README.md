@@ -7,9 +7,9 @@ brokers and insurance agents all log in here).
 The old address https://carrier-iq.vercel.app still opens the app, but Google sign-in works only on
 the new one (Render's `GOOGLE_REDIRECT_URI` points there).
 
-[![Frontend (Vercel)](https://img.shields.io/github/deployments/vaishnavSTS/CarrierIQ/Production?label=frontend%20%28Vercel%29&logo=vercel)](https://github.com/vaishnavSTS/CarrierIQ/deployments/Production)
-[![Backend (Render)](https://img.shields.io/github/deployments/vaishnavSTS/CarrierIQ/main%20-%20carrieriq-api?label=backend%20%28Render%29&logo=render)](https://github.com/vaishnavSTS/CarrierIQ/deployments)
-[![Deploy check](https://github.com/vaishnavSTS/CarrierIQ/actions/workflows/deploy-check.yml/badge.svg)](https://github.com/vaishnavSTS/CarrierIQ/actions/workflows/deploy-check.yml)
+[![Frontend (Vercel)](https://img.shields.io/github/deployments/vaishnavSTS/CarrierSafetyScan/Production?label=frontend%20%28Vercel%29&logo=vercel)](https://github.com/vaishnavSTS/CarrierSafetyScan/deployments/Production)
+[![Backend (Render)](https://img.shields.io/github/deployments/vaishnavSTS/CarrierSafetyScan/main%20-%20carrieriq-api?label=backend%20%28Render%29&logo=render)](https://github.com/vaishnavSTS/CarrierSafetyScan/deployments)
+[![Deploy check](https://github.com/vaishnavSTS/CarrierSafetyScan/actions/workflows/deploy-check.yml/badge.svg)](https://github.com/vaishnavSTS/CarrierSafetyScan/actions/workflows/deploy-check.yml)
 
 Each badge shows the result of that service's latest deploy: **success** means it is live,
 **pending** or **in progress** means it is building, **failure** or **error** means the last deploy

@@ -96,7 +96,7 @@ Roles (backend `app/models/enums.py`): `STS_ADMIN`, `STS_ANALYST` (internal); `C
 |---|---|
 | Live app | https://carriersafetyscan.vercel.app (old https://carrier-iq.vercel.app still opens, Google sign-in only works on the new one) |
 | Backend API | https://carrieriq-api.onrender.com (`/api/v1/health`, docs at `/docs`) |
-| Repo | github.com/vaishnavSTS/CarrierIQ, branch `main` |
+| Repo | github.com/vaishnavSTS/CarrierSafetyScan, branch `main` |
 | Frontend host | Vercel (builds only when `frontend/` changes) |
 | Backend host | Render, **free plan**, Docker, `render.yaml` blueprint, service `carrieriq-api`, deploys on every push touching `backend/` |
 | Database | Supabase PostgreSQL (session pooler, port 5432, `sslmode=require`) |
