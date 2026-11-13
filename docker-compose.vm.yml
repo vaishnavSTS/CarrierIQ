@@ -7,6 +7,8 @@
 # - backend: published on 127.0.0.1 only, so just Nginx on this VM reaches the API.
 # - DataQs files live in /srv/carrieriq/dataqs on the VM (DATAQS_STORAGE_DIR=/data/dataqs).
 # - Everything restarts by itself after a crash or a reboot.
+# - host.docker.internal is the VM itself: the Score Card PDF printer (Chromium in the backend)
+#   opens the website through Nginx there (REPORT_APP_URL=http://host.docker.internal in .env).
 # `!reset` / `!override` need Docker Compose 2.24 or newer (get.docker.com installs a newer one).
 services:
   db:
@@ -15,6 +17,8 @@ services:
   backend:
     ports: !override ["127.0.0.1:8000:8000"]
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - /srv/carrieriq/dataqs:/data/dataqs
   worker:
