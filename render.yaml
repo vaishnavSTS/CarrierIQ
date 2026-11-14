@@ -1,6 +1,9 @@
+# RETIRED: the app now runs on the office VM at https://carriersafetyscan.com (deploy.sh).
+# This service only redirects: REDIRECT_TO sends every request (partner API calls, old links)
+# to the same path there with a 308, and runs nothing else (no database, emails or jobs).
+# The old Vercel address redirects the same way (frontend/vercel.json).
+#
 # Render Blueprint for the CarrierSafetyScan API (demo setup: free plan, no background worker).
-# The frontend is on Vercel and reaches this service through the /api rewrite in
-# frontend/vercel.json, so the session cookie stays on the frontend's domain.
 services:
   - type: web
     name: carrieriq-api
@@ -11,6 +14,8 @@ services:
     healthCheckPath: /api/v1/health
     autoDeploy: true # redeploy on every push to main (the frontend on Vercel does the same)
     envVars:
+      - key: REDIRECT_TO
+        value: https://carriersafetyscan.com # retired: redirect everything to the VM
       - key: ENVIRONMENT
         value: production # HTTPS-only cookies; refuses to start with the development key
       - key: RUN_WORKER_IN_API

@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     # Comma-separated list of allowed frontend origins.
     cors_origins: str = "http://localhost:5173"
 
+    # A retired copy of the API (the old Render service): every request is redirected to the
+    # same path on this address, e.g. https://carriersafetyscan.com, and nothing else runs (no
+    # database, no emails, no background jobs). Unset everywhere the app really runs.
+    redirect_to: str | None = None
+
     # data.transportation.gov (Socrata). The app token is optional; it raises rate limits.
     socrata_base_url: str = "https://data.transportation.gov"
     socrata_app_token: str | None = None

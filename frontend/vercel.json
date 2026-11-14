@@ -1,14 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "ignoreCommand": "git diff --quiet ${VERCEL_GIT_PREVIOUS_SHA:-HEAD^} HEAD -- .",
-  "rewrites": [
+  "redirects": [
     {
-      "source": "/api/:path*",
-      "destination": "https://carrieriq-api.onrender.com/api/:path*"
-    },
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/index.html"
+      "source": "/:path*",
+      "destination": "https://carriersafetyscan.com/:path*",
+      "permanent": true
     }
   ]
 }
