@@ -1,6 +1,6 @@
 #!/bin/sh
 # Deploy on the production VM: pull the latest code, build the website, then build and restart
-# the database, API and worker in Docker. Run it from the repo folder (e.g. /opt/carrieriq):
+# the database, API and worker in Docker. Run it from the repo folder (on the VM: ~/CarrierSafetyScan):
 #
 #   ./deploy.sh
 #
@@ -10,9 +10,9 @@
 # table (alembic upgrade head). Later runs apply only new migrations; the data stays (pgdata).
 #
 # The same compose command for everyday use (logs, restarts):
-#   alias dc='docker compose -f /opt/carrieriq/docker-compose.yml \
-#     -f /opt/carrieriq/docker-compose.localdb.yml -f /opt/carrieriq/docker-compose.vm.yml \
-#     --env-file /opt/carrieriq/backend/.env --profile localdb'
+#   alias dc='docker compose -f ~/CarrierSafetyScan/docker-compose.yml \
+#     -f ~/CarrierSafetyScan/docker-compose.localdb.yml -f ~/CarrierSafetyScan/docker-compose.vm.yml \
+#     --env-file ~/CarrierSafetyScan/backend/.env --profile localdb'
 # Always name the services (db backend worker): the `frontend` service is the development
 # server and isn't used on the VM.
 set -eu

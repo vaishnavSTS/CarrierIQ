@@ -21,9 +21,10 @@ VERIFY_PER_IP = (10, 3600.0)
 
 
 def client_ip(request: Request) -> str:
-    """The visitor's address. The API is reached through Vercel's rewrite and Render's proxy, so
-    the connection itself comes from them: every visitor would share one address. The first
-    X-Forwarded-For entry is the visitor's (Vercel replaces whatever the visitor sends)."""
+    """The visitor's address. The API is reached through Nginx on the VM, so the connection itself
+    comes from Nginx: every visitor would share one address. The first X-Forwarded-For entry is
+    the visitor's (Nginx replaces whatever the visitor sends, taking the address from the office
+    proxy's X-Real-IP only when the request came through that proxy)."""
     forwarded = request.headers.get("x-forwarded-for", "")
     first = forwarded.split(",")[0].strip()
     return first or (request.client.host if request.client else "unknown")

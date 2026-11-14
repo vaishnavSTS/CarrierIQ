@@ -5,9 +5,8 @@ import threading
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
 
 from app.api.middleware import request_id_middleware
 from app.api.v1.router import api_router
@@ -82,35 +81,9 @@ async def worker_lifespan(_: FastAPI) -> AsyncIterator[None]:
         thread.join(timeout=30)  # lets a running job finish; a job cut off is requeued
 
 
-REDIRECT_METHODS = ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-
-
-def create_redirect_app(target: str) -> FastAPI:
-    """REDIRECT_TO is set: this copy is retired. Every request goes to the same path and query on
-    `target` with a 308, so the method and body are kept (partner API calls, webhooks that follow
-    redirects). The health check still answers here, so the host keeps the service up. No
-    database, no email dispatcher, no background jobs: the live copy does all of that."""
-    target = target.rstrip("/")
-    app = FastAPI(title="Carrier Safety Scan (moved)", docs_url=None, redoc_url=None)
-
-    @app.get("/api/v1/health", include_in_schema=False)
-    def health() -> dict[str, str]:
-        return {"status": "moved", "location": target}
-
-    @app.api_route("/{path:path}", methods=REDIRECT_METHODS, include_in_schema=False)
-    def moved(path: str, request: Request) -> RedirectResponse:
-        query = request.url.query
-        return RedirectResponse(f"{target}/{path}{'?' + query if query else ''}", status_code=308)
-
-    return app
-
-
 def create_app() -> FastAPI:
     settings = get_settings()
     configure_logging(settings.log_level)
-    if settings.redirect_to:
-        logger.info("REDIRECT_TO is set: redirecting every request to %s", settings.redirect_to)
-        return create_redirect_app(settings.redirect_to)
     if settings.environment != "local" and settings.auth_secret_key == DEV_AUTH_SECRET_KEY:
         raise RuntimeError("Set AUTH_SECRET_KEY to a long random value outside local development")
 

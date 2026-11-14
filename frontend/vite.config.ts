@@ -6,7 +6,7 @@ import { ROBOTS_DISALLOW, SITEMAP_PATHS } from './src/seo/pages'
 
 /**
  * robots.txt and sitemap.xml for search engines, built from src/seo/pages.ts. The site's address is
- * VITE_SITE_URL (set it on Vercel to the purchased domain at launch); until then the Vercel address.
+ * VITE_SITE_URL (frontend/.env.production on the VM), else https://carriersafetyscan.com.
  */
 function searchFiles(siteUrl: string): Plugin {
   const base = siteUrl.replace(/\/+$/, '')
@@ -61,7 +61,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
-      searchFiles(env.VITE_SITE_URL || 'https://carriersafetyscan.vercel.app'),
+      searchFiles(env.VITE_SITE_URL || 'https://carriersafetyscan.com'),
     ],
     server: {
       host: true,

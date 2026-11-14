@@ -2,23 +2,12 @@
 
 ## Live app
 
-**Open CarrierSafetyScan: https://carriersafetyscan.vercel.app** (the STS team, carriers, freight
+**Open CarrierSafetyScan: https://carriersafetyscan.com** (the STS team, carriers, freight
 brokers and insurance agents all log in here).
-The old address https://carrier-iq.vercel.app still opens the app, but Google sign-in works only on
-the new one (Render's `GOOGLE_REDIRECT_URI` points there).
 
-[![Frontend (Vercel)](https://img.shields.io/github/deployments/vaishnavSTS/CarrierSafetyScan/Production?label=frontend%20%28Vercel%29&logo=vercel)](https://github.com/vaishnavSTS/CarrierSafetyScan/deployments/Production)
-[![Backend (Render)](https://img.shields.io/github/deployments/vaishnavSTS/CarrierSafetyScan/main%20-%20carrieriq-api?label=backend%20%28Render%29&logo=render)](https://github.com/vaishnavSTS/CarrierSafetyScan/deployments)
-[![Deploy check](https://github.com/vaishnavSTS/CarrierSafetyScan/actions/workflows/deploy-check.yml/badge.svg)](https://github.com/vaishnavSTS/CarrierSafetyScan/actions/workflows/deploy-check.yml)
-
-Each badge shows the result of that service's latest deploy: **success** means it is live,
-**pending** or **in progress** means it is building, **failure** or **error** means the last deploy
-failed and the previous version is still running. **Deploy check** (served by GitHub itself)
-shows whether the live app and backend answered after the latest deploy; the other two come from
-shields.io, which sometimes shows "Unable to select next GitHub token from pool" when it is busy:
-that is a badge-service limit, not a deploy problem, and clears on a later refresh. A push redeploys only what it changed:
-`frontend/` on Vercel, `backend/` on Render. The free backend sleeps when idle, so the first
-page after a quiet spell can take about a minute.
+Everything runs on STS's own Ubuntu VM in the office: the website, the API, the background worker,
+PostgreSQL and the DataQs evidence files (see **Deploy** below). Vercel, Render and Supabase are no
+longer used.
 
 Explainable carrier intelligence, built by Sky Transport Solutions (STS), for three audiences:
 
@@ -54,8 +43,8 @@ Requires Docker Desktop. The backend and worker containers read `backend/.env` (
 local runs use: database, Socrata token, Google sign-in); start from `.env.example`.
 
 ```bash
-cp .env.example backend/.env       # then fill in DATABASE_URL (Supabase) etc.
-docker compose up --build          # backend, worker, frontend on Supabase
+cp .env.example backend/.env       # then fill it in (see the comments in the file)
+docker compose -f docker-compose.yml -f docker-compose.localdb.yml --profile localdb up --build
 ```
 
 - Frontend: http://localhost:5173
@@ -66,65 +55,30 @@ Migrations run automatically when the backend container starts; the frontend and
 until the backend is healthy. Jobs run in the worker container (`RUN_WORKER_IN_API` is off in
 Docker). Stop local `uvicorn` / `npm run dev` first: they use the same ports.
 
-To use the local PostgreSQL container instead of Supabase:
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.localdb.yml --profile localdb up --build
-```
-
-## Deploy (demo): Vercel frontend, Render backend, Supabase database
+## Deploy: the office VM
 
 ```
-Browser ──► Vercel (frontend) ── /api/* rewrite ──► Render (backend) ──► Supabase
+Browser ──► https://carriersafetyscan.com ──► office proxy (Nginx Proxy Manager, HTTPS)
+        ──► VM Nginx :80 ──► website (frontend/dist)
+                         └─► /api/ ──► backend (Docker, 127.0.0.1:8000) ──► PostgreSQL (Docker)
+                                       worker (Docker) ───────────────────┘
 ```
 
-The browser only talks to the Vercel domain: `frontend/vercel.json` passes `/api/*` to the Render
-service, so the login cookie and Google sign-in work exactly as they do locally through Vite.
+- The office proxy holds the HTTPS certificate (Let's Encrypt, renewed by Nginx Proxy Manager)
+  and passes every request to the VM on port 80.
+- Nginx on the VM serves the built website and passes `/api/` to the backend. It trusts the
+  visitor's address (`X-Real-IP`) and `X-Forwarded-Proto` only from the office proxy.
+- The backend, worker and database run in Docker from `docker-compose.yml`,
+  `docker-compose.localdb.yml` and `docker-compose.vm.yml` together. The database and the API are
+  never reachable from the network: only Nginx on the VM reaches the API.
+- DataQs evidence files are in `/srv/carrieriq/dataqs` on the VM (`DATAQS_STORAGE_DIR=/data/dataqs`).
 
-**Demo setup, no background worker.** Searching a carrier that is not in the database still loads
-it live from FMCSA (seconds for most carriers; very large fleets take minutes, so open those
-locally first: local and hosted use the same Supabase database). `CARRIER_REFRESH_HOURS` in
-`render.yaml` keeps stored carriers as they are. Without a worker, "Refresh now" stays queued, the
-monthly Estimated ISS reference is not rebuilt, and older carriers are not refreshed overnight.
+**Deploying a change:** push to `main`, then on the VM run `./deploy.sh` in the repo folder. It
+pulls, builds the website, rebuilds and restarts the database, backend and worker, and applies
+new migrations. Nothing deploys by itself on a push.
 
-1. **Render (backend).** New → Blueprint → this repository; it reads `render.yaml` (free plan,
-   Docker, `backend/`). `AUTH_SECRET_KEY` is generated by Render. In the service's Environment,
-   set the values marked `sync: false` in `render.yaml` (each is explained there). Every feature
-   whose keys are missing stays off; the app still starts.
-
-   | Setting | What it turns on |
-   |---|---|
-   | `DATABASE_URL` | Supabase session-pooler URL, as in `backend/.env` (required) |
-   | `SOCRATA_APP_TOKEN` | data.transportation.gov (FMCSA datasets, carrier map) |
-   | `QCMOBILE_WEB_KEY` | FMCSA QCMobile: carriers' EIN for the Chameleon check |
-   | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` | Google sign-in (step 3) |
-   | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile on login and sign-up |
-   | `GMAIL_*`, or `SMTP_*`, or `RESEND_API_KEY`; `DATAQS_EMAIL_FROM` | Email (Gmail API first, as the free plan blocks SMTP) |
-   | `DATAQS_EMAIL_CARRIER_OVERRIDE`, `DATAQS_EMAIL_STAFF_OVERRIDE` | Testing only: send every email to these inboxes. Delete both before real customers sign up |
-   | `DATAQS_STORAGE_*` | DataQs evidence files (Supabase Storage, S3 API) |
-   | `TWILIO_*` | FMCSA login codes by text or call |
-   | `PUBLIC_APP_URL`, `PUBLIC_API_URL` | Links in emails; Twilio and Stripe webhooks |
-   | `COMPLIANCE_REQUEST_EMAIL` | Where Compliance-tab service requests are emailed |
-   | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Stripe payments (not in `render.yaml`: add them in the dashboard; webhook at `PUBLIC_API_URL/api/v1/webhooks/stripe`) |
-
-   Deploy, then check `https://<service>.onrender.com/api/v1/health`. The free plan sleeps after
-   about 15 idle minutes; the first request after that takes about a minute.
-2. **Vercel (frontend).** New Project → this repository, Root Directory `frontend` (Vite is
-   detected). If the Render URL is not `https://carrieriq-api.onrender.com`, change it in
-   `frontend/vercel.json` first.
-   **Search engines:** each page's title and description are in `frontend/src/seo/pages.ts`;
-   `robots.txt` and `sitemap.xml` are built from the same file. Set `VITE_SITE_URL` in Vercel's
-   Environment Variables to the site's own address (e.g. `https://www.carriersafetyscan.com`) once
-   the domain is live, and redeploy; until then they use `https://carriersafetyscan.vercel.app`.
-   Every push to `main` redeploys both: Vercel and Render each build from GitHub on their own
-   servers (not GitHub Actions). Render applies database migrations on start.
-   **Client search:** `CLIENT_SEARCH_ENABLED` is `false` (the default, and in `render.yaml`), so
-   clients see only their own carriers, with no search. To let clients search and open any
-   carrier again (e.g. for team testing), set it to `true` in Render → carrieriq-api →
-   Environment (Save and deploy). No code change is needed.
-3. **Google sign-in.** Set `GOOGLE_REDIRECT_URI` on Render to
-   `https://<vercel-domain>/api/v1/auth/google/callback` and add the same URL to the OAuth client's
-   Authorized redirect URIs in Google Cloud Console.
+The VM's settings are in `backend/.env` and `frontend/.env.production` on the VM (never in git);
+`.env.example` lists every setting with what it turns on.
 
 ## Run locally without Docker
 
@@ -171,10 +125,6 @@ GitHub Actions (`.github/workflows/ci.yml`) can run the same checks, plus `alemb
 on an empty PostgreSQL and the database tests. It runs only when started by hand (Actions → CI →
 Run workflow), never on push.
 
-The **Deploy check** workflow (`.github/workflows/deploy-check.yml`) is the one that runs on its
-own: only when Vercel or Render reports a finished deploy. Each run appears in the Actions tab as
-"Frontend (Vercel) deploy success: <commit>" or "Backend (Render) …" and checks that the live app
-and backend answer. Run workflow on it checks both by hand.
 
 ### Database tests
 

@@ -12,7 +12,7 @@ CarrierSafetyScan is run by Sky Transport Solutions. Questions: info@skytranspor
 
 | | |
 |---|---|
-| Base URL | `https://carrieriq-api.onrender.com/api/v1` (will move to the new domain; you'll be told) |
+| Base URL | `https://carriersafetyscan.com/api/v1` |
 | Endpoint | `GET /partner/iss/{usdot_number}` |
 | Authentication | `X-Api-Key` header, with the key Sky Transport Solutions gave you |
 | Format | JSON, UTF-8 |
@@ -85,7 +85,7 @@ How to read the score (FMCSA's bands):
 
 > The Estimated ISS is CarrierSafetyScan's estimate of FMCSA's ISS, calculated from public FMCSA
 > data with FMCSA's published methods. It is not FMCSA's official ISS and not a safety rating.
-> How it is worked out: https://carriersafetyscan.vercel.app/methodology
+> How it is worked out: https://carriersafetyscan.com/methodology
 
 ---
 
@@ -122,21 +122,21 @@ A badly written parameter (for example `month=October`, or letters in the USDOT 
 
 ```bash
 curl -H "X-Api-Key: $CSS_API_KEY" \
-  https://carrieriq-api.onrender.com/api/v1/partner/iss/2465630
+  https://carriersafetyscan.com/api/v1/partner/iss/2465630
 ```
 
 A specific month:
 
 ```bash
 curl -H "X-Api-Key: $CSS_API_KEY" \
-  "https://carrieriq-api.onrender.com/api/v1/partner/iss/2465630?month=2026-11"
+  "https://carriersafetyscan.com/api/v1/partner/iss/2465630?month=2026-11"
 ```
 
 ### JavaScript (Node.js 18+)
 
 ```js
 const response = await fetch(
-  `https://carrieriq-api.onrender.com/api/v1/partner/iss/${usdot}`,
+  `https://carriersafetyscan.com/api/v1/partner/iss/${usdot}`,
   { headers: { 'X-Api-Key': process.env.CSS_API_KEY }, signal: AbortSignal.timeout(90_000) },
 )
 if (!response.ok) throw new Error(`Estimated ISS: ${response.status} ${await response.text()}`)
@@ -150,7 +150,7 @@ import os
 import requests
 
 response = requests.get(
-    f"https://carrieriq-api.onrender.com/api/v1/partner/iss/{usdot}",
+    f"https://carriersafetyscan.com/api/v1/partner/iss/{usdot}",
     headers={"X-Api-Key": os.environ["CSS_API_KEY"]},
     timeout=90,
 )
@@ -177,8 +177,9 @@ score = response.json()["estimated_iss"]
 *Not for partners: leave this section out when sending the guide.*
 
 - **Making a key:** in the `backend` folder, run `python -m app.workers.new_partner_key`. Give the
-  printed key to the partner once. Add the printed hash to `PARTNER_API_KEY_HASHES` in Render's
-  Environment, comma-separated when there is more than one partner. Render redeploys.
+  printed key to the partner once. Add the printed hash to `PARTNER_API_KEY_HASHES` in the VM's
+  `backend/.env`, comma-separated when there is more than one partner, then restart the backend
+  (`./deploy.sh`, or the compose `up -d backend` command at the top of `deploy.sh`).
 - **Switching a key off:** remove its hash from `PARTNER_API_KEY_HASHES`.
 - Only the SHA-256 hash of each key is kept on the server; a lost key can't be read back, so make
   a new one.

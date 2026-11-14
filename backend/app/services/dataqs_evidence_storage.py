@@ -1,5 +1,5 @@
 """Private storage for DataQs evidence files: a folder on the server (DATAQS_STORAGE_DIR, our own
-VM), or a bucket over the S3 protocol (Supabase Storage).
+VM), or a bucket over the S3 protocol (Supabase Storage until the move to the VM).
 
 Both use the same object keys (org-1/case-2/<hex>.pdf), so the files of a bucket can be copied
 into the folder as they are. The bucket is private and the keys stay on the backend. Files are

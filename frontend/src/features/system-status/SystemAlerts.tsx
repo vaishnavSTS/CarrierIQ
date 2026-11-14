@@ -5,9 +5,8 @@ import { useHealth } from '../../hooks/useHealth'
 import { useJobs } from '../../hooks/useJobs'
 
 /**
- * The "worker isn't running" banner is off for now: the hosted backend runs without a worker
- * (render.yaml, RUN_WORKER_IN_API=false), so it would always show. Set VITE_SHOW_WORKER_ALERT=true
- * (Vercel environment variable, or frontend/.env.local) to show it again once a worker runs.
+ * The "worker isn't running" banner shows only when VITE_SHOW_WORKER_ALERT=true (on the VM in
+ * frontend/.env.production, where the worker runs; locally in frontend/.env.local).
  */
 export const SHOW_WORKER_ALERT = import.meta.env.VITE_SHOW_WORKER_ALERT === 'true'
 

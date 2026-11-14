@@ -1,4 +1,4 @@
-# Run the whole stack on the local PostgreSQL container instead of Supabase:
+# Run the whole stack on the PostgreSQL container (as on the VM):
 #   docker compose -f docker-compose.yml -f docker-compose.localdb.yml --profile localdb up --build
 # The backend applies every migration to the empty database on its first start.
 x-localdb: &localdb

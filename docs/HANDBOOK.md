@@ -86,7 +86,7 @@ Roles (backend `app/models/enums.py`): `STS_ADMIN`, `STS_ANALYST` (internal); `C
 - Staff: everything except Compliance and Invoices, plus **Intelligence** (signals, review). Staff
   handle compliance and invoices on their own Service requests / Invoices pages.
 - Carriers can only open **their own** carriers unless `CLIENT_SEARCH_ENABLED` is on (team testing;
-  off on Render).
+  off on the VM).
 
 ---
 
@@ -94,40 +94,38 @@ Roles (backend `app/models/enums.py`): `STS_ADMIN`, `STS_ANALYST` (internal); `C
 
 | What | Where |
 |---|---|
-| Live app | https://carriersafetyscan.vercel.app (old https://carrier-iq.vercel.app still opens, Google sign-in only works on the new one) |
-| Backend API | https://carrieriq-api.onrender.com (`/api/v1/health`, docs at `/docs`) |
+| Live app | https://carriersafetyscan.com (website and API on the same address; health at `/api/v1/health`) |
 | Repo | github.com/vaishnavSTS/CarrierSafetyScan, branch `main` |
-| Frontend host | Vercel (builds only when `frontend/` changes) |
-| Backend host | Render, **free plan**, Docker, `render.yaml` blueprint, service `carrieriq-api`, deploys on every push touching `backend/` |
-| Database | Supabase PostgreSQL (session pooler, port 5432, `sslmode=require`) |
-| Evidence files | Supabase Storage via S3 API (`DATAQS_STORAGE_*`) |
-| Payments | Stripe (sandbox set up; live mode still to do) |
-| Email | Gmail API (live credentials in `backend/.env` and Render) |
-| Bot protection | Cloudflare Turnstile (keys in Render and `backend/.env`) |
-| Deploy status | GitHub Actions `deploy-check.yml` + README badges |
+| Host | STS's office VM: Ubuntu 24.04, `192.168.1.132`, user `sts`, repo in `~/CarrierSafetyScan` |
+| HTTPS | Office proxy (Nginx Proxy Manager, `192.168.1.202`) with a Let's Encrypt certificate, forwarding to the VM on port 80 |
+| Website | Nginx on the VM serves `frontend/dist` and passes `/api/` to the backend |
+| Backend, worker, database | Docker on the VM (`docker-compose.yml` + `docker-compose.localdb.yml` + `docker-compose.vm.yml`), PostgreSQL 16 |
+| Evidence files | `/srv/carrieriq/dataqs` on the VM (`DATAQS_STORAGE_DIR=/data/dataqs`) |
+| Payments | Stripe |
+| Email | Gmail API |
+| Bot protection | Cloudflare Turnstile |
+| Retired | Vercel, Render and Supabase (moved to the VM in November 2026) |
 
-The free Render backend **sleeps** after ~15 idle minutes; the first request then takes about a
-minute. It runs **without a background worker** (`RUN_WORKER_IN_API=false`), so scheduled refreshes
-and the monthly ISS reference build don't run in production (see §15).
-
-**Secrets never go in git, logs or chat.** They live in `backend/.env` (git-ignored) and in the
-Render / Vercel dashboards.
+**Secrets never go in git, logs or chat.** They live in `backend/.env` and
+`frontend/.env.production` on the VM (git-ignored).
 
 ---
 
 ## 4. Architecture and stack
 
 ```
-Browser ──► Vercel (React SPA) ── /api/* rewrite ──► Render (FastAPI) ──► Supabase Postgres
-                                                        │
-                                                        ├─► FMCSA via Socrata (data.transportation.gov)
-                                                        ├─► FMCSA QCMobile (EIN), NHTSA vPIC (VIN decode)
-                                                        ├─► SAFER (UCR status page), Stripe, Gmail API
-                                                        └─► Twilio (FMCSA login codes), Turnstile, Google OAuth
+Browser ──► office proxy (HTTPS) ──► VM Nginx ──► React SPA (frontend/dist)
+                                          └─► /api/ ──► FastAPI (Docker) ──► PostgreSQL (Docker)
+                                                          │
+                                                          ├─► FMCSA via Socrata (data.transportation.gov)
+                                                          ├─► FMCSA QCMobile (EIN), NHTSA vPIC (VIN decode)
+                                                          ├─► SAFER (UCR status page), Stripe, Gmail API
+                                                          └─► Twilio (FMCSA login codes), Turnstile, Google OAuth
 ```
 
-The browser only talks to the Vercel domain; `frontend/vercel.json` rewrites `/api/:path*` to the
-Render service, so the session cookie and Google sign-in work as on localhost.
+Website and API share one address, so the session cookie and Google sign-in work as on localhost
+(where Vite's dev proxy does the same job). The VM's Nginx trusts the visitor's address
+(`X-Real-IP`) only from the office proxy, so rate limits see real visitors.
 
 **Backend** — Python ≥3.12 (Docker/CI use 3.13), FastAPI, Pydantic, SQLAlchemy 2.0, Alembic,
 psycopg 3, httpx, PyJWT, boto3, reportlab (invoice PDFs), openpyxl (Excel). Layered:
@@ -156,11 +154,12 @@ CarrierIQ/
 │   ├── partner-api.md       Partner API (ISS by API key)
 │   └── queue-evaluation.md  why a Postgres job queue
 ├── CHECKPOINT.md            phase log + session log (update at end of sessions)
-├── README.md                setup, deploy, badges
-├── render.yaml              Render blueprint
+├── README.md                setup, deploy
+├── deploy.sh                deploy on the VM (pull, build, restart)
 ├── docker-compose.yml       backend + worker + frontend (+ db with --profile localdb)
-├── docker-compose.localdb.yml
-└── .github/workflows/       ci.yml (manual), deploy-check.yml (on deployments)
+├── docker-compose.localdb.yml  PostgreSQL in Docker (used on the VM)
+├── docker-compose.vm.yml   VM overrides (ports, restarts, DataQs folder)
+└── .github/workflows/       ci.yml (manual)
 ```
 
 One folder up (`C:\Vaishnav\CarrierSafetyScan\`) are non-code assets: `PROJECT_SPECIFICATION.md`,
@@ -225,15 +224,15 @@ screenshots, see §6).
 # backend
 cd backend && python -m venv .venv && .venv/Scripts/activate
 pip install -e ".[dev]"
-cp ../.env.example .env        # fill DATABASE_URL (Supabase) etc. — never commit
+cp ../.env.example .env        # fill it in — never commit
 alembic upgrade head
 uvicorn app.main:app --reload --port 8000
 # frontend
 cd frontend && npm install && npm run dev      # http://localhost:5173, proxies /api to :8000
 ```
 
-Or `docker compose up --build` (backend, worker, frontend on Supabase); add
-`-f docker-compose.localdb.yml --profile localdb` for a local Postgres.
+Or Docker: `docker compose -f docker-compose.yml -f docker-compose.localdb.yml --profile localdb up --build`
+(backend, worker, frontend and PostgreSQL).
 
 > **Do not start or stop anything on ports 8000 / 5173** — those are the owner's own servers.
 > Use the demo servers below.
@@ -316,17 +315,17 @@ TEST_DATABASE_URL=postgresql+psycopg://postgres:localtest@localhost:55432/carrie
    EOF
    git push origin main
    ```
-4. A push redeploys only what changed: `frontend/` → Vercel, `backend/` → Render. A commit touching
-   only `.github/` or docs triggers no deploy (and no deploy-check run).
+4. A push deploys nothing by itself. On the VM, run `./deploy.sh` in `~/CarrierSafetyScan`: it
+   pulls, builds the website, rebuilds and restarts the database, backend and worker, and applies
+   new migrations.
 5. Verify it's live by looking for **text that only exists in the new build** in the live bundle
    (don't reuse a string that was already there):
    ```bash
-   js=$(curl -s https://carriersafetyscan.vercel.app/ | grep -o '/assets/index-[^"]*\.js' | head -1)
-   curl -s "https://carriersafetyscan.vercel.app$js" | grep -c "some new string"
+   js=$(curl -s https://carriersafetyscan.com/ | grep -o '/assets/index-[^"]*\.js' | head -1)
+   curl -s "https://carriersafetyscan.com$js" | grep -c "some new string"
    ```
-   For backend changes, hit the new endpoint on `https://carrieriq-api.onrender.com` (a 404 means
+   For backend changes, hit the new endpoint on `https://carriersafetyscan.com` (a 404 means
    not deployed yet; 401/422 means it exists).
-6. `deploy-check.yml` looks for `<title>Carrier Safety Scan</title>` on the live site.
 
 ---
 
@@ -568,7 +567,7 @@ These come from the owner; breaking them has caused real problems before.
    Estimates are labelled as estimates. Regulations quoted must be verified (cite the CFR section).
 5. **Don't run the 20-carrier report check** after every change; only when asked.
 6. **Secrets** never in git, logs or chat. Partner keys, Stripe, Turnstile, Gmail, Google all live in
-   `backend/.env` / Render / Vercel.
+   `backend/.env` (on the VM and locally).
 7. **Live database is read-only** for investigation. Use the local test DB for anything else.
 8. **Don't touch ports 8000 / 5173** (owner's servers). Use 8011 / 5197.
 9. **Never commit** `frontend/src/features/carrier-profile/IdentitySection.tsx` or
@@ -657,21 +656,19 @@ Ask the owner before acting on any of these.
 5. **Email overrides** — `DATAQS_EMAIL_CARRIER_OVERRIDE` / `DATAQS_EMAIL_STAFF_OVERRIDE` send every
    customer/staff email (including sign-up confirmation and password reset) to internal test
    inboxes. Real customers can't confirm a password sign-up or reset a password until they're
-   removed (Render env + `render.yaml`). Remind the owner at launch; never remove without a yes.
+   removed from the VM's `backend/.env`. Remind the owner at launch; never remove without a yes.
 6. **iStock photo** — the front-door carrier card uses the 612 px preview; get the full-size
    licensed file for sharpness.
 7. **Staff portal** still uses the old top-bar `AppLayout`; moving it into `PortalShell` was the
    planned next step of the redesign.
 8. **"Recently viewed carriers"** for brokers would need `CarrierProfilePage` to record views
    (suggested by the redesign agent; not built).
-9. Housekeeping from `CHECKPOINT.md`: reset the Supabase DB password (it was once shared in chat);
-   rename the app on Google's OAuth consent screen; remove the old carrier-iq.vercel.app redirect URI
-   when unused.
+9. Housekeeping: remove the old `*.vercel.app` redirect URIs and Turnstile hostnames now that
+   Vercel is retired.
 10. Small code notes: stale docstrings (migration 0045 says 14-day/$25; `PacketDocument` says "three
     pages"; `DataQsIntro` says "phase 0"; router header comment misses newer routes);
     `.env.example` lacks Stripe/Google/Turnstile/`AUTH_SECRET_KEY`/`ENVIRONMENT`/partner/schedule
-    link vars; `render.yaml` doesn't declare Stripe/partner/schedule/CORS vars (set by hand);
-    `vercel.json` sets no security headers; rate limits are in-memory (per process); 2 pre-existing
+    link vars; the VM's Nginx sets no security headers; rate limits are in-memory (per process); 2 pre-existing
     mypy errors in auth; drug & alcohol and background check have no online price (request-only);
     CPDP crash preventability marked "later release"; uploads exclude ZIP/ETHOS until scanning.
 
@@ -679,25 +676,19 @@ Ask the owner before acting on any of these.
 
 ## 15. Launch checklist (official domain)
 
-When the purchased domain goes live:
+Done in November 2026: the app runs on the office VM at https://carriersafetyscan.com with its own
+worker, data copied from Supabase, Google sign-in and Turnstile on the domain, and the old Vercel
+and Render addresses retired. Still to do on the VM:
 
-1. Run a **real background worker** (Render `RUN_WORKER_IN_API=true` or a separate worker service on
-   a paid plan) so Refresh now, scheduled refreshes and the monthly ISS build run.
-2. Turn the worker banner back on: `VITE_SHOW_WORKER_ALERT=true` on Vercel (also brings back the
-   dashboard Background jobs card).
-3. "Put all this in the database": let scheduled ingestion keep carrier data current; lower
-   `CARRIER_REFRESH_HOURS` (now 876000, i.e. never) to e.g. 24.
-4. Google: set `GOOGLE_REDIRECT_URI` to `https://<domain>/api/v1/auth/google/callback` and add it to
-   the OAuth client. Update `CORS_ORIGINS`, `PUBLIC_APP_URL`, and the `vercel.json` rewrite if the API
-   host changes.
-5. Turnstile: add the domain to the widget hostnames; keys on the host.
-6. **Remove the email overrides** (§14.5) — with the owner's yes.
-7. Stripe **live mode**: webhook endpoint (6 events: `checkout.session.completed`,
-   `charge.refunded`, `customer.subscription.created/updated/deleted`, `invoice.paid`) + its secret
-   on Render; live customer portal (invoice history, card update, cancel at period end, no plan
-   switching); owner disables Link.
-8. If Cloudflare proxies the whole site: check `client_ip` in `api/bot_protection.py` (first
-   X-Forwarded-For entry) still sees real visitor IPs, otherwise everyone shares one rate limit.
+1. **Remove the email overrides** (§14.5) — with the owner's yes.
+2. Stripe **live mode**: webhook endpoint `https://carriersafetyscan.com/api/v1/webhooks/stripe`
+   (6 events: `checkout.session.completed`, `charge.refunded`,
+   `customer.subscription.created/updated/deleted`, `invoice.paid`) + its secret in the VM's
+   `backend/.env`; remove the test `stripe-listener` container; live customer portal (invoice
+   history, card update, cancel at period end, no plan switching); owner disables Link.
+3. Nightly backups of the database and DataQs files, with a copy off the VM.
+4. "Put all this in the database": let scheduled ingestion keep carrier data current;
+   `CARRIER_REFRESH_HOURS` decides how old a stored carrier may be before it is re-fetched.
 
 ---
 
@@ -710,9 +701,8 @@ When the purchased domain goes live:
 - The login endpoint is **rate-limited**; screenshot scripts should log in once per run.
 - Turnstile is on in `backend/.env`; local API logins without a token get 400 — the demo launcher
   blanks the Turnstile keys.
-- A free Render cold start can take ~1 minute; a `fetch failed` in a script often means you stopped
-  a server mid-run.
-- Vercel/Render only deploy what changed; a docs-only or workflow-only commit deploys nothing.
+- A `fetch failed` in a script often means you stopped a server mid-run.
+- A push deploys nothing; run `./deploy.sh` on the VM.
 - The dark theme inverts slate colours (§11) — the most common source of "invisible text" bugs.
 - `getBoundingClientRect` returns zoomed sizes: the report applies zoom before measuring (printFit).
 - Headless Edge in a background tab can freeze `motion` reveal animations; screenshot scripts bring
@@ -724,7 +714,7 @@ When the purchased domain goes live:
 
 ## 17. Reference: environment variables
 
-Names only — values live in `backend/.env`, Render and Vercel. Full list in
+Names only — values live in `backend/.env` (and `frontend/.env.production`) on the VM. Full list in
 `backend/app/core/config.py`.
 
 - General: `APP_NAME`, `ENVIRONMENT`, `LOG_LEVEL`, `DATABASE_URL`, `CORS_ORIGINS`,
@@ -758,7 +748,7 @@ Names only — values live in `backend/.env`, Render and Vercel. Full list in
   `INSURANCE_REMINDER_DAYS`, `INSURANCE_REMINDERS_COPY_TO`.
 - Stripe: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`. Twilio: `TWILIO_ACCOUNT_SID`,
   `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`.
-- Frontend: `VITE_SHOW_WORKER_ALERT` (Vercel), `API_PROXY_TARGET` (Vite dev proxy).
+- Frontend: `VITE_SHOW_WORKER_ALERT`, `VITE_SITE_URL` (`frontend/.env.production`), `API_PROXY_TARGET` (Vite dev proxy).
 
 ---
 

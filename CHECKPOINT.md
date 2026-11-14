@@ -5,7 +5,7 @@ Phases come from `../PROJECT_SPECIFICATION.md` (Section 26). Update this file at
 
 **Last updated:** 2026-11-05
 **Current phase:** All 10 phases done — the MVP checklist below is met. Post-MVP work (portals for carriers, brokers and insurance agents, DataQs, Safety Score Report, billing, public site, carrier map) is in the session log.
-**Live:** https://carriersafetyscan.vercel.app (Vercel) → Render backend `carrieriq-api` → Supabase
+**Live:** https://carriersafetyscan.com on the office VM (Nginx, Docker: backend, worker, PostgreSQL). Vercel, Render and Supabase retired in November 2026.
 
 Legend: `[x]` done · `[ ]` to do · `[~]` in progress
 

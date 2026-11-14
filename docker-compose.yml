@@ -1,6 +1,6 @@
 services:
-  # Optional local PostgreSQL. Not started by default (we use Supabase);
-  # run `docker compose --profile localdb up` to use it instead.
+  # PostgreSQL in Docker: started with `--profile localdb` (deploy.sh on the VM does this).
+  # Without the profile the backend uses DATABASE_URL from backend/.env.
   db:
     image: postgres:16-alpine
     profiles: ["localdb"]

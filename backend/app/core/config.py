@@ -21,11 +21,6 @@ class Settings(BaseSettings):
     # Comma-separated list of allowed frontend origins.
     cors_origins: str = "http://localhost:5173"
 
-    # A retired copy of the API (the old Render service): every request is redirected to the
-    # same path on this address, e.g. https://carriersafetyscan.com, and nothing else runs (no
-    # database, no emails, no background jobs). Unset everywhere the app really runs.
-    redirect_to: str | None = None
-
     # data.transportation.gov (Socrata). The app token is optional; it raises rate limits.
     socrata_base_url: str = "https://data.transportation.gov"
     socrata_app_token: str | None = None
@@ -117,9 +112,10 @@ class Settings(BaseSettings):
     client_search_enabled: bool = False
 
     # DataQs evidence files (docs/DataQ.md): either a folder on the server (DATAQS_STORAGE_DIR, e.g.
-    # a Docker volume on our own VM), or a private bucket reached over the S3 protocol (Supabase
-    # Storage → S3 Configuration). The folder wins when both are set. The S3 keys are secrets:
-    # environment only, backend only. Uploads are refused (503) while neither is set.
+    # a Docker volume on our own VM), or a private bucket reached over the S3 protocol (any
+    # S3-compatible store; the files were in Supabase Storage before the VM). The folder wins
+    # when both are set. The S3 keys are secrets: environment only, backend only. Uploads are
+    # refused (503) while neither is set.
     dataqs_storage_dir: str | None = None
     dataqs_storage_endpoint: str | None = None
     dataqs_storage_region: str = "us-east-1"
